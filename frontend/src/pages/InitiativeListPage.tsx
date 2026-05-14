@@ -204,7 +204,9 @@ export default function InitiativeListPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredInitiatives.map((initiative) => (
+          {filteredInitiatives.map((initiative) => {
+            const quarterLabel = computeQuarterLabel(initiative.targetStartDate, initiative.targetEndDate);
+            return (
             <Card key={initiative.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
@@ -264,9 +266,9 @@ export default function InitiativeListPage() {
                         {initiative.targetStartDate && initiative.targetEndDate && ' - '}
                         {initiative.targetEndDate && formatLocalizedDate(initiative.targetEndDate, i18n.language)}
                       </span>
-                      {computeQuarterLabel(initiative.targetStartDate, initiative.targetEndDate) && (
+                      {quarterLabel && (
                         <Badge variant="outline" className="text-xs font-normal">
-                          {computeQuarterLabel(initiative.targetStartDate, initiative.targetEndDate)}
+                          {quarterLabel}
                         </Badge>
                       )}
                     </div>
@@ -298,7 +300,8 @@ export default function InitiativeListPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

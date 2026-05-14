@@ -223,7 +223,9 @@ export default function EpicListPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredEpics.map((epic) => (
+          {filteredEpics.map((epic) => {
+            const quarterLabel = computeQuarterLabel(epic.targetStartDate, epic.targetEndDate);
+            return (
             <Card key={epic.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
@@ -288,9 +290,9 @@ export default function EpicListPage() {
                         {epic.targetStartDate && epic.targetEndDate && ' - '}
                         {epic.targetEndDate && formatLocalizedDate(epic.targetEndDate, i18n.language)}
                       </span>
-                      {computeQuarterLabel(epic.targetStartDate, epic.targetEndDate) && (
+                      {quarterLabel && (
                         <Badge variant="outline" className="text-xs font-normal">
-                          {computeQuarterLabel(epic.targetStartDate, epic.targetEndDate)}
+                          {quarterLabel}
                         </Badge>
                       )}
                     </div>
@@ -322,7 +324,8 @@ export default function EpicListPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
