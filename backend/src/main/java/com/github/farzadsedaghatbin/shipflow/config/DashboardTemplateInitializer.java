@@ -64,6 +64,10 @@ public class DashboardTemplateInitializer implements CommandLineRunner {
       createQADashboardTemplate(templateOwner);
       createdCount++;
     }
+    if (!templateExists("Project Manager")) {
+      createProjectManagerTemplate(templateOwner);
+      createdCount++;
+    }
 
     if (createdCount > 0) {
       log.info("Created {} dashboard template(s)", createdCount);
@@ -158,6 +162,37 @@ public class DashboardTemplateInitializer implements CommandLineRunner {
         "{\"title\":\"Bug Reports\",\"pageSize\":5,\"searchable\":false,\"sourceType\":\"BUG_LIST\",\"sortBy\":\"severity\",\"sortOrder\":\"desc\",\"limit\":5}");
 
     log.debug("Created QA Dashboard template with {} widgets", 2);
+  }
+
+  private void createProjectManagerTemplate(User owner) {
+    CustomDashboard dashboard = CustomDashboard.builder().user(owner).name("Project Manager")
+        .description(
+            "Actionable insights for project managers: unshaped pitches, stale bugs, high-priority tasks, at-risk epics, and overdue items")
+        .isTemplate(true).isDefault(false).templateCategory(TemplateCategory.PROJECT_MANAGER)
+        .layoutConfig(DEFAULT_LAYOUT_CONFIG).createdBy(owner).build();
+    dashboard = customDashboardRepository.save(dashboard);
+
+    // Widget 1: Unshaped Pitches — pitches still in IDEA or DRAFT that need shaping
+    createWidget(dashboard, "TABLE", 0, 0, 6, 4, 1,
+        "{\"title\":\"Unshaped Pitches\",\"pageSize\":10,\"searchable\":true,\"sourceType\":\"UNSHAPED_PITCHES\",\"sortBy\":\"createdAt\",\"sortOrder\":\"asc\",\"limit\":15}");
+
+    // Widget 2: Stale Bugs — unresolved bugs older than 3 days
+    createWidget(dashboard, "TABLE", 6, 0, 6, 4, 2,
+        "{\"title\":\"Stale Bugs (3+ days unresolved)\",\"pageSize\":10,\"searchable\":true,\"sourceType\":\"STALE_BUGS\",\"sortBy\":\"createdAt\",\"sortOrder\":\"asc\",\"limit\":15}");
+
+    // Widget 3: High Priority Tasks — URGENT and HIGH priority active tasks
+    createWidget(dashboard, "TABLE", 0, 4, 6, 4, 3,
+        "{\"title\":\"High Priority Tasks\",\"pageSize\":10,\"searchable\":true,\"sourceType\":\"HIGH_PRIORITY_TASKS\",\"sortBy\":\"priority\",\"sortOrder\":\"desc\",\"limit\":15}");
+
+    // Widget 4: At-Risk Epics — epics nearing deadline with low completion
+    createWidget(dashboard, "TABLE", 6, 4, 6, 4, 4,
+        "{\"title\":\"At-Risk Epics\",\"pageSize\":10,\"searchable\":true,\"sourceType\":\"AT_RISK_EPICS\",\"limit\":10}");
+
+    // Widget 5: Overdue Tasks — tasks past their due date
+    createWidget(dashboard, "TABLE", 0, 8, 12, 4, 5,
+        "{\"title\":\"Overdue Tasks\",\"pageSize\":10,\"searchable\":true,\"sourceType\":\"OVERDUE_TASKS\",\"sortBy\":\"dueDate\",\"sortOrder\":\"asc\",\"limit\":15}");
+
+    log.debug("Created Project Manager template with {} widgets", 5);
   }
 
   private void createWidget(CustomDashboard dashboard, String widgetType, int posX, int posY, int width, int height,
