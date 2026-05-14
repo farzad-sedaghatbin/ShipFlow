@@ -583,10 +583,7 @@ export default function PitchDetail() {
           title={t('pitchDetailPage.notes')}
         />
 
-        <PitchTasksSection
-          tasks={tasks}
-          cycleId={pitch.cycleId}
-        />
+        <PitchTasksSection tasks={tasks} />
 
         {/* Work Logs and Meetings - Two columns on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -51,16 +51,26 @@ public class MeetingService {
     Specification<Meeting> spec = (root, query, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
 
+      var pitchJoin = root.join("pitch", jakarta.persistence.criteria.JoinType.LEFT);
+      var cycleJoin = pitchJoin.join("cycle", jakarta.persistence.criteria.JoinType.LEFT);
+      var cycleProjectJoin = cycleJoin.join("project", jakarta.persistence.criteria.JoinType.LEFT);
+      var directProjectJoin = root.join("project", jakarta.persistence.criteria.JoinType.LEFT);
+
+      query.distinct(true);
+
       if (cycleId != null) {
-        predicates.add(cb.equal(root.get("pitch").get("cycle").get("id"), cycleId));
+        predicates.add(cb.equal(cycleJoin.get("id"), cycleId));
       }
 
       if (projectId != null) {
-        predicates.add(cb.equal(root.get("pitch").get("cycle").get("project").get("id"), projectId));
+        predicates.add(cb.or(
+            cb.equal(directProjectJoin.get("id"), projectId),
+            cb.equal(cycleProjectJoin.get("id"), projectId)
+        ));
       }
 
       if (pitchId != null) {
-        predicates.add(cb.equal(root.get("pitch").get("id"), pitchId));
+        predicates.add(cb.equal(pitchJoin.get("id"), pitchId));
       }
 
       if (types != null && !types.isEmpty()) {
