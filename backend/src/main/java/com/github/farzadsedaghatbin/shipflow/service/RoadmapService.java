@@ -14,7 +14,9 @@ import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -60,13 +62,31 @@ public class RoadmapService {
 
     // Get releases within the date range
     List<Release> releases = releaseRepository.findByProjectIdNotDeleted(projectId).stream()
-        .filter(r -> r.getTargetDate() != null && 
-            !r.getTargetDate().isBefore(startDate) && 
+        .filter(r -> r.getTargetDate() != null &&
+            !r.getTargetDate().isBefore(startDate) &&
             !r.getTargetDate().isAfter(endDate))
         .collect(Collectors.toList());
 
+    // Bulk-fetch counts for all releases in 4 queries instead of 4N
+    Map<Long, Long> pitchCounts;
+    Map<Long, Long> donePitchCounts;
+    Map<Long, Long> taskCounts;
+    Map<Long, Long> bugCounts;
+    if (releases.isEmpty()) {
+      pitchCounts = Collections.emptyMap();
+      donePitchCounts = Collections.emptyMap();
+      taskCounts = Collections.emptyMap();
+      bugCounts = Collections.emptyMap();
+    } else {
+      List<Long> releaseIds = releases.stream().map(Release::getId).collect(Collectors.toList());
+      pitchCounts = toCountMap(pitchRepository.countByTargetReleaseIdsNotDeleted(releaseIds));
+      donePitchCounts = toCountMap(pitchRepository.countByTargetReleaseIdsAndStatusNotDeleted(releaseIds, PitchStatus.DONE));
+      taskCounts = toCountMap(taskRepository.countByTargetReleaseIdsNotDeleted(releaseIds));
+      bugCounts = toCountMap(bugReportRepository.countByTargetReleaseIds(releaseIds));
+    }
+
     List<TimelineRelease> timelineReleases = releases.stream()
-        .map(this::toTimelineRelease)
+        .map(r -> toTimelineRelease(r, pitchCounts, donePitchCounts, taskCounts, bugCounts))
         .collect(Collectors.toList());
 
     // Calculate overall date bounds
@@ -171,12 +191,16 @@ public class RoadmapService {
         .build();
   }
 
-  private TimelineRelease toTimelineRelease(Release release) {
-    long totalPitches = pitchRepository.countByTargetReleaseIdNotDeleted(release.getId());
-    long completedPitches = pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(
-        release.getId(), PitchStatus.DONE);
-    long totalTasks = taskRepository.countByTargetReleaseIdNotDeleted(release.getId());
-    long totalBugs = bugReportRepository.countByTargetReleaseId(release.getId());
+  private TimelineRelease toTimelineRelease(
+      Release release,
+      Map<Long, Long> pitchCounts,
+      Map<Long, Long> donePitchCounts,
+      Map<Long, Long> taskCounts,
+      Map<Long, Long> bugCounts) {
+    long totalPitches = pitchCounts.getOrDefault(release.getId(), 0L);
+    long completedPitches = donePitchCounts.getOrDefault(release.getId(), 0L);
+    long totalTasks = taskCounts.getOrDefault(release.getId(), 0L);
+    long totalBugs = bugCounts.getOrDefault(release.getId(), 0L);
 
     double progress = totalPitches > 0 ? (double) completedPitches / totalPitches * 100.0 : 0.0;
 
@@ -193,6 +217,12 @@ public class RoadmapService {
         .taskCount(totalTasks)
         .bugCount(totalBugs)
         .build();
+  }
+
+  private Map<Long, Long> toCountMap(List<Object[]> rows) {
+    return rows.stream().collect(Collectors.toMap(
+        r -> (Long) r[0],
+        r -> (Long) r[1]));
   }
 
   private double calculateInitiativeProgress(Initiative initiative) {
@@ -248,6 +278,9 @@ public class RoadmapService {
     int endY = end.getYear();
     if (startY == endY && startQ == endQ) {
       return "Q" + startQ + " " + startY;
+    }
+    if (startY == endY) {
+      return "Q" + startQ + " – Q" + endQ + " " + startY;
     }
     return "Q" + startQ + " " + startY + " – Q" + endQ + " " + endY;
   }

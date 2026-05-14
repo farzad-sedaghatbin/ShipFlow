@@ -25,7 +25,9 @@ import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -135,10 +137,10 @@ class RoadmapServiceTest {
         .thenReturn(Arrays.asList());
     when(releaseRepository.findByProjectIdNotDeleted(any()))
         .thenReturn(Arrays.asList(testRelease));
-    when(pitchRepository.countByTargetReleaseIdNotDeleted(any())).thenReturn(3L);
-    when(pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(any(), eq(PitchStatus.DONE))).thenReturn(1L);
-    when(taskRepository.countByTargetReleaseIdNotDeleted(any())).thenReturn(5L);
-    when(bugReportRepository.countByTargetReleaseId(any())).thenReturn(2L);
+    when(pitchRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 3L}));
+    when(pitchRepository.countByTargetReleaseIdsAndStatusNotDeleted(any(), eq(PitchStatus.DONE))).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 1L}));
+    when(taskRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 5L}));
+    when(bugReportRepository.countByTargetReleaseIds(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 2L}));
 
     RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
         1L,
@@ -222,10 +224,10 @@ class RoadmapServiceTest {
         .thenReturn(Arrays.asList());
     when(releaseRepository.findByProjectIdNotDeleted(any()))
         .thenReturn(Arrays.asList(testRelease));
-    when(pitchRepository.countByTargetReleaseIdNotDeleted(1L)).thenReturn(5L);
-    when(pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(1L, PitchStatus.DONE)).thenReturn(2L);
-    when(taskRepository.countByTargetReleaseIdNotDeleted(1L)).thenReturn(8L);
-    when(bugReportRepository.countByTargetReleaseId(1L)).thenReturn(3L);
+    when(pitchRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 5L}));
+    when(pitchRepository.countByTargetReleaseIdsAndStatusNotDeleted(any(), eq(PitchStatus.DONE))).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 2L}));
+    when(taskRepository.countByTargetReleaseIdsNotDeleted(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 8L}));
+    when(bugReportRepository.countByTargetReleaseIds(any())).thenReturn(Arrays.<Object[]>asList(new Object[]{1L, 3L}));
 
     RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
         1L,

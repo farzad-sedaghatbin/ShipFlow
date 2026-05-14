@@ -143,4 +143,7 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
   /** Find bugs whose fixed release differs from target (slipped bugs) */
   @Query("SELECT br FROM BugReport br WHERE br.targetRelease.id = :releaseId AND br.fixedInRelease IS NOT NULL AND br.fixedInRelease.id <> br.targetRelease.id")
   List<BugReport> findSlippedBugsByTargetReleaseId(@Param("releaseId") Long releaseId);
+
+  @Query("SELECT br.targetRelease.id, COUNT(br) FROM BugReport br WHERE br.targetRelease.id IN :releaseIds GROUP BY br.targetRelease.id")
+  List<Object[]> countByTargetReleaseIds(@Param("releaseIds") List<Long> releaseIds);
 }
