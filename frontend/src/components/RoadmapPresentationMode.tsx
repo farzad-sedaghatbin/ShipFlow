@@ -425,11 +425,6 @@ export default function RoadmapPresentationMode({
                         >
                           {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
                         </Badge>
-                        {initiative.quarterLabel && (
-                          <Badge variant="secondary" className={`text-xs shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
-                            {initiative.quarterLabel}
-                          </Badge>
-                        )}
                       </div>
                       <div className="flex-1 relative h-12">
                         <PresentationTimelineBar
@@ -471,11 +466,6 @@ export default function RoadmapPresentationMode({
                               >
                                 {t(`epics.status.${epic.status.toLowerCase()}`)}
                               </Badge>
-                              {epic.quarterLabel && (
-                                <Badge variant="secondary" className={`text-[10px] shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
-                                  {epic.quarterLabel}
-                                </Badge>
-                              )}
                             </div>
                             <div className="flex-1 relative h-10">
                               <PresentationTimelineBar
@@ -553,11 +543,6 @@ export default function RoadmapPresentationMode({
                           >
                             {t(`epics.status.${epic.status.toLowerCase()}`)}
                           </Badge>
-                          {epic.quarterLabel && (
-                            <Badge variant="secondary" className={`text-[10px] shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
-                              {epic.quarterLabel}
-                            </Badge>
-                          )}
                         </div>
                         <div className="flex-1 relative h-10">
                           <PresentationTimelineBar

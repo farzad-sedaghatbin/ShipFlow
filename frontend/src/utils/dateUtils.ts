@@ -113,3 +113,25 @@ export function isPast(date: Date | string): boolean {
   const d = parseDate(date);
   return d.getTime() < new Date().getTime();
 }
+
+/**
+ * Compute a human-readable quarter label for a date range.
+ * Returns e.g. "Q2 2026", "Q2 – Q3 2026", or "Q4 2026 – Q1 2027".
+ * Returns null if either date is missing.
+ */
+export function computeQuarterLabel(startDate?: string | null, endDate?: string | null): string | null {
+  if (!startDate || !endDate) return null;
+  const start = parseDate(startDate);
+  const end = parseDate(endDate);
+  const startQ = Math.floor(start.getMonth() / 3) + 1;
+  const endQ = Math.floor(end.getMonth() / 3) + 1;
+  const startY = start.getFullYear();
+  const endY = end.getFullYear();
+  if (startY === endY && startQ === endQ) {
+    return `Q${startQ} ${startY}`;
+  }
+  if (startY === endY) {
+    return `Q${startQ} – Q${endQ} ${startY}`;
+  }
+  return `Q${startQ} ${startY} – Q${endQ} ${endY}`;
+}
