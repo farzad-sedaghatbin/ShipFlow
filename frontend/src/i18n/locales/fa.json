@@ -1185,6 +1185,7 @@
     "register": "ثبت‌نام",
     "required": "الزامی",
     "reset": "بازنشانی",
+    "retry": "تلاش مجدد",
     "save": "ذخیره",
     "search": "جستجو",
     "setDefault": "تنظیم به عنوان پیش‌فرض",
@@ -6164,7 +6165,15 @@
     "userDeleted": "کاربر با موفقیت حذف شد",
     "userUpdated": "[TODO: Persian translation] User updated successfully",
     "username": "نام کاربری",
-    "usernameRequired": "نام کاربری الزامی است"
+    "usernameRequired": "نام کاربری الزامی است",
+    "projectAccess": "دسترسی پروژه",
+    "selectAllProjects": "انتخاب همه",
+    "deselectAllProjects": "لغو انتخاب همه",
+    "adminProjectNote": "مدیران به طور خودکار به تمام پروژه‌ها دسترسی دارند",
+    "noProjects": "هیچ پروژه‌ای موجود نیست",
+    "projectsSelected_one": "{{count}} پروژه انتخاب شده",
+    "projectsSelected_other": "{{count}} پروژه انتخاب شده",
+    "projectLoadFailed": "بارگذاری پروژه‌ها ناموفق بود. امکان تخصیص دسترسی پروژه وجود ندارد."
   },
   "validation": {
     "dateRange": "تاریخ پایان باید بعد از تاریخ شروع باشد",

@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.dto;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,4 +23,6 @@ public class RegisterRequest {
   private UserRole role;
 
   private Long personId; // Optional: link to existing person
+
+  private List<Long> projectIds; // Optional: when null/empty, all active projects are assigned
 }
