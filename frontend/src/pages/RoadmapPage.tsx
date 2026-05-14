@@ -720,11 +720,6 @@ export default function RoadmapPage() {
                         <Badge variant="outline" className="text-[10px] shrink-0">
                           {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
                         </Badge>
-                        {initiative.quarterLabel && (
-                          <Badge variant="secondary" className="text-[9px] shrink-0 font-normal">
-                            {initiative.quarterLabel}
-                          </Badge>
-                        )}
                         {initiative.epics && initiative.epics.length > 0 && (
                           <span className="text-[10px] text-muted-foreground shrink-0">
                             {t('roadmap.epicCount', { count: initiative.epics.length })}
@@ -776,11 +771,6 @@ export default function RoadmapPage() {
                               <Badge variant="outline" className="text-[10px] shrink-0">
                                 {t(`epics.status.${epic.status.toLowerCase()}`)}
                               </Badge>
-                              {epic.quarterLabel && (
-                                <Badge variant="secondary" className="text-[9px] shrink-0 font-normal">
-                                  {epic.quarterLabel}
-                                </Badge>
-                              )}
                               {epic.pitches && epic.pitches.length > 0 && (
                                 <span className="text-[10px] text-muted-foreground shrink-0">
                                   {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
@@ -864,11 +854,6 @@ export default function RoadmapPage() {
                             <Badge variant="outline" className="text-[10px] shrink-0">
                               {t(`epics.status.${epic.status.toLowerCase()}`)}
                             </Badge>
-                            {epic.quarterLabel && (
-                              <Badge variant="secondary" className="text-[9px] shrink-0 font-normal">
-                                {epic.quarterLabel}
-                              </Badge>
-                            )}
                             {epic.pitches && epic.pitches.length > 0 && (
                               <span className="text-[10px] text-muted-foreground shrink-0">
                                 {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}

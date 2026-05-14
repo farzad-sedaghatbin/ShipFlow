@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
+import { computeQuarterLabel } from '../utils/dateUtils';
 import {
   Plus,
   Pencil,
@@ -263,6 +264,11 @@ export default function InitiativeListPage() {
                         {initiative.targetStartDate && initiative.targetEndDate && ' - '}
                         {initiative.targetEndDate && formatLocalizedDate(initiative.targetEndDate, i18n.language)}
                       </span>
+                      {computeQuarterLabel(initiative.targetStartDate, initiative.targetEndDate) && (
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {computeQuarterLabel(initiative.targetStartDate, initiative.targetEndDate)}
+                        </Badge>
+                      )}
                     </div>
                   )}
                   
