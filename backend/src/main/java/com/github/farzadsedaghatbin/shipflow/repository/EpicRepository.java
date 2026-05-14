@@ -50,10 +50,10 @@ public interface EpicRepository extends JpaRepository<Epic, Long> {
   @Query("SELECT e FROM Epic e WHERE e.owner.id = :ownerId AND e.deletedAt IS NULL ORDER BY e.sortOrder")
   List<Epic> findByOwnerIdNotDeleted(@Param("ownerId") Long ownerId);
 
-  // Date range queries for roadmap timeline
+  // Date range queries for roadmap timeline — only items with both dates set and overlapping the range
   @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId " +
-         "AND ((e.targetStartDate <= :endDate AND e.targetEndDate >= :startDate) " +
-         "OR (e.targetStartDate IS NULL OR e.targetEndDate IS NULL)) " +
+         "AND e.targetStartDate IS NOT NULL AND e.targetEndDate IS NOT NULL " +
+         "AND e.targetStartDate <= :endDate AND e.targetEndDate >= :startDate " +
          "AND e.deletedAt IS NULL ORDER BY e.sortOrder, e.targetStartDate")
   List<Epic> findByProjectIdAndDateRangeNotDeleted(
       @Param("projectId") Long projectId,

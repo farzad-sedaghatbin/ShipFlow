@@ -348,10 +348,24 @@ export default function RoadmapPresentationMode({
                                 </Badge>
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent className="text-base p-4">
+                            <TooltipContent className="text-base p-4 space-y-1">
                               <p className="font-bold text-lg">{release.name} ({release.version})</p>
                               <p>{t('roadmap.targetDate')}: {formatLocalizedDate(release.targetDate || '', i18n.language)}</p>
                               <p>{t('roadmap.progress')}: {Math.round(release.progressPercentage || 0)}%</p>
+                              <div className="flex gap-3 text-sm text-muted-foreground pt-1 border-t">
+                                {(release.pitchCount ?? 0) > 0 && (
+                                  <span>{t('roadmap.releasePitches', { count: release.pitchCount })}</span>
+                                )}
+                                {(release.taskCount ?? 0) > 0 && (
+                                  <span>{t('roadmap.releaseTasks', { count: release.taskCount })}</span>
+                                )}
+                                {(release.bugCount ?? 0) > 0 && (
+                                  <span>{t('roadmap.releaseBugs', { count: release.bugCount })}</span>
+                                )}
+                                {(release.pitchCount ?? 0) === 0 && (release.taskCount ?? 0) === 0 && (release.bugCount ?? 0) === 0 && (
+                                  <span>{t('roadmap.releaseNoItems')}</span>
+                                )}
+                              </div>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -405,12 +419,17 @@ export default function RoadmapPresentationMode({
                           style={{ backgroundColor: initiative.color || '#6366f1' }}
                         />
                         <span className="font-semibold text-lg truncate">{initiative.name}</span>
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className={`text-sm shrink-0 ${isDarkMode ? 'border-slate-600' : ''}`}
                         >
                           {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
                         </Badge>
+                        {initiative.quarterLabel && (
+                          <Badge variant="secondary" className={`text-xs shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
+                            {initiative.quarterLabel}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex-1 relative h-12">
                         <PresentationTimelineBar
@@ -425,7 +444,7 @@ export default function RoadmapPresentationMode({
                         />
                       </div>
                     </div>
-                    
+
                     {/* Expanded Epics */}
                     <AnimatePresence>
                       {expandedInitiatives.has(initiative.id) && initiative.epics?.map((epic) => (
@@ -446,12 +465,17 @@ export default function RoadmapPresentationMode({
                             <div className="w-74 shrink-0 flex items-center gap-3 py-2 px-3">
                               <FileText className={`h-5 w-5 shrink-0 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                               <span className="text-base truncate">{epic.name}</span>
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className={`text-xs shrink-0 ${isDarkMode ? 'border-slate-600' : ''}`}
                               >
                                 {t(`epics.status.${epic.status.toLowerCase()}`)}
                               </Badge>
+                              {epic.quarterLabel && (
+                                <Badge variant="secondary" className={`text-[10px] shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
+                                  {epic.quarterLabel}
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex-1 relative h-10">
                               <PresentationTimelineBar
@@ -466,7 +490,7 @@ export default function RoadmapPresentationMode({
                               />
                             </div>
                           </div>
-                          
+
                           {/* Expanded Pitches */}
                           <AnimatePresence>
                             {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
@@ -523,12 +547,17 @@ export default function RoadmapPresentationMode({
                         <div className="w-80 shrink-0 flex items-center gap-3 py-2 px-3">
                           <FileText className={`h-5 w-5 shrink-0 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                           <span className="text-base truncate">{epic.name}</span>
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`text-xs shrink-0 ${isDarkMode ? 'border-slate-600' : ''}`}
                           >
                             {t(`epics.status.${epic.status.toLowerCase()}`)}
                           </Badge>
+                          {epic.quarterLabel && (
+                            <Badge variant="secondary" className={`text-[10px] shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
+                              {epic.quarterLabel}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex-1 relative h-10">
                           <PresentationTimelineBar
