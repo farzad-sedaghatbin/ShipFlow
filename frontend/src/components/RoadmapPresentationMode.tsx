@@ -348,10 +348,24 @@ export default function RoadmapPresentationMode({
                                 </Badge>
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent className="text-base p-4">
+                            <TooltipContent className="text-base p-4 space-y-1">
                               <p className="font-bold text-lg">{release.name} ({release.version})</p>
                               <p>{t('roadmap.targetDate')}: {formatLocalizedDate(release.targetDate || '', i18n.language)}</p>
                               <p>{t('roadmap.progress')}: {Math.round(release.progressPercentage || 0)}%</p>
+                              <div className="flex gap-3 text-sm text-muted-foreground pt-1 border-t">
+                                {(release.pitchCount ?? 0) > 0 && (
+                                  <span>{t('roadmap.releasePitches', { count: release.pitchCount })}</span>
+                                )}
+                                {(release.taskCount ?? 0) > 0 && (
+                                  <span>{t('roadmap.releaseTasks', { count: release.taskCount })}</span>
+                                )}
+                                {(release.bugCount ?? 0) > 0 && (
+                                  <span>{t('roadmap.releaseBugs', { count: release.bugCount })}</span>
+                                )}
+                                {(release.pitchCount ?? 0) === 0 && (release.taskCount ?? 0) === 0 && (release.bugCount ?? 0) === 0 && (
+                                  <span>{t('roadmap.releaseNoItems')}</span>
+                                )}
+                              </div>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>

@@ -25,9 +25,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -290,5 +288,117 @@ class RoadmapServiceTest {
         eq(LocalDate.of(2026, 1, 1)),
         eq(LocalDate.of(2026, 12, 31))
     );
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldComputeSingleQuarterLabel() {
+    testInitiative.setTargetStartDate(LocalDate.of(2026, 4, 1));
+    testInitiative.setTargetEndDate(LocalDate.of(2026, 6, 15));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getInitiatives().get(0).getQuarterLabel()).isEqualTo("Q2 2026");
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldComputeMultiQuarterSameYearLabel() {
+    testInitiative.setTargetStartDate(LocalDate.of(2026, 4, 1));
+    testInitiative.setTargetEndDate(LocalDate.of(2026, 9, 30));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getInitiatives().get(0).getQuarterLabel()).isEqualTo("Q2 – Q3 2026");
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldComputeCrossYearQuarterLabel() {
+    testInitiative.setTargetStartDate(LocalDate.of(2026, 10, 1));
+    testInitiative.setTargetEndDate(LocalDate.of(2027, 3, 31));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2027, 12, 31));
+
+    assertThat(result.getInitiatives().get(0).getQuarterLabel()).isEqualTo("Q4 2026 – Q1 2027");
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldExcludeOrphanEpicsWithNoDates() {
+    Epic noDatesEpic = Epic.builder()
+        .id(99L)
+        .name("No Dates Epic")
+        .status(EpicStatus.DRAFT)
+        .project(testProject)
+        .pitches(Arrays.asList())
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList());
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList(noDatesEpic));
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getOrphanEpics()).isEmpty();
+  }
+
+  @Test
+  void getRoadmapTimeline_ShouldExcludeChildEpicsOutsideDateRange() {
+    Epic outOfRangeEpic = Epic.builder()
+        .id(50L)
+        .name("October Epic")
+        .status(EpicStatus.PLANNED)
+        .color("#FF0000")
+        .targetStartDate(LocalDate.of(2026, 10, 1))
+        .targetEndDate(LocalDate.of(2026, 12, 15))
+        .project(testProject)
+        .pitches(Arrays.asList())
+        .createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now())
+        .build();
+    outOfRangeEpic.setInitiative(testInitiative);
+    testInitiative.setEpics(Arrays.asList(testEpic, outOfRangeEpic));
+
+    when(initiativeRepository.findByProjectIdAndDateRangeNotDeleted(any(), any(), any()))
+        .thenReturn(Arrays.asList(testInitiative));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+    when(releaseRepository.findByProjectIdNotDeleted(any()))
+        .thenReturn(Arrays.asList());
+
+    // Q2 date range: April 1 - June 30
+    RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
+        1L, LocalDate.of(2026, 4, 1), LocalDate.of(2026, 6, 30));
+
+    RoadmapTimelineDTO.TimelineInitiative init = result.getInitiatives().get(0);
+    assertThat(init.getEpics()).hasSize(1);
+    assertThat(init.getEpics().get(0).getName()).isEqualTo("Mobile Checkout Redesign");
   }
 }
