@@ -16,10 +16,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseRiskLevel;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseStatus;
+import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -45,6 +47,12 @@ class RoadmapServiceTest {
 
   @Mock
   private PitchRepository pitchRepository;
+
+  @Mock
+  private TaskRepository taskRepository;
+
+  @Mock
+  private BugReportRepository bugReportRepository;
 
   @InjectMocks
   private RoadmapService roadmapService;
@@ -129,6 +137,8 @@ class RoadmapServiceTest {
         .thenReturn(Arrays.asList(testRelease));
     when(pitchRepository.countByTargetReleaseIdNotDeleted(any())).thenReturn(3L);
     when(pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(any(), eq(PitchStatus.DONE))).thenReturn(1L);
+    when(taskRepository.countByTargetReleaseIdNotDeleted(any())).thenReturn(5L);
+    when(bugReportRepository.countByTargetReleaseId(any())).thenReturn(2L);
 
     RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
         1L,
@@ -214,6 +224,8 @@ class RoadmapServiceTest {
         .thenReturn(Arrays.asList(testRelease));
     when(pitchRepository.countByTargetReleaseIdNotDeleted(1L)).thenReturn(5L);
     when(pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(1L, PitchStatus.DONE)).thenReturn(2L);
+    when(taskRepository.countByTargetReleaseIdNotDeleted(1L)).thenReturn(8L);
+    when(bugReportRepository.countByTargetReleaseId(1L)).thenReturn(3L);
 
     RoadmapTimelineDTO result = roadmapService.getRoadmapTimeline(
         1L,
@@ -229,6 +241,9 @@ class RoadmapServiceTest {
     assertThat(release.getStatus()).isEqualTo("PLANNING");
     assertThat(release.getRiskLevel()).isEqualTo("MEDIUM");
     assertThat(release.getProgressPercentage()).isEqualTo(40.0);
+    assertThat(release.getPitchCount()).isEqualTo(5L);
+    assertThat(release.getTaskCount()).isEqualTo(8L);
+    assertThat(release.getBugCount()).isEqualTo(3L);
   }
 
   @Test

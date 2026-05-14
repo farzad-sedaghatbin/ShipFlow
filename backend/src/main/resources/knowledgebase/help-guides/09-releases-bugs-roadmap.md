@@ -45,28 +45,60 @@ Each release shows:
 # Roadmap
 
 ## What is the Roadmap?
-The Roadmap provides a high-level strategic view of your product using Initiatives and Epics layered on top of the Shape Up cycle structure.
+The Roadmap provides a high-level strategic view of your product using Initiatives and Epics layered on top of the Shape Up cycle structure. It displays items on a Gantt-style timeline so you can see how work is distributed across quarters and the year.
 
 ## How to View the Roadmap
 1. Navigate to **Roadmap** from the sidebar
-2. See initiatives and epics plotted over time
-3. Filter by status, owner, or time range
+2. Choose between **Quarterly** or **Yearly** view using the dropdown
+3. Use the arrow buttons to navigate between periods
+4. Click the expand icon to enter **Presentation Mode** for a fullscreen view
+
+## What Appears on the Roadmap
+Only initiatives and epics that have **both a start date and an end date** set will appear on the roadmap. Items without dates are excluded so the timeline stays clean and meaningful.
+
+Each initiative and epic displays a **quarter label** (e.g., "Q2 2026" or "Q2 – Q3 2026") indicating which quarter(s) it spans.
+
+Items are filtered by the currently visible time window — an epic scheduled for October will not appear in the Q2 quarterly view.
+
+## Releases on the Roadmap
+Releases appear as milestone flags on the timeline at their target date. Hovering over a release shows:
+- Release name, version, and target date
+- Overall progress percentage
+- Linked item counts: pitches, tasks, and bugs targeted for that release
+
+To associate items with a release, set the **Target Release** field on individual pitches, tasks, or bug reports. The roadmap aggregates these automatically.
+
+## How to Set Dates
+- **Drag and drop**: Grab a timeline bar to move it, or drag its edges to resize
+- **Click "Set dates"**: For items without dates, click the link to assign default dates
+- **Edit directly**: Open the initiative or epic detail page to set exact dates
 
 ## Initiatives
 Initiatives are high-level strategic goals (e.g., "Improve user onboarding"):
 1. Navigate to **Initiatives** from the sidebar
 2. Click **New Initiative**
-3. Fill in name, description, status, owner, and target dates
+3. Fill in name, description, status, owner, and **target start/end dates**
 4. Link epics to the initiative
 
 ## Epics
 Epics are large bodies of work within an initiative that break down into pitches:
 1. Navigate to **Epics** from the sidebar
 2. Click **New Epic**
-3. Fill in name, description, status, and link to an initiative
+3. Fill in name, description, status, **target start/end dates**, and link to an initiative
 4. Link pitches to the epic for end-to-end traceability
+
+## Linking Work to Releases
+To see pitches, tasks, and bugs on a release milestone:
+1. Open a **Pitch**, **Task**, or **Bug Report**
+2. Set the **Target Release** field to the desired release
+3. The roadmap will automatically count and display these items on the release tooltip
 
 ## Initiative → Epic → Pitch Hierarchy
 - **Initiative**: Strategic goal (e.g., "Mobile App Launch")
 - **Epic**: Major work area within the initiative (e.g., "Authentication System")
 - **Pitch**: Specific shaped proposal within the epic (e.g., "Social Login with OAuth")
+
+## Tips
+- Set dates on all initiatives and epics you want visible on the roadmap
+- Use the quarterly view for near-term planning and yearly view for the big picture
+- Quarter labels help quickly identify when work is scheduled without reading exact dates

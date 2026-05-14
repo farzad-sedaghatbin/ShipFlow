@@ -7,10 +7,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Release;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +31,8 @@ public class RoadmapService {
   private final EpicRepository epicRepository;
   private final PitchRepository pitchRepository;
   private final ReleaseRepository releaseRepository;
+  private final TaskRepository taskRepository;
+  private final BugReportRepository bugReportRepository;
 
   /**
    * Get the complete roadmap timeline for a project within a date range.
@@ -44,13 +48,13 @@ public class RoadmapService {
         initiativeRepository.findByProjectIdAndDateRangeNotDeleted(projectId, startDate, endDate);
 
     List<TimelineInitiative> timelineInitiatives = initiatives.stream()
-        .map(this::toTimelineInitiative)
+        .map(i -> toTimelineInitiative(i, startDate, endDate))
         .collect(Collectors.toList());
 
-    // Get orphan epics (not linked to any initiative)
+    // Get orphan epics (not linked to any initiative) — only those with dates in range
     List<Epic> orphanEpics = epicRepository.findOrphanEpicsByProjectIdNotDeleted(projectId);
     List<TimelineEpic> orphanTimelineEpics = orphanEpics.stream()
-        .filter(e -> overlapsDateRange(e.getTargetStartDate(), e.getTargetEndDate(), startDate, endDate))
+        .filter(e -> hasDatesInRange(e.getTargetStartDate(), e.getTargetEndDate(), startDate, endDate))
         .map(this::toTimelineEpic)
         .collect(Collectors.toList());
 
@@ -97,9 +101,11 @@ public class RoadmapService {
     return getRoadmapTimeline(projectId, startDate, endDate);
   }
 
-  private TimelineInitiative toTimelineInitiative(Initiative initiative) {
+  private TimelineInitiative toTimelineInitiative(
+      Initiative initiative, LocalDate rangeStart, LocalDate rangeEnd) {
     List<TimelineEpic> epics = initiative.getEpics().stream()
         .filter(e -> e.getDeletedAt() == null)
+        .filter(e -> hasDatesInRange(e.getTargetStartDate(), e.getTargetEndDate(), rangeStart, rangeEnd))
         .map(this::toTimelineEpic)
         .collect(Collectors.toList());
 
@@ -114,6 +120,7 @@ public class RoadmapService {
         .startDate(initiative.getTargetStartDate())
         .endDate(initiative.getTargetEndDate())
         .progress(progress)
+        .quarterLabel(computeQuarterLabel(initiative.getTargetStartDate(), initiative.getTargetEndDate()))
         .epics(epics)
         .build();
   }
@@ -135,6 +142,7 @@ public class RoadmapService {
         .startDate(epic.getTargetStartDate())
         .endDate(epic.getTargetEndDate())
         .progress(progress)
+        .quarterLabel(computeQuarterLabel(epic.getTargetStartDate(), epic.getTargetEndDate()))
         .pitches(pitches)
         .build();
   }
@@ -167,6 +175,8 @@ public class RoadmapService {
     long totalPitches = pitchRepository.countByTargetReleaseIdNotDeleted(release.getId());
     long completedPitches = pitchRepository.countByTargetReleaseIdAndStatusNotDeleted(
         release.getId(), PitchStatus.DONE);
+    long totalTasks = taskRepository.countByTargetReleaseIdNotDeleted(release.getId());
+    long totalBugs = bugReportRepository.countByTargetReleaseId(release.getId());
 
     double progress = totalPitches > 0 ? (double) completedPitches / totalPitches * 100.0 : 0.0;
 
@@ -179,6 +189,9 @@ public class RoadmapService {
         .releaseDate(release.getReleaseDate())
         .riskLevel(release.getRiskLevel().name())
         .progressPercentage(progress)
+        .pitchCount(totalPitches)
+        .taskCount(totalTasks)
+        .bugCount(totalBugs)
         .build();
   }
 
@@ -218,13 +231,25 @@ public class RoadmapService {
     return (double) completed / activePitches.size() * 100.0;
   }
 
-  private boolean overlapsDateRange(LocalDate itemStart, LocalDate itemEnd, LocalDate rangeStart, LocalDate rangeEnd) {
-    if (itemStart == null && itemEnd == null) {
-      return true; // Items with no dates are always included
+  private boolean hasDatesInRange(LocalDate itemStart, LocalDate itemEnd, LocalDate rangeStart, LocalDate rangeEnd) {
+    if (itemStart == null || itemEnd == null) {
+      return false;
     }
-    LocalDate start = itemStart != null ? itemStart : itemEnd;
-    LocalDate end = itemEnd != null ? itemEnd : itemStart;
-    return start != null && end != null && !start.isAfter(rangeEnd) && !end.isBefore(rangeStart);
+    return !itemStart.isAfter(rangeEnd) && !itemEnd.isBefore(rangeStart);
+  }
+
+  private String computeQuarterLabel(LocalDate start, LocalDate end) {
+    if (start == null || end == null) {
+      return null;
+    }
+    int startQ = (start.getMonthValue() - 1) / 3 + 1;
+    int endQ = (end.getMonthValue() - 1) / 3 + 1;
+    int startY = start.getYear();
+    int endY = end.getYear();
+    if (startY == endY && startQ == endQ) {
+      return "Q" + startQ + " " + startY;
+    }
+    return "Q" + startQ + " " + startY + " – Q" + endQ + " " + endY;
   }
 
   private LocalDate calculateMinDate(

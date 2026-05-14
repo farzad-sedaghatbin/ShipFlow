@@ -405,12 +405,17 @@ export default function RoadmapPresentationMode({
                           style={{ backgroundColor: initiative.color || '#6366f1' }}
                         />
                         <span className="font-semibold text-lg truncate">{initiative.name}</span>
-                        <Badge 
-                          variant="outline" 
+                        <Badge
+                          variant="outline"
                           className={`text-sm shrink-0 ${isDarkMode ? 'border-slate-600' : ''}`}
                         >
                           {t(`initiatives.status.${initiative.status.toLowerCase()}`)}
                         </Badge>
+                        {initiative.quarterLabel && (
+                          <Badge variant="secondary" className={`text-xs shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
+                            {initiative.quarterLabel}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex-1 relative h-12">
                         <PresentationTimelineBar
@@ -425,7 +430,7 @@ export default function RoadmapPresentationMode({
                         />
                       </div>
                     </div>
-                    
+
                     {/* Expanded Epics */}
                     <AnimatePresence>
                       {expandedInitiatives.has(initiative.id) && initiative.epics?.map((epic) => (
@@ -446,12 +451,17 @@ export default function RoadmapPresentationMode({
                             <div className="w-74 shrink-0 flex items-center gap-3 py-2 px-3">
                               <FileText className={`h-5 w-5 shrink-0 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                               <span className="text-base truncate">{epic.name}</span>
-                              <Badge 
-                                variant="outline" 
+                              <Badge
+                                variant="outline"
                                 className={`text-xs shrink-0 ${isDarkMode ? 'border-slate-600' : ''}`}
                               >
                                 {t(`epics.status.${epic.status.toLowerCase()}`)}
                               </Badge>
+                              {epic.quarterLabel && (
+                                <Badge variant="secondary" className={`text-[10px] shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
+                                  {epic.quarterLabel}
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex-1 relative h-10">
                               <PresentationTimelineBar
@@ -466,7 +476,7 @@ export default function RoadmapPresentationMode({
                               />
                             </div>
                           </div>
-                          
+
                           {/* Expanded Pitches */}
                           <AnimatePresence>
                             {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
@@ -523,12 +533,17 @@ export default function RoadmapPresentationMode({
                         <div className="w-80 shrink-0 flex items-center gap-3 py-2 px-3">
                           <FileText className={`h-5 w-5 shrink-0 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                           <span className="text-base truncate">{epic.name}</span>
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`text-xs shrink-0 ${isDarkMode ? 'border-slate-600' : ''}`}
                           >
                             {t(`epics.status.${epic.status.toLowerCase()}`)}
                           </Badge>
+                          {epic.quarterLabel && (
+                            <Badge variant="secondary" className={`text-[10px] shrink-0 font-normal ${isDarkMode ? 'bg-slate-700' : ''}`}>
+                              {epic.quarterLabel}
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex-1 relative h-10">
                           <PresentationTimelineBar

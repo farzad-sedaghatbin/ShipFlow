@@ -40,6 +40,7 @@ public class RoadmapTimelineDTO {
     private LocalDate endDate;
     private Double progress;
     private Integer sortOrder;
+    private String quarterLabel;
 
     // Child epics
     private List<TimelineEpic> epics;
@@ -63,6 +64,7 @@ public class RoadmapTimelineDTO {
     private Double progress;
     private Integer sortOrder;
     private Long initiativeId;
+    private String quarterLabel;
 
     // Child pitches
     private List<TimelinePitch> pitches;
@@ -103,5 +105,8 @@ public class RoadmapTimelineDTO {
     private LocalDate releaseDate;
     private Double progressPercentage;
     private Integer sortOrder;
+    private Long pitchCount;
+    private Long taskCount;
+    private Long bugCount;
   }
 }

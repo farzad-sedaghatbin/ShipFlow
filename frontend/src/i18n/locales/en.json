@@ -2381,7 +2381,14 @@
     "toggleTheme": "Theme",
     "toggleView": "View",
     "exit": "Exit",
-    "today": "Today"
+    "today": "Today",
+    "releasePitches_one": "{{count}} pitch",
+    "releasePitches_other": "{{count}} pitches",
+    "releaseTasks_one": "{{count}} task",
+    "releaseTasks_other": "{{count}} tasks",
+    "releaseBugs_one": "{{count}} bug",
+    "releaseBugs_other": "{{count}} bugs",
+    "releaseNoItems": "No items linked"
   },
   "initiatives": {
     "title": "Initiatives",
