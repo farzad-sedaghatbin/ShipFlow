@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
+import { computeQuarterLabel } from '../utils/dateUtils';
 import {
   Plus,
   Pencil,
@@ -203,7 +204,9 @@ export default function InitiativeListPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredInitiatives.map((initiative) => (
+          {filteredInitiatives.map((initiative) => {
+            const quarterLabel = computeQuarterLabel(initiative.targetStartDate, initiative.targetEndDate);
+            return (
             <Card key={initiative.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
@@ -263,6 +266,11 @@ export default function InitiativeListPage() {
                         {initiative.targetStartDate && initiative.targetEndDate && ' - '}
                         {initiative.targetEndDate && formatLocalizedDate(initiative.targetEndDate, i18n.language)}
                       </span>
+                      {quarterLabel && (
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {quarterLabel}
+                        </Badge>
+                      )}
                     </div>
                   )}
                   
@@ -292,7 +300,8 @@ export default function InitiativeListPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

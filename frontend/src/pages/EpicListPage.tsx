@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
+import { computeQuarterLabel } from '../utils/dateUtils';
 import {
   Plus,
   Pencil,
@@ -222,7 +223,9 @@ export default function EpicListPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredEpics.map((epic) => (
+          {filteredEpics.map((epic) => {
+            const quarterLabel = computeQuarterLabel(epic.targetStartDate, epic.targetEndDate);
+            return (
             <Card key={epic.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
@@ -287,6 +290,11 @@ export default function EpicListPage() {
                         {epic.targetStartDate && epic.targetEndDate && ' - '}
                         {epic.targetEndDate && formatLocalizedDate(epic.targetEndDate, i18n.language)}
                       </span>
+                      {quarterLabel && (
+                        <Badge variant="outline" className="text-xs font-normal">
+                          {quarterLabel}
+                        </Badge>
+                      )}
                     </div>
                   )}
                   
@@ -316,7 +324,8 @@ export default function EpicListPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 
