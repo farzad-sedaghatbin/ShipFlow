@@ -755,7 +755,8 @@ class WidgetDataService {
         const value = item[filter.field];
         const filterValue = filter.value;
 
-        switch (filter.operator) {
+        const op = (filter.operator || '').toLowerCase();
+        switch (op) {
           case 'equals':
             return value === filterValue;
           case 'not_equals':
