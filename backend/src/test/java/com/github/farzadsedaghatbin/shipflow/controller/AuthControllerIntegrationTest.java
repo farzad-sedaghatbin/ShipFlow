@@ -91,7 +91,7 @@ class AuthControllerIntegrationTest {
 
   @Test
   void register_WithValidData_ShouldCreateUser() throws Exception {
-    RegisterRequest request = new RegisterRequest("newuser", "newpassword", UserRole.MEMBER, null);
+    RegisterRequest request = new RegisterRequest("newuser", "newpassword", UserRole.MEMBER, null, null);
 
     mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
@@ -100,7 +100,7 @@ class AuthControllerIntegrationTest {
 
   @Test
   void register_WithExistingUsername_ShouldReturn400() throws Exception {
-    RegisterRequest request = new RegisterRequest("auth-test-user", "somepassword", UserRole.MEMBER, null);
+    RegisterRequest request = new RegisterRequest("auth-test-user", "somepassword", UserRole.MEMBER, null, null);
 
     mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isBadRequest());

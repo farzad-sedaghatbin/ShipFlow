@@ -751,6 +751,7 @@ export interface CreateUserRequest {
   email?: string;
   role: UserRole;
   personId?: number;
+  projectIds?: number[];
 }
 
 export interface HillChartPoint {

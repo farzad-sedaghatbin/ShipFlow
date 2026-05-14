@@ -3709,7 +3709,13 @@
     "userDeactivated": "User deactivated successfully",
     "roleRequired": "Role is required",
     "members": "Members",
-    "newPassword": "New Password"
+    "newPassword": "New Password",
+    "projectAccess": "Project Access",
+    "selectAllProjects": "Select All",
+    "deselectAllProjects": "Deselect All",
+    "adminProjectNote": "Admins automatically have access to all projects",
+    "noProjects": "No projects available",
+    "projectsSelected": "{{count}} projects selected"
   },
   "peopleManagement": {
     "title": "People Management",

@@ -17,11 +17,13 @@ import {
   EyeOff,
   RefreshCw,
   Trash2,
+  FolderOpen,
 } from 'lucide-react';
 import { useToast, useAuth } from '../contexts';
 import { usePermission } from '../hooks/usePermission';
 import api from '../services/api';
-import { User as UserType, UserRole, CreateUserRequest, Person } from '../types';
+import { User as UserType, UserRole, CreateUserRequest, Person, Project } from '../types';
+import { projectService } from '../services/projectService';
 import { cn } from '../lib/utils';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -59,6 +61,7 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { Checkbox } from '../components/ui/checkbox';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 const USER_ROLES: UserRole[] = ['ADMIN', 'MANAGER', 'MEMBER', 'READONLY'];
@@ -73,6 +76,10 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [canManageUsers, setCanManageUsers] = useState<boolean | null>(null);
+
+  // Projects for access selection
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<number[]>([]);
 
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -114,6 +121,7 @@ export default function UserManagement() {
     if (canManageUsers) {
       fetchUsers();
       fetchPeople();
+      fetchProjects();
     }
     return () => abortController.abort();
   }, [canManageUsers]);
@@ -138,6 +146,15 @@ export default function UserManagement() {
     }
   };
 
+  const fetchProjects = async () => {
+    try {
+      const allProjects = await projectService.getAll();
+      setProjects(allProjects.filter((p) => p.isActive));
+    } catch (error) {
+      // Silent fail — project list is optional
+    }
+  };
+
   const handleOpenDialog = () => {
     setFormData({
       username: '',
@@ -145,6 +162,7 @@ export default function UserManagement() {
       email: '',
       role: 'MEMBER',
     });
+    setSelectedProjectIds(projects.map((p) => p.id));
     setDialogOpen(true);
   };
 
@@ -176,6 +194,7 @@ export default function UserManagement() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setFormData({ username: '', password: '', email: '', role: 'MEMBER' });
+    setSelectedProjectIds([]);
   };
 
   const handleSave = async () => {
@@ -190,7 +209,11 @@ export default function UserManagement() {
 
     setSaving(true);
     try {
-      await api.post('/auth/register', formData);
+      const payload = {
+        ...formData,
+        projectIds: formData.role === 'ADMIN' ? undefined : selectedProjectIds,
+      };
+      await api.post('/auth/register', payload);
       showToast(t('userManagement.userCreated'), 'success');
       fetchUsers();
       handleCloseDialog();
@@ -658,6 +681,78 @@ export default function UserManagement() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            {/* Project Access */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5">
+                  <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                  {t('userManagement.projectAccess')}
+                </Label>
+                {formData.role !== 'ADMIN' && projects.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() =>
+                      setSelectedProjectIds(
+                        selectedProjectIds.length === projects.length
+                          ? []
+                          : projects.map((p) => p.id)
+                      )
+                    }
+                  >
+                    {selectedProjectIds.length === projects.length
+                      ? t('userManagement.deselectAllProjects')
+                      : t('userManagement.selectAllProjects')}
+                  </Button>
+                )}
+              </div>
+              {formData.role === 'ADMIN' ? (
+                <p className="text-xs text-muted-foreground italic">
+                  {t('userManagement.adminProjectNote')}
+                </p>
+              ) : projects.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {t('userManagement.noProjects')}
+                </p>
+              ) : (
+                <>
+                  <div className="max-h-40 overflow-y-auto rounded-md border p-2 space-y-1">
+                    {projects.map((project) => (
+                      <label
+                        key={project.id}
+                        className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={selectedProjectIds.includes(project.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedProjectIds((prev) =>
+                              checked
+                                ? [...prev, project.id]
+                                : prev.filter((id) => id !== project.id)
+                            );
+                          }}
+                        />
+                        <span className="truncate">
+                          {project.name}
+                          {project.projectKey && (
+                            <span className="ml-1 text-muted-foreground">
+                              ({project.projectKey})
+                            </span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('userManagement.projectsSelected', {
+                      count: selectedProjectIds.length,
+                    })}
+                  </p>
+                </>
+              )}
             </div>
           </div>
           <DialogFooter>

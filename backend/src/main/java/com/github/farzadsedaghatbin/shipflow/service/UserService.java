@@ -1,15 +1,20 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.*;
+import com.github.farzadsedaghatbin.shipflow.entity.NotificationUserMapping;
 import com.github.farzadsedaghatbin.shipflow.entity.PasswordResetToken;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserProject;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
-import com.github.farzadsedaghatbin.shipflow.entity.NotificationUserMapping;
 import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PasswordResetTokenRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +37,8 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PersonRepository personRepository;
+  private final ProjectRepository projectRepository;
+  private final UserProjectRepository userProjectRepository;
   private final NotificationUserMappingRepository notificationUserMappingRepository;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final PasswordEncoder passwordEncoder;
@@ -83,7 +90,53 @@ public class UserService {
     }
 
     user = userRepository.save(user);
+
+    assignProjectsToNewUser(user, request);
+
     return toDTO(user);
+  }
+
+  /**
+   * Automatically assigns projects to a newly created user. ADMINs are skipped
+   * because they have global access. When projectIds is null or empty, all active
+   * projects are assigned. Otherwise, only the specified projects are assigned.
+   */
+  private void assignProjectsToNewUser(User user, RegisterRequest request) {
+    ProjectRole projectRole = mapUserRoleToProjectRole(user.getRole());
+    if (projectRole == null) {
+      // ADMIN users don't need project assignments
+      return;
+    }
+
+    List<Project> projects;
+    if (request.getProjectIds() == null || request.getProjectIds().isEmpty()) {
+      projects = projectRepository.findByIsActiveTrue();
+    } else {
+      projects = projectRepository.findAllById(request.getProjectIds());
+    }
+
+    for (Project project : projects) {
+      UserProject userProject = UserProject.builder().user(user).project(project).projectRole(projectRole).build();
+      userProjectRepository.save(userProject);
+    }
+
+    if (!projects.isEmpty()) {
+      log.info("Auto-assigned user '{}' (role={}) to {} project(s) with project role {}", user.getUsername(),
+          user.getRole(), projects.size(), projectRole);
+    }
+  }
+
+  /**
+   * Maps a global UserRole to a project-level ProjectRole. Returns null for ADMIN
+   * since ADMINs have global access and don't need project assignments.
+   */
+  ProjectRole mapUserRoleToProjectRole(UserRole userRole) {
+    return switch (userRole) {
+      case MEMBER -> ProjectRole.CONTRIBUTOR;
+      case READONLY -> ProjectRole.VIEWER;
+      case MANAGER -> ProjectRole.MANAGER;
+      case ADMIN -> null;
+    };
   }
 
   @CacheEvict(value = "users", allEntries = true)
