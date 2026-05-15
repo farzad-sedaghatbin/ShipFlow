@@ -6,7 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.RegisterRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.UpdateUserProjectsRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UserDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.UserProjectAssignmentDTO;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserProject;
@@ -283,6 +286,129 @@ class UserServiceTest {
     verify(userRepository, never()).save(any());
     verify(userProjectRepository, never()).save(any());
   }
+
+  // --- getUserProjectAssignments tests ---
+
+  @Test
+  void getUserProjectAssignments_ReturnsAssignmentsForUser() {
+    when(userRepository.existsById(100L)).thenReturn(true);
+    UserProject up = UserProject.builder().user(User.builder().id(100L).build()).project(projectA)
+        .projectRole(ProjectRole.CONTRIBUTOR).build();
+    when(userProjectRepository.findByUserId(100L)).thenReturn(List.of(up));
+
+    List<UserProjectAssignmentDTO> result = userService.getUserProjectAssignments(100L);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getProjectId()).isEqualTo(1L);
+    assertThat(result.get(0).getProjectName()).isEqualTo("Project A");
+    assertThat(result.get(0).getProjectRole()).isEqualTo(ProjectRole.CONTRIBUTOR);
+  }
+
+  @Test
+  void getUserProjectAssignments_UserNotFound_Throws() {
+    when(userRepository.existsById(999L)).thenReturn(false);
+
+    assertThatThrownBy(() -> userService.getUserProjectAssignments(999L))
+        .isInstanceOf(ResourceNotFoundException.class);
+  }
+
+  // --- updateUserProjectAssignments tests ---
+
+  @Test
+  void updateUserProjectAssignments_AddsNewAssignment() {
+    authenticateAsAdmin();
+    User targetUser = User.builder().id(50L).username("target").role(UserRole.MEMBER).build();
+    when(userRepository.findById(50L)).thenReturn(Optional.of(targetUser));
+    when(userProjectRepository.findByUserId(50L)).thenReturn(List.of());
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(projectA));
+
+    UpdateUserProjectsRequest request = new UpdateUserProjectsRequest();
+    request.setAssignments(
+        List.of(new UpdateUserProjectsRequest.ProjectAssignment(1L, ProjectRole.CONTRIBUTOR)));
+
+    userService.updateUserProjectAssignments(50L, request);
+
+    ArgumentCaptor<UserProject> captor = ArgumentCaptor.forClass(UserProject.class);
+    verify(userProjectRepository).save(captor.capture());
+    assertThat(captor.getValue().getProject().getId()).isEqualTo(1L);
+    assertThat(captor.getValue().getProjectRole()).isEqualTo(ProjectRole.CONTRIBUTOR);
+    assertThat(captor.getValue().getGrantedBy().getUsername()).isEqualTo("admin");
+  }
+
+  @Test
+  void updateUserProjectAssignments_RemovesMissingAssignment() {
+    authenticateAsAdmin();
+    User targetUser = User.builder().id(50L).username("target").role(UserRole.MEMBER).build();
+    when(userRepository.findById(50L)).thenReturn(Optional.of(targetUser));
+
+    UserProject existingUp = UserProject.builder().id(10L).user(targetUser).project(projectA)
+        .projectRole(ProjectRole.VIEWER).build();
+    when(userProjectRepository.findByUserId(50L)).thenReturn(List.of(existingUp));
+
+    UpdateUserProjectsRequest request = new UpdateUserProjectsRequest();
+    request.setAssignments(List.of());
+
+    userService.updateUserProjectAssignments(50L, request);
+
+    verify(userProjectRepository).deleteByUserIdAndProjectId(50L, 1L);
+    verify(userProjectRepository, never()).save(any());
+  }
+
+  @Test
+  void updateUserProjectAssignments_UpdatesChangedRole() {
+    authenticateAsAdmin();
+    User targetUser = User.builder().id(50L).username("target").role(UserRole.MEMBER).build();
+    when(userRepository.findById(50L)).thenReturn(Optional.of(targetUser));
+
+    UserProject existingUp = UserProject.builder().id(10L).user(targetUser).project(projectA)
+        .projectRole(ProjectRole.VIEWER).build();
+    when(userProjectRepository.findByUserId(50L)).thenReturn(List.of(existingUp));
+
+    UpdateUserProjectsRequest request = new UpdateUserProjectsRequest();
+    request.setAssignments(
+        List.of(new UpdateUserProjectsRequest.ProjectAssignment(1L, ProjectRole.MANAGER)));
+
+    userService.updateUserProjectAssignments(50L, request);
+
+    verify(userProjectRepository, never()).deleteByUserIdAndProjectId(any(), any());
+    ArgumentCaptor<UserProject> captor = ArgumentCaptor.forClass(UserProject.class);
+    verify(userProjectRepository).save(captor.capture());
+    assertThat(captor.getValue().getProjectRole()).isEqualTo(ProjectRole.MANAGER);
+  }
+
+  @Test
+  void updateUserProjectAssignments_SkipsSaveWhenRoleUnchanged() {
+    authenticateAsAdmin();
+    User targetUser = User.builder().id(50L).username("target").role(UserRole.MEMBER).build();
+    when(userRepository.findById(50L)).thenReturn(Optional.of(targetUser));
+
+    UserProject existingUp = UserProject.builder().id(10L).user(targetUser).project(projectA)
+        .projectRole(ProjectRole.CONTRIBUTOR).build();
+    when(userProjectRepository.findByUserId(50L)).thenReturn(List.of(existingUp));
+
+    UpdateUserProjectsRequest request = new UpdateUserProjectsRequest();
+    request.setAssignments(
+        List.of(new UpdateUserProjectsRequest.ProjectAssignment(1L, ProjectRole.CONTRIBUTOR)));
+
+    userService.updateUserProjectAssignments(50L, request);
+
+    verify(userProjectRepository, never()).save(any());
+    verify(userProjectRepository, never()).deleteByUserIdAndProjectId(any(), any());
+  }
+
+  @Test
+  void updateUserProjectAssignments_UserNotFound_Throws() {
+    authenticateAsAdmin();
+    when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+    UpdateUserProjectsRequest request = new UpdateUserProjectsRequest();
+    request.setAssignments(List.of());
+
+    assertThatThrownBy(() -> userService.updateUserProjectAssignments(999L, request))
+        .isInstanceOf(ResourceNotFoundException.class);
+  }
+
+  // --- mapUserRoleToProjectRole tests ---
 
   @Test
   void mapUserRoleToProjectRole_MemberReturnsContributor() {

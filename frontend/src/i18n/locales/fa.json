@@ -6173,7 +6173,12 @@
     "noProjects": "هیچ پروژه‌ای موجود نیست",
     "projectsSelected_one": "{{count}} پروژه انتخاب شده",
     "projectsSelected_other": "{{count}} پروژه انتخاب شده",
-    "projectLoadFailed": "بارگذاری پروژه‌ها ناموفق بود. امکان تخصیص دسترسی پروژه وجود ندارد."
+    "projectLoadFailed": "بارگذاری پروژه‌ها ناموفق بود. امکان تخصیص دسترسی پروژه وجود ندارد.",
+    "manageProjectAccess": "مدیریت دسترسی پروژه",
+    "manageProjectAccessFor": "مدیریت دسترسی پروژه برای {{username}}",
+    "saveProjectAccess": "ذخیره دسترسی",
+    "projectAccessUpdated": "دسترسی پروژه با موفقیت به‌روزرسانی شد",
+    "projectAccessUpdateFailed": "به‌روزرسانی دسترسی پروژه ناموفق بود"
   },
   "validation": {
     "dateRange": "تاریخ پایان باید بعد از تاریخ شروع باشد",

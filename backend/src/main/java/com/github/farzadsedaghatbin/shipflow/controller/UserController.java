@@ -4,8 +4,10 @@ import com.github.farzadsedaghatbin.shipflow.dto.AdminResetPasswordRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.ChangePasswordRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.NotificationUserMappingDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateProfileRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.UpdateUserProjectsRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UpsertNotificationMappingRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UserDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.UserProjectAssignmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UserProfileDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.service.UserService;
@@ -151,6 +153,22 @@ public class UserController {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     String username = authentication.getName();
     userService.deleteNotificationMapping(username, providerName);
+    return ResponseEntity.ok().build();
+  }
+
+  @GetMapping("/{userId}/projects")
+  @Operation(summary = "Get user's project assignments")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<List<UserProjectAssignmentDTO>> getUserProjects(@PathVariable Long userId) {
+    return ResponseEntity.ok(userService.getUserProjectAssignments(userId));
+  }
+
+  @PutMapping("/{userId}/projects")
+  @Operation(summary = "Bulk update user's project assignments")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Void> updateUserProjects(@PathVariable Long userId,
+      @Valid @RequestBody UpdateUserProjectsRequest request) {
+    userService.updateUserProjectAssignments(userId, request);
     return ResponseEntity.ok().build();
   }
 }

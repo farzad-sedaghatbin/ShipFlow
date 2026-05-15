@@ -112,6 +112,15 @@ export default function UserManagement() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserType | null>(null);
 
+  // Project access dialog
+  const [projectAccessDialogOpen, setProjectAccessDialogOpen] = useState(false);
+  const [projectAccessUser, setProjectAccessUser] = useState<UserType | null>(null);
+  const [userProjectAssignments, setUserProjectAssignments] = useState<
+    { projectId: number; projectRole: string }[]
+  >([]);
+  const [savingProjectAccess, setSavingProjectAccess] = useState(false);
+  const [loadingProjectAccess, setLoadingProjectAccess] = useState(false);
+
   // Check if current user has user management permission
   useEffect(() => {
     hasPermission('USER', 'MANAGE').then(setCanManageUsers).catch(() => setCanManageUsers(false));
@@ -324,6 +333,72 @@ export default function UserManagement() {
     }
   };
 
+  const defaultProjectRoleForUser = (role: UserRole): string => {
+    switch (role) {
+      case 'MANAGER': return 'MANAGER';
+      case 'READONLY': return 'VIEWER';
+      default: return 'CONTRIBUTOR';
+    }
+  };
+
+  const handleOpenProjectAccess = async (user: UserType) => {
+    setProjectAccessUser(user);
+    setUserProjectAssignments([]);
+    setProjectAccessDialogOpen(true);
+    setLoadingProjectAccess(true);
+    try {
+      const response = await api.get<{ projectId: number; projectRole: string }[]>(
+        `/users/${user.id}/projects`
+      );
+      setUserProjectAssignments(response.data);
+    } catch {
+      showToast(t('userManagement.projectAccessUpdateFailed'), 'error');
+      setUserProjectAssignments([]);
+    } finally {
+      setLoadingProjectAccess(false);
+    }
+  };
+
+  const isProjectAssigned = (projectId: number) =>
+    userProjectAssignments.some((a) => a.projectId === projectId);
+
+  const getAssignedRole = (projectId: number) =>
+    userProjectAssignments.find((a) => a.projectId === projectId)?.projectRole ??
+    defaultProjectRoleForUser(projectAccessUser?.role ?? 'MEMBER');
+
+  const toggleProjectAssignment = (projectId: number, checked: boolean) => {
+    if (checked) {
+      setUserProjectAssignments((prev) => [
+        ...prev,
+        { projectId, projectRole: defaultProjectRoleForUser(projectAccessUser?.role ?? 'MEMBER') },
+      ]);
+    } else {
+      setUserProjectAssignments((prev) => prev.filter((a) => a.projectId !== projectId));
+    }
+  };
+
+  const updateAssignmentRole = (projectId: number, role: string) => {
+    setUserProjectAssignments((prev) =>
+      prev.map((a) => (a.projectId === projectId ? { ...a, projectRole: role } : a))
+    );
+  };
+
+  const handleSaveProjectAccess = async () => {
+    if (!projectAccessUser) return;
+    setSavingProjectAccess(true);
+    try {
+      await api.put(`/users/${projectAccessUser.id}/projects`, {
+        assignments: userProjectAssignments,
+      });
+      showToast(t('userManagement.projectAccessUpdated'), 'success');
+      setProjectAccessDialogOpen(false);
+    } catch {
+      showToast(t('userManagement.projectAccessUpdateFailed'), 'error');
+    } finally {
+      setSavingProjectAccess(false);
+    }
+  };
+
   const getRoleClassName = (role: UserRole): string => {
     const classNames: Record<UserRole, string> = {
       ADMIN: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
@@ -521,6 +596,21 @@ export default function UserManagement() {
                           </TooltipTrigger>
                           <TooltipContent>{t('userManagement.changeRole')}</TooltipContent>
                         </Tooltip>
+                        {user.role !== 'ADMIN' && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => handleOpenProjectAccess(user)}
+                              >
+                                <FolderOpen className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>{t('userManagement.manageProjectAccess')}</TooltipContent>
+                          </Tooltip>
+                        )}
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -917,6 +1007,104 @@ export default function UserManagement() {
         onConfirm={handleDeleteUser}
         variant="destructive"
       />
+
+      {/* Manage Project Access Dialog */}
+      <Dialog open={projectAccessDialogOpen} onOpenChange={setProjectAccessDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t('userManagement.manageProjectAccess')}</DialogTitle>
+            <DialogDescription>
+              {t('userManagement.manageProjectAccessFor', { username: projectAccessUser?.username || '' })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {loadingProjectAccess ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : projects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('userManagement.noProjects')}</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {t('userManagement.projectsSelected', { count: userProjectAssignments.length })}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() =>
+                      setUserProjectAssignments(
+                        userProjectAssignments.length === projects.length
+                          ? []
+                          : projects.map((p) => ({
+                              projectId: p.id,
+                              projectRole: defaultProjectRoleForUser(projectAccessUser?.role ?? 'MEMBER'),
+                            }))
+                      )
+                    }
+                  >
+                    {userProjectAssignments.length === projects.length
+                      ? t('userManagement.deselectAllProjects')
+                      : t('userManagement.selectAllProjects')}
+                  </Button>
+                </div>
+                <div className="max-h-64 overflow-y-auto rounded-md border p-2 space-y-1">
+                  {projects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent"
+                    >
+                      <Checkbox
+                        checked={isProjectAssigned(project.id)}
+                        onCheckedChange={(checked) => toggleProjectAssignment(project.id, !!checked)}
+                      />
+                      <span className="flex-1 truncate">
+                        {project.name}
+                        {project.projectKey && (
+                          <span className="ml-1 text-muted-foreground">({project.projectKey})</span>
+                        )}
+                      </span>
+                      {isProjectAssigned(project.id) && (
+                        <Select
+                          value={getAssignedRole(project.id)}
+                          onValueChange={(value) => updateAssignmentRole(project.id, value)}
+                        >
+                          <SelectTrigger className="h-7 w-[120px] text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="VIEWER">Viewer</SelectItem>
+                            <SelectItem value="CONTRIBUTOR">Contributor</SelectItem>
+                            <SelectItem value="MANAGER">Manager</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProjectAccessDialogOpen(false)}>
+              {t('userManagement.cancel')}
+            </Button>
+            <Button onClick={handleSaveProjectAccess} disabled={savingProjectAccess || loadingProjectAccess}>
+              {savingProjectAccess ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('common.save')}
+                </>
+              ) : (
+                t('userManagement.saveProjectAccess')
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

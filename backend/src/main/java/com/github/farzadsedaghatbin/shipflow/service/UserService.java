@@ -18,8 +18,11 @@ import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -149,6 +152,68 @@ public class UserService {
       case MANAGER -> ProjectRole.MANAGER;
       case ADMIN -> null;
     };
+  }
+
+  @Transactional(readOnly = true)
+  public List<UserProjectAssignmentDTO> getUserProjectAssignments(Long userId) {
+    if (!userRepository.existsById(userId)) {
+      throw new ResourceNotFoundException("User not found with id: " + userId);
+    }
+    return userProjectRepository.findByUserId(userId).stream()
+        .map(up -> UserProjectAssignmentDTO.builder().projectId(up.getProject().getId())
+            .projectName(up.getProject().getName()).projectKey(up.getProject().getProjectKey())
+            .projectRole(up.getProjectRole()).build())
+        .collect(Collectors.toList());
+  }
+
+  @Transactional
+  public void updateUserProjectAssignments(Long userId, UpdateUserProjectsRequest request) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+    User currentUser = getCurrentAuthenticatedUser();
+
+    Map<Long, UserProject> existing = userProjectRepository.findByUserId(userId).stream()
+        .collect(Collectors.toMap(up -> up.getProject().getId(), Function.identity()));
+
+    Set<Long> incomingProjectIds = request.getAssignments().stream()
+        .map(UpdateUserProjectsRequest.ProjectAssignment::getProjectId).collect(Collectors.toSet());
+
+    // Remove assignments not in the incoming list
+    for (Map.Entry<Long, UserProject> entry : existing.entrySet()) {
+      if (!incomingProjectIds.contains(entry.getKey())) {
+        userProjectRepository.deleteByUserIdAndProjectId(userId, entry.getKey());
+      }
+    }
+
+    // Add or update assignments
+    for (UpdateUserProjectsRequest.ProjectAssignment assignment : request.getAssignments()) {
+      UserProject existingUp = existing.get(assignment.getProjectId());
+      if (existingUp != null) {
+        if (existingUp.getProjectRole() != assignment.getProjectRole()) {
+          existingUp.setProjectRole(assignment.getProjectRole());
+          userProjectRepository.save(existingUp);
+        }
+      } else {
+        Project project = projectRepository.findById(assignment.getProjectId())
+            .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + assignment.getProjectId()));
+        UserProject up = UserProject.builder().user(user).project(project).projectRole(assignment.getProjectRole())
+            .grantedBy(currentUser).build();
+        userProjectRepository.save(up);
+      }
+    }
+
+    log.info("Updated project assignments for user '{}': {} projects", user.getUsername(),
+        request.getAssignments().size());
+  }
+
+  private User getCurrentAuthenticatedUser() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || !auth.isAuthenticated()) {
+      throw new IllegalStateException("No authenticated user");
+    }
+    return userRepository.findByUsername(auth.getName())
+        .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
   }
 
   @CacheEvict(value = "users", allEntries = true)
