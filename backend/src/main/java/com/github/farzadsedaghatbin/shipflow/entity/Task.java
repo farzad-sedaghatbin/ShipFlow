@@ -59,12 +59,24 @@ public class Task {
 
   /**
    * The cycle this task belongs to. For Kanban projects, tasks are associated with a long-term
-   * hidden cycle for data consistency, but this cycle is never shown in the UI.
+   * hidden cycle for data consistency, but this cycle is never shown in the UI. For Scrum product
+   * backlog tasks, this is null — the task belongs to the project but no sprint yet.
    */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "cycle_id", nullable = false)
+  @JoinColumn(name = "cycle_id", nullable = true)
   private Cycle cycle;
+
+  /**
+   * Direct project reference. Always populated so that product-backlog tasks (cycle == null) can
+   * still be queried by project. Derived from cycle.project on creation; preserved when the task
+   * is moved to the backlog (cycle set to null).
+   */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project_id")
+  @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+  private Project project;
 
   /**
    * The pitch this task is associated with (optional). Links the task to a

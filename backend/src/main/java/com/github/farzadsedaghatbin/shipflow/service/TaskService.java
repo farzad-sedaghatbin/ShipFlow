@@ -145,6 +145,15 @@ public class TaskService {
     return taskRepository.findByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  /**
+   * Returns all top-level tasks in the product backlog for a project — tasks not yet assigned to
+   * any sprint (cycle IS NULL). Used exclusively in Scrum mode sprint planning.
+   */
+  public List<TaskDTO> getProductBacklogTasks(Long projectId) {
+    return taskRepository.findProductBacklogTasks(projectId)
+        .stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
   public Page<TaskDTO> getTasksByProjectIdPaged(Long projectId, Pageable pageable) {
     return taskRepository.findByProjectIdPaged(projectId, pageable).map(this::toDTO);
   }
@@ -190,6 +199,7 @@ public class TaskService {
     }
 
     Task task = Task.builder().title(request.getTitle()).description(request.getDescription()).cycle(cycle)
+        .project(cycle.getProject()) // always populate direct reference for backlog queries
         .parentTask(parentTask).status(request.getStatus() != null ? request.getStatus() : TaskStatus.BACKLOG)
         .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
         .category(request.getCategory() != null ? request.getCategory() : TaskCategory.PITCH_SCOPE)
@@ -308,13 +318,16 @@ public class TaskService {
     TaskPriority oldPriority = task.getPriority();
 
     // Handle cycle changes first — so parent-task validation uses the correct cycle
-    if (request.getCycleId() != null && !request.getCycleId().equals(task.getCycle().getId())) {
+    if (request.getCycleId() != null
+        && (task.getCycle() == null || !request.getCycleId().equals(task.getCycle().getId()))) {
       Cycle newCycle = cycleRepository.findById(request.getCycleId())
           .orElseThrow(() -> new IllegalArgumentException(
               "Cycle not found with id: " + request.getCycleId()));
       task.setCycle(newCycle);
+      task.setProject(newCycle.getProject());
       // Clear parent task if it now belongs to a different cycle
       if (task.getParentTask() != null
+          && task.getParentTask().getCycle() != null
           && !task.getParentTask().getCycle().getId().equals(request.getCycleId())) {
         task.setParentTask(null);
       }
@@ -332,8 +345,9 @@ public class TaskService {
           throw new IllegalArgumentException(messageService.getMessage("error.task.circular.reference"));
         }
 
-        // Ensure parent task belongs to the same cycle
-        if (!parentTask.getCycle().getId().equals(task.getCycle().getId())) {
+        // Ensure parent task belongs to the same cycle (skip check when either is in the backlog)
+        if (parentTask.getCycle() != null && task.getCycle() != null
+            && !parentTask.getCycle().getId().equals(task.getCycle().getId())) {
           throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
         }
 
@@ -479,6 +493,10 @@ public class TaskService {
                 () -> new ResourceNotFoundException("Task not found with id: " + taskId));
 
     if (cycleId == null) {
+      // Preserve project reference before clearing cycle (for legacy data that may not have it)
+      if (task.getProject() == null && task.getCycle() != null) {
+        task.setProject(task.getCycle().getProject());
+      }
       task.setCycle(null);
     } else {
       Cycle cycle =
@@ -487,6 +505,7 @@ public class TaskService {
               .orElseThrow(
                   () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
       task.setCycle(cycle);
+      task.setProject(cycle.getProject());
     }
 
     return toDTO(taskRepository.save(task));
@@ -985,10 +1004,12 @@ public class TaskService {
         ? task.getChildren().stream().map(child -> TaskDTO.builder().id(child.getId()).title(child.getTitle())
             .description(child.getDescription()).status(child.getStatus()).priority(child.getPriority())
             .category(child.getCategory()).estimateHours(child.getEstimateHours())
-            .actualHours(child.getActualHours()).cycleId(child.getCycle().getId())
+            .actualHours(child.getActualHours())
+            .cycleId(child.getCycle() != null ? child.getCycle().getId() : null)
             .assigneeId(child.getAssignee() != null ? child.getAssignee().getId() : null)
             .assigneeName(child.getAssignee() != null ? child.getAssignee().getName() : null)
-            .parentTaskId(child.getParentTask().getId()).parentTaskTitle(child.getParentTask().getTitle())
+            .parentTaskId(child.getParentTask() != null ? child.getParentTask().getId() : null)
+            .parentTaskTitle(child.getParentTask() != null ? child.getParentTask().getTitle() : null)
             .dueDate(child.getDueDate()).createdAt(child.getCreatedAt()).updatedAt(child.getUpdatedAt())
             .build()).collect(Collectors.toList())
         : new ArrayList<>();
@@ -998,10 +1019,11 @@ public class TaskService {
         .sortOrder(task.getSortOrder())
         .estimateHours(task.getEstimateHours()).actualHours(task.getActualHours())
         .storyPoints(task.getStoryPoints())
-        .cycleId(task.getCycle().getId()).cycleName(task.getCycle().getName())
-        .projectId(task.getCycle().getProject() != null ? task.getCycle().getProject().getId() : null)
-        .projectName(task.getCycle().getProject() != null ? task.getCycle().getProject().getName() : null)
-        .projectKey(task.getCycle().getProject() != null ? task.getCycle().getProject().getProjectKey() : null)
+        .cycleId(task.getCycle() != null ? task.getCycle().getId() : null)
+        .cycleName(task.getCycle() != null ? task.getCycle().getName() : null)
+        .projectId(resolveProjectId(task))
+        .projectName(resolveProjectName(task))
+        .projectKey(resolveProjectKey(task))
         .pitchId(task.getPitch() != null ? task.getPitch().getId() : null)
         .pitchTitle(task.getPitch() != null ? task.getPitch().getTitle() : null)
         .scopeId(task.getScope() != null ? task.getScope().getId() : null)
@@ -1103,6 +1125,31 @@ public class TaskService {
 
     taskRepository.saveAll(toSave);
     log.info("Reordered {} tasks", toSave.size());
+  }
+
+  /**
+   * Resolves the project ID for a task. Prefers the cycle's project (always authoritative when a
+   * cycle is set) and falls back to the direct project reference for product-backlog tasks.
+   */
+  private Long resolveProjectId(Task task) {
+    if (task.getCycle() != null && task.getCycle().getProject() != null) {
+      return task.getCycle().getProject().getId();
+    }
+    return task.getProject() != null ? task.getProject().getId() : null;
+  }
+
+  private String resolveProjectName(Task task) {
+    if (task.getCycle() != null && task.getCycle().getProject() != null) {
+      return task.getCycle().getProject().getName();
+    }
+    return task.getProject() != null ? task.getProject().getName() : null;
+  }
+
+  private String resolveProjectKey(Task task) {
+    if (task.getCycle() != null && task.getCycle().getProject() != null) {
+      return task.getCycle().getProject().getProjectKey();
+    }
+    return task.getProject() != null ? task.getProject().getProjectKey() : null;
   }
 
   /**

@@ -27,7 +27,7 @@ vi.mock('../../services/cycleService', () => ({
 
 vi.mock('../../services/taskService', () => ({
   taskService: {
-    getByProjectId: vi.fn(),
+    getProductBacklogTasks: vi.fn(),
     getByCycleId: vi.fn(),
     assignCycle: vi.fn(),
   },
@@ -146,7 +146,10 @@ describe('SprintPlanningPage', () => {
       isScrumProject: true,
     };
     (cycleService.getByProject as any).mockResolvedValue({ data: mockCycles });
-    (taskService.getByProjectId as any).mockResolvedValue({ data: mockBacklogTasks });
+    // getProductBacklogTasks returns only tasks with no sprint assignment (ids 1 and 2)
+    (taskService.getProductBacklogTasks as any).mockResolvedValue({
+      data: mockBacklogTasks.filter((t) => !t.cycleId),
+    });
     (taskService.getByCycleId as any).mockResolvedValue({ data: mockSprintTasks });
     (taskService.assignCycle as any).mockResolvedValue({ data: {} });
   });

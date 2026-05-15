@@ -3394,6 +3394,8 @@
     "unassigned": "Unassigned",
     "moveToSprint": "Move to Sprint",
     "moveToBacklog": "Move to Backlog",
+    "movedToSprint": "Task moved to sprint",
+    "movedToBacklog": "Task moved to backlog",
     "sprintGoal": "Sprint Goal",
     "sprintGoalPlaceholder": "What is the goal of this sprint?",
     "velocity": "Velocity",

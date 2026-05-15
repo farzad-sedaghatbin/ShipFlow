@@ -267,6 +267,14 @@ public class TaskController {
         assigneeIds, category, exclude, pageable));
   }
 
+  @GetMapping("/project/{projectId}/backlog-tasks")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Get product backlog tasks for a project",
+      description = "Returns top-level tasks not yet assigned to any sprint (cycle IS NULL). Scrum mode only.")
+  public ResponseEntity<List<TaskDTO>> getProductBacklogTasks(@PathVariable Long projectId) {
+    return ResponseEntity.ok(taskService.getProductBacklogTasks(projectId));
+  }
+
   @GetMapping("/project/{projectId}/statistics")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get task statistics for a project")

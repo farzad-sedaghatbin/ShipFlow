@@ -2870,6 +2870,8 @@
     "unassigned": "بدون مسئول",
     "moveToSprint": "انتقال به اسپرینت",
     "moveToBacklog": "انتقال به بک‌لاگ",
+    "movedToSprint": "وظیفه به اسپرینت منتقل شد",
+    "movedToBacklog": "وظیفه به بک‌لاگ منتقل شد",
     "sprintGoal": "هدف اسپرینت",
     "sprintGoalPlaceholder": "هدف این اسپرینت چیست؟",
     "velocity": "سرعت تیم",

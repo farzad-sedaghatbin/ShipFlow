@@ -19,12 +19,10 @@ import { toast } from 'sonner';
 import { useProject } from '../contexts/ProjectContext';
 import { cycleService } from '../services/cycleService';
 import { taskService } from '../services/taskService';
-import { Task, TaskStatus } from '../types';
+import { Task } from '../types';
 import { BurndownChart } from '../components/BurndownChart';
 import { VelocityChart } from '../components/VelocityChart';
 
-// Tasks that belong to "product backlog" (not yet in a sprint or in early statuses)
-const BACKLOG_STATUSES: TaskStatus[] = ['BACKLOG', 'TODO'];
 
 function StoryPointBadge({ points }: { points?: number | null }) {
   if (points == null) return null;
@@ -76,6 +74,7 @@ export default function SprintPlanningPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
+  const projectId = currentProject?.id;
 
   // Redirect non-SCRUM projects away from this page
   useEffect(() => {
@@ -86,18 +85,18 @@ export default function SprintPlanningPage() {
 
   // Fetch cycles for this project
   const { data: cycles, isLoading: cyclesLoading } = useQuery({
-    queryKey: ['cycles', 'project', currentProject?.id],
-    queryFn: () => cycleService.getByProject(currentProject!.id).then((r) => r.data),
-    enabled: !!currentProject?.id,
+    queryKey: ['cycles', 'project', projectId],
+    queryFn: () => cycleService.getByProject(projectId!).then((r) => r.data),
+    enabled: !!projectId,
   });
 
   const selectedCycle = cycles?.find((c) => c.id === selectedCycleId) ?? null;
 
-  // Product backlog: all project tasks in early statuses without a cycle assignment
-  const { data: allProjectTasks, isLoading: allTasksLoading } = useQuery({
-    queryKey: ['tasks', 'project', currentProject?.id],
-    queryFn: () => taskService.getByProjectId(currentProject!.id).then((r) => r.data),
-    enabled: !!currentProject?.id,
+  // Product backlog: tasks with no sprint assigned — uses dedicated endpoint
+  const { data: backlogTasks = [], isLoading: backlogLoading } = useQuery({
+    queryKey: ['product-backlog', projectId],
+    queryFn: () => taskService.getProductBacklogTasks(projectId!).then((r) => r.data),
+    enabled: !!projectId && isScrumProject,
   });
 
   // Sprint tasks: tasks assigned to the selected cycle
@@ -113,7 +112,8 @@ export default function SprintPlanningPage() {
     mutationFn: (task: Task) => taskService.assignCycle(task.id, selectedCycleId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success(t('sprintPlanning.moveToSprint'));
+      queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
+      toast.success(t('sprintPlanning.movedToSprint'));
     },
     onError: () => toast.error(t('common.error')),
   });
@@ -123,17 +123,13 @@ export default function SprintPlanningPage() {
     mutationFn: (task: Task) => taskService.assignCycle(task.id, null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast.success(t('sprintPlanning.moveToBacklog'));
+      queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
+      toast.success(t('sprintPlanning.movedToBacklog'));
     },
     onError: () => toast.error(t('common.error')),
   });
 
-  // Product backlog = tasks not in any sprint OR in BACKLOG/TODO status
-  const productBacklogTasks =
-    allProjectTasks?.filter(
-      (t) =>
-        (!t.cycleId || t.cycleId === 0) && BACKLOG_STATUSES.includes(t.status),
-    ) ?? [];
+  const productBacklogTasks = backlogTasks;
 
   const sprintTaskList: Task[] = (sprintTasks as Task[] | undefined) ?? [];
 
@@ -146,7 +142,7 @@ export default function SprintPlanningPage() {
     0,
   );
 
-  const isLoading = cyclesLoading || allTasksLoading;
+  const isLoading = cyclesLoading || backlogLoading;
 
   return (
     <div className="flex flex-col gap-6 p-6">
