@@ -3217,7 +3217,8 @@
     "viewMode": {
       "list": "List View",
       "kanban": "Kanban Board",
-      "gantt": "Timeline (Gantt)"
+      "gantt": "Timeline (Gantt)",
+      "calendar": "Calendar"
     },
     "kanban": {
       "noTasks": "No tasks in this column",
@@ -6964,5 +6965,22 @@
     "setDueDates": "Set due dates to see tasks on the timeline.",
     "unassigned": "Unassigned",
     "noDueDate": "No due date"
+  },
+  "calendarView": {
+    "title": "Calendar",
+    "today": "Today",
+    "zoomWeek": "Week",
+    "zoomMonth": "Month",
+    "noTasksThisMonth": "No tasks due this month.",
+    "unscheduled": "No due date",
+    "unscheduledCount": "No due date ({{count}})",
+    "moreTasksCount": "+{{count}} more",
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
   }
 }

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Plus, List, Kanban, GanttChartSquare, Download, Loader2 } from 'lucide-react';
+import { Plus, List, Kanban, GanttChartSquare, CalendarDays, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -135,12 +135,25 @@ export function BacklogHeader({
                   variant={viewMode === 'gantt' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => onViewModeChange('gantt')}
-                  className="rounded-l-none"
+                  className="rounded-none border-x"
                 >
                   <GanttChartSquare className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.viewMode.gantt')}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => onViewModeChange('calendar')}
+                  className="rounded-l-none"
+                >
+                  <CalendarDays className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('backlogPage.viewMode.calendar')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
