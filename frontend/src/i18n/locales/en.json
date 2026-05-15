@@ -3718,7 +3718,12 @@
     "noProjects": "No projects available",
     "projectsSelected_one": "{{count}} project selected",
     "projectsSelected_other": "{{count}} projects selected",
-    "projectLoadFailed": "Failed to load projects. Cannot assign project access."
+    "projectLoadFailed": "Failed to load projects. Cannot assign project access.",
+    "manageProjectAccess": "Manage Project Access",
+    "manageProjectAccessFor": "Manage project access for {{username}}",
+    "saveProjectAccess": "Save Access",
+    "projectAccessUpdated": "Project access updated successfully",
+    "projectAccessUpdateFailed": "Failed to update project access"
   },
   "peopleManagement": {
     "title": "People Management",
