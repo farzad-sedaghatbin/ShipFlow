@@ -1,4 +1,5 @@
 export { BacklogHeader } from './BacklogHeader';
+export { CalendarView } from './CalendarView';
 export { GanttView } from './GanttView';
 export { BacklogFilters } from './BacklogFilters';
 export { BacklogStatistics } from './BacklogStatistics';

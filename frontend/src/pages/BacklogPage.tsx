@@ -14,6 +14,7 @@ import {
   BacklogViewDialog,
   BacklogDeleteDialog,
   GanttView,
+  CalendarView,
 } from '../components/backlog';
 import { useTranslation } from 'react-i18next';
 
@@ -122,7 +123,9 @@ export default function BacklogPage() {
         />
 
         <TabsContent value="all" className="mt-0">
-          {bp.viewMode === 'gantt' ? (
+          {bp.viewMode === 'calendar' ? (
+            <CalendarView tasks={bp.tasks} onViewTask={bp.handleViewTask} />
+          ) : bp.viewMode === 'gantt' ? (
             <GanttView
               tasks={bp.tasks}
               cycles={bp.cycles}
@@ -136,7 +139,9 @@ export default function BacklogPage() {
           )}
         </TabsContent>
         <TabsContent value="my" className="mt-0">
-          {bp.viewMode === 'gantt' ? (
+          {bp.viewMode === 'calendar' ? (
+            <CalendarView tasks={bp.tasks} onViewTask={bp.handleViewTask} />
+          ) : bp.viewMode === 'gantt' ? (
             <GanttView
               tasks={bp.tasks}
               cycles={bp.cycles}

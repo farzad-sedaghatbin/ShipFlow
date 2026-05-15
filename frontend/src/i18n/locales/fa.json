@@ -374,7 +374,9 @@
     "viewDetails": "مشاهده جزئیات",
     "viewMode": {
       "kanban": "نمای کانبان",
-      "list": "نمای لیست"
+      "list": "نمای لیست",
+      "gantt": "نمای زمان‌بندی (گانت)",
+      "calendar": "تقویم"
     },
     "hillChartAutoCreate": "ایجاد خودکار محدوده نمودار تپه",
     "searchPersons": "جستجوی افراد..."
@@ -6964,5 +6966,22 @@
     "setDueDates": "تاریخ سررسید تعیین کنید تا وظایف در جدول زمانی نمایش داده شوند.",
     "unassigned": "بدون تخصیص",
     "noDueDate": "بدون تاریخ سررسید"
+  },
+  "calendarView": {
+    "title": "تقویم",
+    "today": "امروز",
+    "zoomWeek": "هفته",
+    "zoomMonth": "ماه",
+    "noTasksThisMonth": "هیچ وظیفه‌ای با سررسید در این ماه وجود ندارد.",
+    "unscheduled": "بدون تاریخ سررسید",
+    "unscheduledCount": "بدون تاریخ سررسید ({{count}})",
+    "moreTasksCount": "+{{count}} بیشتر",
+    "sun": "یک",
+    "mon": "دو",
+    "tue": "سه",
+    "wed": "چهار",
+    "thu": "پنج",
+    "fri": "جمعه",
+    "sat": "شنبه"
   }
 }
