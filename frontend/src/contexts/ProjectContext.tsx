@@ -125,8 +125,11 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [currentProject]
   );
 
+  // Note: when currentProject is null ("All Projects" view), we treat it as
+  // Shape Up mode for header/UI defaults, but this flag returns false — callers
+  // that need the "all projects" default behaviour should check isAllProjectsSelected.
   const isShapeUpProject = useMemo(() =>
-    currentProject?.projectType === 'SHAPE_UP' || currentProject === null,
+    currentProject?.projectType === 'SHAPE_UP',
     [currentProject]
   );
 

@@ -3389,7 +3389,7 @@
     "sprintBacklog": "Sprint Backlog",
     "selectSprint": "Select Sprint",
     "noSprint": "No sprint selected",
-    "totalPoints": "{{count}} points",
+    "totalPoints": "{{points}} points",
     "unassigned": "Unassigned",
     "moveToSprint": "Move to Sprint",
     "moveToBacklog": "Move to Backlog",

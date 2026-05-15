@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SprintPlanningPage from '../SprintPlanningPage';
 import { cycleService } from '../../services/cycleService';
@@ -23,7 +24,7 @@ vi.mock('../../services/taskService', () => ({
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, opts?: any) => (opts?.count != null ? `${key}:${opts.count}` : key),
+    t: (key: string, opts?: any) => (opts?.points != null ? `${key}:${opts.points}` : key),
     i18n: { language: 'en' },
   }),
 }));
@@ -35,6 +36,7 @@ vi.mock('sonner', () => ({
 vi.mock('../../contexts/ProjectContext', () => ({
   useProject: () => ({
     currentProject: { id: 1, name: 'Demo Project', projectKey: 'DEMO', projectType: 'SCRUM' },
+    isScrumProject: true,
   }),
 }));
 
@@ -50,7 +52,11 @@ function renderWithClient(ui: React.ReactElement) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={client}>{ui}</QueryClientProvider>
+    </MemoryRouter>,
+  );
 }
 
 const mockCycles = [

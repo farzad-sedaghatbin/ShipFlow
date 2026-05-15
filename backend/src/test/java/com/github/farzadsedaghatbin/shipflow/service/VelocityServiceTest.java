@@ -28,7 +28,7 @@ class VelocityServiceTest {
 
   @Test
   void computeVelocity_noCycles_returnsEmptyList() {
-    when(cycleRepository.findByProjectIdOrderByStartDateDesc(1L)).thenReturn(List.of());
+    when(cycleRepository.findByProjectIdOrderByStartDateAsc(1L)).thenReturn(List.of());
 
     List<VelocityPointDTO> result = velocityService.computeVelocity(1L);
 
@@ -40,9 +40,9 @@ class VelocityServiceTest {
     Cycle older = buildCycle(1L, "Sprint 1", LocalDate.of(2026, 1, 1));
     Cycle newer = buildCycle(2L, "Sprint 2", LocalDate.of(2026, 2, 1));
 
-    // Repository returns newest first (DESC)
-    when(cycleRepository.findByProjectIdOrderByStartDateDesc(10L))
-        .thenReturn(List.of(newer, older));
+    // Repository returns oldest first (ASC) — service no longer reverses
+    when(cycleRepository.findByProjectIdOrderByStartDateAsc(10L))
+        .thenReturn(List.of(older, newer));
     when(taskRepository.findByCycleId(1L)).thenReturn(List.of());
     when(taskRepository.findByCycleId(2L)).thenReturn(List.of());
 
@@ -62,7 +62,7 @@ class VelocityServiceTest {
     Task inProgress = buildTask(3L, 8, TaskStatus.IN_PROGRESS);
     Task noPoints = buildTask(4L, null, TaskStatus.DONE);
 
-    when(cycleRepository.findByProjectIdOrderByStartDateDesc(20L)).thenReturn(List.of(cycle));
+    when(cycleRepository.findByProjectIdOrderByStartDateAsc(20L)).thenReturn(List.of(cycle));
     when(taskRepository.findByCycleId(5L)).thenReturn(List.of(done1, done2, inProgress, noPoints));
 
     List<VelocityPointDTO> result = velocityService.computeVelocity(20L);

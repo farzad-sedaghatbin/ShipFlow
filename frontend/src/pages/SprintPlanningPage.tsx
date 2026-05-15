@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Select,
@@ -51,13 +52,9 @@ function SprintTaskCard({ task, actionLabel, actionIcon, onAction, isPending }: 
           <span className="text-sm font-medium truncate">{task.title}</span>
           <StoryPointBadge points={task.storyPoints} />
         </div>
-        {task.assigneeName && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {t('sprintPlanning.unassigned') !== task.assigneeName
-              ? task.assigneeName
-              : t('sprintPlanning.unassigned')}
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {task.assigneeName ?? t('sprintPlanning.unassigned')}
+        </p>
       </div>
       <Button
         variant="ghost"
@@ -75,9 +72,17 @@ function SprintTaskCard({ task, actionLabel, actionIcon, onAction, isPending }: 
 
 export default function SprintPlanningPage() {
   const { t } = useTranslation();
-  const { currentProject } = useProject();
+  const { currentProject, isScrumProject } = useProject();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
+
+  // Redirect non-SCRUM projects away from this page
+  useEffect(() => {
+    if (currentProject && !isScrumProject) {
+      navigate('/backlog', { replace: true });
+    }
+  }, [currentProject, isScrumProject, navigate]);
 
   // Fetch cycles for this project
   const { data: cycles, isLoading: cyclesLoading } = useQuery({
@@ -219,7 +224,7 @@ export default function SprintPlanningPage() {
             <CardTitle className="flex items-center justify-between text-base">
               <span>{t('sprintPlanning.productBacklog')}</span>
               <Badge variant="secondary">
-                {t('sprintPlanning.totalPoints', { count: productBacklogPoints })}
+                {t('sprintPlanning.totalPoints', { points: productBacklogPoints })}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -261,7 +266,7 @@ export default function SprintPlanningPage() {
                   : t('sprintPlanning.sprintBacklog')}
               </span>
               <Badge variant="secondary">
-                {t('sprintPlanning.totalPoints', { count: sprintPoints })}
+                {t('sprintPlanning.totalPoints', { points: sprintPoints })}
               </Badge>
             </CardTitle>
           </CardHeader>

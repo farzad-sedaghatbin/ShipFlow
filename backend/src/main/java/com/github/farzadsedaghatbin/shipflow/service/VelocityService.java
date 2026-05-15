@@ -33,10 +33,8 @@ public class VelocityService {
    * @return list of {@link VelocityPointDTO} one per cycle
    */
   public List<VelocityPointDTO> computeVelocity(Long projectId) {
-    List<Cycle> cycles = cycleRepository.findByProjectIdOrderByStartDateDesc(projectId);
-
-    // Reverse to return oldest-first for a natural velocity chart
-    List<Cycle> orderedCycles = cycles.reversed();
+    // Query ascending so the velocity chart naturally shows oldest sprint first
+    List<Cycle> orderedCycles = cycleRepository.findByProjectIdOrderByStartDateAsc(projectId);
 
     return orderedCycles.stream()
         .map(

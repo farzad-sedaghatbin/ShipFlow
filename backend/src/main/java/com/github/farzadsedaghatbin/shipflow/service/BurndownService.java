@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Computes burndown chart data for a Scrum sprint (cycle). Each point on the chart represents the
@@ -31,6 +33,26 @@ public class BurndownService {
   private final TaskRepository taskRepository;
 
   /**
+   * Resolve the project ID for the given cycle. Used by the controller to enforce
+   * project-scope authorization before delegating to {@link #computeBurndown(Long)}.
+   *
+   * @param cycleId the ID of the sprint/cycle
+   * @return the project ID that owns this cycle
+   */
+  public Long resolveProjectId(Long cycleId) {
+    Cycle cycle =
+        cycleRepository
+            .findByIdWithProject(cycleId)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+    if (cycle.getProject() == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cycle " + cycleId + " has no associated project");
+    }
+    return cycle.getProject().getId();
+  }
+
+  /**
    * Compute the burndown series for the given cycle.
    *
    * @param cycleId the ID of the sprint/cycle
@@ -44,12 +66,31 @@ public class BurndownService {
                 () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
 
     LocalDate startDate = cycle.getStartDate();
+    if (startDate == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cycle " + cycleId + " has no start date");
+    }
+
     LocalDate endDate = cycle.getEndDate();
+    // Default to a 2-week sprint when no end date is configured
+    if (endDate == null) {
+      log.warn(
+          "Cycle {} has no end date; defaulting to startDate + 14 days for burndown computation",
+          cycleId);
+      endDate = startDate.plusDays(14);
+    }
+
     LocalDate today = LocalDate.now();
     LocalDate seriesEnd = today.isBefore(endDate) ? today : endDate;
 
     // All tasks in the cycle that have story points
     List<Task> tasks = taskRepository.findByCycleId(cycleId);
+
+    // Early return when no tasks carry story points
+    if (tasks.stream().allMatch(t -> t.getStoryPoints() == null)) {
+      return List.of();
+    }
+
     List<Task> scoredTasks =
         tasks.stream()
             .filter(t -> t.getStoryPoints() != null && t.getStoryPoints() > 0)

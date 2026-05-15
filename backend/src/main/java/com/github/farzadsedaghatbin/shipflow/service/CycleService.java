@@ -160,8 +160,12 @@ public class CycleService {
     cycle.setStartDate(request.getStartDate());
     cycle.setEndDate(endDate);
     cycle.setPhase(request.getPhase());
-    cycle.setSprintGoal(request.getSprintGoal());
-    cycle.setVelocityActual(request.getVelocityActual());
+    if (request.getSprintGoal() != null) {
+      cycle.setSprintGoal(request.getSprintGoal());
+    }
+    if (request.getVelocityActual() != null) {
+      cycle.setVelocityActual(request.getVelocityActual());
+    }
 
     Cycle saved = cycleRepository.save(cycle);
 

@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.VelocityPointDTO;
+import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
 import com.github.farzadsedaghatbin.shipflow.service.VelocityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class VelocityController {
 
   private final VelocityService velocityService;
+  private final ProjectService projectService;
 
   @GetMapping
   @PreAuthorize(
@@ -30,6 +32,7 @@ public class VelocityController {
           "Returns planned and completed story points per sprint/cycle for the given project,"
               + " ordered by sprint start date ascending.")
   public ResponseEntity<List<VelocityPointDTO>> getVelocity(@PathVariable Long projectId) {
+    projectService.requireProjectAccess(projectId);
     return ResponseEntity.ok(velocityService.computeVelocity(projectId));
   }
 }
