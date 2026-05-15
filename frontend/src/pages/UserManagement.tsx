@@ -343,6 +343,7 @@ export default function UserManagement() {
 
   const handleOpenProjectAccess = async (user: UserType) => {
     setProjectAccessUser(user);
+    setUserProjectAssignments([]);
     setProjectAccessDialogOpen(true);
     setLoadingProjectAccess(true);
     try {
