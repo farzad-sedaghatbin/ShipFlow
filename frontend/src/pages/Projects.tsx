@@ -548,7 +548,13 @@ export default function Projects() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{t('common.delete')}</TooltipContent>
+                    <TooltipContent>
+                      {project.projectType !== 'KANBAN' && (project.cycleCount || 0) > 0
+                        ? project.projectType === 'SCRUM'
+                          ? t('projects.deleteDisabledScrum')
+                          : t('projects.cannotDeleteWithCycles')
+                        : t('common.delete')}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </CardFooter>

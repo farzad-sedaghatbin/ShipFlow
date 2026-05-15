@@ -107,25 +107,10 @@ export default function SprintPlanningPage() {
     enabled: !!selectedCycleId,
   });
 
-  // Move task to sprint mutation
+  // Move task to sprint mutation — uses dedicated PATCH /tasks/{id}/cycle to avoid
+  // partial-update data loss (parentTaskId, scopeId, releaseId, etc. are preserved server-side)
   const moveToSprintMutation = useMutation({
-    mutationFn: (task: Task) =>
-      taskService.update(task.id, {
-        title: task.title,
-        description: task.description,
-        cycleId: selectedCycleId!,
-        pitchId: task.pitchId,
-        status: task.status,
-        priority: task.priority,
-        category: task.category,
-        estimateHours: task.estimateHours,
-        teamId: task.teamId,
-        assigneeId: task.assigneeId,
-        pairAssigneeId: task.pairAssigneeId,
-        dueDate: task.dueDate,
-        tags: task.tags,
-        storyPoints: task.storyPoints,
-      }),
+    mutationFn: (task: Task) => taskService.assignCycle(task.id, selectedCycleId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success(t('sprintPlanning.moveToSprint'));
@@ -133,25 +118,9 @@ export default function SprintPlanningPage() {
     onError: () => toast.error(t('common.error')),
   });
 
-  // Move task back to backlog mutation
+  // Move task back to product backlog — passes null to clear the cycle assignment
   const moveToBacklogMutation = useMutation({
-    mutationFn: (task: Task) =>
-      taskService.update(task.id, {
-        title: task.title,
-        description: task.description,
-        cycleId: 0,
-        pitchId: task.pitchId,
-        status: task.status === 'IN_PROGRESS' ? 'TODO' : task.status,
-        priority: task.priority,
-        category: task.category,
-        estimateHours: task.estimateHours,
-        teamId: task.teamId,
-        assigneeId: task.assigneeId,
-        pairAssigneeId: task.pairAssigneeId,
-        dueDate: task.dueDate,
-        tags: task.tags,
-        storyPoints: task.storyPoints,
-      }),
+    mutationFn: (task: Task) => taskService.assignCycle(task.id, null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast.success(t('sprintPlanning.moveToBacklog'));

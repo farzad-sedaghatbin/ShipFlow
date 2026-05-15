@@ -204,6 +204,10 @@ export const taskService = {
       },
     }),
 
+  // Assign task to a cycle (sprint) or remove from cycle (null = product backlog)
+  assignCycle: (taskId: number, cycleId: number | null) =>
+    api.patch<Task>(`/tasks/${taskId}/cycle`, { cycleId }),
+
   // Bulk operations
   bulkUpdate: (request: BulkTaskUpdateRequest) =>
     api.post<BulkUpdateResult>('/tasks/bulk-update', request),

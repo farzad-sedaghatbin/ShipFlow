@@ -7,6 +7,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,8 @@ public class VelocityService {
   /**
    * Compute velocity for each cycle of the project, ordered by start date ascending.
    *
+   * <p>Uses a single batch query for all project tasks to avoid N+1 queries (one per cycle).
+   *
    * @param projectId the ID of the project
    * @return list of {@link VelocityPointDTO} one per cycle
    */
@@ -36,10 +40,18 @@ public class VelocityService {
     // Query ascending so the velocity chart naturally shows oldest sprint first
     List<Cycle> orderedCycles = cycleRepository.findByProjectIdOrderByStartDateAsc(projectId);
 
+    // Single batch query for all non-deleted tasks in the project — avoids N+1 (one query per
+    // cycle)
+    List<Task> allTasks = taskRepository.findByProjectIdNotDeleted(projectId);
+    Map<Long, List<Task>> byCycle =
+        allTasks.stream()
+            .filter(t -> t.getCycle() != null)
+            .collect(Collectors.groupingBy(t -> t.getCycle().getId()));
+
     return orderedCycles.stream()
         .map(
             cycle -> {
-              List<Task> tasks = taskRepository.findByCycleId(cycle.getId());
+              List<Task> tasks = byCycle.getOrDefault(cycle.getId(), List.of());
 
               int planned =
                   tasks.stream()
@@ -49,9 +61,7 @@ public class VelocityService {
 
               int completed =
                   tasks.stream()
-                      .filter(
-                          t ->
-                              t.getStoryPoints() != null && t.getStatus() == TaskStatus.DONE)
+                      .filter(t -> t.getStoryPoints() != null && t.getStatus() == TaskStatus.DONE)
                       .mapToInt(Task::getStoryPoints)
                       .sum();
 

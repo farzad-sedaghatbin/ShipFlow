@@ -49,7 +49,7 @@ class BurndownServiceTest {
     Cycle cycle = buildCycle(1L, start, end);
 
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
-    when(taskRepository.findByCycleId(1L)).thenReturn(List.of());
+    when(taskRepository.findByCycleIdNotDeleted(1L)).thenReturn(List.of());
 
     List<BurndownPointDTO> result = burndownService.computeBurndown(1L);
 
@@ -74,7 +74,7 @@ class BurndownServiceTest {
     Task task3 = buildTask(3L, 2, TaskStatus.IN_PROGRESS, null);
 
     when(cycleRepository.findById(2L)).thenReturn(Optional.of(cycle));
-    when(taskRepository.findByCycleId(2L)).thenReturn(List.of(task1, task2, task3));
+    when(taskRepository.findByCycleIdNotDeleted(2L)).thenReturn(List.of(task1, task2, task3));
 
     List<BurndownPointDTO> result = burndownService.computeBurndown(2L);
 
@@ -120,11 +120,90 @@ class BurndownServiceTest {
     Cycle cycle = buildCycle(3L, start, null);
 
     when(cycleRepository.findById(3L)).thenReturn(Optional.of(cycle));
-    when(taskRepository.findByCycleId(3L)).thenReturn(List.of());
+    when(taskRepository.findByCycleIdNotDeleted(3L)).thenReturn(List.of());
 
     // Should not throw; defaults endDate to start + 14 days → returns empty (no scored tasks)
     List<BurndownPointDTO> result = burndownService.computeBurndown(3L);
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void computeBurndown_idealBurndown_day0EqualsTotalAndLastDayEqualsZero() {
+    // 5-day sprint fully in the past
+    LocalDate start = LocalDate.now().minusDays(5);
+    LocalDate end = LocalDate.now().minusDays(1);
+    Cycle cycle = buildCycle(10L, start, end);
+
+    Task task = buildTask(10L, 10, TaskStatus.IN_PROGRESS, null);
+    when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+    when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(List.of(task));
+
+    List<BurndownPointDTO> result = burndownService.computeBurndown(10L);
+
+    // day 0 ideal == total (10)
+    assertThat(result.get(0).getDate()).isEqualTo(start);
+    assertThat(result.get(0).getIdealPoints()).isEqualTo(10);
+
+    // last day ideal == 0 (or very close — Math.round may give 0 or 1 depending on rounding)
+    BurndownPointDTO lastPoint = result.get(result.size() - 1);
+    assertThat(lastPoint.getDate()).isEqualTo(end);
+    assertThat(lastPoint.getIdealPoints()).isLessThanOrEqualTo(1);
+  }
+
+  @Test
+  void computeBurndown_midSprint_seriesEndsAtToday() {
+    // Sprint started 3 days ago, ends 4 days from now — ongoing sprint
+    LocalDate start = LocalDate.now().minusDays(3);
+    LocalDate end = LocalDate.now().plusDays(4);
+    Cycle cycle = buildCycle(11L, start, end);
+
+    Task task = buildTask(11L, 8, TaskStatus.IN_PROGRESS, null);
+    when(cycleRepository.findById(11L)).thenReturn(Optional.of(cycle));
+    when(taskRepository.findByCycleIdNotDeleted(11L)).thenReturn(List.of(task));
+
+    List<BurndownPointDTO> result = burndownService.computeBurndown(11L);
+
+    // Series must end at today (not at sprintEnd which is in the future)
+    assertThat(result).isNotEmpty();
+    BurndownPointDTO lastPoint = result.get(result.size() - 1);
+    assertThat(lastPoint.getDate()).isEqualTo(LocalDate.now());
+  }
+
+  @Test
+  void computeBurndown_sameDayStartAndEnd_noDivisionByZero() {
+    // Edge case: totalDays == 0 (start == end, treated as 1 day)
+    LocalDate start = LocalDate.now().minusDays(1);
+    LocalDate end = LocalDate.now().minusDays(1); // same as start
+    Cycle cycle = buildCycle(12L, start, end);
+
+    Task task = buildTask(12L, 5, TaskStatus.IN_PROGRESS, null);
+    when(cycleRepository.findById(12L)).thenReturn(Optional.of(cycle));
+    when(taskRepository.findByCycleIdNotDeleted(12L)).thenReturn(List.of(task));
+
+    // Must not throw ArithmeticException
+    List<BurndownPointDTO> result = burndownService.computeBurndown(12L);
+
+    assertThat(result).isNotEmpty();
+    assertThat(result.get(0).getRemainingPoints()).isGreaterThanOrEqualTo(0);
+  }
+
+  @Test
+  void computeBurndown_remainingClampedAtZero() {
+    // All tasks completed before the start date: burned > total would go negative without clamping
+    LocalDate start = LocalDate.now().minusDays(3);
+    LocalDate end = LocalDate.now().minusDays(1);
+    Cycle cycle = buildCycle(13L, start, end);
+
+    // Completed far in the past — before sprint even started
+    LocalDateTime completedBeforeSprint = start.minusDays(2).atTime(9, 0);
+    Task task = buildTask(13L, 5, TaskStatus.DONE, completedBeforeSprint);
+    when(cycleRepository.findById(13L)).thenReturn(Optional.of(cycle));
+    when(taskRepository.findByCycleIdNotDeleted(13L)).thenReturn(List.of(task));
+
+    List<BurndownPointDTO> result = burndownService.computeBurndown(13L);
+
+    // All points should have remainingPoints >= 0 (clamped by Math.max)
+    assertThat(result).allMatch(p -> p.getRemainingPoints() >= 0);
   }
 
   // ---- helpers ----

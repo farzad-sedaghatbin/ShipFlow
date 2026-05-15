@@ -31,6 +31,4 @@ public class CreateCycleRequest {
   private CyclePhase phase = CyclePhase.SHAPING_BUILDING;
 
   private String sprintGoal;
-
-  private Integer velocityActual;
 }

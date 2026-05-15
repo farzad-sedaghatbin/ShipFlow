@@ -462,6 +462,36 @@ public class TaskService {
     return !oldAssignee.getId().equals(newAssignee.getId());
   }
 
+  /**
+   * Assigns a task to a cycle (sprint) or moves it to the product backlog. Only the cycleId is
+   * changed — all other task fields are left untouched, preventing accidental data loss from
+   * partial-update callers such as SprintPlanningPage.
+   *
+   * @param taskId the ID of the task to reassign
+   * @param cycleId the target cycle ID, or null to move the task to the product backlog
+   * @return the updated task DTO
+   */
+  public TaskDTO assignTaskToCycle(Long taskId, Long cycleId) {
+    Task task =
+        taskRepository
+            .findByIdNotDeleted(taskId)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Task not found with id: " + taskId));
+
+    if (cycleId == null) {
+      task.setCycle(null);
+    } else {
+      Cycle cycle =
+          cycleRepository
+              .findById(cycleId)
+              .orElseThrow(
+                  () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+      task.setCycle(cycle);
+    }
+
+    return toDTO(taskRepository.save(task));
+  }
+
   public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
     return updateTaskStatus(id, status, null);
   }

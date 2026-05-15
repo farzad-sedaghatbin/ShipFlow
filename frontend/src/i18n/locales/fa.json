@@ -178,8 +178,6 @@
     "done": "انجام شده",
     "dueDate": "موعد مقرر",
     "edit": "ویرایش",
-    "storyPoints": "امتیاز داستان",
-    "storyPointsAbbr": "SP",
     "editSubtask": "ویرایش زیرتسک",
     "editTask": "ویرایش تسک",
     "emptyDesc": "اولین تسک خود را ایجاد کنید تا پیگیری کار را شروع کنید.",
@@ -381,7 +379,9 @@
       "calendar": "تقویم"
     },
     "hillChartAutoCreate": "ایجاد خودکار محدوده نمودار تپه",
-    "searchPersons": "جستجوی افراد..."
+    "searchPersons": "جستجوی افراد...",
+    "storyPoints": "امتیاز داستان",
+    "storyPointsAbbr": "SP"
   },
   "betting": {
     "availablePitches": "پیچ‌های موجود",
@@ -4793,6 +4793,7 @@
     "backlog": "باکلاگ",
     "cannotDelete": "امکان حذف پروژه با چرخه‌های موجود وجود ندارد",
     "cannotDeleteWithCycles": "[TODO: Persian translation] Cannot delete project with cycles",
+    "deleteDisabledScrum": "نمی‌توان یک پروژه اسکرام با اسپرینت را حذف کرد",
     "completed": "تکمیل شده",
     "completedCycle": "چرخه تکمیل شده",
     "completedCycles": "چرخه‌های تکمیل شده",

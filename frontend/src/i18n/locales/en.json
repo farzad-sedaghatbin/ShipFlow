@@ -1558,6 +1558,7 @@
     "delete": "Delete",
     "cannotDelete": "Cannot delete project with cycles",
     "cannotDeleteWithCycles": "Cannot delete project with cycles",
+    "deleteDisabledScrum": "Cannot delete a Scrum project that has sprints",
     "archived": "Archived",
     "description": "Description",
     "projectType": "Project Type",

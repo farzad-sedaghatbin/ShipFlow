@@ -122,7 +122,7 @@ public class CycleService {
 
     Cycle cycle = Cycle.builder().project(project).name(request.getName()).startDate(request.getStartDate())
         .endDate(endDate).phase(request.getPhase() != null ? request.getPhase() : CyclePhase.SHAPING_BUILDING)
-        .isActive(true).sprintGoal(request.getSprintGoal()).velocityActual(request.getVelocityActual()).build();
+        .isActive(true).sprintGoal(request.getSprintGoal()).build();
 
     Cycle saved = cycleRepository.save(cycle);
     // Ingest into knowledge base for QA
@@ -160,12 +160,9 @@ public class CycleService {
     cycle.setStartDate(request.getStartDate());
     cycle.setEndDate(endDate);
     cycle.setPhase(request.getPhase());
-    if (request.getSprintGoal() != null) {
-      cycle.setSprintGoal(request.getSprintGoal());
-    }
-    if (request.getVelocityActual() != null) {
-      cycle.setVelocityActual(request.getVelocityActual());
-    }
+    // Null clears the sprint goal intentionally — non-Scrum UIs simply omit this field
+    cycle.setSprintGoal(request.getSprintGoal());
+    // velocityActual is computed by VelocityService from completed story points; not settable via request
 
     Cycle saved = cycleRepository.save(cycle);
 

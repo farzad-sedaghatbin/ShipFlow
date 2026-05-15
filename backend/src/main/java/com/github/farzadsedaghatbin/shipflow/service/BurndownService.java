@@ -83,8 +83,8 @@ public class BurndownService {
     LocalDate today = LocalDate.now();
     LocalDate seriesEnd = today.isBefore(endDate) ? today : endDate;
 
-    // All tasks in the cycle that have story points
-    List<Task> tasks = taskRepository.findByCycleId(cycleId);
+    // All tasks in the cycle that have story points (soft-delete aware)
+    List<Task> tasks = taskRepository.findByCycleIdNotDeleted(cycleId);
 
     // Early return when no tasks carry story points
     if (tasks.stream().allMatch(t -> t.getStoryPoints() == null)) {

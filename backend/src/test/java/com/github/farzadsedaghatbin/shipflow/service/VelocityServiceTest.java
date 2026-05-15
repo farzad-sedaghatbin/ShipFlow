@@ -29,6 +29,8 @@ class VelocityServiceTest {
   @Test
   void computeVelocity_noCycles_returnsEmptyList() {
     when(cycleRepository.findByProjectIdOrderByStartDateAsc(1L)).thenReturn(List.of());
+    // No tasks query needed when there are no cycles
+    when(taskRepository.findByProjectIdNotDeleted(1L)).thenReturn(List.of());
 
     List<VelocityPointDTO> result = velocityService.computeVelocity(1L);
 
@@ -43,8 +45,8 @@ class VelocityServiceTest {
     // Repository returns oldest first (ASC) — service no longer reverses
     when(cycleRepository.findByProjectIdOrderByStartDateAsc(10L))
         .thenReturn(List.of(older, newer));
-    when(taskRepository.findByCycleId(1L)).thenReturn(List.of());
-    when(taskRepository.findByCycleId(2L)).thenReturn(List.of());
+    // Single batch query returns all tasks for the project (empty — just testing ordering)
+    when(taskRepository.findByProjectIdNotDeleted(10L)).thenReturn(List.of());
 
     List<VelocityPointDTO> result = velocityService.computeVelocity(10L);
 
@@ -57,13 +59,15 @@ class VelocityServiceTest {
   void computeVelocity_tasksWithPoints_correctPlannedAndCompleted() {
     Cycle cycle = buildCycle(5L, "Sprint 5", LocalDate.of(2026, 3, 1));
 
-    Task done1 = buildTask(1L, 5, TaskStatus.DONE);
-    Task done2 = buildTask(2L, 3, TaskStatus.DONE);
-    Task inProgress = buildTask(3L, 8, TaskStatus.IN_PROGRESS);
-    Task noPoints = buildTask(4L, null, TaskStatus.DONE);
+    Task done1 = buildTask(1L, 5, TaskStatus.DONE, cycle);
+    Task done2 = buildTask(2L, 3, TaskStatus.DONE, cycle);
+    Task inProgress = buildTask(3L, 8, TaskStatus.IN_PROGRESS, cycle);
+    Task noPoints = buildTask(4L, null, TaskStatus.DONE, cycle);
 
     when(cycleRepository.findByProjectIdOrderByStartDateAsc(20L)).thenReturn(List.of(cycle));
-    when(taskRepository.findByCycleId(5L)).thenReturn(List.of(done1, done2, inProgress, noPoints));
+    // Single batch query — all tasks for project 20
+    when(taskRepository.findByProjectIdNotDeleted(20L))
+        .thenReturn(List.of(done1, done2, inProgress, noPoints));
 
     List<VelocityPointDTO> result = velocityService.computeVelocity(20L);
 
@@ -85,11 +89,12 @@ class VelocityServiceTest {
     return c;
   }
 
-  private Task buildTask(Long id, Integer points, TaskStatus status) {
+  private Task buildTask(Long id, Integer points, TaskStatus status, Cycle cycle) {
     Task t = new Task();
     t.setId(id);
     t.setStoryPoints(points);
     t.setStatus(status);
+    t.setCycle(cycle);
     return t;
   }
 }

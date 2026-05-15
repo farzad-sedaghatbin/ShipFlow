@@ -115,6 +115,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId")
     List<Task> findByProjectId(@Param("projectId") Long projectId);
 
+    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId AND t.deletedAt IS NULL")
+    List<Task> findByProjectIdNotDeleted(@Param("projectId") Long projectId);
+
     @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId")
     Page<Task> findByProjectIdPaged(@Param("projectId") Long projectId, Pageable pageable);
 

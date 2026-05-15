@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.dto.AssignTaskCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
@@ -303,6 +304,18 @@ public class TaskController {
       @RequestBody Map<String, String> statusUpdate) {
     TaskStatus status = TaskStatus.valueOf(statusUpdate.get("status"));
     return ResponseEntity.ok(taskService.updateTaskStatus(id, status));
+  }
+
+  @PatchMapping("/{taskId}/cycle")
+  @PreAuthorize("hasAnyRole('ADMIN','PROJECT_MANAGER','DEVELOPER','QA','PRODUCT')")
+  @Operation(
+      summary = "Assign task to a cycle (sprint)",
+      description =
+          "Lightweight PATCH that only changes the cycleId. Pass null cycleId to move the task"
+              + " to the product backlog. All other task fields are untouched.")
+  public ResponseEntity<TaskDTO> assignTaskToCycle(
+      @PathVariable Long taskId, @RequestBody AssignTaskCycleRequest request) {
+    return ResponseEntity.ok(taskService.assignTaskToCycle(taskId, request.getCycleId()));
   }
 
   @PatchMapping("/{id}/priority")

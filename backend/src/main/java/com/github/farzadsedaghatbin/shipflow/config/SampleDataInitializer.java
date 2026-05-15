@@ -936,41 +936,52 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build();
     projectRepository.save(scrumProject);
 
-    // Sprint 1 — completed, ship onboarding flow (velocity = 13)
+    // Use relative dates so burndown/velocity charts always render correctly regardless of when the
+    // demo is run. Dates are anchored to LocalDate.now() so completedAt always falls within the
+    // sprint window (Sprint 1/2 are in the past, Sprint 3 is the active sprint).
+    LocalDate now = LocalDate.now();
+
+    // Sprint 1 — completed sprint (8 weeks ago → 6 weeks ago)
+    LocalDate sprint1Start = now.minusWeeks(8);
+    LocalDate sprint1End = now.minusWeeks(6);
     Cycle sprint1 =
         Cycle.builder()
             .project(scrumProject)
             .name("Sprint 1")
-            .startDate(LocalDate.of(2026, 3, 2))
-            .endDate(LocalDate.of(2026, 3, 15))
-            .phase(CyclePhase.BETTING_COOLDOWN)
+            .startDate(sprint1Start)
+            .endDate(sprint1End)
+            .phase(CyclePhase.SHAPING_BUILDING)
             .isActive(false)
             .sprintGoal("Ship onboarding flow with email + social sign-in")
             .velocityActual(13)
             .build();
     cycleRepository.save(sprint1);
 
-    // Sprint 2 — completed, push notifications (velocity = 16)
+    // Sprint 2 — completed sprint (5 weeks ago → 3 weeks ago)
+    LocalDate sprint2Start = now.minusWeeks(5);
+    LocalDate sprint2End = now.minusWeeks(3);
     Cycle sprint2 =
         Cycle.builder()
             .project(scrumProject)
             .name("Sprint 2")
-            .startDate(LocalDate.of(2026, 3, 16))
-            .endDate(LocalDate.of(2026, 3, 29))
-            .phase(CyclePhase.BETTING_COOLDOWN)
+            .startDate(sprint2Start)
+            .endDate(sprint2End)
+            .phase(CyclePhase.SHAPING_BUILDING)
             .isActive(false)
             .sprintGoal("Add push notifications and in-app messaging")
             .velocityActual(16)
             .build();
     cycleRepository.save(sprint2);
 
-    // Sprint 3 — active, polish UX (velocity tracked at sprint end)
+    // Sprint 3 — active sprint (2 weeks ago → 3 days from now)
+    LocalDate sprint3Start = now.minusWeeks(2);
+    LocalDate sprint3End = now.plusDays(3);
     Cycle sprint3 =
         Cycle.builder()
             .project(scrumProject)
             .name("Sprint 3")
-            .startDate(LocalDate.of(2026, 3, 30))
-            .endDate(LocalDate.of(2026, 4, 12))
+            .startDate(sprint3Start)
+            .endDate(sprint3End)
             .phase(CyclePhase.SHAPING_BUILDING)
             .isActive(true)
             .sprintGoal("Polish UX, fix top customer-reported bugs, ship dark mode")
@@ -978,30 +989,35 @@ public class SampleDataInitializer implements CommandLineRunner {
     cycleRepository.save(sprint3);
 
     // Sprint 1 tasks (all DONE — 5 + 3 + 5 = 13 pts)
+    // completedAt within Sprint 1 window so burndown line descends correctly
+    LocalDateTime sprint1CompletedAt = sprint1Start.plusWeeks(1).atTime(10, 0);
     createScrumTask("Email sign-up endpoint", TaskStatus.DONE, TaskPriority.HIGH, 5, sprint1,
-        aliPerson, saraPerson, "backend,auth");
+        aliPerson, saraPerson, "backend,auth", sprint1CompletedAt);
     createScrumTask("Google OAuth integration", TaskStatus.DONE, TaskPriority.HIGH, 3, sprint1,
-        aliPerson, saraPerson, "backend,oauth");
+        aliPerson, saraPerson, "backend,oauth", sprint1CompletedAt);
     createScrumTask("Onboarding wizard screens", TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint1,
-        minaPerson, saraPerson, "frontend,ux");
+        minaPerson, saraPerson, "frontend,ux", sprint1CompletedAt);
 
     // Sprint 2 tasks (all DONE — 8 + 3 + 5 = 16 pts)
+    LocalDateTime sprint2CompletedAt = sprint2Start.plusWeeks(1).atTime(10, 0);
     createScrumTask("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH, 8, sprint2,
-        aliPerson, saraPerson, "backend,notifications");
+        aliPerson, saraPerson, "backend,notifications", sprint2CompletedAt);
     createScrumTask("Notification preferences UI", TaskStatus.DONE, TaskPriority.MEDIUM, 3, sprint2,
-        minaPerson, saraPerson, "frontend");
+        minaPerson, saraPerson, "frontend", sprint2CompletedAt);
     createScrumTask("In-app message center", TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint2,
-        minaPerson, saraPerson, "frontend,messaging");
+        minaPerson, saraPerson, "frontend,messaging", sprint2CompletedAt);
 
     // Sprint 3 tasks (mix of statuses for burndown chart)
+    // completedAt 3 days ago — within the active sprint window
+    LocalDateTime sprint3CompletedAt = now.minusDays(3).atTime(10, 0);
     createScrumTask("Dark-mode theme tokens", TaskStatus.DONE, TaskPriority.MEDIUM, 2, sprint3,
-        minaPerson, saraPerson, "frontend,theme");
+        minaPerson, saraPerson, "frontend,theme", sprint3CompletedAt);
     createScrumTask("Fix top 5 crash reports", TaskStatus.IN_PROGRESS, TaskPriority.HIGH, 5, sprint3,
-        aliPerson, saraPerson, "bugfix");
+        aliPerson, saraPerson, "bugfix", null);
     createScrumTask("Accessibility audit pass", TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3,
-        sprint3, minaPerson, saraPerson, "a11y,frontend");
+        sprint3, minaPerson, saraPerson, "a11y,frontend", null);
     createScrumTask("Performance: lazy-load images", TaskStatus.TODO, TaskPriority.LOW, 2, sprint3,
-        minaPerson, saraPerson, "performance,frontend");
+        minaPerson, saraPerson, "performance,frontend", null);
   }
 
   private void createScrumTask(
@@ -1012,7 +1028,8 @@ public class SampleDataInitializer implements CommandLineRunner {
       Cycle cycle,
       Person assignee,
       Person createdBy,
-      String tags) {
+      String tags,
+      LocalDateTime completedAt) {
     Task task =
         Task.builder()
             .title(title)
@@ -1025,8 +1042,8 @@ public class SampleDataInitializer implements CommandLineRunner {
             .createdBy(createdBy)
             .tags(tags)
             .build();
-    if (status == TaskStatus.DONE) {
-      task.setCompletedAt(LocalDateTime.now().minusDays(1));
+    if (completedAt != null) {
+      task.setCompletedAt(completedAt);
     }
     taskRepository.save(task);
   }

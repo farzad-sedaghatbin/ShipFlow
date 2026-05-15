@@ -233,7 +233,10 @@ export function BacklogTaskDialog({
                 min="0"
                 step="1"
                 value={formData.storyPoints != null ? formData.storyPoints : ''}
-                onChange={(e) => onFormDataChange({ ...formData, storyPoints: e.target.value ? Number(e.target.value) : null })}
+                onChange={(e) => {
+                  const val = e.target.value === '' ? null : Math.max(0, parseInt(e.target.value, 10));
+                  onFormDataChange({ ...formData, storyPoints: val });
+                }}
                 placeholder="0"
               />
             </div>
