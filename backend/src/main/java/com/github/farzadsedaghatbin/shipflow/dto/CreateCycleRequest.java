@@ -29,4 +29,8 @@ public class CreateCycleRequest {
 
   @Builder.Default
   private CyclePhase phase = CyclePhase.SHAPING_BUILDING;
+
+  private String sprintGoal;
+
+  private Integer velocityActual;
 }

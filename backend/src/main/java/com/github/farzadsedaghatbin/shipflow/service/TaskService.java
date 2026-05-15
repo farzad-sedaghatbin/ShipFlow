@@ -194,6 +194,7 @@ public class TaskService {
         .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
         .category(request.getCategory() != null ? request.getCategory() : TaskCategory.PITCH_SCOPE)
         .estimateHours(request.getEstimateHours()).actualHours(request.getActualHours())
+        .storyPoints(request.getStoryPoints())
         .dueDate(request.getDueDate()).tags(request.getTags()).build();
 
     Person assignee = null;
@@ -366,6 +367,7 @@ public class TaskService {
 
     task.setEstimateHours(request.getEstimateHours());
     task.setActualHours(request.getActualHours());
+    task.setStoryPoints(request.getStoryPoints());
     task.setDueDate(request.getDueDate());
     task.setTags(request.getTags());
 
@@ -965,6 +967,7 @@ public class TaskService {
         .status(task.getStatus()).priority(task.getPriority()).category(task.getCategory())
         .sortOrder(task.getSortOrder())
         .estimateHours(task.getEstimateHours()).actualHours(task.getActualHours())
+        .storyPoints(task.getStoryPoints())
         .cycleId(task.getCycle().getId()).cycleName(task.getCycle().getName())
         .projectId(task.getCycle().getProject() != null ? task.getCycle().getProject().getId() : null)
         .projectName(task.getCycle().getProject() != null ? task.getCycle().getProject().getName() : null)

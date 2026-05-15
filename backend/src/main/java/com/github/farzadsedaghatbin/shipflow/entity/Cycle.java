@@ -42,6 +42,14 @@ public class Cycle {
   @Column(nullable = false)
   private Boolean isActive;
 
+  /** Sprint goal text for Scrum mode (optional). */
+  @Column(name = "sprint_goal", columnDefinition = "TEXT")
+  private String sprintGoal;
+
+  /** Actual velocity (story points completed) for Scrum mode (optional). */
+  @Column(name = "velocity_actual")
+  private Integer velocityActual;
+
   @OneToMany(mappedBy = "cycle", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<Pitch> pitches = new ArrayList<>();

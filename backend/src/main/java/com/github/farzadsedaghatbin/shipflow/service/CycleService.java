@@ -122,7 +122,7 @@ public class CycleService {
 
     Cycle cycle = Cycle.builder().project(project).name(request.getName()).startDate(request.getStartDate())
         .endDate(endDate).phase(request.getPhase() != null ? request.getPhase() : CyclePhase.SHAPING_BUILDING)
-        .isActive(true).build();
+        .isActive(true).sprintGoal(request.getSprintGoal()).velocityActual(request.getVelocityActual()).build();
 
     Cycle saved = cycleRepository.save(cycle);
     // Ingest into knowledge base for QA
@@ -160,6 +160,8 @@ public class CycleService {
     cycle.setStartDate(request.getStartDate());
     cycle.setEndDate(endDate);
     cycle.setPhase(request.getPhase());
+    cycle.setSprintGoal(request.getSprintGoal());
+    cycle.setVelocityActual(request.getVelocityActual());
 
     Cycle saved = cycleRepository.save(cycle);
 
@@ -269,6 +271,8 @@ public class CycleService {
           .projectKey(cycle.getProject().getProjectKey())
           .projectType(cycle.getProject().getProjectType());
     }
+
+    builder.sprintGoal(cycle.getSprintGoal()).velocityActual(cycle.getVelocityActual());
 
     return builder.build();
   }

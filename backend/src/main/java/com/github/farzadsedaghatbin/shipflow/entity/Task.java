@@ -156,6 +156,11 @@ public class Task {
   @Column(columnDefinition = "TEXT")
   private String tags;
 
+  /** Story points for Scrum mode estimation (optional). */
+  @NotAudited
+  @Column(name = "story_points")
+  private Integer storyPoints;
+
   /** The target release for this task (optional) */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)

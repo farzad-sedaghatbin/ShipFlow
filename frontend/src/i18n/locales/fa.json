@@ -178,6 +178,8 @@
     "done": "انجام شده",
     "dueDate": "موعد مقرر",
     "edit": "ویرایش",
+    "storyPoints": "امتیاز داستان",
+    "storyPointsAbbr": "ام",
     "editSubtask": "ویرایش زیرتسک",
     "editTask": "ویرایش تسک",
     "emptyDesc": "اولین تسک خود را ایجاد کنید تا پیگیری کار را شروع کنید.",
@@ -1251,7 +1253,8 @@
     "pitch": "پیچ",
     "saving": "در حال ذخیره...",
     "noResults": "نتیجه‌ای یافت نشد",
-    "new": "جدید"
+    "new": "جدید",
+    "noData": "داده‌ای موجود نیست"
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",
@@ -2856,6 +2859,38 @@
       "figmaStep3": "[TODO: Persian translation] Ensure `MCP_FIGMA_ENABLED=true` and `MCP_FIGMA_SERVER_URL` point to your running Figma MCP server instance."
     }
   },
+  "sprintPlanning": {
+    "title": "برنامه‌ریزی اسپرینت",
+    "description": "با انتقال وظایف از بک‌لاگ محصول، اسپرینت خود را برنامه‌ریزی کنید",
+    "productBacklog": "بک‌لاگ محصول",
+    "sprintBacklog": "بک‌لاگ اسپرینت",
+    "selectSprint": "انتخاب اسپرینت",
+    "noSprint": "اسپرینتی انتخاب نشده",
+    "totalPoints": "{{count}} امتیاز",
+    "unassigned": "بدون مسئول",
+    "moveToSprint": "انتقال به اسپرینت",
+    "moveToBacklog": "انتقال به بک‌لاگ",
+    "sprintGoal": "هدف اسپرینت",
+    "sprintGoalPlaceholder": "هدف این اسپرینت چیست؟",
+    "velocity": "سرعت تیم",
+    "burndown": "نمودار برن‌داون",
+    "velocityChart": "نمودار سرعت"
+  },
+  "charts": {
+    "burndown": {
+      "title": "برن‌داون اسپرینت",
+      "remaining": "باقی‌مانده",
+      "ideal": "ایده‌آل",
+      "storyPoints": "امتیاز داستان",
+      "noData": "هیچ امتیاز داستانی به وظایف اسپرینت اختصاص داده نشده"
+    },
+    "velocity": {
+      "title": "سرعت تیم",
+      "planned": "برنامه‌ریزی شده",
+      "completed": "تکمیل شده",
+      "noData": "هنوز هیچ اسپرینت تکمیل‌شده‌ای وجود ندارد"
+    }
+  },
   "healthOverview": {
     "active": "(فعال)",
     "allActiveCycles": "همه سیکل‌های فعال",
@@ -3720,7 +3755,8 @@
     "testCases": "تست کیس‌ها",
     "wiseArchitecture": "معماری هوشمند",
     "userManagement": "مدیریت کاربران",
-    "workLogs": "گزارش کار"
+    "workLogs": "گزارش کار",
+    "sprintPlanning": "برنامه‌ریزی اسپرینت"
   },
   "organizationSettings": {
     "accentColor": "[TODO: Persian translation] Accent Color",

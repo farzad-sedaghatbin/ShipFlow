@@ -17,6 +17,8 @@ interface ProjectContextType {
   isKanbanProject: boolean;
   /** Returns true if current project uses Shape Up methodology */
   isShapeUpProject: boolean;
+  /** Returns true if current project uses Scrum methodology */
+  isScrumProject: boolean;
   /** Returns the project type of the current project, or null if all projects selected */
   currentProjectType: ProjectType | null;
   selectProject: (project: Project | null) => void;
@@ -118,13 +120,18 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [currentProject]
   );
   
-  const isKanbanProject = useMemo(() => 
-    currentProject?.projectType === 'KANBAN', 
+  const isKanbanProject = useMemo(() =>
+    currentProject?.projectType === 'KANBAN',
     [currentProject]
   );
-  
-  const isShapeUpProject = useMemo(() => 
-    currentProject?.projectType === 'SHAPE_UP' || currentProject === null, 
+
+  const isShapeUpProject = useMemo(() =>
+    currentProject?.projectType === 'SHAPE_UP' || currentProject === null,
+    [currentProject]
+  );
+
+  const isScrumProject = useMemo(() =>
+    currentProject?.projectType === 'SCRUM',
     [currentProject]
   );
 
@@ -139,6 +146,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         isSwitchingProject,
         isKanbanProject,
         isShapeUpProject,
+        isScrumProject,
         currentProjectType,
         selectProject,
         selectAllProjects,

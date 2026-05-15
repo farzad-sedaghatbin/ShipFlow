@@ -39,6 +39,9 @@ public class CreateTaskRequest {
   private BigDecimal estimateHours;
   private BigDecimal actualHours;
 
+  @Min(value = 0, message = "Story points must be 0 or greater")
+  private Integer storyPoints;
+
   private Long teamId;
 
   private Long assigneeId;

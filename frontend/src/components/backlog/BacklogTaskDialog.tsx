@@ -226,6 +226,20 @@ export function BacklogTaskDialog({
               )}
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="storyPoints">{t('backlogPage.storyPoints')}</Label>
+              <Input
+                id="storyPoints"
+                type="number"
+                min="0"
+                step="1"
+                value={formData.storyPoints != null ? formData.storyPoints : ''}
+                onChange={(e) => onFormDataChange({ ...formData, storyPoints: e.target.value ? Number(e.target.value) : null })}
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
               <Label htmlFor="dueDate">{t('backlogPage.dueDate')}</Label>
               <LocalizedDateInput
                 id="dueDate"

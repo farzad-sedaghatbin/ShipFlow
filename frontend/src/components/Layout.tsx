@@ -40,6 +40,7 @@ import {
   PackageCheck,
   ArrowDownToLine,
   Search,
+  Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -248,7 +249,7 @@ function SectionHeader({ textKey }: { textKey: string }) {
 
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
-  const { isKanbanProject, isAllProjectsSelected } = useProject();
+  const { isKanbanProject, isAllProjectsSelected, isScrumProject } = useProject();
   const { hasPermissionSync, hasPermission } = usePermission();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
@@ -354,6 +355,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             isActive={currentPath.startsWith('/backlog')}
             onClick={onItemClick}
           />
+          {/* Sprint Planning — visible only for Scrum projects */}
+          {isScrumProject && (
+            <NavItem
+              item={{ textKey: 'nav.sprintPlanning', icon: Workflow, path: '/sprint-planning' }}
+              isActive={currentPath.startsWith('/sprint-planning')}
+              onClick={onItemClick}
+            />
+          )}
           <NavItem
             item={{ textKey: 'nav.workLogs', icon: Clock, path: '/time/logs', tourId: 'worklogs-menu' }}
             isActive={currentPath.startsWith('/time')}

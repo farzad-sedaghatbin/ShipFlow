@@ -106,7 +106,8 @@
     "pitch": "Pitch",
     "saving": "Saving...",
     "noResults": "No results found",
-    "new": "New"
+    "new": "New",
+    "noData": "No data available"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -142,6 +143,7 @@
     "initiatives": "Initiatives",
     "epics": "Epics",
     "releases": "Releases",
+    "sprintPlanning": "Sprint Planning",
     "sections": {
       "overview": "Overview",
       "cycleWorkspace": "Cycle Workspace",
@@ -3153,6 +3155,8 @@
     "create": "Create",
     "close": "Close",
     "edit": "Edit",
+    "storyPoints": "Story Points",
+    "storyPointsAbbr": "SP",
     "deleteTask": "Delete Task",
     "confirmDeleteMessage": "Are you sure you want to delete this task? This action cannot be undone.",
     "delete": "Delete",
@@ -3374,6 +3378,38 @@
     "uploadFile": "Upload File",
     "hillChartAutoCreate": "Auto-create hill chart scope",
     "searchPersons": "Search persons..."
+  },
+  "sprintPlanning": {
+    "title": "Sprint Planning",
+    "description": "Plan your sprint by moving tasks from the product backlog",
+    "productBacklog": "Product Backlog",
+    "sprintBacklog": "Sprint Backlog",
+    "selectSprint": "Select Sprint",
+    "noSprint": "No sprint selected",
+    "totalPoints": "{{count}} points",
+    "unassigned": "Unassigned",
+    "moveToSprint": "Move to Sprint",
+    "moveToBacklog": "Move to Backlog",
+    "sprintGoal": "Sprint Goal",
+    "sprintGoalPlaceholder": "What is the goal of this sprint?",
+    "velocity": "Velocity",
+    "burndown": "Burndown Chart",
+    "velocityChart": "Velocity Chart"
+  },
+  "charts": {
+    "burndown": {
+      "title": "Sprint Burndown",
+      "remaining": "Remaining",
+      "ideal": "Ideal",
+      "storyPoints": "Story Points",
+      "noData": "No story points assigned to sprint tasks"
+    },
+    "velocity": {
+      "title": "Team Velocity",
+      "planned": "Planned",
+      "completed": "Completed",
+      "noData": "No completed sprints yet"
+    }
   },
   "healthOverview": {
     "title": "Pitch Health Overview",

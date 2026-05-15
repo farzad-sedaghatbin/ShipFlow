@@ -48,6 +48,9 @@ const PitchComparisonView = lazy(() => import('./pages/PitchComparisonView'));
 const BacklogPage = lazy(() => import('./pages/BacklogPage'));
 const TaskDetailPage = lazy(() => import('./pages/TaskDetailPage'));
 
+// Scrum
+const SprintPlanningPage = lazy(() => import('./pages/SprintPlanningPage'));
+
 // Retros & Health
 const RetroList = lazy(() => import('./pages/RetroList'));
 const RetroBoard = lazy(() => import('./pages/RetroBoard'));
@@ -218,6 +221,9 @@ function App() {
                         path="reports/cycle-reports"
                         element={<Navigate to="/reports" replace />}
                       />
+
+                      {/* Scrum */}
+                      <Route path="sprint-planning" element={<SprintPlanningPage />} />
 
                       {/* Backlog */}
                       <Route path="backlog" element={<BacklogPage />} />
