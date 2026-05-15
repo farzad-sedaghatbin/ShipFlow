@@ -148,6 +148,8 @@ export interface CreateCycleRequest {
   startDate: string;
   endDate?: string;  // Optional - auto-calculated from OrganizationSettings if not provided
   phase?: CyclePhase;
+  /** Scrum: the goal statement for this sprint */
+  sprintGoal?: string | null;
 }
 
 export interface Team {

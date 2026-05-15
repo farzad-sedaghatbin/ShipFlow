@@ -15,6 +15,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Skeleton } from '../components/ui/skeleton';
 import { usePermission } from '../hooks/usePermission';
@@ -32,7 +33,7 @@ export default function CycleForm() {
   const id = safeParseId(idParam);
   const navigate = useNavigate();
   const isEdit = !!id;
-  const { currentProject } = useProject();
+  const { currentProject, isScrumProject } = useProject();
   const { showSuccess } = useToast();
 
   const [formData, setFormData] = useState<CreateCycleRequest>({
@@ -41,6 +42,7 @@ export default function CycleForm() {
     startDate: '',
     endDate: '',
     phase: 'SHAPING_BUILDING',
+    sprintGoal: '',
   });
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -129,6 +131,7 @@ export default function CycleForm() {
         startDate: cycle.startDate,
         endDate: cycle.endDate,
         phase: cycle.phase,
+        sprintGoal: cycle.sprintGoal ?? '',
       });
       setStartDate(cycle.startDate);
       setEndDate(cycle.endDate);
@@ -399,6 +402,20 @@ export default function CycleForm() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Sprint Goal (Scrum only) */}
+            {isScrumProject && (
+              <div className="space-y-2">
+                <Label htmlFor="sprintGoal">{t('sprintPlanning.sprintGoal')}</Label>
+                <Textarea
+                  id="sprintGoal"
+                  value={formData.sprintGoal ?? ''}
+                  onChange={(e) => setFormData({ ...formData, sprintGoal: e.target.value })}
+                  placeholder={t('sprintPlanning.sprintGoalPlaceholder')}
+                  rows={3}
+                />
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4">

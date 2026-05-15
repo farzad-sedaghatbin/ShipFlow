@@ -31,13 +31,14 @@ import {
   Smartphone,
   Rss,
   Network,
-  Key,
-  BarChart3,
   ArrowDownToLine,
   Calendar,
   Pencil,
   GripHorizontal,
   Bug,
+  TrendingDown,
+  Gauge,
+  Target,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -177,12 +178,14 @@ export default function PublicRoadmap() {
     {
       version: 'v1.1.0',
       theme: t('publicRoadmap.phase110Theme'),
-      status: 'planned',
+      status: 'in-progress',
       items: [
-        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.phase110Item0Title'), description: t('publicRoadmap.phase110Item0Desc') },
-        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.phase110Item1Title'), description: t('publicRoadmap.phase110Item1Desc') },
-        { icon: <BarChart3 className="h-5 w-5" />, title: t('publicRoadmap.phase110Item2Title'), description: t('publicRoadmap.phase110Item2Desc') },
-        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase110Item3Title'), description: t('publicRoadmap.phase110Item3Desc') },
+        { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.phase110Item0Title'), description: t('publicRoadmap.phase110Item0Desc') },
+        { icon: <Target className="h-5 w-5" />, title: t('publicRoadmap.phase110Item1Title'), description: t('publicRoadmap.phase110Item1Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.phase110Item2Title'), description: t('publicRoadmap.phase110Item2Desc') },
+        { icon: <TrendingDown className="h-5 w-5" />, title: t('publicRoadmap.phase110Item3Title'), description: t('publicRoadmap.phase110Item3Desc') },
+        { icon: <Gauge className="h-5 w-5" />, title: t('publicRoadmap.phase110Item4Title'), description: t('publicRoadmap.phase110Item4Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase110Item5Title'), description: t('publicRoadmap.phase110Item5Desc') },
       ],
     },
     {

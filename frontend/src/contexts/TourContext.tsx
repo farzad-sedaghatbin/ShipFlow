@@ -233,6 +233,16 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       route: '/time/logs',
     },
     {
+      element: '[data-tour="sprint-planning-board"]',
+      popover: {
+        title: '🏃 Sprint Planning',
+        description: 'For Scrum projects, plan sprints here. Pull tasks from the product backlog on the left into the active sprint on the right. Story-point totals roll up automatically, and the burndown and velocity charts visualize progress.',
+        side: 'top',
+        align: 'center',
+      },
+      route: '/sprint-planning',
+    },
+    {
       element: '[data-tour="project-selector"]',
       popover: {
         title: '🎯 Project Selector',

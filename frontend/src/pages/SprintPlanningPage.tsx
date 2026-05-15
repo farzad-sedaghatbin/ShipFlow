@@ -212,7 +212,7 @@ export default function SprintPlanningPage() {
       </div>
 
       {/* Two-column planning board */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div data-tour="sprint-planning-board" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Product Backlog */}
         <Card>
           <CardHeader className="pb-2">

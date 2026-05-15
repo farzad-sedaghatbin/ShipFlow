@@ -72,8 +72,9 @@ Each step has a `data-tour` attribute on its target element. The table below is 
 | 17 | Meetings | `meetings-menu` | `Layout.tsx:145` (navItem `tourId`) | `/meetings` |
 | 18 | Backlog | `backlog-menu` | `Layout.tsx:352` | `/backlog` |
 | 19 | Work Logs | `worklogs-menu` | `Layout.tsx:357` | `/time/logs` |
-| 20 | Project Selector | `project-selector` | `Layout.tsx:522` | `/health` |
-| 21 | You're All Set! | `user-menu` | `Layout.tsx:624` | `/health` |
+| 20 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` |
+| 21 | Project Selector | `project-selector` | `Layout.tsx:522` | `/health` |
+| 22 | You're All Set! | `user-menu` | `Layout.tsx:624` | `/health` |
 
 ### How `navItem` tourIds work
 

@@ -19,12 +19,13 @@ A modern project management application implementing the [Shape Up](https://base
 
 ## ✨ Features
 
-- **Dual Project Modes**: Flexible support for different project methodologies
+- **Triple Project Modes**: Flexible support for different project methodologies
   - **Shape Up Mode**: 6-week cycle methodology with pitches, betting, hill charts
   - **Kanban Mode**: Continuous flow with board-first visualization
-  - Automatic UI adaptation based on project type (cycles hidden for Kanban)
+  - **Scrum Mode** (v1.1.0): Sprint planning with story points, burndown charts, and team velocity tracking
+  - Automatic UI adaptation based on project type (cycles hidden for Kanban; sprint goal/story points surfaced for Scrum)
   - Default "Continuous Flow" cycle created automatically for Kanban projects
-  - Pitch and scope fields hidden in Kanban projects (Shape Up concepts)
+  - Pitch and scope fields hidden in Kanban/Scrum projects (Shape Up concepts)
 - **Cycles**: 6-week development cycles with betting table (Shape Up projects)
   - **Auto-Calculated Cycle Dates**: End dates automatically calculated from organization settings
     - Default 6-week cycles aligned with Shape Up methodology
@@ -450,7 +451,8 @@ ShipFlow is the **only project management tool** built specifically for the [Sha
 |---------|----------|--------|-------|------------|------|----------|
 | **Native Shape Up** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
 | **Kanban Mode** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Dual Mode (Shape Up + Kanban)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Scrum Mode** (story points, burndown, velocity) | ✅ | ✅ | Partial | Partial | ✅ | ❌ |
+| **Triple Mode (Shape Up + Kanban + Scrum)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **6-Week Cycles** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Hill Charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Betting Table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
