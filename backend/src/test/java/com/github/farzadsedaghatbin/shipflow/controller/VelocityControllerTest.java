@@ -20,12 +20,11 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
+// Note: @Transactional has no effect when all beans are @MockBean — removed.
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
-@Transactional
 class VelocityControllerTest {
 
   @Autowired private MockMvc mockMvc;

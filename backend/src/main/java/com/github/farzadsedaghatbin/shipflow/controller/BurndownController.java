@@ -2,7 +2,6 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.BurndownPointDTO;
 import com.github.farzadsedaghatbin.shipflow.service.BurndownService;
-import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class BurndownController {
 
   private final BurndownService burndownService;
-  private final ProjectService projectService;
 
   @GetMapping
   @PreAuthorize(
@@ -31,10 +29,8 @@ public class BurndownController {
       description =
           "Returns daily remaining story points and ideal burndown line from sprint start"
               + " to today (capped at sprint end date). Only tasks with story points are"
-              + " included.")
+              + " included. Project-scope authorization is enforced inside BurndownService.")
   public ResponseEntity<List<BurndownPointDTO>> getBurndown(@PathVariable Long cycleId) {
-    Long projectId = burndownService.resolveProjectId(cycleId);
-    projectService.requireProjectAccess(projectId);
     return ResponseEntity.ok(burndownService.computeBurndown(cycleId));
   }
 }

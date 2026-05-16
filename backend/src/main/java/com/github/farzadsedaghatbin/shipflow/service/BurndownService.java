@@ -14,6 +14,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,39 +32,29 @@ public class BurndownService {
 
   private final CycleRepository cycleRepository;
   private final TaskRepository taskRepository;
+  private final ProjectService projectService;
 
   /**
-   * Resolve the project ID for the given cycle. Used by the controller to enforce
-   * project-scope authorization before delegating to {@link #computeBurndown(Long)}.
-   *
-   * @param cycleId the ID of the sprint/cycle
-   * @return the project ID that owns this cycle
-   */
-  public Long resolveProjectId(Long cycleId) {
-    Cycle cycle =
-        cycleRepository
-            .findByIdWithProject(cycleId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
-    if (cycle.getProject() == null) {
-      throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "Cycle " + cycleId + " has no associated project");
-    }
-    return cycle.getProject().getId();
-  }
-
-  /**
-   * Compute the burndown series for the given cycle.
+   * Compute the burndown series for the given cycle, enforcing project-scope authorization
+   * internally. The cycle is loaded once (with its project join) to avoid a duplicate DB query.
    *
    * @param cycleId the ID of the sprint/cycle
    * @return ordered list of {@link BurndownPointDTO} from startDate to min(today, endDate)
    */
   public List<BurndownPointDTO> computeBurndown(Long cycleId) {
+    // Single query — loads cycle + project join; used for both auth check and computation
     Cycle cycle =
         cycleRepository
-            .findById(cycleId)
+            .findByIdWithProject(cycleId)
             .orElseThrow(
                 () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+
+    if (cycle.getProject() == null) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Cycle " + cycleId + " has no associated project");
+    }
+    // Enforce project-scope access (throws AccessDeniedException on failure)
+    projectService.requireProjectAccess(cycle.getProject().getId());
 
     LocalDate startDate = cycle.getStartDate();
     if (startDate == null) {

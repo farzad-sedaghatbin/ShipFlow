@@ -2,9 +2,11 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateProjectRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.ProjectDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.UserProject;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
 import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
+import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProjectController {
 
   private final ProjectService projectService;
+  private final TaskService taskService;
 
   /**
    * Get all projects (ADMIN only). For regular users, use /my-projects endpoint.
@@ -70,6 +73,21 @@ public class ProjectController {
   @Operation(summary = "Get project by key", description = "Returns a single project by its unique key (if user has access)")
   public ResponseEntity<ProjectDTO> getProjectByKey(@PathVariable String key) {
     return ResponseEntity.ok(projectService.findByKey(key));
+  }
+
+  /**
+   * Get product backlog tasks for a project (Scrum mode). Returns top-level tasks not yet assigned
+   * to any sprint (cycle IS NULL). This endpoint is at /api/projects/{projectId}/backlog-tasks to
+   * match the frontend taskService path.
+   */
+  @GetMapping("/{projectId}/backlog-tasks")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(
+      summary = "Get product backlog tasks for a project",
+      description =
+          "Returns top-level tasks not yet assigned to any sprint (cycle IS NULL). Scrum mode only.")
+  public ResponseEntity<List<TaskDTO>> getProductBacklogTasks(@PathVariable Long projectId) {
+    return ResponseEntity.ok(taskService.getProductBacklogTasks(projectId));
   }
 
   /** Check if current user has access to a project */

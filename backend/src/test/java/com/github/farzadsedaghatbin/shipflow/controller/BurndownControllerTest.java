@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.github.farzadsedaghatbin.shipflow.dto.BurndownPointDTO;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.service.BurndownService;
-import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -22,18 +21,16 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
+// Note: @Transactional has no effect when all beans are @MockBean — removed.
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
-@Transactional
 class BurndownControllerTest {
 
   @Autowired private MockMvc mockMvc;
 
   @MockBean private BurndownService burndownService;
-  @MockBean private ProjectService projectService;
 
   @Test
   void getBurndown_unauthenticated_returns401() throws Exception {
@@ -43,10 +40,10 @@ class BurndownControllerTest {
   @Test
   @WithMockUser(username = "dev", roles = {"DEVELOPER"})
   void getBurndown_projectAccessDenied_returns403() throws Exception {
-    when(burndownService.resolveProjectId(1L)).thenReturn(10L);
+    // Project-scope auth is now enforced inside BurndownService.computeBurndown
     doThrow(new AccessDeniedException("Access denied"))
-        .when(projectService)
-        .requireProjectAccess(10L);
+        .when(burndownService)
+        .computeBurndown(1L);
 
     mockMvc.perform(get("/api/cycles/1/burndown")).andExpect(status().isForbidden());
   }
@@ -54,8 +51,9 @@ class BurndownControllerTest {
   @Test
   @WithMockUser(username = "dev", roles = {"DEVELOPER"})
   void getBurndown_cycleNotFound_returns404() throws Exception {
-    when(burndownService.resolveProjectId(99L))
-        .thenThrow(new ResourceNotFoundException("Cycle not found with id: 99"));
+    doThrow(new ResourceNotFoundException("Cycle not found with id: 99"))
+        .when(burndownService)
+        .computeBurndown(99L);
 
     mockMvc.perform(get("/api/cycles/99/burndown")).andExpect(status().isNotFound());
   }
@@ -64,7 +62,6 @@ class BurndownControllerTest {
   @WithMockUser(username = "dev", roles = {"DEVELOPER"})
   void getBurndown_happyPath_returns200WithSeries() throws Exception {
     LocalDate today = LocalDate.now();
-    when(burndownService.resolveProjectId(2L)).thenReturn(5L);
     when(burndownService.computeBurndown(2L))
         .thenReturn(
             List.of(
@@ -91,7 +88,6 @@ class BurndownControllerTest {
   @Test
   @WithMockUser(username = "admin", roles = {"ADMIN"})
   void getBurndown_noTasks_returnsEmptyList() throws Exception {
-    when(burndownService.resolveProjectId(3L)).thenReturn(7L);
     when(burndownService.computeBurndown(3L)).thenReturn(List.of());
 
     mockMvc

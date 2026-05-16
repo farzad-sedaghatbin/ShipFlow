@@ -129,16 +129,14 @@ export default function SprintPlanningPage() {
     onError: () => toast.error(t('common.error')),
   });
 
-  const productBacklogTasks = backlogTasks;
-
   const sprintTaskList: Task[] = (sprintTasks as Task[] | undefined) ?? [];
 
-  const productBacklogPoints = productBacklogTasks.reduce(
-    (sum, t) => sum + (t.storyPoints ?? 0),
+  const productBacklogPoints = backlogTasks.reduce(
+    (sum, task) => sum + (task.storyPoints ?? 0),
     0,
   );
   const sprintPoints = sprintTaskList.reduce(
-    (sum, t) => sum + (t.storyPoints ?? 0),
+    (sum, task) => sum + (task.storyPoints ?? 0),
     0,
   );
 
@@ -200,19 +198,19 @@ export default function SprintPlanningPage() {
                   <Skeleton key={i} className="h-14 w-full" />
                 ))}
               </div>
-            ) : productBacklogTasks.length === 0 ? (
+            ) : backlogTasks.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">
                 {t('common.noData')}
               </p>
             ) : (
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                {productBacklogTasks.map((task) => (
+                {backlogTasks.map((task) => (
                   <SprintTaskCard
                     key={task.id}
                     task={task}
                     actionLabel={t('sprintPlanning.moveToSprint')}
                     actionIcon={<ArrowRight className="h-4 w-4" />}
-                    onAction={(t) => moveToSprintMutation.mutate(t)}
+                    onAction={(task) => moveToSprintMutation.mutate(task)}
                     isPending={moveToSprintMutation.isPending || !selectedCycleId}
                   />
                 ))}
@@ -258,7 +256,7 @@ export default function SprintPlanningPage() {
                     task={task}
                     actionLabel={t('sprintPlanning.moveToBacklog')}
                     actionIcon={<ArrowLeft className="h-4 w-4" />}
-                    onAction={(t) => moveToBacklogMutation.mutate(t)}
+                    onAction={(task) => moveToBacklogMutation.mutate(task)}
                     isPending={moveToBacklogMutation.isPending}
                   />
                 ))}

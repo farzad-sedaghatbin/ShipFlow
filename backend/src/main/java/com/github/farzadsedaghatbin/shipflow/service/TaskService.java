@@ -331,6 +331,13 @@ public class TaskService {
           && !task.getParentTask().getCycle().getId().equals(request.getCycleId())) {
         task.setParentTask(null);
       }
+    } else if (request.getCycleId() == null && task.getCycle() != null) {
+      // Explicitly moving to the product backlog (cycleId: null in PUT body)
+      if (task.getProject() == null) {
+        // Preserve the project reference so the task remains findable via project_id
+        task.setProject(task.getCycle().getProject());
+      }
+      task.setCycle(null);
     }
 
     // Validate and update parent task if changed
@@ -345,9 +352,12 @@ public class TaskService {
           throw new IllegalArgumentException(messageService.getMessage("error.task.circular.reference"));
         }
 
-        // Ensure parent task belongs to the same cycle (skip check when either is in the backlog)
-        if (parentTask.getCycle() != null && task.getCycle() != null
-            && !parentTask.getCycle().getId().equals(task.getCycle().getId())) {
+        // Ensure parent task belongs to the same project (works even when one or both tasks are
+        // in the product backlog with cycle == null — falls back to the direct project reference)
+        Long taskProjectId = resolveProjectId(task);
+        Long parentProjectId = resolveProjectId(parentTask);
+        if (taskProjectId != null && parentProjectId != null
+            && !taskProjectId.equals(parentProjectId)) {
           throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
         }
 
@@ -381,7 +391,11 @@ public class TaskService {
 
     task.setEstimateHours(request.getEstimateHours());
     task.setActualHours(request.getActualHours());
-    task.setStoryPoints(request.getStoryPoints());
+    // Guard: null means "not provided by this caller" — guards non-Scrum UIs that omit storyPoints.
+    // Callers wanting to explicitly clear points should send 0 (zero points).
+    if (request.getStoryPoints() != null) {
+      task.setStoryPoints(request.getStoryPoints());
+    }
     task.setDueDate(request.getDueDate());
     task.setTags(request.getTags());
 

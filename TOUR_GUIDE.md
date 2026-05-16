@@ -53,28 +53,28 @@ Each step has a `data-tour` attribute on its target element. The table below is 
 
 | # | Step Title | `data-tour` selector | Selector file | Route |
 |---|-----------|---------------------|---------------|-------|
-| 1 | Welcome to ShipFlow! | `sidebar` | `Layout.tsx:277` | `/` |
-| 2 | Projects | `projects-menu` | `Layout.tsx:98` (navItem `tourId`) | `/` |
+| 1 | Welcome to ShipFlow! | `sidebar` | `Layout.tsx:279` | `/` |
+| 2 | Projects | `projects-menu` | `Layout.tsx:100` (navItem `tourId`) | `/` |
 | 3 | Create Your First Project | `new-project-btn` | `Projects.tsx` | `/projects` |
 | 4 | Project Created! | `project-card` | `Projects.tsx` (first card, `index === 0`) | `/projects` |
-| 5 | Cycles | `cycles-menu` | `Layout.tsx:99` (navItem `tourId`) | `/projects` |
+| 5 | Cycles | `cycles-menu` | `Layout.tsx:101` (navItem `tourId`) | `/projects` |
 | 6 | Create a Cycle | `new-cycle-btn` | `CycleList.tsx:157` | `/cycles` |
 | 7 | Your Cycle | `cycle-card` | `CycleList.tsx:225` (first card, `index === 0`) | `/cycles` |
-| 8 | Pitch Board | `pitches-menu` | `Layout.tsx:110` (navItem `tourId`) | `/cycles` |
+| 8 | Pitch Board | `pitches-menu` | `Layout.tsx:112` (navItem `tourId`) | `/cycles` |
 | 9 | Create a Pitch | `new-pitch-btn` | `PitchBoard.tsx:608` | `/pitches` |
 | 10 | Kanban Board | `pitch-board` | `PitchBoard.tsx:661` / `665` | `/pitches` |
-| 11 | Betting Table (nav) | `betting-menu` | `Layout.tsx:111` (navItem `tourId`) | `/pitches` |
+| 11 | Betting Table (nav) | `betting-menu` | `Layout.tsx:113` (navItem `tourId`) | `/pitches` |
 | 12 | Plan Your Cycle | `betting-table` | `BettingTable.tsx:475` | `/betting` |
-| 13 | Health Overview (nav) | `health-menu` | `Layout.tsx:112` (navItem `tourId`) | `/betting` |
+| 13 | Health Overview (nav) | `health-menu` | `Layout.tsx:114` (navItem `tourId`) | `/betting` |
 | 14 | Hill Chart | `hill-chart-section` | `HealthOverview.tsx:115` | `/health` |
-| 15 | Retrospectives | `retros-menu` | `Layout.tsx:113` (navItem `tourId`) | `/retros` |
-| 16 | Reports | `reports-menu` | `Layout.tsx:115` (navItem `tourId`) | `/reports` |
-| 17 | Meetings | `meetings-menu` | `Layout.tsx:145` (navItem `tourId`) | `/meetings` |
-| 18 | Backlog | `backlog-menu` | `Layout.tsx:352` | `/backlog` |
-| 19 | Work Logs | `worklogs-menu` | `Layout.tsx:357` | `/time/logs` |
-| 20 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` |
-| 21 | Project Selector | `project-selector` | `Layout.tsx:522` | `/health` |
-| 22 | You're All Set! | `user-menu` | `Layout.tsx:624` | `/health` |
+| 15 | Retrospectives | `retros-menu` | `Layout.tsx:115` (navItem `tourId`) | `/retros` |
+| 16 | Reports | `reports-menu` | `Layout.tsx:117` (navItem `tourId`) | `/reports` |
+| 17 | Meetings | `meetings-menu` | `Layout.tsx:147` (navItem `tourId`) | `/meetings` |
+| 18 | Backlog | `backlog-menu` | `Layout.tsx:354` | `/backlog` |
+| 19 | Work Logs | `worklogs-menu` | `Layout.tsx:367` | `/time/logs` |
+| 20 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` ⚠️ Scrum-only — non-Scrum projects redirect to `/backlog`; this step is only reachable/shown when the active project has `projectType: SCRUM` |
+| 21 | Project Selector | `project-selector` | `Layout.tsx:537` | `/health` |
+| 22 | You're All Set! | `user-menu` | `Layout.tsx:639` | `/health` |
 
 ### How `navItem` tourIds work
 

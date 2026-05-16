@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import com.github.farzadsedaghatbin.shipflow.dto.BurndownPointDTO;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,11 +32,13 @@ class BurndownServiceTest {
 
   @Mock private TaskRepository taskRepository;
 
+  @Mock private ProjectService projectService;
+
   @InjectMocks private BurndownService burndownService;
 
   @Test
   void computeBurndown_cycleNotFound_throwsResourceNotFoundException() {
-    when(cycleRepository.findById(99L)).thenReturn(Optional.empty());
+    when(cycleRepository.findByIdWithProject(99L)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> burndownService.computeBurndown(99L))
         .isInstanceOf(ResourceNotFoundException.class)
@@ -42,18 +46,58 @@ class BurndownServiceTest {
   }
 
   @Test
+  void computeBurndown_projectAccessDenied_throwsAccessDeniedException() {
+    LocalDate start = LocalDate.now().minusDays(3);
+    LocalDate end = LocalDate.now().minusDays(1);
+    Cycle cycle = buildCycleWithProject(1L, start, end, 10L);
+
+    when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(cycle));
+    doThrow(new AccessDeniedException("Access denied"))
+        .when(projectService)
+        .requireProjectAccess(10L);
+
+    assertThatThrownBy(() -> burndownService.computeBurndown(1L))
+        .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
   void computeBurndown_noScoredTasks_returnsEmptySeries() {
     // Sprint ended yesterday — always in the past, no time-dependency
     LocalDate start = LocalDate.now().minusDays(3);
     LocalDate end = LocalDate.now().minusDays(1);
-    Cycle cycle = buildCycle(1L, start, end);
+    Cycle cycle = buildCycleWithProject(1L, start, end, 5L);
 
-    when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
+    when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findByCycleIdNotDeleted(1L)).thenReturn(List.of());
 
     List<BurndownPointDTO> result = burndownService.computeBurndown(1L);
 
-    // All tasks have null storyPoints → early-return empty list (Fix 6)
+    // All tasks have null storyPoints → early-return empty list
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void computeBurndown_allTasksHaveNullStoryPoints_returnsEmptySeries() {
+    LocalDate start = LocalDate.now().minusDays(3);
+    LocalDate end = LocalDate.now().minusDays(1);
+    Cycle cycle = buildCycleWithProject(20L, start, end, 5L);
+
+    Task taskNoPoints1 = new Task();
+    taskNoPoints1.setId(201L);
+    taskNoPoints1.setStoryPoints(null);
+    taskNoPoints1.setStatus(TaskStatus.IN_PROGRESS);
+
+    Task taskNoPoints2 = new Task();
+    taskNoPoints2.setId(202L);
+    taskNoPoints2.setStoryPoints(null);
+    taskNoPoints2.setStatus(TaskStatus.DONE);
+
+    when(cycleRepository.findByIdWithProject(20L)).thenReturn(Optional.of(cycle));
+    when(taskRepository.findByCycleIdNotDeleted(20L))
+        .thenReturn(List.of(taskNoPoints1, taskNoPoints2));
+
+    List<BurndownPointDTO> result = burndownService.computeBurndown(20L);
+
     assertThat(result).isEmpty();
   }
 
@@ -62,7 +106,7 @@ class BurndownServiceTest {
     // Sprint: 7 days ago → 1 day ago; always fully in the past
     LocalDate start = LocalDate.now().minusDays(7);
     LocalDate end = LocalDate.now().minusDays(1);
-    Cycle cycle = buildCycle(2L, start, end);
+    Cycle cycle = buildCycleWithProject(2L, start, end, 5L);
 
     // task1 completed on day 2 of the sprint (5 pts)
     LocalDateTime task1Done = start.plusDays(1).atTime(12, 0);
@@ -73,7 +117,7 @@ class BurndownServiceTest {
     Task task2 = buildTask(2L, 3, TaskStatus.DONE, task2Done);
     Task task3 = buildTask(3L, 2, TaskStatus.IN_PROGRESS, null);
 
-    when(cycleRepository.findById(2L)).thenReturn(Optional.of(cycle));
+    when(cycleRepository.findByIdWithProject(2L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findByCycleIdNotDeleted(2L)).thenReturn(List.of(task1, task2, task3));
 
     List<BurndownPointDTO> result = burndownService.computeBurndown(2L);
@@ -93,33 +137,12 @@ class BurndownServiceTest {
   }
 
   @Test
-  void resolveProjectId_returnsProjectId() {
-    Project project = Project.builder().build();
-    project.setId(42L);
-    Cycle cycle = buildCycle(5L, LocalDate.now().minusDays(2), LocalDate.now().minusDays(1));
-    cycle.setProject(project);
-
-    when(cycleRepository.findByIdWithProject(5L)).thenReturn(Optional.of(cycle));
-
-    assertThat(burndownService.resolveProjectId(5L)).isEqualTo(42L);
-  }
-
-  @Test
-  void resolveProjectId_cycleNotFound_throwsResourceNotFoundException() {
-    when(cycleRepository.findByIdWithProject(77L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> burndownService.resolveProjectId(77L))
-        .isInstanceOf(ResourceNotFoundException.class)
-        .hasMessageContaining("77");
-  }
-
-  @Test
   void computeBurndown_nullEndDate_defaultsToFourteenDays() {
     // Sprint started 5 days ago, no end date set
     LocalDate start = LocalDate.now().minusDays(5);
-    Cycle cycle = buildCycle(3L, start, null);
+    Cycle cycle = buildCycleWithProject(3L, start, null, 5L);
 
-    when(cycleRepository.findById(3L)).thenReturn(Optional.of(cycle));
+    when(cycleRepository.findByIdWithProject(3L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findByCycleIdNotDeleted(3L)).thenReturn(List.of());
 
     // Should not throw; defaults endDate to start + 14 days → returns empty (no scored tasks)
@@ -132,10 +155,10 @@ class BurndownServiceTest {
     // 5-day sprint fully in the past
     LocalDate start = LocalDate.now().minusDays(5);
     LocalDate end = LocalDate.now().minusDays(1);
-    Cycle cycle = buildCycle(10L, start, end);
+    Cycle cycle = buildCycleWithProject(10L, start, end, 5L);
 
     Task task = buildTask(10L, 10, TaskStatus.IN_PROGRESS, null);
-    when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+    when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(List.of(task));
 
     List<BurndownPointDTO> result = burndownService.computeBurndown(10L);
@@ -155,10 +178,10 @@ class BurndownServiceTest {
     // Sprint started 3 days ago, ends 4 days from now — ongoing sprint
     LocalDate start = LocalDate.now().minusDays(3);
     LocalDate end = LocalDate.now().plusDays(4);
-    Cycle cycle = buildCycle(11L, start, end);
+    Cycle cycle = buildCycleWithProject(11L, start, end, 5L);
 
     Task task = buildTask(11L, 8, TaskStatus.IN_PROGRESS, null);
-    when(cycleRepository.findById(11L)).thenReturn(Optional.of(cycle));
+    when(cycleRepository.findByIdWithProject(11L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findByCycleIdNotDeleted(11L)).thenReturn(List.of(task));
 
     List<BurndownPointDTO> result = burndownService.computeBurndown(11L);
@@ -174,10 +197,10 @@ class BurndownServiceTest {
     // Edge case: totalDays == 0 (start == end, treated as 1 day)
     LocalDate start = LocalDate.now().minusDays(1);
     LocalDate end = LocalDate.now().minusDays(1); // same as start
-    Cycle cycle = buildCycle(12L, start, end);
+    Cycle cycle = buildCycleWithProject(12L, start, end, 5L);
 
     Task task = buildTask(12L, 5, TaskStatus.IN_PROGRESS, null);
-    when(cycleRepository.findById(12L)).thenReturn(Optional.of(cycle));
+    when(cycleRepository.findByIdWithProject(12L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findByCycleIdNotDeleted(12L)).thenReturn(List.of(task));
 
     // Must not throw ArithmeticException
@@ -192,12 +215,12 @@ class BurndownServiceTest {
     // All tasks completed before the start date: burned > total would go negative without clamping
     LocalDate start = LocalDate.now().minusDays(3);
     LocalDate end = LocalDate.now().minusDays(1);
-    Cycle cycle = buildCycle(13L, start, end);
+    Cycle cycle = buildCycleWithProject(13L, start, end, 5L);
 
     // Completed far in the past — before sprint even started
     LocalDateTime completedBeforeSprint = start.minusDays(2).atTime(9, 0);
     Task task = buildTask(13L, 5, TaskStatus.DONE, completedBeforeSprint);
-    when(cycleRepository.findById(13L)).thenReturn(Optional.of(cycle));
+    when(cycleRepository.findByIdWithProject(13L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findByCycleIdNotDeleted(13L)).thenReturn(List.of(task));
 
     List<BurndownPointDTO> result = burndownService.computeBurndown(13L);
@@ -208,11 +231,14 @@ class BurndownServiceTest {
 
   // ---- helpers ----
 
-  private Cycle buildCycle(Long id, LocalDate start, LocalDate end) {
+  private Cycle buildCycleWithProject(Long id, LocalDate start, LocalDate end, Long projectId) {
+    Project project = Project.builder().build();
+    project.setId(projectId);
     Cycle c = new Cycle();
     c.setId(id);
     c.setStartDate(start);
     c.setEndDate(end);
+    c.setProject(project);
     return c;
   }
 

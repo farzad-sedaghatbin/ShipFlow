@@ -3,8 +3,16 @@ ALTER TABLE tasks ALTER COLUMN cycle_id DROP NOT NULL;
 
 -- Add direct project reference for tasks not attached to a cycle
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id BIGINT;
-ALTER TABLE tasks ADD CONSTRAINT IF NOT EXISTS fk_tasks_project
-    FOREIGN KEY (project_id) REFERENCES projects(id);
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_tasks_project'
+  ) THEN
+    ALTER TABLE tasks ADD CONSTRAINT fk_tasks_project
+      FOREIGN KEY (project_id) REFERENCES projects(id);
+  END IF;
+END $$;
 
 -- Populate project_id from existing cycle relationship (backfill)
 UPDATE tasks SET project_id = (

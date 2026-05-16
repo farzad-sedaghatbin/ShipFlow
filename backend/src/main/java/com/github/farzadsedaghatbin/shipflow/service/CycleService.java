@@ -160,10 +160,10 @@ public class CycleService {
     cycle.setStartDate(request.getStartDate());
     cycle.setEndDate(endDate);
     cycle.setPhase(request.getPhase());
-    // Clients wanting to clear sprintGoal should send an empty string, not null.
-    // Null means 'not provided by this caller' — guards non-Scrum UIs that don't send this field.
+    // Null means 'not provided by this caller' — guards non-Scrum UIs that omit sprintGoal.
+    // Empty string explicitly clears the goal to NULL in the DB; any non-empty value updates it.
     if (request.getSprintGoal() != null) {
-      cycle.setSprintGoal(request.getSprintGoal());
+      cycle.setSprintGoal(request.getSprintGoal().isEmpty() ? null : request.getSprintGoal());
     }
     // velocityActual is computed by VelocityService from completed story points; not settable via request
 
