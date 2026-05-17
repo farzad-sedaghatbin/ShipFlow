@@ -72,7 +72,7 @@ Each step has a `data-tour` attribute on its target element. The table below is 
 | 17 | Meetings | `meetings-menu` | `Layout.tsx:147` (navItem `tourId`) | `/meetings` |
 | 18 | Backlog | `backlog-menu` | `Layout.tsx:354` | `/backlog` |
 | 19 | Work Logs | `worklogs-menu` | `Layout.tsx:367` | `/time/logs` |
-| 20 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` ⚠️ Scrum-only — non-Scrum projects redirect to `/backlog`; this step is only reachable/shown when the active project has `projectType: SCRUM` |
+| 20 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` — **Conditional: only included in the tour when the active project has `projectType === 'SCRUM'`**. `getTourSteps()` in `TourContext.tsx` filters this step out for non-SCRUM projects (which would otherwise be redirected to `/backlog`, breaking the tour). |
 | 21 | Project Selector | `project-selector` | `Layout.tsx:537` | `/health` |
 | 22 | You're All Set! | `user-menu` | `Layout.tsx:639` | `/health` |
 
@@ -221,4 +221,4 @@ The `/help` page has a nav item with `tourId: 'help-menu'` (available in Layout.
 
 ---
 
-*Last updated: 2026-03-31 — reflects TourContext.tsx v21-step implementation (S13)*
+*Last updated: 2026-05-17 — step 20 (Sprint Planning) is now conditionally filtered to SCRUM projects only (PR #285 round-5 fix)*

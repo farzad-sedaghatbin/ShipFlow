@@ -113,6 +113,8 @@ export default function SprintPlanningPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['burndown', selectedCycleId] });
+      queryClient.invalidateQueries({ queryKey: ['velocity', projectId] });
       toast.success(t('sprintPlanning.movedToSprint'));
     },
     onError: () => toast.error(t('common.error')),
@@ -124,6 +126,8 @@ export default function SprintPlanningPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['burndown', selectedCycleId] });
+      queryClient.invalidateQueries({ queryKey: ['velocity', projectId] });
       toast.success(t('sprintPlanning.movedToBacklog'));
     },
     onError: () => toast.error(t('common.error')),
