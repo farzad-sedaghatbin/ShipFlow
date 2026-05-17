@@ -61,6 +61,7 @@ class TaskBulkUpdateServiceTest {
   @Mock MessageService messageService;
   @Mock ApplicationEventPublisher eventPublisher;
   @Mock PermissionService permissionService;
+  @Mock ProjectService projectService;
 
   @InjectMocks TaskService taskService;
 

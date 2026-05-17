@@ -77,14 +77,15 @@ public class BurndownService {
     // All tasks in the cycle that have story points (soft-delete aware)
     List<Task> tasks = taskRepository.findByCycleIdNotDeleted(cycleId);
 
-    // Early return when no tasks carry story points
+    // Early return when no tasks carry story points (tasks with storyPoints == 0 still
+    // produce a series with 0 total, matching VelocityService which treats 0 as planned)
     if (tasks.stream().allMatch(t -> t.getStoryPoints() == null)) {
       return List.of();
     }
 
     List<Task> scoredTasks =
         tasks.stream()
-            .filter(t -> t.getStoryPoints() != null && t.getStoryPoints() > 0)
+            .filter(t -> t.getStoryPoints() != null)
             .toList();
 
     int total = scoredTasks.stream().mapToInt(Task::getStoryPoints).sum();

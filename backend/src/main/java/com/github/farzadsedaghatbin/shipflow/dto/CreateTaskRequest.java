@@ -40,6 +40,7 @@ public class CreateTaskRequest {
   private BigDecimal actualHours;
 
   @Min(value = 0, message = "Story points must be 0 or greater")
+  @Max(value = 999, message = "Story points must not exceed 999")
   private Integer storyPoints;
 
   private Long teamId;

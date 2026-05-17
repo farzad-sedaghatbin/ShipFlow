@@ -75,6 +75,7 @@ public class TaskService {
   private final MessageService messageService;
   private final ApplicationEventPublisher eventPublisher;
   private final PermissionService permissionService;
+  private final ProjectService projectService;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -192,8 +193,12 @@ public class TaskService {
       parentTask = taskRepository.findById(request.getParentTaskId()).orElseThrow(
           () -> new IllegalArgumentException("Parent task not found with id: " + request.getParentTaskId()));
 
-      // Ensure parent task belongs to the same cycle
-      if (!parentTask.getCycle().getId().equals(request.getCycleId())) {
+      // Ensure parent task belongs to the same project (handles product-backlog tasks where
+      // cycle may be null — falls back to the direct project reference on either task)
+      Long parentProjectId = resolveProjectId(parentTask);
+      Long requestedProjectId = cycle.getProject() != null ? cycle.getProject().getId() : null;
+      if (parentProjectId != null && requestedProjectId != null
+          && !parentProjectId.equals(requestedProjectId)) {
         throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
       }
     }
@@ -331,13 +336,6 @@ public class TaskService {
           && !task.getParentTask().getCycle().getId().equals(request.getCycleId())) {
         task.setParentTask(null);
       }
-    } else if (request.getCycleId() == null && task.getCycle() != null) {
-      // Explicitly moving to the product backlog (cycleId: null in PUT body)
-      if (task.getProject() == null) {
-        // Preserve the project reference so the task remains findable via project_id
-        task.setProject(task.getCycle().getProject());
-      }
-      task.setCycle(null);
     }
 
     // Validate and update parent task if changed
@@ -352,12 +350,14 @@ public class TaskService {
           throw new IllegalArgumentException(messageService.getMessage("error.task.circular.reference"));
         }
 
-        // Ensure parent task belongs to the same project (works even when one or both tasks are
-        // in the product backlog with cycle == null — falls back to the direct project reference)
+        // Ensure parent task belongs to the same project. Fail closed: if either project
+        // reference is missing, the relationship cannot be safely validated and must be rejected.
         Long taskProjectId = resolveProjectId(task);
         Long parentProjectId = resolveProjectId(parentTask);
-        if (taskProjectId != null && parentProjectId != null
-            && !taskProjectId.equals(parentProjectId)) {
+        if (taskProjectId == null || parentProjectId == null) {
+          throw new IllegalArgumentException("Cannot validate parent task: project reference missing");
+        }
+        if (!taskProjectId.equals(parentProjectId)) {
           throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
         }
 
@@ -506,6 +506,12 @@ public class TaskService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("Task not found with id: " + taskId));
 
+    // Enforce project-scope authorization on the task's current project
+    Long taskProjectId = resolveProjectId(task);
+    if (taskProjectId != null) {
+      projectService.requireProjectAccess(taskProjectId);
+    }
+
     if (cycleId == null) {
       // Preserve project reference before clearing cycle (for legacy data that may not have it)
       if (task.getProject() == null && task.getCycle() != null) {
@@ -518,6 +524,10 @@ public class TaskService {
               .findById(cycleId)
               .orElseThrow(
                   () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+      // Also verify the target cycle belongs to the same project (or an accessible project)
+      if (cycle.getProject() != null) {
+        projectService.requireProjectAccess(cycle.getProject().getId());
+      }
       task.setCycle(cycle);
       task.setProject(cycle.getProject());
     }
@@ -1018,7 +1028,7 @@ public class TaskService {
         ? task.getChildren().stream().map(child -> TaskDTO.builder().id(child.getId()).title(child.getTitle())
             .description(child.getDescription()).status(child.getStatus()).priority(child.getPriority())
             .category(child.getCategory()).estimateHours(child.getEstimateHours())
-            .actualHours(child.getActualHours())
+            .actualHours(child.getActualHours()).storyPoints(child.getStoryPoints())
             .cycleId(child.getCycle() != null ? child.getCycle().getId() : null)
             .assigneeId(child.getAssignee() != null ? child.getAssignee().getId() : null)
             .assigneeName(child.getAssignee() != null ? child.getAssignee().getName() : null)

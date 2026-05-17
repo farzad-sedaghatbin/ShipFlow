@@ -22,8 +22,7 @@ public class BurndownController {
   private final BurndownService burndownService;
 
   @GetMapping
-  @PreAuthorize(
-      "hasAnyRole('ADMIN','PROJECT_MANAGER','DEVELOPER','QA','PRODUCT','VIEWER')")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(
       summary = "Get burndown chart data for a sprint",
       description =

@@ -51,6 +51,9 @@ class TaskHierarchyServiceTest {
   @Mock
   private MessageService messageService;
 
+  @Mock
+  private ProjectService projectService;
+
   @InjectMocks
   private TaskService taskService;
 
@@ -131,8 +134,9 @@ class TaskHierarchyServiceTest {
 
   @Test
   void shouldFailToCreateTaskWithParentFromDifferentCycle() {
-    // Given
-    Cycle differentCycle = Cycle.builder().id(2L).name("Sprint 2").build();
+    // Given — parent task is in a cycle that belongs to a DIFFERENT project
+    Project otherProject = Project.builder().id(99L).name("Other Project").projectKey("OTH").build();
+    Cycle differentCycle = Cycle.builder().id(2L).name("Sprint 2").project(otherProject).build();
 
     Task parentFromDifferentCycle = Task.builder().id(1L).title("Parent Task").cycle(differentCycle).build();
 
@@ -140,7 +144,8 @@ class TaskHierarchyServiceTest {
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentFromDifferentCycle));
 
-    // When / Then
+    // When / Then — createTask now validates at project level (not cycle level), so the
+    // error is the same key but applies cross-project rather than cross-cycle
     assertThatThrownBy(() -> taskService.createTask(createRequest)).isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Parent task must belong to the same cycle");
   }

@@ -1038,6 +1038,7 @@ public class SampleDataInitializer implements CommandLineRunner {
             .priority(priority)
             .storyPoints(storyPoints)
             .cycle(cycle)
+            .project(cycle.getProject())
             .assignee(assignee)
             .createdBy(createdBy)
             .tags(tags)

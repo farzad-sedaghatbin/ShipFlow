@@ -24,8 +24,7 @@ public class VelocityController {
   private final ProjectService projectService;
 
   @GetMapping
-  @PreAuthorize(
-      "hasAnyRole('ADMIN','PROJECT_MANAGER','DEVELOPER','QA','PRODUCT','VIEWER')")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(
       summary = "Get velocity chart data for a project",
       description =
