@@ -16,7 +16,9 @@ import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.TaskDependency;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
@@ -199,7 +201,7 @@ public class TaskService {
       Long requestedProjectId = cycle.getProject() != null ? cycle.getProject().getId() : null;
       if (parentProjectId != null && requestedProjectId != null
           && !parentProjectId.equals(requestedProjectId)) {
-        throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
+        throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.project"));
       }
     }
 
@@ -358,7 +360,7 @@ public class TaskService {
           throw new IllegalArgumentException("Cannot validate parent task: project reference missing");
         }
         if (!taskProjectId.equals(parentProjectId)) {
-          throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
+          throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.project"));
         }
 
         task.setParentTask(parentTask);
@@ -391,11 +393,10 @@ public class TaskService {
 
     task.setEstimateHours(request.getEstimateHours());
     task.setActualHours(request.getActualHours());
-    // Guard: null means "not provided by this caller" — guards non-Scrum UIs that omit storyPoints.
-    // Callers wanting to explicitly clear points should send 0 (zero points).
-    if (request.getStoryPoints() != null) {
-      task.setStoryPoints(request.getStoryPoints());
-    }
+    // null clears story points — consistent with estimateHours/actualHours/dueDate which are
+    // also written unconditionally. BacklogTaskDialog (the canonical edit path) always includes
+    // the field, so null means the user cleared the estimate.
+    task.setStoryPoints(request.getStoryPoints());
     task.setDueDate(request.getDueDate());
     task.setTags(request.getTags());
 
@@ -513,6 +514,14 @@ public class TaskService {
     }
 
     if (cycleId == null) {
+      // Moving to product backlog (cycle = null) is only valid for SCRUM projects.
+      // For SHAPE_UP and KANBAN projects, tasks must always belong to a cycle.
+      Project taskProject = task.getProject() != null ? task.getProject()
+          : (task.getCycle() != null ? task.getCycle().getProject() : null);
+      if (taskProject == null || taskProject.getProjectType() != ProjectType.SCRUM) {
+        throw new IllegalArgumentException(
+            "Only SCRUM projects support product backlog (tasks without a sprint)");
+      }
       // Preserve project reference before clearing cycle (for legacy data that may not have it)
       if (task.getProject() == null && task.getCycle() != null) {
         task.setProject(task.getCycle().getProject());
@@ -524,9 +533,15 @@ public class TaskService {
               .findById(cycleId)
               .orElseThrow(
                   () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
-      // Also verify the target cycle belongs to the same project (or an accessible project)
+      // Verify the target cycle belongs to an accessible project
       if (cycle.getProject() != null) {
         projectService.requireProjectAccess(cycle.getProject().getId());
+      }
+      // Verify the task and the target cycle belong to the SAME project
+      Long cycleProjectId = cycle.getProject() != null ? cycle.getProject().getId() : null;
+      if (taskProjectId != null && cycleProjectId != null && !taskProjectId.equals(cycleProjectId)) {
+        throw new IllegalArgumentException(
+            "Cannot move a task to a cycle in a different project");
       }
       task.setCycle(cycle);
       task.setProject(cycle.getProject());

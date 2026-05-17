@@ -68,6 +68,8 @@ class TaskHierarchyServiceTest {
       String key = i.getArgument(0);
       if (key.contains("parent.different.cycle"))
         return "Parent task must belong to the same cycle";
+      if (key.contains("parent.different.project"))
+        return "Parent task must belong to the same project";
       if (key.contains("circular.reference"))
         return "circular reference";
       return key;
@@ -76,6 +78,8 @@ class TaskHierarchyServiceTest {
       String key = i.getArgument(0);
       if (key.contains("parent.different.cycle"))
         return "Parent task must belong to the same cycle";
+      if (key.contains("parent.different.project"))
+        return "Parent task must belong to the same project";
       if (key.contains("circular.reference"))
         return "circular reference";
       return key;
@@ -144,10 +148,11 @@ class TaskHierarchyServiceTest {
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentFromDifferentCycle));
 
-    // When / Then — createTask now validates at project level (not cycle level), so the
-    // error is the same key but applies cross-project rather than cross-cycle
+    // When / Then — createTask validates at project level; the message key is now
+    // error.task.parent.different.project. MessageService returns the key itself when the
+    // key is not found in the properties, so we assert on the resolved message text.
     assertThatThrownBy(() -> taskService.createTask(createRequest)).isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parent task must belong to the same cycle");
+        .hasMessageContaining("same project");
   }
 
   @Test

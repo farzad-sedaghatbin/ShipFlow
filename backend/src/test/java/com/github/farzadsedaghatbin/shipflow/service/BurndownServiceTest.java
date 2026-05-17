@@ -2,7 +2,6 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import com.github.farzadsedaghatbin.shipflow.dto.BurndownPointDTO;
@@ -22,7 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.server.ResponseStatusException;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,7 +30,7 @@ class BurndownServiceTest {
 
   @Mock private TaskRepository taskRepository;
 
-  @Mock private ProjectService projectService;
+  // ProjectService is no longer injected into BurndownService — auth was moved to BurndownController.
 
   @InjectMocks private BurndownService burndownService;
 
@@ -46,18 +44,18 @@ class BurndownServiceTest {
   }
 
   @Test
-  void computeBurndown_projectAccessDenied_throwsAccessDeniedException() {
-    LocalDate start = LocalDate.now().minusDays(3);
-    LocalDate end = LocalDate.now().minusDays(1);
-    Cycle cycle = buildCycleWithProject(1L, start, end, 10L);
+  void computeBurndown_noProjectOnCycle_throwsBadRequest() {
+    // Cycle exists but has no associated project — service must reject it with 400.
+    // Project-scope authorization is handled by BurndownController, not by this service.
+    Cycle cycle = new Cycle();
+    cycle.setId(1L);
+    cycle.setProject(null); // no project
+    cycle.setStartDate(LocalDate.now().minusDays(3));
 
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(cycle));
-    doThrow(new AccessDeniedException("Access denied"))
-        .when(projectService)
-        .requireProjectAccess(10L);
 
     assertThatThrownBy(() -> burndownService.computeBurndown(1L))
-        .isInstanceOf(AccessDeniedException.class);
+        .isInstanceOf(ResponseStatusException.class);
   }
 
   @Test

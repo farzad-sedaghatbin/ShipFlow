@@ -74,6 +74,8 @@ export default function SprintPlanningPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
+  const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
+  const [pendingBacklogTaskId, setPendingBacklogTaskId] = useState<number | null>(null);
   const projectId = currentProject?.id;
 
   // Redirect non-SCRUM projects away from this page
@@ -87,7 +89,7 @@ export default function SprintPlanningPage() {
   const { data: cycles, isLoading: cyclesLoading } = useQuery({
     queryKey: ['cycles', 'project', projectId],
     queryFn: () => cycleService.getByProject(projectId!).then((r) => r.data),
-    enabled: !!projectId,
+    enabled: !!projectId && isScrumProject,
   });
 
   const selectedCycle = cycles?.find((c) => c.id === selectedCycleId) ?? null;
@@ -110,6 +112,8 @@ export default function SprintPlanningPage() {
   // partial-update data loss (parentTaskId, scopeId, releaseId, etc. are preserved server-side)
   const moveToSprintMutation = useMutation({
     mutationFn: (task: Task) => taskService.assignCycle(task.id, selectedCycleId!),
+    onMutate: (task) => setPendingTaskId(task.id),
+    onSettled: () => setPendingTaskId(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
@@ -123,6 +127,8 @@ export default function SprintPlanningPage() {
   // Move task back to product backlog — passes null to clear the cycle assignment
   const moveToBacklogMutation = useMutation({
     mutationFn: (task: Task) => taskService.assignCycle(task.id, null),
+    onMutate: (task) => setPendingBacklogTaskId(task.id),
+    onSettled: () => setPendingBacklogTaskId(null),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
@@ -144,7 +150,7 @@ export default function SprintPlanningPage() {
     0,
   );
 
-  const isLoading = cyclesLoading || backlogLoading;
+  const isLoading = !projectId || cyclesLoading || backlogLoading;
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -215,7 +221,7 @@ export default function SprintPlanningPage() {
                     actionLabel={t('sprintPlanning.moveToSprint')}
                     actionIcon={<ArrowRight className="h-4 w-4" />}
                     onAction={(task) => moveToSprintMutation.mutate(task)}
-                    isPending={moveToSprintMutation.isPending || !selectedCycleId}
+                    isPending={pendingTaskId === task.id || !selectedCycleId}
                   />
                 ))}
               </div>
@@ -261,7 +267,7 @@ export default function SprintPlanningPage() {
                     actionLabel={t('sprintPlanning.moveToBacklog')}
                     actionIcon={<ArrowLeft className="h-4 w-4" />}
                     onAction={(task) => moveToBacklogMutation.mutate(task)}
-                    isPending={moveToBacklogMutation.isPending}
+                    isPending={pendingBacklogTaskId === task.id}
                   />
                 ))}
               </div>

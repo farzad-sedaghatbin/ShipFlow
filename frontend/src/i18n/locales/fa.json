@@ -2890,7 +2890,8 @@
       "title": "سرعت تیم",
       "planned": "برنامه‌ریزی شده",
       "completed": "تکمیل شده",
-      "noData": "هنوز هیچ اسپرینت تکمیل‌شده‌ای وجود ندارد"
+      "noData": "هنوز هیچ اسپرینت تکمیل‌شده‌ای وجود ندارد",
+      "storyPoints": "امتیاز داستان"
     }
   },
   "healthOverview": {
@@ -4794,8 +4795,6 @@
     "backToProjects": "بازگشت به پروژه‌ها",
     "backlog": "باکلاگ",
     "cannotDelete": "امکان حذف پروژه با چرخه‌های موجود وجود ندارد",
-    "cannotDeleteWithCycles": "[TODO: Persian translation] Cannot delete project with cycles",
-    "deleteDisabledScrum": "نمی‌توان یک پروژه اسکرام با اسپرینت را حذف کرد",
     "completed": "تکمیل شده",
     "completedCycle": "چرخه تکمیل شده",
     "completedCycles": "چرخه‌های تکمیل شده",
@@ -4924,6 +4923,8 @@
     "viewProject": "مشاهده پروژه",
     "activateSuccess": "پروژه با موفقیت فعال شد",
     "noProjectsMatch": "هیچ پروژه‌ای با جستجوی شما مطابقت ندارد",
+    "cannotDeleteWithCycles": "نمی‌توان پروژه‌ای را که چرخه‌ها دارد حذف کرد",
+    "deleteDisabledScrum": "نمی‌توان یک پروژه اسکرام با اسپرینت را حذف کرد",
     "errors": {
       "nameRequired": "نام پروژه الزامی است",
       "keyRequired": "کلید پروژه الزامی است",
@@ -6540,7 +6541,11 @@
     "skipTitle": "رد کردن تور؟",
     "skipDescription": "آیا مطمئن هستید که می‌خواهید تور را رد کنید؟ می‌توانید هر زمان از دکمه راهنما آن را مجدداً شروع کنید.",
     "skip": "رد کردن تور",
-    "continue": "ادامه تور"
+    "continue": "ادامه تور",
+    "sprintPlanning": {
+      "title": "برنامه‌ریزی اسپرینت",
+      "description": "برای پروژه‌های اسکرام، اسپرینت خود را اینجا برنامه‌ریزی کنید. وظایف را بین بک‌لاگ محصول و اسپرینت فعال جابجا کنید."
+    }
   },
   "cooldownActivity": {
     "pageTitle": "فعالیت‌های دوره استراحت",

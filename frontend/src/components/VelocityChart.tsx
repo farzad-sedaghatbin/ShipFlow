@@ -50,7 +50,7 @@ export function VelocityChart({ projectId }: VelocityChartProps) {
               <XAxis dataKey="cycleName" tick={{ fontSize: 12 }} />
               <YAxis
                 label={{
-                  value: t('charts.burndown.storyPoints'),
+                  value: t('charts.velocity.storyPoints'),
                   angle: -90,
                   position: 'insideLeft',
                   offset: 10,

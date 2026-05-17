@@ -247,7 +247,7 @@ export function BacklogTaskDialog({
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
+            <div className="col-span-2 grid gap-2">
               <Label htmlFor="dueDate">{t('backlogPage.dueDate')}</Label>
               <LocalizedDateInput
                 id="dueDate"

@@ -9,12 +9,12 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,17 +32,15 @@ public class BurndownService {
 
   private final CycleRepository cycleRepository;
   private final TaskRepository taskRepository;
-  private final ProjectService projectService;
 
   /**
-   * Compute the burndown series for the given cycle, enforcing project-scope authorization
-   * internally. The cycle is loaded once (with its project join) to avoid a duplicate DB query.
+   * Compute the burndown series for the given cycle. Project-scope authorization is enforced by
+   * {@code BurndownController} before this method is called.
    *
    * @param cycleId the ID of the sprint/cycle
    * @return ordered list of {@link BurndownPointDTO} from startDate to min(today, endDate)
    */
   public List<BurndownPointDTO> computeBurndown(Long cycleId) {
-    // Single query — loads cycle + project join; used for both auth check and computation
     Cycle cycle =
         cycleRepository
             .findByIdWithProject(cycleId)
@@ -53,8 +51,6 @@ public class BurndownService {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "Cycle " + cycleId + " has no associated project");
     }
-    // Enforce project-scope access (throws AccessDeniedException on failure)
-    projectService.requireProjectAccess(cycle.getProject().getId());
 
     LocalDate startDate = cycle.getStartDate();
     if (startDate == null) {
@@ -89,7 +85,9 @@ public class BurndownService {
             .toList();
 
     int total = scoredTasks.stream().mapToInt(Task::getStoryPoints).sum();
-    long totalDays = startDate.until(endDate).getDays();
+    // ChronoUnit.DAYS.between gives total elapsed days, not just the days component of a Period.
+    // startDate.until(endDate).getDays() is wrong for cross-month spans (e.g. Apr 15 → May 15 = 0).
+    long totalDays = ChronoUnit.DAYS.between(startDate, endDate);
     if (totalDays <= 0) {
       totalDays = 1;
     }
@@ -116,7 +114,7 @@ public class BurndownService {
       int remaining = total - burned;
 
       // Ideal linear burndown: total * (daysLeft / totalDays)
-      long daysElapsed = startDate.until(pointDate).getDays();
+      long daysElapsed = ChronoUnit.DAYS.between(startDate, pointDate);
       long daysLeft = totalDays - daysElapsed;
       int ideal = (int) Math.round((double) total * daysLeft / totalDays);
 

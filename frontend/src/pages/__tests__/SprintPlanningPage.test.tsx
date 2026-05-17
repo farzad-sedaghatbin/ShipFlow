@@ -237,6 +237,39 @@ describe('SprintPlanningPage', () => {
     });
   });
 
+  // ── Fix 8: per-task pending state — only the clicked task's button is disabled ──
+  it('disables only the clicked task button while moveToSprint mutation is pending', async () => {
+    const user = userEvent.setup();
+    // Delay the mutation so we can inspect the intermediate state
+    let resolveAssign: () => void;
+    (taskService.assignCycle as any).mockImplementation(
+      () => new Promise<{ data: object }>((resolve) => { resolveAssign = () => resolve({ data: {} }); }),
+    );
+
+    renderWithClient(<SprintPlanningPage />);
+
+    await waitFor(() => expect(screen.getByText('Task A')).toBeInTheDocument());
+
+    const cycleSelect = screen.getByTestId('cycle-select');
+    fireEvent.change(cycleSelect, { target: { value: '10' } });
+
+    const moveButtons = await screen.findAllByLabelText('sprintPlanning.moveToSprint');
+    // Two backlog tasks — click the first one (Task A, id=1)
+    await user.click(moveButtons[0]);
+
+    // While pending: Task A's button should be disabled
+    const buttonsAfterClick = screen.getAllByLabelText('sprintPlanning.moveToSprint');
+    expect(buttonsAfterClick[0]).toBeDisabled();
+    // Task B's button should still be enabled
+    expect(buttonsAfterClick[1]).not.toBeDisabled();
+
+    // Settle the mutation
+    resolveAssign!();
+    await waitFor(() => {
+      expect(taskService.assignCycle).toHaveBeenCalledWith(1, 10);
+    });
+  });
+
   // ── Fix 7c: non-SCRUM project redirects to /backlog ───────────────────────
   it('navigates to /backlog when currentProject is not a SCRUM project', async () => {
     mockProjectContext = {

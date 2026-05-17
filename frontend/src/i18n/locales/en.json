@@ -3414,7 +3414,8 @@
       "title": "Team Velocity",
       "planned": "Planned",
       "completed": "Completed",
-      "noData": "No completed sprints yet"
+      "noData": "No completed sprints yet",
+      "storyPoints": "Story Points"
     }
   },
   "healthOverview": {
@@ -6539,7 +6540,11 @@
     "skipTitle": "Skip Tour?",
     "skipDescription": "Are you sure you want to skip the tour? You can restart it anytime from the help button.",
     "skip": "Skip Tour",
-    "continue": "Continue Tour"
+    "continue": "Continue Tour",
+    "sprintPlanning": {
+      "title": "Sprint Planning",
+      "description": "For Scrum projects, plan your sprint here. Move tasks between the product backlog and the active sprint."
+    }
   },
   "cooldownActivity": {
     "pageTitle": "Cooldown Activities",
