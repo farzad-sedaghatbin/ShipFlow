@@ -119,8 +119,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByProjectIdNotDeleted(@Param("projectId") Long projectId);
 
     // Tasks with no sprint assigned (product backlog) — restricted to SCRUM projects only
-    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.cycle IS NULL AND t.deletedAt IS NULL AND t.parentTask IS NULL AND t.project.projectType = 'SCRUM'")
-    List<Task> findProductBacklogTasks(@Param("projectId") Long projectId);
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.cycle IS NULL AND t.deletedAt IS NULL AND t.parentTask IS NULL AND t.project.projectType = :projectType")
+    List<Task> findProductBacklogTasks(@Param("projectId") Long projectId, @Param("projectType") com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType projectType);
 
     @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId")
     Page<Task> findByProjectIdPaged(@Param("projectId") Long projectId, Pageable pageable);

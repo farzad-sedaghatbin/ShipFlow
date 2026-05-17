@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.github.farzadsedaghatbin.shipflow.dto.BurndownPointDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
-import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.service.BurndownService;
 import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
@@ -27,7 +27,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-// Note: @Transactional has no effect when all beans are @MockBean — removed.
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
@@ -37,8 +36,8 @@ class BurndownControllerTest {
 
   @MockBean private BurndownService burndownService;
 
-  // Auth and cycle lookup were moved from BurndownService into BurndownController (Fix 7).
-  // These mocks satisfy the controller's constructor injection in the Spring context.
+  // BurndownController loads the Cycle from CycleRepository itself and delegates auth to
+  // ProjectService. Both beans must be available in the test context.
   @MockBean private ProjectService projectService;
   @MockBean private CycleRepository cycleRepository;
 
@@ -57,18 +56,14 @@ class BurndownControllerTest {
   @Test
   @WithMockUser(username = "viewer", roles = {"VIEWER"})
   void getBurndown_authenticated_viewer_returns200() throws Exception {
-    // RBAC is disabled in the test profile so any authenticated role can call this endpoint.
-    // In production, unauthenticated requests are blocked by the JWT filter before reaching
-    // method security — that contract is covered by integration tests with filters enabled.
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(cycleWithProject(1L, 5L)));
-    when(burndownService.computeBurndown(1L)).thenReturn(List.of());
+    when(burndownService.computeBurndown(any(Cycle.class))).thenReturn(List.of());
     mockMvc.perform(get("/api/cycles/1/burndown")).andExpect(status().isOk());
   }
 
   @Test
   @WithMockUser(username = "dev", roles = {"DEVELOPER"})
   void getBurndown_projectAccessDenied_returns403() throws Exception {
-    // Project-scope auth is now enforced inside BurndownController via projectService.
     when(cycleRepository.findByIdWithProject(1L)).thenReturn(Optional.of(cycleWithProject(1L, 10L)));
     doThrow(new AccessDeniedException("Access denied"))
         .when(projectService)
@@ -80,7 +75,6 @@ class BurndownControllerTest {
   @Test
   @WithMockUser(username = "dev", roles = {"DEVELOPER"})
   void getBurndown_cycleNotFound_returns404() throws Exception {
-    // CycleRepository returns empty → controller throws ResourceNotFoundException → 404
     when(cycleRepository.findByIdWithProject(99L)).thenReturn(Optional.empty());
 
     mockMvc.perform(get("/api/cycles/99/burndown")).andExpect(status().isNotFound());
@@ -91,7 +85,7 @@ class BurndownControllerTest {
   void getBurndown_happyPath_returns200WithSeries() throws Exception {
     LocalDate today = LocalDate.now();
     when(cycleRepository.findByIdWithProject(2L)).thenReturn(Optional.of(cycleWithProject(2L, 5L)));
-    when(burndownService.computeBurndown(2L))
+    when(burndownService.computeBurndown(any(Cycle.class)))
         .thenReturn(
             List.of(
                 BurndownPointDTO.builder()
@@ -118,7 +112,7 @@ class BurndownControllerTest {
   @WithMockUser(username = "admin", roles = {"ADMIN"})
   void getBurndown_noTasks_returnsEmptyList() throws Exception {
     when(cycleRepository.findByIdWithProject(3L)).thenReturn(Optional.of(cycleWithProject(3L, 5L)));
-    when(burndownService.computeBurndown(3L)).thenReturn(List.of());
+    when(burndownService.computeBurndown(any(Cycle.class))).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/cycles/3/burndown"))

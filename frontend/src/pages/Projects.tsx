@@ -542,14 +542,14 @@ export default function Projects() {
                           e.stopPropagation();
                           setDeleteDialog({ open: true, project });
                         }}
-                        disabled={project.projectType !== 'KANBAN' && (project.cycleCount || 0) > 0}
+                        disabled={(project.projectType === 'SHAPE_UP' || project.projectType === 'SCRUM') && (project.cycleCount || 0) > 0}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {project.projectType !== 'KANBAN' && (project.cycleCount || 0) > 0
+                      {(project.projectType === 'SHAPE_UP' || project.projectType === 'SCRUM') && (project.cycleCount || 0) > 0
                         ? project.projectType === 'SCRUM'
                           ? t('projects.deleteDisabledScrum')
                           : t('projects.cannotDeleteWithCycles')

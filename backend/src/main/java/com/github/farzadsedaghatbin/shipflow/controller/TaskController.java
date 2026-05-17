@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.UpdateStoryPointsRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
@@ -314,8 +315,21 @@ public class TaskController {
     return ResponseEntity.ok(taskService.updateTaskStatus(id, status));
   }
 
+  @PatchMapping("/{id}/story-points")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(
+      summary = "Update story points for a task",
+      description =
+          "Lightweight PATCH that only changes the storyPoints field. Pass null to clear the"
+              + " estimate. Using a dedicated endpoint prevents accidental data loss from"
+              + " full-update callers that do not include all task fields.")
+  public ResponseEntity<TaskDTO> updateStoryPoints(
+      @PathVariable Long id, @Valid @RequestBody UpdateStoryPointsRequest request) {
+    return ResponseEntity.ok(taskService.updateStoryPoints(id, request.getStoryPoints()));
+  }
+
   @PatchMapping("/{taskId}/cycle")
-  @PreAuthorize("hasAnyRole('ADMIN','PROJECT_MANAGER','DEVELOPER','QA','PRODUCT')")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(
       summary = "Assign task to a cycle (sprint)",
       description =

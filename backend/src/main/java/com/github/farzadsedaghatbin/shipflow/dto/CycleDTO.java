@@ -23,5 +23,5 @@ public class CycleDTO {
   private Integer teamCount;
   private ProjectType projectType;
   private String sprintGoal;
-  private Integer velocityActual;
+  // velocityActual intentionally omitted — computed dynamically by VelocityService; see VelocityPointDTO
 }

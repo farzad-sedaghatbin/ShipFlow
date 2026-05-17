@@ -25,8 +25,17 @@ public class CreateTaskRequest {
 
   private String description;
 
-  @NotNull(message = "Cycle ID is required")
+  /**
+   * ID of the sprint/cycle to assign the task to. Optional for SCRUM projects — when null and
+   * {@code projectId} is supplied the task is placed in the product backlog (cycle = null).
+   */
   private Long cycleId;
+
+  /**
+   * Direct project reference. Required when {@code cycleId} is null (SCRUM product backlog tasks).
+   * Ignored when {@code cycleId} is supplied (project is derived from the cycle).
+   */
+  private Long projectId;
 
   private Long pitchId;
 

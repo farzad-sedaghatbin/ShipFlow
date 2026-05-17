@@ -276,7 +276,7 @@ public class CycleService {
           .projectType(cycle.getProject().getProjectType());
     }
 
-    builder.sprintGoal(cycle.getSprintGoal()).velocityActual(cycle.getVelocityActual());
+    builder.sprintGoal(cycle.getSprintGoal());
 
     return builder.build();
   }

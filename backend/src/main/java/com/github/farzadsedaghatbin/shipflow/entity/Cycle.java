@@ -46,9 +46,9 @@ public class Cycle {
   @Column(name = "sprint_goal", columnDefinition = "TEXT")
   private String sprintGoal;
 
-  /** Actual velocity (story points completed) for Scrum mode (optional). */
-  @Column(name = "velocity_actual")
-  private Integer velocityActual;
+  // velocity_actual column exists in DB (V100) but is not mapped here. Actual velocity is
+  // computed dynamically by VelocityService from completed task story points and exposed via
+  // VelocityPointDTO. The column is preserved for a future "close sprint" workflow.
 
   @OneToMany(mappedBy = "cycle", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default

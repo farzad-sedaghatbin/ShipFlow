@@ -14,10 +14,14 @@ BEGIN
   END IF;
 END $$;
 
--- Populate project_id from existing cycle relationship (backfill)
+-- Populate project_id from existing cycle relationship (backfill for all tasks with a cycle)
 UPDATE tasks SET project_id = (
     SELECT c.project_id FROM cycles c WHERE c.id = tasks.cycle_id
 ) WHERE cycle_id IS NOT NULL AND project_id IS NULL;
+
+-- Enforce NOT NULL after backfill: every task must belong to a project
+-- (either via cycle → project or via direct project reference for backlog tasks)
+ALTER TABLE tasks ALTER COLUMN project_id SET NOT NULL;
 
 -- Create index for the new column
 CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);

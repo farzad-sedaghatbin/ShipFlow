@@ -44,6 +44,7 @@ public class BurndownController {
     if (cycle.getProject() != null) {
       projectService.requireProjectAccess(cycle.getProject().getId());
     }
-    return ResponseEntity.ok(burndownService.computeBurndown(cycleId));
+    // Pass the already-loaded cycle so BurndownService does not issue a second DB query.
+    return ResponseEntity.ok(burndownService.computeBurndown(cycle));
   }
 }

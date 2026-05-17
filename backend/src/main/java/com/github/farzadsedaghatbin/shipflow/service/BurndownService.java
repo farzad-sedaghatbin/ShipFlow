@@ -4,11 +4,8 @@ import com.github.farzadsedaghatbin.shipflow.dto.BurndownPointDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
-import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
-import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,22 +27,18 @@ import org.springframework.web.server.ResponseStatusException;
 @Slf4j
 public class BurndownService {
 
-  private final CycleRepository cycleRepository;
   private final TaskRepository taskRepository;
 
   /**
-   * Compute the burndown series for the given cycle. Project-scope authorization is enforced by
-   * {@code BurndownController} before this method is called.
+   * Compute the burndown series for the given cycle. The caller (BurndownController) is responsible
+   * for loading the cycle and enforcing project-scope authorization before calling this method.
+   * Accepting the pre-loaded {@link Cycle} avoids a redundant DB query.
    *
-   * @param cycleId the ID of the sprint/cycle
+   * @param cycle the sprint/cycle entity (must not be null)
    * @return ordered list of {@link BurndownPointDTO} from startDate to min(today, endDate)
    */
-  public List<BurndownPointDTO> computeBurndown(Long cycleId) {
-    Cycle cycle =
-        cycleRepository
-            .findByIdWithProject(cycleId)
-            .orElseThrow(
-                () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+  public List<BurndownPointDTO> computeBurndown(Cycle cycle) {
+    Long cycleId = cycle.getId();
 
     if (cycle.getProject() == null) {
       throw new ResponseStatusException(
@@ -97,17 +90,17 @@ public class BurndownService {
     for (LocalDate date = startDate; !date.isAfter(seriesEnd); date = date.plusDays(1)) {
       final LocalDate pointDate = date;
 
-      // Points burned = story points of tasks completed on or before this day
+      // Points burned = story points of tasks whose date of completion is on or before this day.
+      // Using toLocalDate() avoids the midnight boundary off-by-one: a task completed at
+      // 2026-05-15T00:00:00 has completedAt.toLocalDate() == May 15, so it is correctly NOT
+      // counted for May 14.
       int burned =
           scoredTasks.stream()
               .filter(
                   t ->
                       t.getStatus() == TaskStatus.DONE
                           && t.getCompletedAt() != null
-                          && !t.getCompletedAt()
-                              .isAfter(
-                                  LocalDateTime.of(
-                                      pointDate.plusDays(1), java.time.LocalTime.MIDNIGHT)))
+                          && !t.getCompletedAt().toLocalDate().isAfter(pointDate))
               .mapToInt(Task::getStoryPoints)
               .sum();
 

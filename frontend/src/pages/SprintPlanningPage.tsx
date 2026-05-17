@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Select,
@@ -71,19 +71,17 @@ function SprintTaskCard({ task, actionLabel, actionIcon, onAction, isPending }: 
 export default function SprintPlanningPage() {
   const { t } = useTranslation();
   const { currentProject, isScrumProject } = useProject();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
-  const [pendingTaskId, setPendingTaskId] = useState<number | null>(null);
-  const [pendingBacklogTaskId, setPendingBacklogTaskId] = useState<number | null>(null);
+  // Sets instead of single values so multiple tasks can be moved concurrently without race conditions
+  const [pendingSprintIds, setPendingSprintIds] = useState<Set<number>>(new Set());
+  const [pendingBacklogIds, setPendingBacklogIds] = useState<Set<number>>(new Set());
   const projectId = currentProject?.id;
 
-  // Redirect non-SCRUM projects away from this page
-  useEffect(() => {
-    if (currentProject && !isScrumProject) {
-      navigate('/backlog', { replace: true });
-    }
-  }, [currentProject, isScrumProject, navigate]);
+  // Synchronous redirect — avoids the one-frame flash that useEffect-based navigation causes
+  if (currentProject && !isScrumProject) {
+    return <Navigate to="/backlog" replace />;
+  }
 
   // Fetch cycles for this project
   const { data: cycles, isLoading: cyclesLoading } = useQuery({
@@ -112,8 +110,9 @@ export default function SprintPlanningPage() {
   // partial-update data loss (parentTaskId, scopeId, releaseId, etc. are preserved server-side)
   const moveToSprintMutation = useMutation({
     mutationFn: (task: Task) => taskService.assignCycle(task.id, selectedCycleId!),
-    onMutate: (task) => setPendingTaskId(task.id),
-    onSettled: () => setPendingTaskId(null),
+    onMutate: (task) => setPendingSprintIds((prev) => new Set(prev).add(task.id)),
+    onSettled: (_data, _err, task) =>
+      setPendingSprintIds((prev) => { const s = new Set(prev); s.delete(task.id); return s; }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
@@ -127,8 +126,9 @@ export default function SprintPlanningPage() {
   // Move task back to product backlog — passes null to clear the cycle assignment
   const moveToBacklogMutation = useMutation({
     mutationFn: (task: Task) => taskService.assignCycle(task.id, null),
-    onMutate: (task) => setPendingBacklogTaskId(task.id),
-    onSettled: () => setPendingBacklogTaskId(null),
+    onMutate: (task) => setPendingBacklogIds((prev) => new Set(prev).add(task.id)),
+    onSettled: (_data, _err, task) =>
+      setPendingBacklogIds((prev) => { const s = new Set(prev); s.delete(task.id); return s; }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['product-backlog', projectId] });
@@ -221,7 +221,7 @@ export default function SprintPlanningPage() {
                     actionLabel={t('sprintPlanning.moveToSprint')}
                     actionIcon={<ArrowRight className="h-4 w-4" />}
                     onAction={(task) => moveToSprintMutation.mutate(task)}
-                    isPending={pendingTaskId === task.id || !selectedCycleId}
+                    isPending={pendingSprintIds.has(task.id) || !selectedCycleId}
                   />
                 ))}
               </div>
@@ -267,7 +267,7 @@ export default function SprintPlanningPage() {
                     actionLabel={t('sprintPlanning.moveToBacklog')}
                     actionIcon={<ArrowLeft className="h-4 w-4" />}
                     onAction={(task) => moveToBacklogMutation.mutate(task)}
-                    isPending={pendingBacklogTaskId === task.id}
+                    isPending={pendingBacklogIds.has(task.id)}
                   />
                 ))}
               </div>

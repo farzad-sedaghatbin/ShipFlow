@@ -953,7 +953,6 @@ public class SampleDataInitializer implements CommandLineRunner {
             .phase(CyclePhase.SHAPING_BUILDING)
             .isActive(false)
             .sprintGoal("Ship onboarding flow with email + social sign-in")
-            .velocityActual(13)
             .build();
     cycleRepository.save(sprint1);
 
@@ -969,7 +968,6 @@ public class SampleDataInitializer implements CommandLineRunner {
             .phase(CyclePhase.SHAPING_BUILDING)
             .isActive(false)
             .sprintGoal("Add push notifications and in-app messaging")
-            .velocityActual(16)
             .build();
     cycleRepository.save(sprint2);
 
@@ -989,31 +987,29 @@ public class SampleDataInitializer implements CommandLineRunner {
     cycleRepository.save(sprint3);
 
     // Sprint 1 tasks (all DONE — 5 + 3 + 5 = 13 pts)
-    // completedAt within Sprint 1 window so burndown line descends correctly
-    LocalDateTime sprint1CompletedAt = sprint1Start.plusWeeks(1).atTime(10, 0);
+    // Spread completedAt across the sprint so the burndown chart shows a descending staircase
+    // rather than all points dropping on the same day.
     createScrumTask("Email sign-up endpoint", TaskStatus.DONE, TaskPriority.HIGH, 5, sprint1,
-        aliPerson, saraPerson, "backend,auth", sprint1CompletedAt);
+        aliPerson, saraPerson, "backend,auth", sprint1Start.plusDays(3).atTime(11, 0));
     createScrumTask("Google OAuth integration", TaskStatus.DONE, TaskPriority.HIGH, 3, sprint1,
-        aliPerson, saraPerson, "backend,oauth", sprint1CompletedAt);
+        aliPerson, saraPerson, "backend,oauth", sprint1Start.plusDays(7).atTime(15, 30));
     createScrumTask("Onboarding wizard screens", TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint1,
-        minaPerson, saraPerson, "frontend,ux", sprint1CompletedAt);
+        minaPerson, saraPerson, "frontend,ux", sprint1Start.plusDays(12).atTime(9, 45));
 
     // Sprint 2 tasks (all DONE — 8 + 3 + 5 = 16 pts)
-    LocalDateTime sprint2CompletedAt = sprint2Start.plusWeeks(1).atTime(10, 0);
     createScrumTask("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH, 8, sprint2,
-        aliPerson, saraPerson, "backend,notifications", sprint2CompletedAt);
+        aliPerson, saraPerson, "backend,notifications", sprint2Start.plusDays(4).atTime(14, 0));
     createScrumTask("Notification preferences UI", TaskStatus.DONE, TaskPriority.MEDIUM, 3, sprint2,
-        minaPerson, saraPerson, "frontend", sprint2CompletedAt);
+        minaPerson, saraPerson, "frontend", sprint2Start.plusDays(8).atTime(10, 15));
     createScrumTask("In-app message center", TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint2,
-        minaPerson, saraPerson, "frontend,messaging", sprint2CompletedAt);
+        minaPerson, saraPerson, "frontend,messaging", sprint2Start.plusDays(11).atTime(16, 0));
 
-    // Sprint 3 tasks (mix of statuses for burndown chart)
-    // completedAt 3 days ago — within the active sprint window
-    LocalDateTime sprint3CompletedAt = now.minusDays(3).atTime(10, 0);
+    // Sprint 3 tasks (mix of statuses for a realistic burndown chart)
+    // Spread the two completed tasks across the sprint window (not the same day)
     createScrumTask("Dark-mode theme tokens", TaskStatus.DONE, TaskPriority.MEDIUM, 2, sprint3,
-        minaPerson, saraPerson, "frontend,theme", sprint3CompletedAt);
-    createScrumTask("Fix top 5 crash reports", TaskStatus.IN_PROGRESS, TaskPriority.HIGH, 5, sprint3,
-        aliPerson, saraPerson, "bugfix", null);
+        minaPerson, saraPerson, "frontend,theme", sprint3Start.plusDays(3).atTime(11, 0));
+    createScrumTask("Fix top 5 crash reports", TaskStatus.DONE, TaskPriority.HIGH, 5, sprint3,
+        aliPerson, saraPerson, "bugfix", sprint3Start.plusDays(8).atTime(17, 0));
     createScrumTask("Accessibility audit pass", TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3,
         sprint3, minaPerson, saraPerson, "a11y,frontend", null);
     createScrumTask("Performance: lazy-load images", TaskStatus.TODO, TaskPriority.LOW, 2, sprint3,

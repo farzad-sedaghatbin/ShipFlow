@@ -138,8 +138,7 @@ export interface Cycle {
   projectType?: ProjectType;
   /** Scrum: the goal statement for this sprint */
   sprintGoal?: string | null;
-  /** Scrum: story points actually completed in this sprint */
-  velocityActual?: number | null;
+  // velocityActual removed — computed dynamically via VelocityService; see VelocityPoint
 }
 
 export interface CreateCycleRequest {
