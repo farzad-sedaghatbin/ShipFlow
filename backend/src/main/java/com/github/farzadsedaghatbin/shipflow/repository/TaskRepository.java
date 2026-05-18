@@ -112,10 +112,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(DISTINCT t.assignee.id) FROM Task t WHERE t.cycle.id = :cycleId AND t.assignee IS NOT NULL")
     int countDistinctAssigneesByCycleId(@Param("cycleId") Long cycleId);
 
-    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId")
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId")
     List<Task> findByProjectId(@Param("projectId") Long projectId);
 
-    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.deletedAt IS NULL")
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.cycle WHERE t.project.id = :projectId AND t.deletedAt IS NULL")
     List<Task> findByProjectIdNotDeleted(@Param("projectId") Long projectId);
 
     // Tasks with no sprint assigned (product backlog) — restricted to SCRUM projects only.
@@ -125,10 +125,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.cycle IS NULL AND t.deletedAt IS NULL AND t.parentTask IS NULL AND t.project.projectType = :projectType")
     List<Task> findProductBacklogTasks(@Param("projectId") Long projectId, @Param("projectType") com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType projectType);
 
-    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId")
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId")
     Page<Task> findByProjectIdPaged(@Param("projectId") Long projectId, Pageable pageable);
 
-    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId AND t.category = :category")
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.category = :category")
     Page<Task> findByProjectIdAndCategory(@Param("projectId") Long projectId, @Param("category") TaskCategory category,
             Pageable pageable);
 
@@ -156,25 +156,25 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             @Param("assigneeIds") List<Long> assigneeIds, Pageable pageable);
 
     // Project-based multi-filter queries with pagination
-    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId " 
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId "
             + "AND t.deletedAt IS NULL "
             + "AND (:statuses IS NULL OR t.status IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority IN :priorities) "
             + "AND (:assigneeIds IS NULL OR t.assignee.id IN :assigneeIds) "
             + "AND (:category IS NULL OR t.category = :category)")
-    Page<Task> findByProjectIdWithFilters(@Param("projectId") Long projectId, 
+    Page<Task> findByProjectIdWithFilters(@Param("projectId") Long projectId,
             @Param("statuses") List<TaskStatus> statuses,
-            @Param("priorities") List<TaskPriority> priorities, 
+            @Param("priorities") List<TaskPriority> priorities,
             @Param("assigneeIds") List<Long> assigneeIds,
             @Param("category") TaskCategory category, Pageable pageable);
 
-    @Query("SELECT t FROM Task t WHERE t.cycle.project.id = :projectId " 
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId "
             + "AND t.deletedAt IS NULL "
             + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority NOT IN :priorities) "
             + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds)")
     Page<Task> findByProjectIdWithExclusionFilters(@Param("projectId") Long projectId,
-            @Param("statuses") List<TaskStatus> statuses, 
+            @Param("statuses") List<TaskStatus> statuses,
             @Param("priorities") List<TaskPriority> priorities,
             @Param("assigneeIds") List<Long> assigneeIds, Pageable pageable);
 

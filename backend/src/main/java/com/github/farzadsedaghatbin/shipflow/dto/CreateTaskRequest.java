@@ -85,7 +85,7 @@ public class CreateTaskRequest {
    * This constraint is surfaced in OpenAPI and validated at the controller boundary via JSR-303,
    * so all consumers (including future API integrations and bulk imports) are covered.
    */
-  @AssertTrue(message = "Either cycleId or projectId must be provided")
+  @AssertTrue(message = "Task location required: provide cycleId (assign to a cycle/sprint) or projectId (SCRUM product backlog)")
   @SuppressWarnings("unused") // invoked by the Bean Validation framework
   private boolean isTaskLocationValid() {
     return cycleId != null || projectId != null;

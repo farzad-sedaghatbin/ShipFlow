@@ -155,6 +155,11 @@ public class TaskService {
    * any sprint (cycle IS NULL). Used exclusively in Scrum mode sprint planning.
    */
   public List<TaskDTO> getProductBacklogTasks(Long projectId) {
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+    if (project.getProjectType() != ProjectType.SCRUM) {
+      throw new BadRequestException(messageService.getMessage("error.task.backlog.scrum.only"));
+    }
     return taskRepository.findProductBacklogTasks(projectId, ProjectType.SCRUM)
         .stream().map(this::toDTO).collect(Collectors.toList());
   }
@@ -574,6 +579,13 @@ public class TaskService {
       }
       task.setCycle(cycle);
       task.setProject(cycle.getProject());
+      // Clear parent reference if parent is in a different cycle — prevents cross-sprint hierarchy
+      if (task.getParentTask() != null) {
+        Long parentCycleId = task.getParentTask().getCycle() != null ? task.getParentTask().getCycle().getId() : null;
+        if (!cycleId.equals(parentCycleId)) {
+          task.setParentTask(null);
+        }
+      }
     }
 
     return toDTO(taskRepository.save(task));
@@ -646,6 +658,12 @@ public class TaskService {
   public TaskDTO updateStoryPoints(Long id, Integer storyPoints) {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+    // Enforce project-scope access — consistent with assignTaskToCycle and other PATCH endpoints
+    Long projectId = resolveProjectId(task);
+    if (projectId == null) {
+      throw new BadRequestException("Cannot update story points: project reference missing on task " + id);
+    }
+    projectService.requireProjectAccess(projectId);
     task.setStoryPoints(storyPoints);
     return toDTO(taskRepository.save(task));
   }

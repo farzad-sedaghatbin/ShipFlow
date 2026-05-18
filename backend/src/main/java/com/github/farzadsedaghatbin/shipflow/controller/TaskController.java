@@ -336,7 +336,7 @@ public class TaskController {
           "Lightweight PATCH that only changes the cycleId. Pass null cycleId to move the task"
               + " to the product backlog. All other task fields are untouched.")
   public ResponseEntity<TaskDTO> assignTaskToCycle(
-      @PathVariable Long taskId, @RequestBody AssignTaskCycleRequest request) {
+      @PathVariable Long taskId, @Valid @RequestBody AssignTaskCycleRequest request) {
     return ResponseEntity.ok(taskService.assignTaskToCycle(taskId, request.getCycleId()));
   }
 

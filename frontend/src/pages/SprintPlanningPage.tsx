@@ -104,7 +104,10 @@ export default function SprintPlanningPage() {
   // Move task to sprint mutation — uses dedicated PATCH /tasks/{id}/cycle to avoid
   // partial-update data loss (parentTaskId, scopeId, releaseId, etc. are preserved server-side)
   const moveToSprintMutation = useMutation({
-    mutationFn: (task: Task) => taskService.assignCycle(task.id, selectedCycleId!),
+    mutationFn: (task: Task) => {
+      if (selectedCycleId == null) return Promise.reject(new Error('No sprint selected'));
+      return taskService.assignCycle(task.id, selectedCycleId);
+    },
     onMutate: (task) => setPendingSprintIds((prev) => new Set(prev).add(task.id)),
     onSettled: (_data, _err, task) =>
       setPendingSprintIds((prev) => { const s = new Set(prev); s.delete(task.id); return s; }),
