@@ -1,5 +1,5 @@
 import api from './api';
-import { Cycle, CreateCycleRequest, CyclePhase, CycleRetroStatus } from '../types';
+import { Cycle, CreateCycleRequest, CyclePhase, CycleRetroStatus, Team } from '../types';
 
 export const cycleService = {
   getAll: () => api.get<Cycle[]>('/cycles'),
@@ -16,4 +16,9 @@ export const cycleService = {
   closeCycle: (id: number) => api.post<Cycle>(`/cycles/${id}/close`),
   getRetroStatus: (id: number) => api.get<CycleRetroStatus>(`/cycles/${id}/retro-status`),
   delete: (id: number) => api.delete(`/cycles/${id}`),
+
+  // Cycle–Team assignment
+  getTeamsForCycle: (cycleId: number) => api.get<Team[]>(`/cycles/${cycleId}/teams`),
+  assignTeamToCycle: (cycleId: number, teamId: number) => api.post<void>(`/cycles/${cycleId}/teams/${teamId}`, {}),
+  removeTeamFromCycle: (cycleId: number, teamId: number) => api.delete(`/cycles/${cycleId}/teams/${teamId}`),
 };

@@ -10,10 +10,13 @@ import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -39,6 +42,7 @@ public class CycleService {
   private final PitchRepository pitchRepository;
   private final RetroRepository retroRepository;
   private final UserRepository userRepository;
+  private final TeamRepository teamRepository;
   private final OrganizationSettingsService organizationSettingsService;
   private final MessageService messageService;
 
@@ -344,5 +348,43 @@ public class CycleService {
       log.warn("Failed to get current user: {}", e.getMessage());
       return null;
     }
+  }
+
+  // ── Cycle–Team assignment ────────────────────────────────────────────────
+
+  @CacheEvict(value = "teams", allEntries = true)
+  public void assignTeamToCycle(Long cycleId, Long teamId) {
+    Cycle cycle = cycleRepository.findById(cycleId)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found: " + cycleId));
+    Team team = teamRepository.findById(teamId)
+        .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
+    if (!cycle.getTeams().contains(team)) {
+      cycle.getTeams().add(team);
+      cycleRepository.save(cycle);
+    }
+  }
+
+  @CacheEvict(value = "teams", allEntries = true)
+  public void removeTeamFromCycle(Long cycleId, Long teamId) {
+    Cycle cycle = cycleRepository.findById(cycleId)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found: " + cycleId));
+    Team team = teamRepository.findById(teamId)
+        .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
+    cycle.getTeams().remove(team);
+    cycleRepository.save(cycle);
+  }
+
+  public List<TeamDTO> getTeamsForCycle(Long cycleId) {
+    if (!cycleRepository.existsById(cycleId)) {
+      throw new ResourceNotFoundException("Cycle not found: " + cycleId);
+    }
+    return teamRepository.findByCycleId(cycleId).stream()
+        .map(t -> TeamDTO.builder()
+            .id(t.getId())
+            .name(t.getName())
+            .hoursPerDayOverride(t.getHoursPerDayOverride())
+            .workingDaysPerWeekOverride(t.getWorkingDaysPerWeekOverride())
+            .build())
+        .collect(Collectors.toList());
   }
 }

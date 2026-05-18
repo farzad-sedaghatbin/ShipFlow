@@ -7,9 +7,11 @@ import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
@@ -19,6 +21,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -57,6 +60,9 @@ class CycleServiceTest {
 
   @Mock
   private UserRepository userRepository;
+
+  @Mock
+  private TeamRepository teamRepository;
 
   @Mock
   private OrganizationSettingsService organizationSettingsService;
@@ -515,6 +521,76 @@ class CycleServiceTest {
     // Verify that no Kanban cycles are in the result
     assertThat(result.stream().noneMatch(c -> c.getProjectId().equals(2L))).isTrue();
     verify(cycleRepository).findAccessibleActiveCyclesByUserId(developerUser.getId());
+  }
+
+  // ── Cycle–Team assignment ────────────────────────────────────────────────
+
+  @Test
+  void assignTeamToCycle_ShouldAddTeamToCollection() {
+    Team team = Team.builder().id(10L).name("Alpha Team").build();
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
+    when(cycleRepository.save(any(Cycle.class))).thenReturn(testCycle);
+
+    cycleService.assignTeamToCycle(1L, 10L);
+
+    assertThat(testCycle.getTeams()).contains(team);
+    verify(cycleRepository).save(testCycle);
+  }
+
+  @Test
+  void assignTeamToCycle_WhenAlreadyAssigned_ShouldNotDuplicate() {
+    Team team = Team.builder().id(10L).name("Alpha Team").build();
+    testCycle.getTeams().add(team);
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
+
+    cycleService.assignTeamToCycle(1L, 10L);
+
+    assertThat(testCycle.getTeams()).hasSize(1);
+    verify(cycleRepository, never()).save(any());
+  }
+
+  @Test
+  void assignTeamToCycle_WhenCycleNotFound_ShouldThrow() {
+    when(cycleRepository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> cycleService.assignTeamToCycle(99L, 1L))
+        .isInstanceOf(ResourceNotFoundException.class);
+  }
+
+  @Test
+  void removeTeamFromCycle_ShouldRemoveTeamFromCollection() {
+    Team team = Team.builder().id(10L).name("Alpha Team").build();
+    testCycle.getTeams().add(team);
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(teamRepository.findById(10L)).thenReturn(Optional.of(team));
+    when(cycleRepository.save(any(Cycle.class))).thenReturn(testCycle);
+
+    cycleService.removeTeamFromCycle(1L, 10L);
+
+    assertThat(testCycle.getTeams()).doesNotContain(team);
+    verify(cycleRepository).save(testCycle);
+  }
+
+  @Test
+  void getTeamsForCycle_ShouldReturnTeamDTOs() {
+    Team team = Team.builder().id(10L).name("Alpha Team").build();
+    when(cycleRepository.existsById(1L)).thenReturn(true);
+    when(teamRepository.findByCycleId(1L)).thenReturn(List.of(team));
+
+    List<TeamDTO> result = cycleService.getTeamsForCycle(1L);
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getName()).isEqualTo("Alpha Team");
+  }
+
+  @Test
+  void getTeamsForCycle_WhenCycleNotFound_ShouldThrow() {
+    when(cycleRepository.existsById(99L)).thenReturn(false);
+
+    assertThatThrownBy(() -> cycleService.getTeamsForCycle(99L))
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   private void setupSecurityContext(String username, User user) {

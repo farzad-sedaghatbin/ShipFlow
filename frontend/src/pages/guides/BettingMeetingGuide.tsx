@@ -53,7 +53,18 @@ export default function BettingMeetingGuide() {
                     <CardDescription>{t('guides.bettingMeeting.beforeSubtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <h4 className="font-semibold">{t('guides.bettingMeeting.step1Title')}</h4>
+                    <h4 className="font-semibold">{t('guides.bettingMeeting.step0Title')}</h4>
+                    <p className="text-sm text-muted-foreground">
+                        <MarkdownInline content={t('guides.bettingMeeting.step0Desc')} />
+                    </p>
+                    <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4">
+                        <p className="text-sm text-amber-900 dark:text-amber-100">
+                            <strong>{t('guides.bettingMeeting.step0Tip')}</strong>{' '}
+                            {t('guides.bettingMeeting.step0TipDesc')}
+                        </p>
+                    </div>
+
+                    <h4 className="font-semibold mt-6">{t('guides.bettingMeeting.step1Title')}</h4>
                     <p className="text-sm text-muted-foreground">
                         <MarkdownInline content={t('guides.bettingMeeting.step1Desc')} />
                     </p>
