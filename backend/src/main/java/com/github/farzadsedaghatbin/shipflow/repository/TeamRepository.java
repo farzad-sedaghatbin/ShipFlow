@@ -11,8 +11,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
-  /** Find teams that have at least one pitch assigned to the given cycle. */
-  @Query("SELECT DISTINCT t FROM Team t JOIN t.pitches p WHERE p.cycle.id = :cycleId AND p.deletedAt IS NULL")
+  /** Find teams explicitly assigned to a cycle via the cycle_teams join table. */
+  @Query("SELECT t FROM Team t JOIN t.cycles c WHERE c.id = :cycleId")
   List<Team> findByCycleId(@Param("cycleId") Long cycleId);
 
   @Query("SELECT t FROM Team t LEFT JOIN FETCH t.assignments a")

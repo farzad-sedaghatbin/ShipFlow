@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Explicit team-to-cycle assignment for betting**: Introduced a `cycle_teams` join table so teams can be assigned to a cycle independently of pitch assignments. This unblocks the "Generate Slots" flow in the Betting Table — previously it failed silently when no pitches had yet been assigned. Teams can now be added/removed directly from the Betting Table page using the new **Teams for this Cycle** panel. REST API: `GET/POST/DELETE /api/cycles/{id}/teams[/{teamId}]`.
 - **Inline pitch title editing**: Pitch names can now be edited directly from the PitchDetail header and the SortablePitchList (EpicDetailPage). Click-to-edit with Enter/blur to save, Escape to cancel.
 - **Interactive roadmap timeline**: Drag-to-move and drag-to-resize timeline bars on the Roadmap page to adjust epic and initiative dates. Empty-state "Set dates" button creates a default 2-week range. Progress percentages and status-colored dots shown on bars.
 - **Backend date validation**: `PATCH /epics/{id}/dates` and `PATCH /initiatives/{id}/dates` now validate that startDate ≤ endDate, returning 400 if invalid. `@DateTimeFormat(iso = DATE)` annotations added for explicit date parsing.
