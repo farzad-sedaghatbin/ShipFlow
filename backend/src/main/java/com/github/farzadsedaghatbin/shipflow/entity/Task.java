@@ -71,8 +71,11 @@ public class Task {
    * Direct project reference. Always populated so that product-backlog tasks (cycle == null) can
    * still be queried by project. Derived from cycle.project on creation; preserved when the task
    * is moved to the backlog (cycle set to null).
+   *
+   * <p>Audited because project changes (e.g. via {@code assignTaskToCycle} cross-cycle moves)
+   * represent an ownership transfer that should be tracked for compliance in multi-tenant setups.
    */
-  @NotAudited
+  @org.hibernate.envers.Audited(targetAuditMode = org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "project_id")
   @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})

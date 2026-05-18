@@ -412,12 +412,11 @@ public class TaskService {
 
     task.setEstimateHours(request.getEstimateHours());
     task.setActualHours(request.getActualHours());
-    // Story points use a null-guard here: null in the full update payload means "leave unchanged"
-    // rather than "clear". To explicitly clear or set story points, use the dedicated
-    // PATCH /tasks/{id}/story-points endpoint (UpdateStoryPointsRequest).
-    if (request.getStoryPoints() != null) {
-      task.setStoryPoints(request.getStoryPoints());
-    }
+    // Written unconditionally: null means "clear the estimate". This PUT endpoint is a full
+    // replacement, and its sole UI caller (BacklogTaskDialog) always includes the field.
+    // Partial-update callers (status-only, priority-only, sprint-planning moves) use their own
+    // dedicated PATCH endpoints which do not touch storyPoints.
+    task.setStoryPoints(request.getStoryPoints());
     task.setDueDate(request.getDueDate());
     task.setTags(request.getTags());
 
@@ -517,6 +516,14 @@ public class TaskService {
    * changed — all other task fields are left untouched, preventing accidental data loss from
    * partial-update callers such as SprintPlanningPage.
    *
+   * <p>This endpoint is methodology-aware:
+   * <ul>
+   *   <li><b>SCRUM</b>: moving to a sprint or to the product backlog (cycleId=null).
+   *   <li><b>SHAPE_UP</b>: re-assigning a task between cycles (cycleId must not be null).
+   *   <li><b>KANBAN</b>: typically has a single cycle; re-assignment is allowed but rarely used.
+   * </ul>
+   * Moving to the backlog (cycleId=null) is restricted to SCRUM projects only.
+   *
    * @param taskId the ID of the task to reassign
    * @param cycleId the target cycle ID, or null to move the task to the product backlog
    * @return the updated task DTO
@@ -528,11 +535,14 @@ public class TaskService {
             .orElseThrow(
                 () -> new ResourceNotFoundException("Task not found with id: " + taskId));
 
-    // Enforce project-scope authorization on the task's current project
+    // Enforce project-scope authorization on the task's current project.
+    // Fail closed: if the project cannot be determined, reject the request rather than silently
+    // skipping authorization. This mirrors the "project reference missing" pattern in updateTask.
     Long taskProjectId = resolveProjectId(task);
-    if (taskProjectId != null) {
-      projectService.requireProjectAccess(taskProjectId);
+    if (taskProjectId == null) {
+      throw new BadRequestException("Cannot reassign task: project reference missing on task " + taskId);
     }
+    projectService.requireProjectAccess(taskProjectId);
 
     if (cycleId == null) {
       // Moving to product backlog (cycle = null) is only valid for SCRUM projects.

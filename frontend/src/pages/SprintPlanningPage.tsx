@@ -78,11 +78,6 @@ export default function SprintPlanningPage() {
   const [pendingBacklogIds, setPendingBacklogIds] = useState<Set<number>>(new Set());
   const projectId = currentProject?.id;
 
-  // Synchronous redirect — avoids the one-frame flash that useEffect-based navigation causes
-  if (currentProject && !isScrumProject) {
-    return <Navigate to="/backlog" replace />;
-  }
-
   // Fetch cycles for this project
   const { data: cycles, isLoading: cyclesLoading } = useQuery({
     queryKey: ['cycles', 'project', projectId],
@@ -138,6 +133,12 @@ export default function SprintPlanningPage() {
     },
     onError: () => toast.error(t('common.error')),
   });
+
+  // All hooks are declared above this point — safe to return early without violating
+  // the Rules of Hooks (hook count is always the same regardless of which branch renders).
+  if (currentProject && !isScrumProject) {
+    return <Navigate to="/backlog" replace />;
+  }
 
   const sprintTaskList: Task[] = (sprintTasks as Task[] | undefined) ?? [];
 

@@ -3,10 +3,10 @@ package com.github.farzadsedaghatbin.shipflow.dto;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
@@ -79,4 +79,15 @@ public class CreateTaskRequest {
   @Max(value = 100, message = "Initial hill position must be between 0 and 100")
   @Builder.Default
   private Integer initialHillPosition = 0;
+
+  /**
+   * Cross-field validation: at least one of {@code cycleId} or {@code projectId} must be provided.
+   * This constraint is surfaced in OpenAPI and validated at the controller boundary via JSR-303,
+   * so all consumers (including future API integrations and bulk imports) are covered.
+   */
+  @AssertTrue(message = "Either cycleId or projectId must be provided")
+  @SuppressWarnings("unused") // invoked by the Bean Validation framework
+  private boolean isTaskLocationValid() {
+    return cycleId != null || projectId != null;
+  }
 }

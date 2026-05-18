@@ -920,6 +920,11 @@ public class SampleDataInitializer implements CommandLineRunner {
    */
   private void seedScrumDemoProject(
       User ownerUser, Person aliPerson, Person minaPerson, Person saraPerson) {
+    // Guard against duplicate seeding on subsequent application restarts or test reruns
+    if (projectRepository.existsByProjectKey("MAS")) {
+      log.info("Scrum demo project (MAS) already exists — skipping seed");
+      return;
+    }
     Project scrumProject =
         Project.builder()
             .name("Mobile App — Scrum Demo")

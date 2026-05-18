@@ -187,6 +187,9 @@ export default function CycleForm() {
       startDate,
       // Only send endDate if not using auto-calculation or if editing
       endDate: useAutoEndDate && !isEdit ? undefined : endDate,
+      // Only include sprintGoal for SCRUM projects — prevents non-SCRUM edits from
+      // inadvertently clearing a sprint goal if the cycle is later migrated to SCRUM.
+      sprintGoal: isScrumProject ? formData.sprintGoal : undefined,
     };
 
     try {

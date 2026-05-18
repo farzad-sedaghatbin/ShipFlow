@@ -59,29 +59,18 @@ export function VelocityChart({ projectId }: VelocityChartProps) {
                 tick={{ fontSize: 12 }}
                 allowDecimals={false}
               />
-              <Tooltip
-                formatter={(value: number, name: string) => [
-                  value,
-                  name === 'plannedPoints'
-                    ? t('charts.velocity.planned')
-                    : t('charts.velocity.completed'),
-                ]}
-              />
-              <Legend
-                formatter={(value) =>
-                  value === 'plannedPoints'
-                    ? t('charts.velocity.planned')
-                    : t('charts.velocity.completed')
-                }
-              />
+              <Tooltip />
+              <Legend />
               <Bar
                 dataKey="plannedPoints"
+                name={t('charts.velocity.planned')}
                 fill="hsl(var(--muted-foreground))"
                 radius={[4, 4, 0, 0]}
                 opacity={0.6}
               />
               <Bar
                 dataKey="completedPoints"
+                name={t('charts.velocity.completed')}
                 fill="hsl(var(--primary))"
                 radius={[4, 4, 0, 0]}
               />

@@ -118,7 +118,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.deletedAt IS NULL")
     List<Task> findByProjectIdNotDeleted(@Param("projectId") Long projectId);
 
-    // Tasks with no sprint assigned (product backlog) — restricted to SCRUM projects only
+    // Tasks with no sprint assigned (product backlog) — restricted to SCRUM projects only.
+    // Filters out subtasks (parentTask IS NULL) so the Sprint Planning UI shows only top-level
+    // backlog items. Subtasks inherit their parent's cycle assignment: when a parent is moved to
+    // a sprint via assignTaskToCycle, the frontend should move its children in the same operation.
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.cycle IS NULL AND t.deletedAt IS NULL AND t.parentTask IS NULL AND t.project.projectType = :projectType")
     List<Task> findProductBacklogTasks(@Param("projectId") Long projectId, @Param("projectType") com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType projectType);
 

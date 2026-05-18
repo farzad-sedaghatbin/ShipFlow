@@ -175,8 +175,10 @@ export const taskService = {
   update: (id: number, data: CreateTaskRequest) => api.put<Task>(`/tasks/${id}`, data),
   updateStatus: (id: number, status: TaskStatus) => 
     api.patch<Task>(`/tasks/${id}/status`, { status }),
-  updatePriority: (id: number, priority: TaskPriority) => 
+  updatePriority: (id: number, priority: TaskPriority) =>
     api.patch<Task>(`/tasks/${id}/priority`, { priority }),
+  updateStoryPoints: (id: number, storyPoints: number | null) =>
+    api.patch<Task>(`/tasks/${id}/story-points`, { storyPoints }),
   delete: (id: number) => api.delete(`/tasks/${id}`),
   
   // Sub-task hierarchy
