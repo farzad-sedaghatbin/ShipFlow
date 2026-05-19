@@ -50,7 +50,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { refreshProjects } = useProject();
+  const { refreshProjects, selectProject, projects } = useProject();
   
   const [project, setProject] = useState<Project | null>(null);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -368,7 +368,11 @@ export default function ProjectDetail() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">{t('projectDetail.backlog')}</CardTitle>
-              <Button size="sm" onClick={() => navigate('/backlog')}>
+              <Button size="sm" onClick={() => {
+                const projectToSelect = projects.find(p => p.id === project?.id) ?? project;
+                if (projectToSelect) selectProject(projectToSelect);
+                navigate('/backlog');
+              }}>
                 <ListTodo className="h-4 w-4 mr-2" />
                 {t('projectDetail.viewBacklog')}
               </Button>

@@ -1,4 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDroppable,
+  useDraggable,
+  DragStartEvent,
+  DragEndEvent,
+} from '@dnd-kit/core';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -70,6 +81,35 @@ import {
 
 const statusColumns: PitchStatus[] = ['IDEA', 'DRAFT', 'SHAPED', 'PENDING', 'STARTED', 'IN_PROGRESS', 'TESTING', 'DONE'];
 
+function DroppableColumn({ status, children }: { status: PitchStatus; children: ReactNode }) {
+  const { isOver, setNodeRef } = useDroppable({ id: status });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn('min-h-[4rem] rounded-lg transition-colors', isOver && 'ring-2 ring-primary ring-offset-1 bg-primary/5')}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DraggablePitchCard({ pitch, children }: { pitch: Pitch; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: pitch.id,
+    data: { currentStatus: pitch.status },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={cn('touch-none', isDragging && 'opacity-40')}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function PitchBoard() {
   const { t } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
@@ -98,6 +138,24 @@ export default function PitchBoard() {
   const [extractedDocumentName, setExtractedDocumentName] = useState<string>('');
   const [extractedDocumentId, setExtractedDocumentId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('basic');
+  const [activeDragPitch, setActiveDragPitch] = useState<Pitch | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+  const handleDragStart = (event: DragStartEvent) => {
+    const pitch = pitches.find(p => p.id === event.active.id);
+    setActiveDragPitch(pitch ?? null);
+  };
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragPitch(null);
+    const { active, over } = event;
+    if (!over) return;
+    const newStatus = over.id as PitchStatus;
+    const currentStatus = (active.data.current as { currentStatus: PitchStatus }).currentStatus;
+    if (newStatus !== currentStatus) {
+      handleStatusChange(active.id as number, newStatus);
+    }
+  };
   const [newPitch, setNewPitch] = useState<CreatePitchRequest>({
     title: '',
     description: '',
@@ -662,6 +720,7 @@ export default function PitchBoard() {
               {renderMobileBoard()}
             </div>
           ) : (
+            <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-tour="pitch-board">
           {statusColumns.filter(s => visibleColumns.has(s)).map((status) => (
             <div key={status} className="min-w-0">
@@ -672,17 +731,19 @@ export default function PitchBoard() {
               </div>
 
               {/* Column Content */}
-              <div className="space-y-3">
+              <DroppableColumn status={status}>
+                <div className="space-y-3">
                 {getPitchesByStatus(status).map((pitch) => (
+                  <DraggablePitchCard key={pitch.id} pitch={pitch}>
                   <Card
-                    key={pitch.id}
-                    className="hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer"
+                    className="hover:shadow-lg hover:border-primary/50 transition-all cursor-grab active:cursor-grabbing"
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-1">
                         <Link
                           to={`/pitches/${pitch.id}`}
                           className="font-semibold text-foreground hover:text-primary transition-colors flex-1 min-w-0 truncate"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {pitch.title}
                         </Link>
@@ -741,6 +802,7 @@ export default function PitchBoard() {
                       </div>
                     </CardContent>
                   </Card>
+                  </DraggablePitchCard>
                 ))}
                 {getPitchesByStatus(status).length === 0 && (
                   <Card className="opacity-60 border-dashed">
@@ -754,10 +816,24 @@ export default function PitchBoard() {
                     </CardContent>
                   </Card>
                 )}
-              </div>
+                </div>
+              </DroppableColumn>
             </div>
           ))}
             </div>
+            <DragOverlay>
+              {activeDragPitch && (
+                <Card className="shadow-xl border-primary/50 rotate-2 cursor-grabbing opacity-90 w-48">
+                  <CardContent className="p-3">
+                    <p className="font-semibold text-sm truncate">{activeDragPitch.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {activeDragPitch.teamName || t('pitchBoard.unassigned')} • {activeDragPitch.appetiteDays}d
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </DragOverlay>
+            </DndContext>
           )}
         </>
       )}

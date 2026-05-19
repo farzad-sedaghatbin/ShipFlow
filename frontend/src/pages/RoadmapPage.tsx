@@ -823,8 +823,15 @@ export default function RoadmapPage() {
 
               {/* Orphan Epics */}
               {timeline?.orphanEpics && timeline.orphanEpics.length > 0 && (
-                <div className="border-t pt-2 mt-2">
-                  <p className="text-xs text-muted-foreground px-2 mb-2">{t('roadmap.unassignedEpics')}</p>
+                <div className="border-t mt-4">
+                  {/* Section header matching initiative group style */}
+                  <div className="flex items-center h-10 bg-muted/30 border-b">
+                    <div className="w-72 shrink-0 flex items-center gap-2 px-2">
+                      <span className="text-sm font-medium text-muted-foreground">{t('roadmap.orphanEpics')}</span>
+                      <Badge variant="outline" className="text-[10px]">{timeline.orphanEpics.length}</Badge>
+                    </div>
+                    <div className="flex-1" />
+                  </div>
                   {timeline.orphanEpics.map((epic) => (
                       <div key={epic.id}>
                         <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`orphan-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>

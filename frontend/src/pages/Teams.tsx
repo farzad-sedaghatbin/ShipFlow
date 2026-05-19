@@ -214,7 +214,7 @@ export default function Teams() {
     try {
       await personService.endAssignment(assignmentId);
       showToast(t('teams.removeSuccess'), 'success');
-      loadData();
+      await loadData();
     } catch (error) {
       showToast(t('teams.failedToEndAssignment'), 'error');
     }
