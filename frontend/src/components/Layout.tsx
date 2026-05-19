@@ -33,7 +33,6 @@ import {
   Github,
   Plug,
   BookOpen,
-  Rss,
   Beaker,
   Map,
   Layers,
@@ -421,11 +420,6 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           {/* Help & Guides Section */}
           <SectionHeader textKey="nav.sections.helpSupport" />
           <NavItem
-            item={{ textKey: 'nav.blog', icon: Rss, path: '/blog', tourId: 'blog-menu' }}
-            isActive={currentPath.startsWith('/blog')}
-            onClick={onItemClick}
-          />
-          <NavItem
             item={{ textKey: 'nav.helpGuides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
             isActive={currentPath.startsWith('/help')}
             onClick={onItemClick}
@@ -536,13 +530,6 @@ export default function Layout({ children }: LayoutProps) {
           {/* Project Selector - Responsive */}
           <div className="flex-1 min-w-0 lg:flex-none" data-tour="project-selector">
             <ProjectSelector />
-          </div>
-
-          {/* Dashboard Switcher */}
-          <div className="hidden lg:block">
-            <DashboardSwitcher onDashboardChange={() => {
-              // Dashboard changed - widgets will auto-refresh based on context
-            }} />
           </div>
 
           <div className="hidden sm:flex flex-1" />

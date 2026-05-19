@@ -65,6 +65,10 @@ public class SampleDataInitializer implements CommandLineRunner {
   @Override
   @Transactional
   public void run(String... args) {
+    // Always seed the Scrum demo project independently so it appears even when
+    // the rest of the sample data was already seeded by an older version.
+    seedScrumDemoProjectIfAbsent();
+
     if (cycleRepository.count() > 0) {
       log.info("Sample data already exists, skipping initialization");
       return;
@@ -919,6 +923,25 @@ public class SampleDataInitializer implements CommandLineRunner {
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
+  }
+
+  /**
+   * Wrapper called unconditionally at startup so the Scrum demo project is added to deployments
+   * that were already seeded by an older version (before v1.1.0).
+   */
+  private void seedScrumDemoProjectIfAbsent() {
+    if (projectRepository.existsByProjectKey("MAS")) {
+      return;
+    }
+    User saraUser = userRepository.findByUsername("sara").orElse(null);
+    if (saraUser == null) {
+      // Seed data hasn't run yet; the regular run() call will seed everything including MAS.
+      return;
+    }
+    Person aliPerson = personRepository.findByEmail("ali@shipflow.dev").orElse(null);
+    Person minaPerson = personRepository.findByEmail("mina@shipflow.dev").orElse(null);
+    Person saraPerson = personRepository.findByEmail("sara@shipflow.dev").orElse(null);
+    seedScrumDemoProject(saraUser, aliPerson, minaPerson, saraPerson);
   }
 
   /**

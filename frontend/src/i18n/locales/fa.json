@@ -749,6 +749,7 @@
     "targetDate": "تاریخ هدف",
     "progress": "پیشرفت",
     "unassignedEpics": "اپیک‌های تخصیص نیافته",
+    "orphanEpics": "اپیک‌ها (ابتکار بدون تاریخ)",
     "epicCount_one": "{{count}} اپیک",
     "epicCount_other": "{{count}} اپیک",
     "setDates": "تنظیم تاریخ‌ها",

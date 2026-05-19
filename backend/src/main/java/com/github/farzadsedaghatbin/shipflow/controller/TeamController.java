@@ -63,4 +63,20 @@ public class TeamController {
     teamService.deleteTeam(id);
     return ResponseEntity.noContent().build();
   }
+
+  @PatchMapping("/{id}/archive")
+  @PreAuthorize("@permissionService.hasPermission('TEAM', 'DELETE')")
+  @Operation(summary = "Archive a team", description = "Soft-archive a team so it no longer appears in the active team list")
+  public ResponseEntity<Void> archiveTeam(@PathVariable Long id) {
+    teamService.archiveTeam(id);
+    return ResponseEntity.noContent().build();
+  }
+
+  @PatchMapping("/{id}/unarchive")
+  @PreAuthorize("@permissionService.hasPermission('TEAM', 'DELETE')")
+  @Operation(summary = "Unarchive a team", description = "Restore a previously archived team to the active team list")
+  public ResponseEntity<Void> unarchiveTeam(@PathVariable Long id) {
+    teamService.unarchiveTeam(id);
+    return ResponseEntity.noContent().build();
+  }
 }

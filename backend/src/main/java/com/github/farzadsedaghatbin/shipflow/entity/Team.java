@@ -28,6 +28,10 @@ public class Team {
   @Column(name = "working_days_per_week_override")
   private Integer workingDaysPerWeekOverride;
 
+  @Column(name = "is_archived", nullable = false)
+  @Builder.Default
+  private Boolean isArchived = false;
+
   @ManyToMany(mappedBy = "teams")
   @Builder.Default
   private List<Cycle> cycles = new ArrayList<>();

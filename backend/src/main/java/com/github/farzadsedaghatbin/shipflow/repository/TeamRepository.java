@@ -18,6 +18,10 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
   @Query("SELECT t FROM Team t LEFT JOIN FETCH t.assignments a")
   List<Team> findAllWithAssignments();
 
+  /** Active (non-archived) teams, eagerly loading assignments. */
+  @Query("SELECT t FROM Team t LEFT JOIN FETCH t.assignments a WHERE t.isArchived = false")
+  List<Team> findActiveWithAssignments();
+
   @Query("SELECT t FROM Team t LEFT JOIN FETCH t.assignments a WHERE t.id = :id")
   Optional<Team> findByIdWithAssignments(@Param("id") Long id);
 }

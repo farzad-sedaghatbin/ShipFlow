@@ -115,11 +115,9 @@ class BettingDecisionControllerIntegrationTest {
                                 .build();
                 shapedPitch = pitchRepository.save(shapedPitch);
 
-                // Membership pitch: links testTeam to testCycle for findByCycleId to work
-                Pitch membershipPitch = Pitch.builder().title("Alpha Team Membership").description("Team link")
-                                .appetiteDays(42).cycle(testCycle).team(testTeam).status(PitchStatus.SHAPED)
-                                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
-                pitchRepository.save(membershipPitch);
+                // Link testTeam to testCycle via the cycle_teams join table
+                testCycle.getTeams().add(testTeam);
+                testCycle = cycleRepository.save(testCycle);
         }
 
         // === Record Decision Tests ===
@@ -450,17 +448,13 @@ class BettingDecisionControllerIntegrationTest {
 
         @Test
         void compareAppetiteAllTeams_ShouldReturnListSortedByFit() throws Exception {
-                // Create a second team
+                // Create a second team and link via cycle_teams join table
                 Team secondTeam = Team.builder()
                                 .name("Beta Team")
                                 .build();
-                teamRepository.save(secondTeam);
-
-                // Link secondTeam to testCycle via membership pitch
-                Pitch secondMembershipPitch = Pitch.builder().title("Beta Team Membership").description("Team link")
-                                .appetiteDays(42).cycle(testCycle).team(secondTeam).status(PitchStatus.SHAPED)
-                                .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
-                pitchRepository.save(secondMembershipPitch);
+                secondTeam = teamRepository.save(secondTeam);
+                testCycle.getTeams().add(secondTeam);
+                cycleRepository.save(testCycle);
 
                 mockMvc.perform(get("/api/betting/decisions/compare/pitch/{pitchId}/all-teams", shapedPitch.getId())
                                 .param("cycleId", testCycle.getId().toString()))

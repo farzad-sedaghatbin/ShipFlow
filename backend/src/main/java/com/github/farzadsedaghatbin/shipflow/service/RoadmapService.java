@@ -14,6 +14,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -55,10 +56,20 @@ public class RoadmapService {
 
     // Get orphan epics (not linked to any initiative) — only those with dates in range
     List<Epic> orphanEpics = epicRepository.findOrphanEpicsByProjectIdNotDeleted(projectId);
-    List<TimelineEpic> orphanTimelineEpics = orphanEpics.stream()
+    List<TimelineEpic> orphanTimelineEpics = new ArrayList<>(orphanEpics.stream()
         .filter(e -> hasDatesInRange(e.getTargetStartDate(), e.getTargetEndDate(), startDate, endDate))
         .map(this::toTimelineEpic)
-        .collect(Collectors.toList());
+        .toList());
+
+    // Also include epics that belong to initiatives with no dates at all (those initiatives
+    // are excluded from the date-filtered initiative query, but the epics may still have
+    // their own dates in range and should appear as orphans on the timeline).
+    List<Epic> epicsFromUndatedInitiatives =
+        epicRepository.findEpicsWithDatesLinkedToUndatedInitiatives(projectId);
+    epicsFromUndatedInitiatives.stream()
+        .filter(e -> hasDatesInRange(e.getTargetStartDate(), e.getTargetEndDate(), startDate, endDate))
+        .map(this::toTimelineEpic)
+        .forEach(orphanTimelineEpics::add);
 
     // Get releases within the date range
     List<Release> releases = releaseRepository.findByProjectIdNotDeleted(projectId).stream()
@@ -262,8 +273,13 @@ public class RoadmapService {
   }
 
   private boolean hasDatesInRange(LocalDate itemStart, LocalDate itemEnd, LocalDate rangeStart, LocalDate rangeEnd) {
-    if (itemStart == null || itemEnd == null) {
+    if (itemStart == null) {
       return false;
+    }
+    // Treat a null endDate as open-ended — the item started and has no scheduled finish,
+    // so include it as long as its startDate is not after the range end.
+    if (itemEnd == null) {
+      return !itemStart.isAfter(rangeEnd);
     }
     return !itemStart.isAfter(rangeEnd) && !itemEnd.isBefore(rangeStart);
   }
