@@ -28,6 +28,10 @@ public class Team {
   @Column(name = "working_days_per_week_override")
   private Integer workingDaysPerWeekOverride;
 
+  @ManyToMany(mappedBy = "teams")
+  @Builder.Default
+  private List<Cycle> cycles = new ArrayList<>();
+
   @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<TeamAssignment> assignments = new ArrayList<>();

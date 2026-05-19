@@ -8,11 +8,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,14 +50,19 @@ class CycleControllerIntegrationTest {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private TeamRepository teamRepository;
+
   private Cycle testCycle;
   private Project testProject;
+  private Team testTeam;
 
   @BeforeEach
   void setUp() {
     cycleRepository.deleteAll();
     projectRepository.deleteAll();
     userRepository.deleteAll();
+    teamRepository.deleteAll();
 
     // Create test users matching @WithMockUser annotations
     User admin = User.builder().username("admin").email("admin@test.com").password("password").role(UserRole.ADMIN)
@@ -76,6 +83,8 @@ class CycleControllerIntegrationTest {
     testCycle = Cycle.builder().name("Test Cycle").project(testProject).phase(CyclePhase.SHAPING_BUILDING)
         .startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(6)).isActive(true).build();
     testCycle = cycleRepository.save(testCycle);
+
+    testTeam = teamRepository.save(Team.builder().name("Alpha Team").build());
   }
 
   @Test
@@ -204,5 +213,50 @@ class CycleControllerIntegrationTest {
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated())
         .andExpect(jsonPath("$.name", is("PM Custom Cycle")))
         .andExpect(jsonPath("$.endDate", is("2026-04-26")));
+  }
+
+  // ── Cycle–Team endpoints ─────────────────────────────────────────────────
+
+  @Test
+  void getTeamsForCycle_ShouldReturnEmptyListWhenNoTeamsAssigned() throws Exception {
+    mockMvc.perform(get("/api/cycles/{cycleId}/teams", testCycle.getId()))
+        .andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$", hasSize(0)));
+  }
+
+  @Test
+  @WithMockUser(username = "pm", roles = {"PROJECT_MANAGER"})
+  void assignTeamToCycle_ShouldReturn204() throws Exception {
+    mockMvc.perform(post("/api/cycles/{cycleId}/teams/{teamId}", testCycle.getId(), testTeam.getId()))
+        .andExpect(status().isNoContent());
+
+    mockMvc.perform(get("/api/cycles/{cycleId}/teams", testCycle.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].name", is("Alpha Team")));
+  }
+
+  @Test
+  @WithMockUser(username = "pm", roles = {"PROJECT_MANAGER"})
+  void removeTeamFromCycle_ShouldReturn204() throws Exception {
+    // First assign the team
+    mockMvc.perform(post("/api/cycles/{cycleId}/teams/{teamId}", testCycle.getId(), testTeam.getId()))
+        .andExpect(status().isNoContent());
+
+    // Then remove it
+    mockMvc.perform(delete("/api/cycles/{cycleId}/teams/{teamId}", testCycle.getId(), testTeam.getId()))
+        .andExpect(status().isNoContent());
+
+    mockMvc.perform(get("/api/cycles/{cycleId}/teams", testCycle.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(0)));
+  }
+
+  @Test
+  @WithMockUser(username = "developer", roles = {"MEMBER"})
+  void assignTeamToCycle_AsDeveloper_ShouldReturn403() throws Exception {
+    mockMvc.perform(post("/api/cycles/{cycleId}/teams/{teamId}", testCycle.getId(), testTeam.getId()))
+        .andExpect(status().isForbidden());
   }
 }

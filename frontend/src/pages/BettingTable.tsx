@@ -25,6 +25,8 @@ import {
   XCircle,
   BarChart3,
   Vote,
+  Trash2,
+  UserPlus,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -41,8 +43,9 @@ import {
 } from '../components/ui/select';
 import { bettingService } from '../services/bettingService';
 import { cycleService } from '../services/cycleService';
+import { teamService } from '../services/teamService';
 import { bettingDecisionService, BettingDecisionDTO, CycleBettingSummaryDTO, computeCycleSummary } from '../services/bettingDecisionService';
-import { BettingTable, BettingSlot, Pitch, Cycle, TeamTrack } from '../types';
+import { BettingTable, BettingSlot, Pitch, Cycle, TeamTrack, Team } from '../types';
 import { useProject, useToast } from '../contexts';
 import EmptyState from '../components/EmptyState';
 import BettingDecisionDialog from '../components/BettingDecisionDialog';
@@ -291,6 +294,11 @@ export default function BettingTablePage() {
   const [decisionDialogOpen, setDecisionDialogOpen] = useState(false);
   const [selectedPitchForDecision, setSelectedPitchForDecision] = useState<Pitch | null>(null);
 
+  // Team assignment state
+  const [cycleTeams, setCycleTeams] = useState<Team[]>([]);
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [selectedTeamToAdd, setSelectedTeamToAdd] = useState<string>('');
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -312,6 +320,7 @@ export default function BettingTablePage() {
   useEffect(() => {
     if (selectedCycle) {
       loadBettingTable(Number(selectedCycle));
+      loadCycleTeams(Number(selectedCycle));
     }
   }, [selectedCycle]);
 
@@ -338,6 +347,42 @@ export default function BettingTablePage() {
       showError(getUserFriendlyError(error, 'Failed to load cycles'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCycleTeams = async (cycleId: number) => {
+    try {
+      const [cycleTeamsRes, allTeamsRes] = await Promise.all([
+        cycleService.getTeamsForCycle(cycleId),
+        teamService.getAll(),
+      ]);
+      setCycleTeams(cycleTeamsRes.data);
+      setAllTeams(allTeamsRes.data);
+      setSelectedTeamToAdd('');
+    } catch (error) {
+      console.warn('Failed to load cycle teams:', error);
+    }
+  };
+
+  const handleAssignTeam = async () => {
+    if (!selectedCycle || !selectedTeamToAdd) return;
+    try {
+      await cycleService.assignTeamToCycle(Number(selectedCycle), Number(selectedTeamToAdd));
+      await loadCycleTeams(Number(selectedCycle));
+      showSuccess(t('bettingTablePage.teamAssigned'));
+    } catch (error) {
+      showError(getUserFriendlyError(error, t('bettingTablePage.teamAssignFailed')));
+    }
+  };
+
+  const handleRemoveTeam = async (teamId: number) => {
+    if (!selectedCycle) return;
+    try {
+      await cycleService.removeTeamFromCycle(Number(selectedCycle), teamId);
+      await loadCycleTeams(Number(selectedCycle));
+      showSuccess(t('bettingTablePage.teamRemoved'));
+    } catch (error) {
+      showError(getUserFriendlyError(error, t('bettingTablePage.teamRemoveFailed')));
     }
   };
 
@@ -540,6 +585,73 @@ export default function BettingTablePage() {
           <div className="w-48 h-1 bg-primary/20 rounded animate-pulse" />
         </div>
       ) : (
+        <>
+          {/* Team Assignment Panel */}
+          <Card className="mb-6">
+            <CardContent className="py-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">{t('bettingTablePage.assignedTeams')}</span>
+                </div>
+
+                <div className="flex flex-wrap gap-2 flex-1">
+                  {cycleTeams.length === 0 ? (
+                    <span className="text-sm text-muted-foreground italic">
+                      {t('bettingTablePage.noTeamsAssigned')}
+                    </span>
+                  ) : (
+                    cycleTeams.map((team) => (
+                      <Badge key={team.id} variant="secondary" className="flex items-center gap-1 pr-1">
+                        {team.name}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTeam(team.id)}
+                          className="ml-1 rounded-full hover:bg-destructive/20 p-0.5"
+                          title={t('bettingTablePage.removeTeam')}
+                        >
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </button>
+                      </Badge>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {(() => {
+                    const unassigned = allTeams.filter(t => !cycleTeams.some(ct => ct.id === t.id));
+                    return unassigned.length === 0 ? (
+                      <span className="text-xs text-muted-foreground">{t('bettingTablePage.allTeamsAssigned')}</span>
+                    ) : (
+                      <>
+                        <Select value={selectedTeamToAdd} onValueChange={setSelectedTeamToAdd}>
+                          <SelectTrigger className="w-[180px] h-8 text-sm">
+                            <SelectValue placeholder={t('bettingTablePage.selectTeamToAdd')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {unassigned.map((team) => (
+                              <SelectItem key={team.id} value={String(team.id)}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button size="sm" variant="outline" onClick={handleAssignTeam} disabled={!selectedTeamToAdd}>
+                          <UserPlus className="h-3.5 w-3.5 mr-1" />
+                          {t('bettingTablePage.addTeam')}
+                        </Button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {cycleTeams.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-2">{t('bettingTablePage.noTeamsAssignedDesc')}</p>
+              )}
+            </CardContent>
+          </Card>
+
         <DndContext
           sensors={sensors}
           onDragStart={handleDragStart}
@@ -701,6 +813,7 @@ export default function BettingTablePage() {
             ) : null}
           </DragOverlay>
         </DndContext>
+        </>
       )}
       
       {/* Betting Decision Dialog */}

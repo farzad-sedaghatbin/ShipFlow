@@ -50,6 +50,14 @@ public class Cycle {
   // computed dynamically by VelocityService from completed task story points and exposed via
   // VelocityPointDTO. The column is preserved for a future "close sprint" workflow.
 
+  @ManyToMany
+  @JoinTable(
+      name = "cycle_teams",
+      joinColumns = @JoinColumn(name = "cycle_id"),
+      inverseJoinColumns = @JoinColumn(name = "team_id"))
+  @Builder.Default
+  private List<Team> teams = new ArrayList<>();
+
   @OneToMany(mappedBy = "cycle", cascade = CascadeType.ALL, orphanRemoval = true)
   @Builder.Default
   private List<Pitch> pitches = new ArrayList<>();

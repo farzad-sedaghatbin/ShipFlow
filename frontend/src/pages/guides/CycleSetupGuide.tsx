@@ -187,6 +187,15 @@ export default function CycleSetupGuide() {
                             <strong>{t('guides.cycleSetup.step3Tip')}</strong> {t('guides.cycleSetup.step3TipDesc')}
                         </p>
                     </div>
+
+                    <div className="rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-4">
+                        <p className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-1">
+                            ⚠️ {t('guides.cycleSetup.step3AssignCycleTeamTitle')}
+                        </p>
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                            {t('guides.cycleSetup.step3AssignCycleTeamDesc')}
+                        </p>
+                    </div>
                 </CardContent>
             </Card>
 

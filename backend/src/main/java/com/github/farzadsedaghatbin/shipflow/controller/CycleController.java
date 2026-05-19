@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleRetroStatusDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.security.RequirePermission;
@@ -126,6 +127,31 @@ public class CycleController {
   @Operation(summary = "Delete a cycle")
   public ResponseEntity<Void> deleteCycle(@PathVariable Long id) {
     cycleService.deleteCycle(id);
+    return ResponseEntity.noContent().build();
+  }
+
+  // ── Cycle–Team assignment ──────────────────────────────────────────────────
+
+  @GetMapping("/{cycleId}/teams")
+  @PreAuthorize("@permissionService.hasPermission('TEAM', 'READ')")
+  @Operation(summary = "Get teams assigned to a cycle")
+  public ResponseEntity<List<TeamDTO>> getTeamsForCycle(@PathVariable Long cycleId) {
+    return ResponseEntity.ok(cycleService.getTeamsForCycle(cycleId));
+  }
+
+  @PostMapping("/{cycleId}/teams/{teamId}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
+  @Operation(summary = "Assign a team to a cycle")
+  public ResponseEntity<Void> assignTeamToCycle(@PathVariable Long cycleId, @PathVariable Long teamId) {
+    cycleService.assignTeamToCycle(cycleId, teamId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @DeleteMapping("/{cycleId}/teams/{teamId}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'PROJECT_MANAGER')")
+  @Operation(summary = "Remove a team from a cycle")
+  public ResponseEntity<Void> removeTeamFromCycle(@PathVariable Long cycleId, @PathVariable Long teamId) {
+    cycleService.removeTeamFromCycle(cycleId, teamId);
     return ResponseEntity.noContent().build();
   }
 }

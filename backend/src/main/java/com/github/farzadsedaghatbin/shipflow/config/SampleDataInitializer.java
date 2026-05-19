@@ -186,6 +186,13 @@ public class SampleDataInitializer implements CommandLineRunner {
     createAssignment(minaPerson, paymentsTeam, TeamMemberRole.FRONTEND, mbaActiveCycle.getStartDate(), null);
     createAssignment(saraPerson, paymentsTeam, TeamMemberRole.TECH_LEAD, mbaActiveCycle.getStartDate(), null);
 
+    // Explicit cycle–team assignments (cycle_teams join table — required for slot generation)
+    mbaActiveCycle.getTeams().add(paymentsTeam);
+    mbaActiveCycle.getTeams().add(authTeam);
+    cycleRepository.save(mbaActiveCycle);
+    mbaCompletedCycle.getTeams().add(authTeam);
+    cycleRepository.save(mbaCompletedCycle);
+
     // Past cycle team assignments
     createAssignment(aliPerson, authTeam, TeamMemberRole.BACKEND,
         mbaCompletedCycle.getStartDate(), mbaCompletedCycle.getEndDate(), false);
