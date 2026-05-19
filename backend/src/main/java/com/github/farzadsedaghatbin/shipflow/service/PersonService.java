@@ -144,6 +144,7 @@ public class PersonService {
 
   // Team Assignment methods
 
+  @CacheEvict(value = {"persons", "teams"}, allEntries = true)
   public TeamAssignmentDTO assignToTeam(CreateTeamAssignmentRequest request) {
     Person person = personRepository.findById(request.getPersonId())
         .orElseThrow(() -> new EntityNotFoundException("Person not found with id: " + request.getPersonId()));
@@ -164,6 +165,7 @@ public class PersonService {
     return mapToAssignmentDTO(saved);
   }
 
+  @CacheEvict(value = {"persons", "teams"}, allEntries = true)
   public TeamAssignmentDTO updateAssignment(Long assignmentId, CreateTeamAssignmentRequest request) {
     TeamAssignment assignment = teamAssignmentRepository.findById(assignmentId)
         .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + assignmentId));
@@ -181,6 +183,7 @@ public class PersonService {
     return mapToAssignmentDTO(saved);
   }
 
+  @CacheEvict(value = {"persons", "teams"}, allEntries = true)
   public TeamAssignmentDTO endAssignment(Long assignmentId) {
     TeamAssignment assignment = teamAssignmentRepository.findById(assignmentId)
         .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + assignmentId));

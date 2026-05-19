@@ -202,7 +202,7 @@ export default function Teams() {
         showToast(t('teams.assignSuccess'), 'success');
       }
       setAssignmentDialog(false);
-      loadData();
+      await loadData();
     } catch (error) {
       showToast(getUserFriendlyError(error, t('teams.failedToSaveAssignment')), 'error');
     } finally {

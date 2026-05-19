@@ -2360,7 +2360,7 @@
     "targetDate": "Target Date",
     "progress": "Progress",
     "unassignedEpics": "Unassigned Epics",
-    "orphanEpics": "Epics without Initiative",
+    "orphanEpics": "Epics (Initiative has no dates)",
     "epicCount_one": "{{count}} epic",
     "epicCount_other": "{{count}} epics",
     "setDates": "Set dates",
