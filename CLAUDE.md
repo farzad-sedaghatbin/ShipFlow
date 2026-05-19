@@ -5,13 +5,12 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.0.0-rc1 — "Stabilization"
+## Current Milestone: v1.2.0 — "Competitor Migration Tooling"
 
-**Current version**: v0.9.0 (released 2026-04-14) → targeting v1.0.0
-**Target**: v1.0.0 open-source release
+**Current version**: v1.1.0 (released 2026-05-19) → targeting v1.2.0
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum mode (v1.1.0, in development: sprints with story points, burndown, and velocity) planned for v1.1; competitor migration tooling planned for v1.2 (requires Scrum mode first).
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Next: competitor migration tooling (v1.2.0) — CSV import → Linear API → Jira API. Always import into Kanban by default; teams adopt Shape Up/Scrum at their own pace.
 
 ### v0.8.0 session map (sessions S01–S13)
 
