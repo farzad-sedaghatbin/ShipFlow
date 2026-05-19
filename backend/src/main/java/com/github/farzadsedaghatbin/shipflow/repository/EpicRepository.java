@@ -41,6 +41,18 @@ public interface EpicRepository extends JpaRepository<Epic, Long> {
   @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId AND e.initiative IS NULL AND e.deletedAt IS NULL ORDER BY e.sortOrder")
   List<Epic> findOrphanEpicsByProjectIdNotDeleted(@Param("projectId") Long projectId);
 
+  /**
+   * Find epics linked to initiatives that have neither startDate nor endDate set.
+   * These epics are "invisible" on the roadmap because their parent initiative never
+   * makes it into the date-filtered initiative list — even though the epic itself
+   * may have its own dates in range.
+   */
+  @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId " +
+         "AND e.initiative IS NOT NULL " +
+         "AND e.initiative.targetStartDate IS NULL AND e.initiative.targetEndDate IS NULL " +
+         "AND e.deletedAt IS NULL ORDER BY e.sortOrder, e.targetStartDate")
+  List<Epic> findEpicsWithDatesLinkedToUndatedInitiatives(@Param("projectId") Long projectId);
+
   @Query("SELECT e FROM Epic e WHERE e.project.id = :projectId AND e.status = :status AND e.deletedAt IS NULL ORDER BY e.sortOrder")
   List<Epic> findByProjectIdAndStatusNotDeleted(@Param("projectId") Long projectId, @Param("status") EpicStatus status);
 

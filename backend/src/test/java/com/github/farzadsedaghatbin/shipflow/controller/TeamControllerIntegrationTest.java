@@ -8,13 +8,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTeamRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Permission;
-import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PermissionRepository;
@@ -99,10 +97,9 @@ class TeamControllerIntegrationTest {
     testTeam = Team.builder().name("Test Team").build();
     testTeam = teamRepository.save(testTeam);
 
-    // Link testTeam to testCycle via a pitch so findByCycleId works
-    Pitch testPitch = Pitch.builder().title("Test Pitch").description("Desc").appetiteDays(14)
-        .cycle(testCycle).team(testTeam).status(PitchStatus.PENDING).build();
-    pitchRepository.save(testPitch);
+    // Link testTeam to testCycle via the cycle_teams join table
+    testCycle.getTeams().add(testTeam);
+    testCycle = cycleRepository.save(testCycle);
   }
 
   @Test

@@ -270,9 +270,7 @@ public class CycleService {
     CycleDTO.CycleDTOBuilder builder = CycleDTO.builder().id(cycle.getId()).name(cycle.getName())
         .startDate(cycle.getStartDate()).endDate(cycle.getEndDate()).phase(cycle.getPhase())
         .isActive(cycle.getIsActive()).pitchCount((int) pitchRepository.countByCycleIdNotDeleted(cycle.getId()))
-        .teamCount((int) (cycle.getPitches() != null
-            ? cycle.getPitches().stream().map(p -> p.getTeam()).filter(t -> t != null).distinct().count()
-            : 0));
+        .teamCount(cycle.getTeams() != null ? cycle.getTeams().size() : 0);
 
     if (cycle.getProject() != null) {
       builder.projectId(cycle.getProject().getId()).projectName(cycle.getProject().getName())
@@ -360,7 +358,7 @@ public class CycleService {
 
   // ── Cycle–Team assignment ────────────────────────────────────────────────
 
-  @CacheEvict(value = "teams", allEntries = true)
+  @CacheEvict(value = {"teams", "cycles"}, allEntries = true)
   public void assignTeamToCycle(Long cycleId, Long teamId) {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found: " + cycleId));
@@ -372,7 +370,7 @@ public class CycleService {
     }
   }
 
-  @CacheEvict(value = "teams", allEntries = true)
+  @CacheEvict(value = {"teams", "cycles"}, allEntries = true)
   public void removeTeamFromCycle(Long cycleId, Long teamId) {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found: " + cycleId));
