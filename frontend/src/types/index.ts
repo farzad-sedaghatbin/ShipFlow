@@ -58,8 +58,9 @@ export interface ReorderRequest {
  * Project methodology type.
  * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown
  * KANBAN: Continuous flow with visual board, no cycles
+ * SCRUM: Sprint-based development with backlog, story points, burndown, and velocity
  */
-export type ProjectType = 'SHAPE_UP' | 'KANBAN';
+export type ProjectType = 'SHAPE_UP' | 'KANBAN' | 'SCRUM';
 
 /**
  * Role a user can have within a specific project.
@@ -135,6 +136,9 @@ export interface Cycle {
   pitchCount?: number;
   teamCount?: number;
   projectType?: ProjectType;
+  /** Scrum: the goal statement for this sprint */
+  sprintGoal?: string | null;
+  // velocityActual removed — computed dynamically via VelocityService; see VelocityPoint
 }
 
 export interface CreateCycleRequest {
@@ -143,6 +147,8 @@ export interface CreateCycleRequest {
   startDate: string;
   endDate?: string;  // Optional - auto-calculated from OrganizationSettings if not provided
   phase?: CyclePhase;
+  /** Scrum: the goal statement for this sprint */
+  sprintGoal?: string | null;
 }
 
 export interface Team {
@@ -863,6 +869,9 @@ export interface Task {
 
   // File attachments
   attachments?: TaskAttachment[];
+
+  // Scrum: story point estimate for this task
+  storyPoints?: number | null;
 }
 
 export interface TaskAttachment {
@@ -896,6 +905,23 @@ export interface CreateTaskRequest {
   // Scope-Task Bridge fields
   createScopeAutomatically?: boolean; // When true and pitchId set (no parentTaskId), auto-creates a scope (default: true)
   initialHillPosition?: number; // Initial position on hill chart (0-100), only used when createScopeAutomatically is true
+
+  // Scrum: story point estimate
+  storyPoints?: number | null;
+}
+
+// Scrum Chart DTOs
+export interface BurndownPoint {
+  date: string;
+  remainingPoints: number;
+  idealPoints: number;
+}
+
+export interface VelocityPoint {
+  cycleId: number;
+  cycleName: string;
+  plannedPoints: number;
+  completedPoints: number;
 }
 
 // Task Dependency Types

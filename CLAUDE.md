@@ -11,7 +11,7 @@ Read it before touching any code.
 **Target**: v1.0.0 open-source release
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum (Sprints ≈ Cycles) planned for v1.1; competitor migration tooling planned for v1.2 (requires Scrum mode first).
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum mode (v1.1.0, in development: sprints with story points, burndown, and velocity) planned for v1.1; competitor migration tooling planned for v1.2 (requires Scrum mode first).
 
 ### v0.8.0 session map (sessions S01–S13)
 

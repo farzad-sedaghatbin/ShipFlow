@@ -23,6 +23,8 @@ public interface CycleRepository extends JpaRepository<Cycle, Long> {
   // Project-specific queries
   List<Cycle> findByProjectIdOrderByStartDateDesc(Long projectId);
 
+  List<Cycle> findByProjectIdOrderByStartDateAsc(Long projectId);
+
   List<Cycle> findByProjectIdAndIsActiveTrue(Long projectId);
 
   @Query("SELECT COUNT(c) FROM Cycle c WHERE c.project.id = :projectId")

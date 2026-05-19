@@ -45,6 +45,9 @@ import {
   Network,
   Pencil,
   GripHorizontal,
+  Workflow,
+  TrendingDown,
+  Gauge,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -63,6 +66,50 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.1.0',
+    date: 'Coming Q3 2026',
+    title: 'Scrum Mode — Sprints, Story Points & Velocity',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: 'Scrum as Third Project Type',
+        description:
+          'Alongside Shape Up and Kanban, projects can now adopt Scrum. Cycles become Sprints, complete with sprint goals, story-point estimates, and time-boxed planning.',
+      },
+      {
+        icon: <Target className="h-5 w-5" />,
+        title: 'Story Points on Tasks',
+        description:
+          'Estimate tasks in story points and see them on backlog rows, Kanban cards, and sprint planning lists. Totals automatically roll up per backlog and per sprint.',
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Sprint Planning Page',
+        description:
+          'A dedicated two-column workspace that pulls the product backlog on the left and the active sprint on the right. Move work between columns with one click; story-point totals update live.',
+      },
+      {
+        icon: <TrendingDown className="h-5 w-5" />,
+        title: 'Burndown Chart',
+        description:
+          'Real-time sprint burndown comparing remaining story points against the ideal trajectory. Spot scope creep or progress lulls the moment they happen.',
+      },
+      {
+        icon: <Gauge className="h-5 w-5" />,
+        title: 'Velocity Chart',
+        description:
+          'Track planned vs completed story points across the last several sprints. Use the historical trend to commit better in your next sprint planning meeting.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Sprint Goal on Cycles',
+        description:
+          'Capture the goal statement for each sprint when creating or editing a cycle. The goal is surfaced on the sprint planning header and on the cycle list cards.',
+      },
+    ],
+  },
   {
     version: '1.0.1',
     date: 'May 2026',

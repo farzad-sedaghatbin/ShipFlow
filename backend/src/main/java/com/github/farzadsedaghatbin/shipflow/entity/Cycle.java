@@ -42,6 +42,14 @@ public class Cycle {
   @Column(nullable = false)
   private Boolean isActive;
 
+  /** Sprint goal text for Scrum mode (optional). */
+  @Column(name = "sprint_goal", columnDefinition = "TEXT")
+  private String sprintGoal;
+
+  // velocity_actual column exists in DB (V100) but is not mapped here. Actual velocity is
+  // computed dynamically by VelocityService from completed task story points and exposed via
+  // VelocityPointDTO. The column is preserved for a future "close sprint" workflow.
+
   @ManyToMany
   @JoinTable(
       name = "cycle_teams",

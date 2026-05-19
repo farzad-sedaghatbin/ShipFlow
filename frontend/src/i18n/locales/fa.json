@@ -379,7 +379,9 @@
       "calendar": "تقویم"
     },
     "hillChartAutoCreate": "ایجاد خودکار محدوده نمودار تپه",
-    "searchPersons": "جستجوی افراد..."
+    "searchPersons": "جستجوی افراد...",
+    "storyPoints": "امتیاز داستان",
+    "storyPointsAbbr": "SP"
   },
   "betting": {
     "availablePitches": "پیچ‌های موجود",
@@ -1263,7 +1265,8 @@
     "pitch": "پیچ",
     "saving": "در حال ذخیره...",
     "noResults": "نتیجه‌ای یافت نشد",
-    "new": "جدید"
+    "new": "جدید",
+    "noData": "داده‌ای موجود نیست"
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",
@@ -2874,6 +2877,42 @@
       "figmaStep3": "[TODO: Persian translation] Ensure `MCP_FIGMA_ENABLED=true` and `MCP_FIGMA_SERVER_URL` point to your running Figma MCP server instance."
     }
   },
+  "sprintPlanning": {
+    "title": "برنامه‌ریزی اسپرینت",
+    "description": "با انتقال وظایف از بک‌لاگ محصول، اسپرینت خود را برنامه‌ریزی کنید",
+    "productBacklog": "بک‌لاگ محصول",
+    "sprintBacklog": "بک‌لاگ اسپرینت",
+    "selectSprint": "انتخاب اسپرینت",
+    "noSprint": "اسپرینتی انتخاب نشده",
+    "totalPoints_one": "{{points}} امتیاز",
+    "totalPoints_other": "{{points}} امتیاز",
+    "unassigned": "بدون مسئول",
+    "moveToSprint": "انتقال به اسپرینت",
+    "moveToBacklog": "انتقال به بک‌لاگ",
+    "movedToSprint": "وظیفه به اسپرینت منتقل شد",
+    "movedToBacklog": "وظیفه به بک‌لاگ منتقل شد",
+    "sprintGoal": "هدف اسپرینت",
+    "sprintGoalPlaceholder": "هدف این اسپرینت چیست؟",
+    "velocity": "سرعت تیم",
+    "burndown": "نمودار برن‌داون",
+    "velocityChart": "نمودار سرعت"
+  },
+  "charts": {
+    "burndown": {
+      "title": "برن‌داون اسپرینت",
+      "remaining": "باقی‌مانده",
+      "ideal": "ایده‌آل",
+      "storyPoints": "امتیاز داستان",
+      "noData": "هیچ امتیاز داستانی به وظایف اسپرینت اختصاص داده نشده"
+    },
+    "velocity": {
+      "title": "سرعت تیم",
+      "planned": "برنامه‌ریزی شده",
+      "completed": "تکمیل شده",
+      "noData": "هنوز هیچ اسپرینت تکمیل‌شده‌ای وجود ندارد",
+      "storyPoints": "امتیاز داستان"
+    }
+  },
   "healthOverview": {
     "active": "(فعال)",
     "allActiveCycles": "همه سیکل‌های فعال",
@@ -3242,15 +3281,19 @@
     "phase101Item2Desc": "اندپوینت‌های تاریخ اپیک و ابتکار اعتبارسنجی می‌کنند که تاریخ شروع ≤ پایان باشد و در صورت نامعتبر بودن 400 برمی‌گردانند.",
     "phase101Item3Title": "رفع ناوبری فرم انتشار",
     "phase101Item3Desc": "پس از ایجاد یا ویرایش انتشار، فرم اکنون به درستی به صفحه جزئیات انتشار هدایت می‌شود.",
-    "phase110Theme": "نسخه ۱.۱.۰ — حالت Scrum + سازمانی",
-    "phase110Item0Title": "حالت Scrum (پروژه‌های مبتنی بر Sprint)",
-    "phase110Item0Desc": "نوع پروژه سوم کنار Shape Up و Kanban. موجودیت Sprint به زیرساخت Cycle موجود مرتبط می‌شود. امتیاز داستان، ردیابی سرعت، نمودار burndown و نمای برنامه‌ریزی sprint.",
-    "phase110Item1Title": "SSO / SAML / OIDC",
-    "phase110Item1Desc": "احراز هویت سازمانی از طریق Keycloak، Auth0 یا Okta. خودمیزبان‌ها نام کاربری/رمز عبور را حفظ می‌کنند؛ SSO یک لایه اختیاری است.",
-    "phase110Item2Title": "نمای Gantt / Timeline برای تسک‌ها",
-    "phase110Item2Desc": "تسک‌ها و sprint‌ها را بر روی یک خط زمانی Gantt بر اساس تاریخ سررسید مشاهده کنید. برای برنامه‌ریزی انتشار و تجسم وابستگی‌ها.",
-    "phase110Item3Title": "فیلدهای سفارشی",
-    "phase110Item3Desc": "فیلدهای قابل تنظیم برای تسک‌ها و پیچ‌ها — امتیاز داستان، مشتری، هدف Sprint و هر چیزی که تیم شما نیاز دارد.",
+    "phase110Theme": "نسخه ۱.۱.۰ — حالت اسکرام: اسپرینت‌ها، امتیاز داستان و سرعت",
+    "phase110Item0Title": "اسکرام به عنوان نوع سوم پروژه",
+    "phase110Item0Desc": "در کنار Shape Up و کانبان، پروژه‌ها اکنون می‌توانند اسکرام را اتخاذ کنند. چرخه‌ها به اسپرینت تبدیل می‌شوند، با هدف اسپرینت، تخمین امتیاز داستان و برنامه‌ریزی زمان‌محدود.",
+    "phase110Item1Title": "امتیاز داستان روی تسک‌ها",
+    "phase110Item1Desc": "تسک‌ها را با امتیاز داستان تخمین بزنید و آن‌ها را در ردیف‌های بک‌لاگ، کارت‌های کانبان و لیست‌های برنامه‌ریزی اسپرینت ببینید. جمع‌ها به‌طور خودکار در هر بک‌لاگ و هر اسپرینت محاسبه می‌شود.",
+    "phase110Item2Title": "صفحه برنامه‌ریزی اسپرینت",
+    "phase110Item2Desc": "یک فضای کاری دو ستونی که بک‌لاگ محصول را در سمت چپ و اسپرینت فعال را در سمت راست نشان می‌دهد. کارها را با یک کلیک بین ستون‌ها جابه‌جا کنید؛ مجموع امتیاز داستان به‌صورت زنده به‌روزرسانی می‌شود.",
+    "phase110Item3Title": "نمودار برن‌داون",
+    "phase110Item3Desc": "برن‌داون لحظه‌ای اسپرینت با مقایسه امتیازهای باقی‌مانده در برابر مسیر ایده‌آل. افزایش دامنه یا کاهش پیشرفت را در لحظه شناسایی کنید.",
+    "phase110Item4Title": "نمودار سرعت",
+    "phase110Item4Desc": "امتیازهای داستان برنامه‌ریزی‌شده در برابر تکمیل‌شده را در چند اسپرینت اخیر دنبال کنید. از روند تاریخی برای تعهد بهتر در جلسه برنامه‌ریزی بعدی استفاده کنید.",
+    "phase110Item5Title": "هدف اسپرینت روی چرخه‌ها",
+    "phase110Item5Desc": "هنگام ایجاد یا ویرایش چرخه، جمله هدف هر اسپرینت را ثبت کنید. این هدف در سرفصل برنامه‌ریزی اسپرینت و کارت‌های لیست چرخه‌ها نمایش داده می‌شود.",
     "phase120Theme": "نسخه ۱.۲.۰ — ابزارهای مهاجرت + اتوماسیون",
     "phase120Item0Title": "مهاجرت رقبا: وارد کردن CSV و مستقیم",
     "phase120Item0Desc": "وارد کردن CSV با رابط نگاشت ستون برای هر ابزاری (Jira، Linear، Asana، Trello همه CSV صادر می‌کنند). وارد کردن مستقیم Linear و Jira از طریق OAuth.",
@@ -3738,7 +3781,8 @@
     "testCases": "تست کیس‌ها",
     "wiseArchitecture": "معماری هوشمند",
     "userManagement": "مدیریت کاربران",
-    "workLogs": "گزارش کار"
+    "workLogs": "گزارش کار",
+    "sprintPlanning": "برنامه‌ریزی اسپرینت"
   },
   "organizationSettings": {
     "accentColor": "[TODO: Persian translation] Accent Color",
@@ -4770,7 +4814,6 @@
     "backToProjects": "بازگشت به پروژه‌ها",
     "backlog": "باکلاگ",
     "cannotDelete": "امکان حذف پروژه با چرخه‌های موجود وجود ندارد",
-    "cannotDeleteWithCycles": "[TODO: Persian translation] Cannot delete project with cycles",
     "completed": "تکمیل شده",
     "completedCycle": "چرخه تکمیل شده",
     "completedCycles": "چرخه‌های تکمیل شده",
@@ -4849,6 +4892,9 @@
     "hideArchived": "پنهان کردن بایگانی‌شده",
     "kanban": "کانبان",
     "kanbanDescription": "جریان مداوم با تخته بصری",
+    "scrum": "اسکرام",
+    "scrumDescription": "اسپرینت‌های زمان‌محدود با امتیاز داستان، برن‌داون و سرعت",
+    "viewSprints": "مشاهده اسپرینت‌ها",
     "keyFormat": "[TODO: Persian translation] 2-10 uppercase letters/numbers (auto-generated from name)",
     "loadFailed": "بارگذاری پروژه‌ها ناموفق بود",
     "logoUrl": "آدرس لوگو (اختیاری)",
@@ -4896,6 +4942,8 @@
     "viewProject": "مشاهده پروژه",
     "activateSuccess": "پروژه با موفقیت فعال شد",
     "noProjectsMatch": "هیچ پروژه‌ای با جستجوی شما مطابقت ندارد",
+    "cannotDeleteWithCycles": "نمی‌توان پروژه‌ای را که چرخه‌ها دارد حذف کرد",
+    "deleteDisabledScrum": "نمی‌توان یک پروژه اسکرام با اسپرینت را حذف کرد",
     "errors": {
       "nameRequired": "نام پروژه الزامی است",
       "keyRequired": "کلید پروژه الزامی است",
@@ -6512,7 +6560,11 @@
     "skipTitle": "رد کردن تور؟",
     "skipDescription": "آیا مطمئن هستید که می‌خواهید تور را رد کنید؟ می‌توانید هر زمان از دکمه راهنما آن را مجدداً شروع کنید.",
     "skip": "رد کردن تور",
-    "continue": "ادامه تور"
+    "continue": "ادامه تور",
+    "sprintPlanning": {
+      "title": "برنامه‌ریزی اسپرینت",
+      "description": "برای پروژه‌های اسکرام، اسپرینت خود را اینجا برنامه‌ریزی کنید. وظایف را بین بک‌لاگ محصول و اسپرینت فعال جابجا کنید."
+    }
   },
   "cooldownActivity": {
     "pageTitle": "فعالیت‌های دوره استراحت",

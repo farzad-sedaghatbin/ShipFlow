@@ -914,7 +914,147 @@ public class SampleDataInitializer implements CommandLineRunner {
       createSampleSavedViews(adminUser, saraUser, bankingProject.getId(), devopsProject.getId());
     }
 
-    log.info("Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban)");
+    // ── SCRUM Demo Project ────────────────────────────────────────────────────
+    seedScrumDemoProject(saraUser, aliPerson, minaPerson, saraPerson);
+
+    log.info(
+        "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
+  }
+
+  /**
+   * Seeds a SCRUM-mode project ("Mobile App — Scrum Demo") with three sprints, story-pointed tasks,
+   * and completed-sprint velocity data so the Burndown and Velocity charts render with real data.
+   */
+  private void seedScrumDemoProject(
+      User ownerUser, Person aliPerson, Person minaPerson, Person saraPerson) {
+    // Guard against duplicate seeding on subsequent application restarts or test reruns
+    if (projectRepository.existsByProjectKey("MAS")) {
+      log.info("Scrum demo project (MAS) already exists — skipping seed");
+      return;
+    }
+    Project scrumProject =
+        Project.builder()
+            .name("Mobile App — Scrum Demo")
+            .projectKey("MAS")
+            .description(
+                "Cross-platform mobile app delivered in two-week sprints — showcases ShipFlow's "
+                    + "Scrum mode with story points, burndown, and velocity tracking.")
+            .color("#A855F7")
+            .projectType(ProjectType.SCRUM)
+            .owner(ownerUser)
+            .isActive(true)
+            .enableRetrospectives(true)
+            .createdAt(LocalDateTime.of(2026, 3, 1, 9, 0))
+            .build();
+    projectRepository.save(scrumProject);
+
+    // Use relative dates so burndown/velocity charts always render correctly regardless of when the
+    // demo is run. Dates are anchored to LocalDate.now() so completedAt always falls within the
+    // sprint window (Sprint 1/2 are in the past, Sprint 3 is the active sprint).
+    LocalDate now = LocalDate.now();
+
+    // Sprint 1 — completed sprint (8 weeks ago → 6 weeks ago)
+    LocalDate sprint1Start = now.minusWeeks(8);
+    LocalDate sprint1End = now.minusWeeks(6);
+    Cycle sprint1 =
+        Cycle.builder()
+            .project(scrumProject)
+            .name("Sprint 1")
+            .startDate(sprint1Start)
+            .endDate(sprint1End)
+            .phase(CyclePhase.SHAPING_BUILDING)
+            .isActive(false)
+            .sprintGoal("Ship onboarding flow with email + social sign-in")
+            .build();
+    cycleRepository.save(sprint1);
+
+    // Sprint 2 — completed sprint (5 weeks ago → 3 weeks ago)
+    LocalDate sprint2Start = now.minusWeeks(5);
+    LocalDate sprint2End = now.minusWeeks(3);
+    Cycle sprint2 =
+        Cycle.builder()
+            .project(scrumProject)
+            .name("Sprint 2")
+            .startDate(sprint2Start)
+            .endDate(sprint2End)
+            .phase(CyclePhase.SHAPING_BUILDING)
+            .isActive(false)
+            .sprintGoal("Add push notifications and in-app messaging")
+            .build();
+    cycleRepository.save(sprint2);
+
+    // Sprint 3 — active sprint (2 weeks ago → 3 days from now)
+    LocalDate sprint3Start = now.minusWeeks(2);
+    LocalDate sprint3End = now.plusDays(3);
+    Cycle sprint3 =
+        Cycle.builder()
+            .project(scrumProject)
+            .name("Sprint 3")
+            .startDate(sprint3Start)
+            .endDate(sprint3End)
+            .phase(CyclePhase.SHAPING_BUILDING)
+            .isActive(true)
+            .sprintGoal("Polish UX, fix top customer-reported bugs, ship dark mode")
+            .build();
+    cycleRepository.save(sprint3);
+
+    // Sprint 1 tasks (all DONE — 5 + 3 + 5 = 13 pts)
+    // Spread completedAt across the sprint so the burndown chart shows a descending staircase
+    // rather than all points dropping on the same day.
+    createScrumTask("Email sign-up endpoint", TaskStatus.DONE, TaskPriority.HIGH, 5, sprint1,
+        aliPerson, saraPerson, "backend,auth", sprint1Start.plusDays(3).atTime(11, 0));
+    createScrumTask("Google OAuth integration", TaskStatus.DONE, TaskPriority.HIGH, 3, sprint1,
+        aliPerson, saraPerson, "backend,oauth", sprint1Start.plusDays(7).atTime(15, 30));
+    createScrumTask("Onboarding wizard screens", TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint1,
+        minaPerson, saraPerson, "frontend,ux", sprint1Start.plusDays(12).atTime(9, 45));
+
+    // Sprint 2 tasks (all DONE — 8 + 3 + 5 = 16 pts)
+    createScrumTask("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH, 8, sprint2,
+        aliPerson, saraPerson, "backend,notifications", sprint2Start.plusDays(4).atTime(14, 0));
+    createScrumTask("Notification preferences UI", TaskStatus.DONE, TaskPriority.MEDIUM, 3, sprint2,
+        minaPerson, saraPerson, "frontend", sprint2Start.plusDays(8).atTime(10, 15));
+    createScrumTask("In-app message center", TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint2,
+        minaPerson, saraPerson, "frontend,messaging", sprint2Start.plusDays(11).atTime(16, 0));
+
+    // Sprint 3 tasks (mix of statuses for a realistic burndown chart)
+    // Spread the two completed tasks across the sprint window (not the same day)
+    createScrumTask("Dark-mode theme tokens", TaskStatus.DONE, TaskPriority.MEDIUM, 2, sprint3,
+        minaPerson, saraPerson, "frontend,theme", sprint3Start.plusDays(3).atTime(11, 0));
+    createScrumTask("Fix top 5 crash reports", TaskStatus.DONE, TaskPriority.HIGH, 5, sprint3,
+        aliPerson, saraPerson, "bugfix", sprint3Start.plusDays(8).atTime(17, 0));
+    createScrumTask("Accessibility audit pass", TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3,
+        sprint3, minaPerson, saraPerson, "a11y,frontend", null);
+    createScrumTask("Performance: lazy-load images", TaskStatus.TODO, TaskPriority.LOW, 2, sprint3,
+        minaPerson, saraPerson, "performance,frontend", null);
+  }
+
+  private void createScrumTask(
+      String title,
+      TaskStatus status,
+      TaskPriority priority,
+      int storyPoints,
+      Cycle cycle,
+      Person assignee,
+      Person createdBy,
+      String tags,
+      LocalDateTime completedAt) {
+    Task task =
+        Task.builder()
+            .title(title)
+            .description(title + " — Scrum demo task")
+            .status(status)
+            .priority(priority)
+            .storyPoints(storyPoints)
+            .cycle(cycle)
+            .project(cycle.getProject())
+            .assignee(assignee)
+            .createdBy(createdBy)
+            .tags(tags)
+            .build();
+    if (completedAt != null) {
+      task.setCompletedAt(completedAt);
+    }
+    taskRepository.save(task);
   }
 
   // ── Helper Methods ──────────────────────────────────────────────────────────

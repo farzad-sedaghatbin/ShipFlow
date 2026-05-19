@@ -106,7 +106,8 @@
     "pitch": "Pitch",
     "saving": "Saving...",
     "noResults": "No results found",
-    "new": "New"
+    "new": "New",
+    "noData": "No data available"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -142,6 +143,7 @@
     "initiatives": "Initiatives",
     "epics": "Epics",
     "releases": "Releases",
+    "sprintPlanning": "Sprint Planning",
     "sections": {
       "overview": "Overview",
       "cycleWorkspace": "Cycle Workspace",
@@ -424,6 +426,9 @@
     "shapeUpDescription": "6-week cycles with betting, pitches & cooldown",
     "kanban": "Kanban",
     "kanbanDescription": "Continuous flow with visual board",
+    "scrum": "Scrum",
+    "scrumDescription": "Time-boxed sprints with story points, burndown, and velocity",
+    "viewSprints": "View sprints",
     "selectColor": "Select Color",
     "selectColorValue": "Select a color",
     "logoUrl": "Logo URL (optional)",
@@ -1553,6 +1558,7 @@
     "delete": "Delete",
     "cannotDelete": "Cannot delete project with cycles",
     "cannotDeleteWithCycles": "Cannot delete project with cycles",
+    "deleteDisabledScrum": "Cannot delete a Scrum project that has sprints",
     "archived": "Archived",
     "description": "Description",
     "projectType": "Project Type",
@@ -3153,6 +3159,8 @@
     "create": "Create",
     "close": "Close",
     "edit": "Edit",
+    "storyPoints": "Story Points",
+    "storyPointsAbbr": "SP",
     "deleteTask": "Delete Task",
     "confirmDeleteMessage": "Are you sure you want to delete this task? This action cannot be undone.",
     "delete": "Delete",
@@ -3374,6 +3382,42 @@
     "uploadFile": "Upload File",
     "hillChartAutoCreate": "Auto-create hill chart scope",
     "searchPersons": "Search persons..."
+  },
+  "sprintPlanning": {
+    "title": "Sprint Planning",
+    "description": "Plan your sprint by moving tasks from the product backlog",
+    "productBacklog": "Product Backlog",
+    "sprintBacklog": "Sprint Backlog",
+    "selectSprint": "Select Sprint",
+    "noSprint": "No sprint selected",
+    "totalPoints_one": "{{points}} point",
+    "totalPoints_other": "{{points}} points",
+    "unassigned": "Unassigned",
+    "moveToSprint": "Move to Sprint",
+    "moveToBacklog": "Move to Backlog",
+    "movedToSprint": "Task moved to sprint",
+    "movedToBacklog": "Task moved to backlog",
+    "sprintGoal": "Sprint Goal",
+    "sprintGoalPlaceholder": "What is the goal of this sprint?",
+    "velocity": "Velocity",
+    "burndown": "Burndown Chart",
+    "velocityChart": "Velocity Chart"
+  },
+  "charts": {
+    "burndown": {
+      "title": "Sprint Burndown",
+      "remaining": "Remaining",
+      "ideal": "Ideal",
+      "storyPoints": "Story Points",
+      "noData": "No story points assigned to sprint tasks"
+    },
+    "velocity": {
+      "title": "Team Velocity",
+      "planned": "Planned",
+      "completed": "Completed",
+      "noData": "No completed sprints yet",
+      "storyPoints": "Story Points"
+    }
   },
   "healthOverview": {
     "title": "Pitch Health Overview",
@@ -4808,15 +4852,19 @@
     "phase101Item2Desc": "Epic and initiative date endpoints validate start ≤ end, returning 400 on invalid ranges. @DateTimeFormat annotations for explicit ISO date parsing.",
     "phase101Item3Title": "Release Form Navigation Fix",
     "phase101Item3Desc": "After creating or editing a release, the form now correctly navigates to the release detail page.",
-    "phase110Theme": "v1.1.0 — Scrum Mode + Enterprise",
-    "phase110Item0Title": "Scrum Mode (Sprint-Based Projects)",
-    "phase110Item0Desc": "Third project type alongside Shape Up and Kanban. Sprint entity maps to the existing Cycle infrastructure. Story points, velocity tracking, burndown chart, and sprint planning view.",
-    "phase110Item1Title": "SSO / SAML / OIDC",
-    "phase110Item1Desc": "Enterprise authentication via Keycloak, Auth0, or Okta. Self-hosters retain username/password; SSO is an optional layer for organizations that already have an identity provider.",
-    "phase110Item2Title": "Gantt / Timeline View for Tasks",
-    "phase110Item2Desc": "Visualize tasks and sprints on a Gantt timeline by due date. Expected for release planning and dependency visualization across cycles.",
-    "phase110Item3Title": "Custom Fields",
-    "phase110Item3Desc": "Per-project configurable fields on tasks and pitches — Story Points, Customer, Sprint Goal, and anything your team needs. Stored as typed key-value pairs with filtering support.",
+    "phase110Theme": "v1.1.0 — Scrum Mode: Sprints, Story Points & Velocity",
+    "phase110Item0Title": "Scrum as Third Project Type",
+    "phase110Item0Desc": "Alongside Shape Up and Kanban, projects can now adopt Scrum. Cycles become Sprints, complete with sprint goals, story-point estimates, and time-boxed planning.",
+    "phase110Item1Title": "Story Points on Tasks",
+    "phase110Item1Desc": "Estimate tasks in story points and see them on backlog rows, Kanban cards, and sprint planning lists. Totals automatically roll up per backlog and per sprint.",
+    "phase110Item2Title": "Sprint Planning Page",
+    "phase110Item2Desc": "A dedicated two-column workspace that pulls the product backlog on the left and the active sprint on the right. Move work between columns with one click; story-point totals update live.",
+    "phase110Item3Title": "Burndown Chart",
+    "phase110Item3Desc": "Real-time sprint burndown comparing remaining story points against the ideal trajectory. Spot scope creep or progress lulls the moment they happen.",
+    "phase110Item4Title": "Velocity Chart",
+    "phase110Item4Desc": "Track planned vs completed story points across the last several sprints. Use the historical trend to commit better in your next sprint planning meeting.",
+    "phase110Item5Title": "Sprint Goal on Cycles",
+    "phase110Item5Desc": "Capture the goal statement for each sprint when creating or editing a cycle. The goal is surfaced on the sprint planning header and on cycle list cards.",
     "phase120Theme": "v1.2.0 — Migration Tools + Automations",
     "phase120Item0Title": "Competitor Migration: CSV & Direct Import",
     "phase120Item0Desc": "CSV import with column-mapping UI covers any tool (Jira, Linear, Asana, Trello all export CSV). Linear and Jira direct imports via OAuth for seamless migration with full history.",
@@ -6511,7 +6559,11 @@
     "skipTitle": "Skip Tour?",
     "skipDescription": "Are you sure you want to skip the tour? You can restart it anytime from the help button.",
     "skip": "Skip Tour",
-    "continue": "Continue Tour"
+    "continue": "Continue Tour",
+    "sprintPlanning": {
+      "title": "Sprint Planning",
+      "description": "For Scrum projects, plan your sprint here. Move tasks between the product backlog and the active sprint."
+    }
   },
   "cooldownActivity": {
     "pageTitle": "Cooldown Activities",

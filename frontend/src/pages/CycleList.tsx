@@ -43,7 +43,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../com
 
 export default function CycleList() {
   const { t, i18n } = useTranslation();
-  const { currentProject, isAllProjectsSelected } = useProject();
+  const { currentProject, isAllProjectsSelected, isScrumProject } = useProject();
   const { showSuccess, showError } = useToast();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,6 +229,11 @@ export default function CycleList() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground truncate">{cycle.name}</h3>
+                      {isScrumProject && cycle.sprintGoal && (
+                        <p className="text-xs text-muted-foreground italic mt-1 line-clamp-2">
+                          {t('sprintPlanning.sprintGoal')}: {cycle.sprintGoal}
+                        </p>
+                      )}
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
@@ -327,6 +332,11 @@ export default function CycleList() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground truncate">{cycle.name}</h3>
+                      {isScrumProject && cycle.sprintGoal && (
+                        <p className="text-xs text-muted-foreground italic mt-1 line-clamp-2">
+                          {t('sprintPlanning.sprintGoal')}: {cycle.sprintGoal}
+                        </p>
+                      )}
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>

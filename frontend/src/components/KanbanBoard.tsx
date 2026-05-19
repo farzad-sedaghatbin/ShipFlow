@@ -202,6 +202,11 @@ function KanbanCard({ task, onViewTask, onEditTask, onDeleteTask, onAddSubtask, 
                 {task.estimateHours}h
               </span>
             )}
+            {task.storyPoints != null && (
+              <Badge variant="outline" className="text-[10px] font-mono px-1.5">
+                {task.storyPoints} {t('backlogPage.storyPointsAbbr')}
+              </Badge>
+            )}
           </div>
           {task.pitchTitle && (
             <Badge variant="outline" className="text-[10px]">

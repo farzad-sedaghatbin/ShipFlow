@@ -1,5 +1,5 @@
 import api from './api';
-import { Cycle, CreateCycleRequest, CyclePhase, CycleRetroStatus, Team } from '../types';
+import { Cycle, CreateCycleRequest, CyclePhase, CycleRetroStatus, BurndownPoint, VelocityPoint, Team } from '../types';
 
 export const cycleService = {
   getAll: () => api.get<Cycle[]>('/cycles'),
@@ -16,6 +16,10 @@ export const cycleService = {
   closeCycle: (id: number) => api.post<Cycle>(`/cycles/${id}/close`),
   getRetroStatus: (id: number) => api.get<CycleRetroStatus>(`/cycles/${id}/retro-status`),
   delete: (id: number) => api.delete(`/cycles/${id}`),
+  /** Scrum: fetch burndown chart data for a sprint (cycle) */
+  getBurndown: (cycleId: number) => api.get<BurndownPoint[]>(`/cycles/${cycleId}/burndown`),
+  /** Scrum: fetch velocity chart data for a project */
+  getVelocity: (projectId: number) => api.get<VelocityPoint[]>(`/projects/${projectId}/velocity`),
 
   // Cycle–Team assignment
   getTeamsForCycle: (cycleId: number) => api.get<Team[]>(`/cycles/${cycleId}/teams`),

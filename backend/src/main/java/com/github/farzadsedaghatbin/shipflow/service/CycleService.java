@@ -126,7 +126,7 @@ public class CycleService {
 
     Cycle cycle = Cycle.builder().project(project).name(request.getName()).startDate(request.getStartDate())
         .endDate(endDate).phase(request.getPhase() != null ? request.getPhase() : CyclePhase.SHAPING_BUILDING)
-        .isActive(true).build();
+        .isActive(true).sprintGoal(request.getSprintGoal()).build();
 
     Cycle saved = cycleRepository.save(cycle);
     // Ingest into knowledge base for QA
@@ -164,6 +164,12 @@ public class CycleService {
     cycle.setStartDate(request.getStartDate());
     cycle.setEndDate(endDate);
     cycle.setPhase(request.getPhase());
+    // Null means 'not provided by this caller' — guards non-Scrum UIs that omit sprintGoal.
+    // Blank (empty or whitespace-only) explicitly clears the goal to NULL; any non-blank value updates it.
+    if (request.getSprintGoal() != null) {
+      cycle.setSprintGoal(request.getSprintGoal().isBlank() ? null : request.getSprintGoal());
+    }
+    // velocityActual is computed by VelocityService from completed story points; not settable via request
 
     Cycle saved = cycleRepository.save(cycle);
 
@@ -273,6 +279,8 @@ public class CycleService {
           .projectKey(cycle.getProject().getProjectKey())
           .projectType(cycle.getProject().getProjectType());
     }
+
+    builder.sprintGoal(cycle.getSprintGoal());
 
     return builder.build();
   }

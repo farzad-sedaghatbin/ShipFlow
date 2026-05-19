@@ -300,6 +300,16 @@ function SortableTaskRow({
         </DropdownMenu>
       </TableCell>
 
+      <TableCell className="text-center">
+        {task.storyPoints != null ? (
+          <Badge variant="outline" className="text-xs font-mono">
+            {task.storyPoints}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+
       <TableCell>
         {task.assigneeName ? (
           <div className="flex items-center gap-2">
@@ -684,6 +694,7 @@ export function BacklogTaskTable({
                       {sortBy === 'priority' && (sortOrder === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />)}
                     </Button>
                   </TableHead>
+                  <TableHead className="w-12 text-center">{t('backlogPage.storyPointsAbbr')}</TableHead>
                   <TableHead>{t('backlogPage.assignee')}</TableHead>
                   <TableHead>
                     <Button
