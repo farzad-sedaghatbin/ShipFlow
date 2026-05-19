@@ -4,18 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-19
+
 ### Added
-- **Scrum mode (v1.1.0)**: New `SCRUM` project type alongside Shape Up and Kanban. Adds story points on tasks, sprint goal and actual velocity on cycles, Sprint Planning page with two-column product/sprint backlog drag-drop, Burndown chart (remaining vs ideal), and Velocity chart (planned vs completed per sprint). New API endpoints: `GET /api/cycles/{id}/burndown` and `GET /api/projects/{id}/velocity`. Demo data now seeds a "Mobile App — Scrum Demo" project with three sprints (two completed with velocity 13/16, one active) and Fibonacci-pointed tasks so the burndown and velocity charts render out of the box.
-- **Explicit team-to-cycle assignment for betting**: Introduced a `cycle_teams` join table so teams can be assigned to a cycle independently of pitch assignments. This unblocks the "Generate Slots" flow in the Betting Table — previously it failed silently when no pitches had yet been assigned. Teams can now be added/removed directly from the Betting Table page using the new **Teams for this Cycle** panel. REST API: `GET/POST/DELETE /api/cycles/{id}/teams[/{teamId}]`.
-- **Inline pitch title editing**: Pitch names can now be edited directly from the PitchDetail header and the SortablePitchList (EpicDetailPage). Click-to-edit with Enter/blur to save, Escape to cancel.
-- **Interactive roadmap timeline**: Drag-to-move and drag-to-resize timeline bars on the Roadmap page to adjust epic and initiative dates. Empty-state "Set dates" button creates a default 2-week range. Progress percentages and status-colored dots shown on bars.
-- **Backend date validation**: `PATCH /epics/{id}/dates` and `PATCH /initiatives/{id}/dates` now validate that startDate ≤ endDate, returning 400 if invalid. `@DateTimeFormat(iso = DATE)` annotations added for explicit date parsing.
-- **Project Manager report template**: New "Project Manager" dashboard template with 5 purpose-built widgets — unshaped pitches, stale bugs (3+ days unresolved), high-priority tasks, at-risk epics, and overdue tasks. Available from the template gallery in the Reports page.
-- **New widget data sources**: Five new data source types for custom dashboards — `UNSHAPED_PITCHES`, `STALE_BUGS`, `HIGH_PRIORITY_TASKS`, `AT_RISK_EPICS`, and `OVERDUE_TASKS`. Usable in any custom report board.
+- **Scrum mode**: New `SCRUM` project type alongside Shape Up and Kanban. Adds story points on tasks, sprint goal on cycles, Sprint Planning page with two-column product/sprint backlog, Burndown chart (remaining vs ideal), and Velocity chart (planned vs completed per sprint). New API endpoints: `GET /api/cycles/{id}/burndown` and `GET /api/projects/{id}/velocity`. Demo data seeds a "Mobile App — Scrum Demo" project with three sprints and Fibonacci-pointed tasks so the burndown and velocity charts render out of the box.
+- **Explicit team-to-cycle assignment for betting**: Introduced a `cycle_teams` join table so teams can be assigned to a cycle independently of pitch assignments. This unblocks the "Generate Slots" flow in the Betting Table. REST API: `GET/POST/DELETE /api/cycles/{id}/teams[/{teamId}]`.
+- **Inline pitch title editing**: Pitch names can now be edited directly from the PitchDetail header and the SortablePitchList. Click-to-edit with Enter/blur to save, Escape to cancel.
+- **Interactive roadmap timeline**: Drag-to-move and drag-to-resize timeline bars on the Roadmap page to adjust epic and initiative dates.
+- **Backend date validation**: `PATCH /epics/{id}/dates` and `PATCH /initiatives/{id}/dates` now validate that startDate ≤ endDate, returning 400 if invalid.
+- **Project Manager report template**: New "Project Manager" dashboard template with 5 purpose-built widgets — unshaped pitches, stale bugs, high-priority tasks, at-risk epics, and overdue tasks.
+- **New widget data sources**: Five new data source types for custom dashboards — `UNSHAPED_PITCHES`, `STALE_BUGS`, `HIGH_PRIORITY_TASKS`, `AT_RISK_EPICS`, and `OVERDUE_TASKS`.
 
 ### Fixed
-- **Release form navigation**: After creating or editing a release, the form now correctly navigates to `/releases-management/:id` instead of the non-existent `/releases/:id`.
-- **Report board View button**: Clicking "View" on a custom report board now correctly navigates to the dashboard view instead of redirecting to the main dashboard.
+- **Release form navigation**: After creating or editing a release, the form now correctly navigates to `/releases-management/:id`.
+- **Report board View button**: Clicking "View" on a custom report board now correctly navigates to the dashboard view.
 
 ## [1.0.0] - 2026-04-21
 

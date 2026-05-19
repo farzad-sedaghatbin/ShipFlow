@@ -68,9 +68,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.1.0',
-    date: 'Coming Q3 2026',
+    date: 'May 19, 2026',
     title: 'Scrum Mode — Sprints, Story Points & Velocity',
-    upcoming: true,
     highlights: [
       {
         icon: <Workflow className="h-5 w-5" />,
