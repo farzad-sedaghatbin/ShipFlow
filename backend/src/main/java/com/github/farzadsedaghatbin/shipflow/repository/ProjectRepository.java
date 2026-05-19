@@ -15,7 +15,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
   boolean existsByProjectKey(String projectKey);
 
-  @Query("SELECT COUNT(p) > 0 FROM Project p WHERE p.projectKey = :key AND p.deletedAt IS NULL")
+  @Query("SELECT COUNT(p) > 0 FROM Project p WHERE p.projectKey = :key AND p.isActive = true")
   boolean existsByProjectKeyNotDeleted(@Param("key") String key);
 
   List<Project> findByIsActiveTrue();
