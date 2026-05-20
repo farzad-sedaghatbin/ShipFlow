@@ -190,9 +190,9 @@ class MeetingControllerIntegrationTest {
     mockMvc.perform(get("/api/meetings/paginated").param("page", "0").param("size", "20")
         .param("sortBy", "dateHeld").param("sortOrder", "desc")).andExpect(status().isOk())
         .andExpect(jsonPath("$.content", hasSize(20)))
-        .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(25)))
-        .andExpect(jsonPath("$.totalPages", greaterThanOrEqualTo(2))).andExpect(jsonPath("$.number", is(0)))
-        .andExpect(jsonPath("$.size", is(20)));
+        .andExpect(jsonPath("$.page.totalElements", greaterThanOrEqualTo(25)))
+        .andExpect(jsonPath("$.page.totalPages", greaterThanOrEqualTo(2))).andExpect(jsonPath("$.page.number", is(0)))
+        .andExpect(jsonPath("$.page.size", is(20)));
   }
 
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")

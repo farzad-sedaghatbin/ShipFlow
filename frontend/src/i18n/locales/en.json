@@ -3430,6 +3430,7 @@
     },
     "velocity": {
       "title": "Team Velocity",
+      "allSprints": "All Sprints · Project Overview",
       "planned": "Planned",
       "completed": "Completed",
       "noData": "No completed sprints yet",

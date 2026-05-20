@@ -66,9 +66,18 @@ public class BurndownService {
     // All tasks in the cycle that have story points (soft-delete aware)
     List<Task> tasks = taskRepository.findByCycleIdNotDeleted(cycleId);
 
-    // Early return when no tasks carry story points (tasks with storyPoints == 0 still
-    // produce a series with 0 total, matching VelocityService which treats 0 as planned)
-    if (tasks.stream().allMatch(t -> t.getStoryPoints() == null)) {
+    log.info(
+        "BurndownService: cycleId={} tasks={} storyPointed={}",
+        cycleId,
+        tasks.size(),
+        tasks.stream().filter(t -> t.getStoryPoints() != null).count());
+
+    // Early return when no tasks exist or none carry story points (tasks with storyPoints == 0
+    // still produce a series with 0 total, matching VelocityService which treats 0 as planned)
+    if (tasks.isEmpty() || tasks.stream().allMatch(t -> t.getStoryPoints() == null)) {
+      log.warn(
+          "BurndownService: returning empty series for cycleId={} — no tasks with story points",
+          cycleId);
       return List.of();
     }
 

@@ -483,6 +483,6 @@ class BettingDecisionControllerIntegrationTest {
                                 .param("size", "10"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content", hasSize(1)))
-                                .andExpect(jsonPath("$.totalElements", is(1)));
+                                .andExpect(jsonPath("$.page.totalElements", is(1)));
         }
 }

@@ -106,7 +106,7 @@ class TaskControllerIntegrationTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].title", is("Test Task")))
-        .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(1)));
+        .andExpect(jsonPath("$.page.totalElements", greaterThanOrEqualTo(1)));
   }
 
   @Test
@@ -129,7 +129,7 @@ class TaskControllerIntegrationTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].cycleId", is(testCycle.getId().intValue())))
-        .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(1)));
+        .andExpect(jsonPath("$.page.totalElements", greaterThanOrEqualTo(1)));
   }
 
   @Test
@@ -138,7 +138,7 @@ class TaskControllerIntegrationTest {
         .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].status", is("TODO")))
-        .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(1)));
+        .andExpect(jsonPath("$.page.totalElements", greaterThanOrEqualTo(1)));
   }
 
   @Test
@@ -267,7 +267,7 @@ class TaskControllerIntegrationTest {
         .param("statuses", "TODO,IN_PROGRESS").param("exclude", "false")).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(2))))
-        .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(2)));
+        .andExpect(jsonPath("$.page.totalElements", greaterThanOrEqualTo(2)));
   }
 
   @Test
