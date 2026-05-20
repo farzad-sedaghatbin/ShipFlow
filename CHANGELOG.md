@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **CSV import backend (v1.2.0)**: `POST /api/import/csv` accepts a multipart CSV file plus `projectName` and optional `format` hint. Auto-detects Jira, Linear, Asana, or Generic format from column headers. Parses rows into a new Kanban project with tasks, epics, and cycles. `GET /api/import` and `GET /api/import/{id}` return job status with per-row error log. Backed by `import_jobs` table (Flyway V2026_05_20_0001).
+
 ### Fixed
 - **Stop timer directly from task detail page**: The "Running" timer button on `TaskDetailPage` was a dead indicator — clicking it did nothing and users had to scroll to the floating `TimerWidget` to stop the timer. The button now shows a live elapsed clock (`HH:MM:SS`) and opens a "Stop & Log Work" dialog right on the task, with the same note + rounded-hours flow as the global widget.
 - **Sprint cards showing "0 stories"**: `CycleDTO.pitchCount` counts pitches (Shape Up concept), which is always 0 for Scrum projects. Added `taskCount` to `CycleDTO` populated from `TaskRepository.countByCycleId()`. `CycleList.tsx` now shows `taskCount` for Scrum projects and `pitchCount` for Shape Up.
