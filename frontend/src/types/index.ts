@@ -134,6 +134,8 @@ export interface Cycle {
   phase: CyclePhase;
   isActive: boolean;
   pitchCount?: number;
+  /** For Scrum sprints: total number of tasks (stories) in this sprint */
+  taskCount?: number;
   teamCount?: number;
   projectType?: ProjectType;
   /** Scrum: the goal statement for this sprint */

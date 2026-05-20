@@ -16,6 +16,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
@@ -40,6 +41,7 @@ public class CycleService {
   private final CycleRepository cycleRepository;
   private final ProjectRepository projectRepository;
   private final PitchRepository pitchRepository;
+  private final TaskRepository taskRepository;
   private final RetroRepository retroRepository;
   private final UserRepository userRepository;
   private final TeamRepository teamRepository;
@@ -270,6 +272,7 @@ public class CycleService {
     CycleDTO.CycleDTOBuilder builder = CycleDTO.builder().id(cycle.getId()).name(cycle.getName())
         .startDate(cycle.getStartDate()).endDate(cycle.getEndDate()).phase(cycle.getPhase())
         .isActive(cycle.getIsActive()).pitchCount((int) pitchRepository.countByCycleIdNotDeleted(cycle.getId()))
+        .taskCount(taskRepository.countByCycleId(cycle.getId()))
         .teamCount(cycle.getTeams() != null ? cycle.getTeams().size() : 0);
 
     if (cycle.getProject() != null) {
