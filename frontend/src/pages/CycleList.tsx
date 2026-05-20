@@ -157,7 +157,7 @@ export default function CycleList() {
         <Button asChild data-tour="new-cycle-btn">
           <Link to="/cycles/new">
             <Plus className="h-4 w-4 mr-2" />
-            {t('cycles.newCycle')}
+            {isScrumProject ? t('cycles.newSprint') : t('cycles.newCycle')}
           </Link>
         </Button>
       </div>
@@ -241,16 +241,22 @@ export default function CycleList() {
                         </span>
                       </div>
                     </div>
-                    <Badge variant="outline" className={getPhaseClasses(cycle.phase)}>
-                      {t(`cycles.phaseValues.${cycle.phase}`)}
-                    </Badge>
+                    {isScrumProject ? (
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                        {t('cycles.activeSprint')}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className={getPhaseClasses(cycle.phase)}>
+                        {t(`cycles.phaseValues.${cycle.phase}`)}
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Stats */}
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
+                      <span><strong className="text-foreground">{isScrumProject ? (cycle.taskCount ?? 0) : (cycle.pitchCount || 0)}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />
@@ -345,7 +351,7 @@ export default function CycleList() {
                       </div>
                     </div>
                     <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      {t('cycles.inactive')}
+                      {isScrumProject ? t('cycles.completed') : t('cycles.inactive')}
                     </Badge>
                   </div>
 
@@ -353,7 +359,7 @@ export default function CycleList() {
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
+                      <span><strong className="text-foreground">{isScrumProject ? (cycle.taskCount ?? 0) : (cycle.pitchCount || 0)}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />

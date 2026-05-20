@@ -533,7 +533,9 @@
     "bugReports": "گزارش باگ‌ها",
     "wiseArchitecture": "معماری هوشمند",
     "cycleNumber": "چرخه #{{number}}",
+    "sprintNumber": "اسپرینت #{{number}}",
     "cycles": "چرخه‌ها",
+    "sprints": "اسپرینت‌ها",
     "dashboard": "داشبورد",
     "edit": "ویرایش",
     "generate": "تولید",
@@ -545,6 +547,7 @@
     "myWorkLogs": "گزارش کار من",
     "new": "جدید",
     "newCycle": "چرخه جدید",
+    "newSprint": "اسپرینت جدید",
     "organizationSettings": "تنظیمات سازمان",
     "people": "افراد",
     "permissions": "دسترسی‌ها",
@@ -1544,6 +1547,7 @@
     "sprints": "اسپرینت‌ها",
     "sprintsFound": "اسپرینت یافت شد",
     "sprintsFound_plural": "اسپرینت یافت شد",
+    "activeSprint": "اسپرینت فعال",
     "activeSprints": "اسپرینت‌های فعال",
     "pastSprints": "اسپرینت‌های گذشته",
     "noActiveSprints": "هیچ اسپرینت فعالی وجود ندارد",
@@ -1565,6 +1569,7 @@
     "failedToUpdate": "به‌روزرسانی سیکل ناموفق بود",
     "inactive": "غیرفعال",
     "newCycle": "سیکل جدید",
+    "newSprint": "اسپرینت جدید",
     "noActiveCycles": "[TODO: Persian translation] No Active Cycles",
     "noActiveCyclesDesc": "[TODO: Persian translation] Start a new cycle to begin tracking your team's progress through the build phase.",
     "noCycles": "سیکلی یافت نشد",
@@ -4612,7 +4617,24 @@
     "tasks": "وظایف",
     "viewAllTasks": "مشاهده همه وظایف",
     "noTasks": "هنوز هیچ وظیفه‌ای به این پیچ مرتبط نشده است.",
-    "viewAllWorkLogs": "مشاهده همه {{total}} گزارش کار →"
+    "viewAllWorkLogs": "مشاهده همه {{total}} گزارش کار →",
+    "createTask": {
+      "button": "ایجاد وظیفه",
+      "dialogTitle": "ایجاد وظیفه برای پیچ",
+      "title": "عنوان",
+      "titlePlaceholder": "عنوان وظیفه را وارد کنید…",
+      "titleRequired": "عنوان وظیفه الزامی است",
+      "description": "توضیحات",
+      "descriptionPlaceholder": "توضیحات اختیاری…",
+      "priority": "اولویت",
+      "status": "وضعیت",
+      "cycle": "چرخه",
+      "selectCycle": "یک چرخه انتخاب کنید…",
+      "cycleRequired": "لطفاً یک چرخه انتخاب کنید",
+      "noCycles": "چرخه‌ای در دسترس نیست",
+      "submit": "ایجاد وظیفه",
+      "success": "وظیفه با موفقیت ایجاد شد"
+    }
   },
   "pitchHillChart": {
     "addScope": "افزودن محدوده",
@@ -4858,6 +4880,8 @@
     "backToProjects": "بازگشت به پروژه‌ها",
     "backlog": "باکلاگ",
     "cannotDelete": "امکان حذف پروژه با چرخه‌های موجود وجود ندارد",
+    "cannotDeleteWithCycles": "امکان حذف پروژه با چرخه‌های موجود وجود ندارد",
+    "deleteDisabledScrum": "نمی‌توان یک پروژه اسکرام با اسپرینت را حذف کرد",
     "completed": "تکمیل شده",
     "completedCycle": "چرخه تکمیل شده",
     "completedCycles": "چرخه‌های تکمیل شده",
@@ -5174,7 +5198,8 @@
     "workDays": "روزهای کاری",
     "yes": "بله",
     "notStarted": "شروع نشده",
-    "hoursByMember": "ساعات به تفکیک عضو"
+    "hoursByMember": "ساعات به تفکیک عضو",
+    "viewPitch": "مشاهده پیچ"
   },
   "retroBoard": {
     "actionItems": "اقدامات",
@@ -5725,6 +5750,19 @@
     "taskNotFound": "وظیفه یافت نشد",
     "taskUpdated": "وظیفه با موفقیت به‌روزرسانی شد",
     "timerRunning": "تایمر در حال اجرا",
+    "timerStarted": "تایمر شروع شد",
+    "timerStartFailed": "شروع تایمر ناموفق بود",
+    "timerStopped": "زمان با موفقیت ثبت شد",
+    "timerStopFailed": "توقف تایمر ناموفق بود",
+    "stopTimerDialog": {
+      "title": "توقف تایمر و ثبت کار",
+      "description": "زمان ردیابی‌شده را بررسی کرده و قبل از ثبت یادداشت اضافه کنید.",
+      "hours": "ساعت",
+      "rounded": "گرد شده به نزدیک‌ترین ۰.۲۵ ساعت",
+      "notes": "یادداشت (اختیاری)",
+      "notesPlaceholder": "روی چه چیزی کار کردید؟",
+      "confirm": "توقف و ثبت زمان"
+    },
     "title": "عنوان"
   },
   "tasks": {
