@@ -1388,6 +1388,7 @@
     "closeFailed": "بستن سیکل ناموفق بود",
     "completed": "تکمیل شده",
     "completedPitches": "پیچ‌های تکمیل شده",
+    "completedStories": "داستان‌های تکمیل شده",
     "confirmClose": "آیا مطمئن هستید که می‌خواهید این سیکل را ببندید؟",
     "confirmCloseDesc": "این کار سیکل را به عنوان تکمیل شده علامت می‌زند و تمام پیچ‌ها را قفل می‌کند.",
     "createRetro": "ایجاد بازنگری",
@@ -1468,7 +1469,11 @@
     "unableToLoadCycle": "[TODO: Persian translation] Unable to load cycle details. The cycle may have been deleted.",
     "unableToLoadProjects": "[TODO: Persian translation] Unable to load projects. Please refresh the page.",
     "updateCycle": "[TODO: Persian translation] Update Cycle",
-    "updateSuccess": "چرخه با موفقیت به‌روزرسانی شد"
+    "updateSuccess": "چرخه با موفقیت به‌روزرسانی شد",
+    "editSprint": "ویرایش اسپرینت",
+    "createNewSprint": "اسپرینت جدید",
+    "sprintNameRequired": "نام اسپرینت *",
+    "sprintNamePlaceholder": "مثلاً اسپرینت ۴"
   },
   "cycleHillChart": {
     "invalidId": "شناسه چرخه نامعتبر است",
@@ -2942,7 +2947,19 @@
     "selectCyclePrompt": "یک سیکل را برای مشاهده خلاصه سلامت انتخاب کنید",
     "specificCycle": "سیکل خاص",
     "subtitle": "یک نمای ساده برای ذینفعان که وضعیت پیچ، سطوح ریسک و پیشرفت را در یک نگاه نشان می‌دهد.",
-    "title": "نمای کلی سلامت پیچ"
+    "title": "نمای کلی سلامت پیچ",
+    "titleScrum": "بررسی سلامت اسپرینت",
+    "subtitleScrum": "نمای ساده‌شده برای ذینفعان که وضعیت وظایف اسپرینت را نشان می‌دهد",
+    "allActiveSprints": "همه اسپرینت‌های فعال",
+    "specificSprint": "اسپرینت خاص",
+    "selectSprint": "انتخاب اسپرینت",
+    "selectSprintPrompt": "یک اسپرینت برای مشاهده خلاصه سلامت انتخاب کنید",
+    "sprintProgress": "پیشرفت اسپرینت",
+    "cycleProgress": "پیشرفت سیکل",
+    "allPitches": "همه پیچ‌ها ({{count}})",
+    "allStories": "همه داستان‌ها ({{count}})",
+    "criticalStoriesMessage": "{{count}} داستان نیاز به اقدام فوری دارد",
+    "atRiskStoriesMessage": "{{count}} داستان در معرض خطر است"
   },
   "blog": {
     "title": "وبلاگ شیپ‌فلو",

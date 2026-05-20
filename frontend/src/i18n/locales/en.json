@@ -2051,7 +2051,11 @@
     "startDateIsRequired": "Start date is required",
     "endDateIsRequired": "End date is required when not using auto-calculation",
     "endDateAfterStart": "End date must be after start date",
-    "failedToSave": "Failed to save cycle. Please try again."
+    "failedToSave": "Failed to save cycle. Please try again.",
+    "editSprint": "Edit Sprint",
+    "createNewSprint": "New Sprint",
+    "sprintNameRequired": "Sprint Name *",
+    "sprintNamePlaceholder": "e.g. Sprint 4"
   },
   "retroList": {
     "title": "Title",
@@ -3451,7 +3455,19 @@
     "needsAttention": "Needs attention",
     "criticalRisk": "Critical",
     "immediateAction": "Immediate action needed",
-    "loadFailed": "Failed to load cycles"
+    "loadFailed": "Failed to load cycles",
+    "titleScrum": "Sprint Health Overview",
+    "subtitleScrum": "A simplified view for stakeholders showing sprint task status, risk levels, and story point progress at a glance.",
+    "allActiveSprints": "All Active Sprints",
+    "specificSprint": "Specific Sprint",
+    "selectSprint": "Select Sprint",
+    "selectSprintPrompt": "Select a sprint to view health summary",
+    "sprintProgress": "Sprint Progress",
+    "cycleProgress": "Cycle Progress",
+    "allPitches": "All Pitches ({{count}})",
+    "allStories": "All Stories ({{count}})",
+    "criticalStoriesMessage": "{{count}} critical {{count, plural, one {story requires} other {stories require}}} immediate action",
+    "atRiskStoriesMessage": "{{count}} {{count, plural, one {story is} other {stories are}}} at risk - monitor closely"
   },
   "organizationSettings": {
     "title": "Organization Settings",
@@ -4284,6 +4300,7 @@
     "cycleInfo": "Cycle Information",
     "progressOverview": "Progress Overview",
     "completedPitches": "Completed Pitches",
+    "completedStories": "Completed Stories",
     "totalAppetite": "Total Appetite",
     "totalActual": "Total Actual",
     "assignedTeams": "Assigned Teams",

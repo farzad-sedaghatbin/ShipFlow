@@ -18,7 +18,7 @@ import { Label } from '../components/ui/label';
 export const HealthOverview: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { currentProject } = useProject();
+  const { currentProject, isScrumProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycleId, setSelectedCycleId] = useState<string>('');
   const [allCycleHealth, setAllCycleHealth] = useState<CycleHealthSummaryDTO[]>([]);
@@ -92,9 +92,9 @@ export const HealthOverview: React.FC = () => {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">{t('healthOverview.title')}</h1>
+        <h1 className="text-3xl font-bold mb-2">{t(isScrumProject ? 'healthOverview.titleScrum' : 'healthOverview.title')}</h1>
         <p className="text-muted-foreground">
-          {t('healthOverview.subtitle')}
+          {t(isScrumProject ? 'healthOverview.subtitleScrum' : 'healthOverview.subtitle')}
         </p>
       </div>
 
@@ -107,8 +107,8 @@ export const HealthOverview: React.FC = () => {
 
       <Tabs value={tabValue} onValueChange={setTabValue} className="mb-6">
         <TabsList>
-          <TabsTrigger value="all">{t('healthOverview.allActiveCycles')}</TabsTrigger>
-          <TabsTrigger value="specific">{t('healthOverview.specificCycle')}</TabsTrigger>
+          <TabsTrigger value="all">{t(isScrumProject ? 'healthOverview.allActiveSprints' : 'healthOverview.allActiveCycles')}</TabsTrigger>
+          <TabsTrigger value="specific">{t(isScrumProject ? 'healthOverview.specificSprint' : 'healthOverview.specificCycle')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-4">
@@ -138,7 +138,7 @@ export const HealthOverview: React.FC = () => {
 
         <TabsContent value="specific" className="mt-4">
           <div className="mb-6">
-            <Label className="mb-2 block">{t('healthOverview.selectCycle')}</Label>
+            <Label className="mb-2 block">{t(isScrumProject ? 'healthOverview.selectSprint' : 'healthOverview.selectCycle')}</Label>
             <Combobox
               options={cycles.map(cycle => ({
                 value: String(cycle.id),
@@ -146,8 +146,8 @@ export const HealthOverview: React.FC = () => {
               }))}
               value={selectedCycleId}
               onValueChange={setSelectedCycleId}
-              placeholder={t('healthOverview.selectCycle')}
-              searchPlaceholder="Search cycles..."
+              placeholder={t(isScrumProject ? 'healthOverview.selectSprint' : 'healthOverview.selectCycle')}
+              searchPlaceholder={isScrumProject ? "Search sprints..." : "Search cycles..."}
               triggerClassName="w-[300px]"
             />
           </div>
@@ -160,7 +160,7 @@ export const HealthOverview: React.FC = () => {
           ) : (
             <div className="flex items-center gap-2 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-500">
               <Info className="h-4 w-4" />
-              <span className="text-sm">{t('healthOverview.selectCyclePrompt')}</span>
+              <span className="text-sm">{t(isScrumProject ? 'healthOverview.selectSprintPrompt' : 'healthOverview.selectCyclePrompt')}</span>
             </div>
           )}
         </TabsContent>
