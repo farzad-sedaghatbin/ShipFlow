@@ -100,6 +100,13 @@ const shapeUpMainNavItems: NavItemConfig[] = [
   { textKey: 'nav.cycles', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
 ];
 
+// Main navigation items for Scrum mode (Sprints — same /cycles path, different label)
+const scrumMainNavItems: NavItemConfig[] = [
+  { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
+  { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
+  { textKey: 'nav.sprints', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
+];
+
 // Main navigation items for Kanban mode (no Cycles)
 const kanbanMainNavItems: NavItemConfig[] = [
   { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
@@ -115,6 +122,11 @@ const cycleWorkspaceItems: NavItemConfig[] = [
   { textKey: 'nav.dashboards', icon: LayoutDashboard, path: '/dashboards', tourId: 'dashboards-menu' },
   { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
 ];
+
+// Sprint Workspace - Cycle Workspace without Pitch Board and Betting Table (Scrum only)
+const scrumWorkspaceItems: NavItemConfig[] = cycleWorkspaceItems.filter(
+  (item) => item.path !== '/pitches' && item.path !== '/betting'
+);
 
 // People & Teams
 const peopleItems: NavItemConfig[] = [
@@ -271,7 +283,11 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   // Determine which nav items to show based on project type
   // When "All Projects" is selected, show Shape Up navigation (full features)
   const showKanbanFeatures = isKanbanProject && !isAllProjectsSelected;
-  const mainNavItems = showKanbanFeatures ? kanbanMainNavItems : shapeUpMainNavItems;
+  const mainNavItems = showKanbanFeatures
+    ? kanbanMainNavItems
+    : isScrumProject
+    ? scrumMainNavItems
+    : shapeUpMainNavItems;
   const showCycleWorkspace = !isKanbanProject || isAllProjectsSelected;
 
   return (
@@ -332,14 +348,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           ))}
 
-          {/* Cycle Workspace Section - Only for Shape Up projects or All Projects */}
+          {/* Cycle/Sprint Workspace Section - Only for Shape Up/Scrum projects or All Projects */}
           {showCycleWorkspace && (
             <>
-              <SectionHeader textKey="nav.sections.cycleWorkspace" />
+              <SectionHeader textKey={isScrumProject ? 'nav.sections.sprintWorkspace' : 'nav.sections.cycleWorkspace'} />
               <NavGroup
-                titleKey="nav.groups.cycleTools"
+                titleKey={isScrumProject ? 'nav.groups.sprintTools' : 'nav.groups.cycleTools'}
                 icon={Target}
-                items={cycleWorkspaceItems}
+                items={isScrumProject ? scrumWorkspaceItems : cycleWorkspaceItems}
                 currentPath={currentPath}
                 onItemClick={onItemClick}
                 defaultOpen={isCycleContext}

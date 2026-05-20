@@ -1536,6 +1536,14 @@
     "cycleReactivated": "سیکل مجدداً فعال شد",
     "cyclesFound": "[TODO: Persian translation] cycle found",
     "cyclesFound_plural": "[TODO: Persian translation] cycles found",
+    "sprints": "اسپرینت‌ها",
+    "sprintsFound": "اسپرینت یافت شد",
+    "sprintsFound_plural": "اسپرینت یافت شد",
+    "activeSprints": "اسپرینت‌های فعال",
+    "pastSprints": "اسپرینت‌های گذشته",
+    "noActiveSprints": "هیچ اسپرینت فعالی وجود ندارد",
+    "noActiveSprintsDesc": "اولین اسپرینت خود را برای شروع برنامه‌ریزی ایجاد کنید.",
+    "stories": "داستان‌ها",
     "daysOverdue": "{{count}} روز گذشته از مهلت",
     "daysOverdue_one": "{{count}} روز گذشته از مهلت",
     "daysRemaining": "{{count}} روز باقیمانده",
@@ -3753,6 +3761,7 @@
     "dashboards": "گزارش پویا",
     "groups": {
       "cycleTools": "ابزارهای سیکل",
+      "sprintTools": "ابزارهای اسپرینت",
       "integrations": "یکپارچه‌سازی‌ها",
       "people": "افراد",
       "planning": "برنامه‌ریزی",
@@ -3782,6 +3791,7 @@
     "sections": {
       "administration": "مدیریت",
       "cycleWorkspace": "فضای کار سیکل",
+      "sprintWorkspace": "فضای کار اسپرینت",
       "helpSupport": "راهنما و پشتیبانی",
       "organization": "سازمان",
       "overview": "نمای کلی",
@@ -3797,7 +3807,8 @@
     "wiseArchitecture": "معماری هوشمند",
     "userManagement": "مدیریت کاربران",
     "workLogs": "گزارش کار",
-    "sprintPlanning": "برنامه‌ریزی اسپرینت"
+    "sprintPlanning": "برنامه‌ریزی اسپرینت",
+    "sprints": "اسپرینت‌ها"
   },
   "organizationSettings": {
     "accentColor": "[TODO: Persian translation] Accent Color",
