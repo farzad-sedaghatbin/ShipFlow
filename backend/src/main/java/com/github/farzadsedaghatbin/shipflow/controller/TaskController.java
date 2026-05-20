@@ -136,6 +136,13 @@ public class TaskController {
     return ResponseEntity.ok(auditService.getTaskHistory(id, pageable));
   }
 
+  @GetMapping("/cycle/{cycleId}/all")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Get all tasks by cycle ID (unpaginated)", description = "Returns all tasks for a sprint without pagination — used by Sprint Planning board")
+  public ResponseEntity<List<TaskDTO>> getAllTasksByCycleId(@PathVariable Long cycleId) {
+    return ResponseEntity.ok(taskService.getTasksByCycleId(cycleId));
+  }
+
   @GetMapping("/cycle/{cycleId}")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get tasks by cycle ID", description = "Returns all tasks for a specific cycle with pagination and sorting")
