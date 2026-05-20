@@ -65,7 +65,7 @@ Every session must complete ALL of these before creating the PR:
 4. Add highlight card to `frontend/src/pages/ReleaseNotes.tsx`
 5. Update relevant `*_GUIDE.md` or `CLAUDE.md` if a new repeatable pattern was introduced
 6. Add i18n keys to **both** `en.json` AND `fa.json`
-7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage)
+7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage). **The full suite must be at 0 failures** — if your change breaks existing tests (e.g. serialization format change, renamed field), fix those tests in the same commit before pushing.
 8. Update `SampleDataInitializer.java` with demo data for the new feature
 9. **If UI layout changed**: verify onboarding tour step selectors in `frontend/src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
 10. **If in-app help guides reference changed UI**: update the relevant help guide content
@@ -240,6 +240,8 @@ npm run storybook              # component explorer
 
 **Coverage gate**: 80% line coverage enforced by JaCoCo. Tests must pass before any PR is merged.
 
+> **100% pass rule**: The full test suite must be at 0 failures before every commit. If an infrastructure change (e.g. adding `@EnableSpringDataWebSupport`, changing a serialization mode, renaming a field) causes existing tests to fail, fix the tests in the same PR — never leave known failures in the suite. `./mvnw verify` must exit with `BUILD SUCCESS` and `Failures: 0, Errors: 0`.
+
 ---
 
 ## Coding Conventions
@@ -385,8 +387,8 @@ This project is **open source** — every significant feature must be documented
 | 9 | Update `SampleDataInitializer.java` with demo data for the new feature | `src/main/java/.../SampleDataInitializer.java` |
 | 10 | If UI layout changed: update `data-tour` selectors in `TourContext.tsx` AND the Step Inventory table in `TOUR_GUIDE.md` | `TOUR_GUIDE.md` |
 | 11 | If help guides reference changed UI: update guide content | relevant `*_GUIDE.md` |
-| 12 | Tests: ≥ 80% line coverage enforced by JaCoCo; write unit + integration tests | `src/test/` |
-| 13 | Run `./mvnw spotless:apply && ./mvnw verify` and `npm test` | CI must stay green |
+| 12 | Tests: ≥ 80% line coverage; **0 failures in the full suite** — fix any tests broken by your change (serialization, renamed fields, etc.) in the same PR | `src/test/` |
+| 13 | Run `./mvnw spotless:apply && ./mvnw verify` — must exit `BUILD SUCCESS, Failures: 0, Errors: 0` | CI must stay green |
 | 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
 
 > These steps keep the open-source community informed, help self-hosters evaluate upgrades, and ensure Claude Code has accurate context in future sessions.
