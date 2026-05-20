@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Stop timer directly from task detail page**: The "Running" timer button on `TaskDetailPage` was a dead indicator — clicking it did nothing and users had to scroll to the floating `TimerWidget` to stop the timer. The button now shows a live elapsed clock (`HH:MM:SS`) and opens a "Stop & Log Work" dialog right on the task, with the same note + rounded-hours flow as the global widget.
+
+## [1.1.0] - 2026-05-20
+
+### Added
+- **Sprint Planning moved into Sprint Tools nav group**: Sprint Planning link is now the first item inside the collapsible "Sprint Tools" group in the sidebar for Scrum projects, contextually grouped with Health, Retrospectives, and Reports instead of floating under Work Management.
+- **Product Backlog seeded with Sprint-4 candidate tasks**: `ScrumDemoInitializer` now seeds 5 backlog tasks (no sprint assigned) — offline mode, biometric login, profile photo upload, PDF export, admin analytics — so the Sprint Planning board shows a populated Product Backlog out of the box. Includes a back-fill path for databases that already have sprint tasks but 0 backlog tasks.
+- **Create Task from Pitch**: "Create Task" button added to the Tasks section of PitchDetail. Opens a dialog pre-filled with the pitch's cycle (if assigned), allowing title, description, priority, status, and cycle selection. Created task is linked to the pitch via `pitchId` and categorised as `PITCH_SCOPE`.
+- **PM Report widget rows are now clickable**: Table rows in PM Report widgets (Unshaped Pitches, Stale Bugs, High-Priority Tasks, At-Risk Epics, Overdue Tasks) are now clickable and navigate to the relevant detail page — pitches → `/pitches/:id`, tasks → `/backlog/:id`, bugs → `/qa/bug-reports/:id`, epics → `/epics/:id`. First column is highlighted as a link.
+- **PM Report widgets respect current project**: All five PM Report widget data sources now filter by the currently selected project. Pitches and epics use project-scoped API endpoints; tasks and bugs filter client-side by `projectId` present in the API response.
+
+### Fixed
+- **Backend startup crash on platforms without AVX2/native tokenizer**: `QAConfig.embeddingModel()` now catches `Throwable` when `AllMiniLmL6V2EmbeddingModel` fails to initialize (e.g. unsupported CPU flavor in Docker) and returns a no-op model so the application starts; QA endpoints will throw `UnsupportedOperationException` with a clear message instead of blocking the entire Spring context.
+- **Meeting checklist items always showing as checked**: `PitchMeetingsSection` view dialog rendered `<Checkbox checked disabled />` which defaulted to `checked={true}` regardless of the actual item state. Fixed to `checked={item.isCompleted}`; uncompleted items are now visually dimmed to distinguish them from completed ones.
+- **Reports page showing cycles from all projects**: `Reports.tsx` was calling `getMyCycles()` regardless of the selected project. Now calls `cycleService.getByProject(projectId)` when a project is active so the cycle dropdown only shows cycles belonging to that project.
+- **Reports page pitch rows are now clickable**: Clicking a row in the pitch details table navigates to `/pitches/:id`.
+- **Burndown chart lines invisible**: `BurndownChart` used `hsl(var(--primary))` and `hsl(var(--muted-foreground))` as Recharts stroke colors. SVG elements don't inherit CSS custom properties, so both lines rendered transparent. Fixed to explicit hex colors — remaining line is now red (`#ef4444`) and ideal line is slate (`#94a3b8` dashed).
 - **Velocity chart colors**: Planned and completed bars were nearly identical dark shades in dark mode. Planned bars are now indigo (`#6366f1`) and completed bars are green (`#22c55e`) for clear visual differentiation.
 - **Velocity chart scope label**: Added "All Sprints · Project Overview" subtitle to clarify the chart shows project-wide data, distinguishing it from the adjacent per-sprint Burndown tab.
 - **Burndown diagnostics**: `BurndownService` now logs cycle ID, task count, and story-pointed task count on every call, plus a WARN when it returns an empty series — makes startup seeding issues diagnosable from logs without needing a debugger.
@@ -15,13 +32,8 @@ All notable changes to this project will be documented in this file.
 - **`chk_project_type` constraint blocking Scrum project insert**: Added Flyway migration `V104` to drop and recreate the constraint to include `SCRUM` alongside `SHAPE_UP` and `KANBAN`.
 - **Burndown empty for seeded sprints**: `ScrumDemoInitializer` now detects when MAS cycles exist with 0 tasks (partial prior commit) and back-fills all 10 sprint tasks with correct `completedAt` values.
 
-### Changed
-- **Test suite: 100% pass rule added to `CLAUDE.md`**: Infrastructure changes (serialization mode, renamed fields) can silently break unrelated tests. All 11 affected integration test assertions (`$.pageable` → `$.page`, `$.totalElements` → `$.page.totalElements`) were updated; `./mvnw verify` now exits with 0 failures.
-
-## [1.1.0] - 2026-05-19
-
-### Added
-- **Scrum mode (v1.1.0)**: New `SCRUM` project type alongside Shape Up and Kanban. Adds story points on tasks, sprint goal and actual velocity on cycles, Sprint Planning page with two-column product/sprint backlog drag-drop, Burndown chart (remaining vs ideal), and Velocity chart (planned vs completed per sprint). New API endpoints: `GET /api/cycles/{id}/burndown` and `GET /api/projects/{id}/velocity`. Demo data now seeds a "Mobile App — Scrum Demo" project with three sprints (two completed with velocity 13/16, one active) and Fibonacci-pointed tasks so the burndown and velocity charts render out of the box.
+### Added (core features, shipped 2026-05-19)
+- **Scrum mode**: New `SCRUM` project type alongside Shape Up and Kanban. Adds story points on tasks, sprint goal and actual velocity on cycles, Sprint Planning page with two-column product/sprint backlog drag-drop, Burndown chart (remaining vs ideal), and Velocity chart (planned vs completed per sprint). New API endpoints: `GET /api/cycles/{id}/burndown` and `GET /api/projects/{id}/velocity`. Demo data now seeds a "Mobile App — Scrum Demo" project with three sprints (two completed with velocity 13/16, one active) and Fibonacci-pointed tasks so the burndown and velocity charts render out of the box.
 - **Explicit team-to-cycle assignment for betting**: Introduced a `cycle_teams` join table so teams can be assigned to a cycle independently of pitch assignments. This unblocks the "Generate Slots" flow in the Betting Table — previously it failed silently when no pitches had yet been assigned. Teams can now be added/removed directly from the Betting Table page using the new **Teams for this Cycle** panel. REST API: `GET/POST/DELETE /api/cycles/{id}/teams[/{teamId}]`.
 - **Inline pitch title editing**: Pitch names can now be edited directly from the PitchDetail header and the SortablePitchList (EpicDetailPage). Click-to-edit with Enter/blur to save, Escape to cancel.
 - **Interactive roadmap timeline**: Drag-to-move and drag-to-resize timeline bars on the Roadmap page to adjust epic and initiative dates. Empty-state "Set dates" button creates a default 2-week range. Progress percentages and status-colored dots shown on bars.
@@ -29,10 +41,13 @@ All notable changes to this project will be documented in this file.
 - **Project Manager report template**: New "Project Manager" dashboard template with 5 purpose-built widgets — unshaped pitches, stale bugs (3+ days unresolved), high-priority tasks, at-risk epics, and overdue tasks. Available from the template gallery in the Reports page.
 - **New widget data sources**: Five new data source types for custom dashboards — `UNSHAPED_PITCHES`, `STALE_BUGS`, `HIGH_PRIORITY_TASKS`, `AT_RISK_EPICS`, and `OVERDUE_TASKS`. Usable in any custom report board.
 
-### Fixed
+### Fixed (core release, 2026-05-19)
 - **Release form navigation**: After creating or editing a release, the form now correctly navigates to `/releases-management/:id` instead of the non-existent `/releases/:id`.
 - **Report board View button**: Clicking "View" on a custom report board now correctly navigates to the dashboard view instead of redirecting to the main dashboard.
 - **Startup crash (`tasks_aud` missing column)**: Added Flyway migration `V102` to add `project_id` to the Hibernate Envers `tasks_aud` audit table, fixing a schema-validation crash on startup when `Task.project` is audited.
+
+### Changed
+- **Test suite: 100% pass rule added to `CLAUDE.md`**: Infrastructure changes (serialization mode, renamed fields) can silently break unrelated tests. All 11 affected integration test assertions (`$.pageable` → `$.page`, `$.totalElements` → `$.page.totalElements`) were updated; `./mvnw verify` now exits with 0 failures.
 
 ## [1.0.0] - 2026-04-21
 

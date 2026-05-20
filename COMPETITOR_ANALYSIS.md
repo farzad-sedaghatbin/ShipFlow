@@ -1,6 +1,6 @@
 # ShipFlow — Competitive Analysis
 
-_Last updated: 2026-05-17 (v1.1.0 in development — Scrum mode)_
+_Last updated: 2026-05-20 (v1.1.0 released — Scrum mode shipped)_
 
 This document positions ShipFlow against the tools teams most commonly evaluate before adopting it.
 It is written factually to help evaluators make an informed decision.
@@ -24,8 +24,8 @@ ShipFlow targets teams that:
 |---------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Shape Up methodology** | ✅ Full | ❌ | ❌ | ❌ | ❌ | Partial¹ | Partial² |
 | **Kanban mode** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| **Scrum mode (sprints, story points, burndown, velocity)** | 🔧 (v1.1.0, in development) | ✅ | ✅ | Partial | Partial | ❌ | ✅ |
-| **Triple mode (Shape Up + Kanban + Scrum per project)** | 🔧 (v1.1.0, in development) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Scrum mode (sprints, story points, burndown, velocity)** | ✅ (v1.1.0) | ✅ | ✅ | Partial | Partial | ❌ | ✅ |
+| **Triple mode (Shape Up + Kanban + Scrum per project)** | ✅ (v1.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **6-week cycles with betting table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Hill charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Circuit breaker (appetite enforcement)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -73,7 +73,7 @@ ShipFlow targets teams that:
 - RTL support (Persian, Arabic)
 - No per-seat cost when self-hosted
 
-**Who should use Linear**: Teams that want the fastest Kanban tool on the market and don't need self-hosting or AI-editor integration. (Scrum sprint support with story points, burndown, and velocity is in active development for v1.1.0.)
+**Who should use Linear**: Teams that want the fastest Kanban tool on the market and don't need self-hosting or AI-editor integration. ShipFlow v1.1.0 now matches Linear's Scrum feature set — sprints, story points, burndown, and velocity — while also supporting Shape Up and self-hosting.
 **Who should use ShipFlow**: Teams that practice Shape Up, want AI-native workflows, or need self-hosted data ownership.
 
 ---

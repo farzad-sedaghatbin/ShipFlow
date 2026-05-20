@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
-import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2 } from 'lucide-react';
+import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, Square, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import { Markdown } from '@/components/ui/markdown';
 import {
@@ -27,7 +28,8 @@ import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { teamService } from '../services/teamService';
 import { pitchService } from '../services/pitchService';
-import timerService from '../services/timerService';
+import timerService, { WorkLogTimer } from '../services/timerService';
+import { workLogService } from '../services/workLogService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskAttachments from '../components/TaskAttachments';
 import TaskDependencies from '../components/TaskDependencies';
@@ -61,6 +63,11 @@ export default function TaskDetailPage() {
   const [subtasks, setSubtasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
+  const [activeTimer, setActiveTimer] = useState<WorkLogTimer | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [stopDialogOpen, setStopDialogOpen] = useState(false);
+  const [workLogNote, setWorkLogNote] = useState('');
+  const [stoppingTimer, setStoppingTimer] = useState(false);
   const [viewSubtask, setViewSubtask] = useState<Task | null>(null);
   
   // Edit dialog state
@@ -95,6 +102,15 @@ export default function TaskDetailPage() {
       loadInitialData();
     }
   }, [taskId]);
+
+  // Tick elapsed seconds when timer is running for this task
+  useEffect(() => {
+    if (!activeTimer || activeTimer.taskId !== task?.id) return;
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeTimer, task?.id]);
 
   const loadInitialData = async () => {
     try {
@@ -134,6 +150,13 @@ export default function TaskDetailPage() {
       const timer = await timerService.getActiveTimer();
       if (timer && timer.taskId) {
         setActiveTimerTaskId(timer.taskId);
+        setActiveTimer(timer);
+        setElapsedSeconds(timer.elapsedSeconds);
+        setWorkLogNote(timer.note || '');
+      } else {
+        setActiveTimerTaskId(null);
+        setActiveTimer(null);
+        setElapsedSeconds(0);
       }
     } catch (error) {
       console.error('Failed to load active timer:', error);
@@ -162,12 +185,44 @@ export default function TaskDetailPage() {
         taskId: task.id,
         note: `Working on: ${task.title}`,
       });
-      setActiveTimerTaskId(task.id);
       await loadActiveTimer();
-      toast.success('Timer started for task');
+      toast.success(t('taskDetailPage.timerStarted'));
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to start timer';
+      const message = error.response?.data?.message || t('taskDetailPage.timerStartFailed');
       toast.error(message);
+    }
+  };
+
+  const formatElapsed = (seconds: number): string => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const handleStopTimer = async () => {
+    if (!activeTimer) return;
+    try {
+      setStoppingTimer(true);
+      const hours = Math.round((elapsedSeconds / 3600) * 4) / 4;
+      await workLogService.createMy({
+        taskId: activeTimer.taskId,
+        pitchId: activeTimer.pitchId,
+        date: new Date().toISOString().split('T')[0],
+        hoursSpent: hours,
+        note: workLogNote.trim() || undefined,
+      });
+      await timerService.cancelTimer();
+      setActiveTimer(null);
+      setActiveTimerTaskId(null);
+      setElapsedSeconds(0);
+      setWorkLogNote('');
+      setStopDialogOpen(false);
+      toast.success(t('taskDetailPage.timerStopped'));
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('taskDetailPage.timerStopFailed'));
+    } finally {
+      setStoppingTimer(false);
     }
   };
 
@@ -304,16 +359,28 @@ export default function TaskDetailPage() {
                   Add Subtask
                 </Button>
               )}
-              <Button
-                variant={activeTimerTaskId === task.id ? 'destructive' : 'default'}
-                size="sm"
-                onClick={handleStartTimer}
-                disabled={activeTimerTaskId !== null && activeTimerTaskId !== task.id}
-                className={activeTimerTaskId === task.id ? '' : 'bg-green-600 hover:bg-green-700'}
-              >
-                <PlayCircle className="h-4 w-4 mr-2" />
-                {activeTimerTaskId === task.id ? 'Running' : 'Start Timer'}
-              </Button>
+              {activeTimerTaskId === task.id ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setStopDialogOpen(true)}
+                  className="gap-2 tabular-nums"
+                >
+                  <Square className="h-4 w-4" />
+                  {t('taskDetailPage.stopTimer')} · {formatElapsed(elapsedSeconds)}
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleStartTimer}
+                  disabled={activeTimerTaskId !== null}
+                  className="bg-green-600 hover:bg-green-700 gap-2"
+                >
+                  <PlayCircle className="h-4 w-4" />
+                  {t('taskDetailPage.startTimer')}
+                </Button>
+              )}
               <Button
                 variant="default"
                 size="sm"
@@ -810,6 +877,53 @@ export default function TaskDetailPage() {
             <Button onClick={handleSaveTask} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t('common.save')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stop Timer Dialog */}
+      <Dialog open={stopDialogOpen} onOpenChange={setStopDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              {t('taskDetailPage.stopTimerDialog.title')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('taskDetailPage.stopTimerDialog.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg bg-muted p-4 text-center">
+              <div className="text-3xl font-bold tabular-nums text-primary">
+                {formatElapsed(elapsedSeconds)}
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {(Math.round((elapsedSeconds / 3600) * 4) / 4).toFixed(2)} {t('taskDetailPage.stopTimerDialog.hours')}
+                <span className="ml-1 text-xs">({t('taskDetailPage.stopTimerDialog.rounded')})</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="stop-timer-note">{t('taskDetailPage.stopTimerDialog.notes')}</Label>
+              <Textarea
+                id="stop-timer-note"
+                placeholder={t('taskDetailPage.stopTimerDialog.notesPlaceholder')}
+                value={workLogNote}
+                onChange={(e) => setWorkLogNote(e.target.value)}
+                rows={3}
+                className="resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStopDialogOpen(false)} disabled={stoppingTimer}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="destructive" onClick={handleStopTimer} disabled={stoppingTimer}>
+              {stoppingTimer && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Square className="h-4 w-4 mr-2" />
+              {t('taskDetailPage.stopTimerDialog.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -481,7 +481,9 @@
       "saveFailed": "Failed to save project",
       "deleteFailed": "Failed to delete project",
       "updateStatusFailed": "Failed to update project status"
-    }
+    },
+    "cannotDeleteWithCycles": "Cannot delete project with cycles",
+    "deleteDisabledScrum": "Cannot delete a Scrum project that has sprints"
   },
   "projectRequired": {
     "title": "Select a Project",
@@ -2287,7 +2289,8 @@
     },
     "viewMode": {
       "list": "List View",
-      "kanban": "Kanban View"
+      "kanban": "Kanban View",
+      "gantt": "Timeline (Gantt)"
     },
     "status": {
       "open": "Open",
@@ -3104,7 +3107,8 @@
     "workDays": "Work Days",
     "avgHoursPerDay": "Avg Hours/Day",
     "notStarted": "Not Started",
-    "hoursByMember": "Hours by Team Member"
+    "hoursByMember": "Hours by Team Member",
+    "viewPitch": "View Pitch"
   },
   "backlogPage": {
     "title": "Backlog",
@@ -4280,7 +4284,24 @@
     "tasks": "Tasks",
     "viewAllTasks": "View All Tasks",
     "noTasks": "No tasks linked to this pitch yet.",
-    "viewAllWorkLogs": "View all {{total}} work logs →"
+    "viewAllWorkLogs": "View all {{total}} work logs →",
+    "createTask": {
+      "button": "Create Task",
+      "dialogTitle": "Create Task for Pitch",
+      "title": "Title",
+      "titlePlaceholder": "Enter task title…",
+      "titleRequired": "Task title is required",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional description…",
+      "priority": "Priority",
+      "status": "Status",
+      "cycle": "Cycle",
+      "selectCycle": "Select a cycle…",
+      "cycleRequired": "Please select a cycle",
+      "noCycles": "No cycles available",
+      "submit": "Create Task",
+      "success": "Task created successfully"
+    }
   },
   "cycleDetailPage": {
     "title": "Cycle Details",
@@ -4429,7 +4450,20 @@
     "taskNotFound": "Task not found",
     "loadFailed": "Failed to load task",
     "saveFailed": "Failed to save task",
-    "deleteFailed": "Failed to delete task"
+    "deleteFailed": "Failed to delete task",
+    "timerStarted": "Timer started",
+    "timerStartFailed": "Failed to start timer",
+    "timerStopped": "Time logged successfully",
+    "timerStopFailed": "Failed to stop timer",
+    "stopTimerDialog": {
+      "title": "Stop Timer & Log Work",
+      "description": "Review tracked time and add notes before logging.",
+      "hours": "hours",
+      "rounded": "rounded to nearest 0.25h",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "What did you work on?",
+      "confirm": "Stop & Log Time"
+    }
   },
   "bettingTablePage": {
     "title": "Betting Table",
