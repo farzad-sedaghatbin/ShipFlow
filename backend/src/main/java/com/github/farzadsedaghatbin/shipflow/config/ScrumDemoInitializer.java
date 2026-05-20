@@ -5,6 +5,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.*;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -39,7 +41,21 @@ public class ScrumDemoInitializer implements CommandLineRunner {
   @Transactional
   public void run(String... args) {
     if (projectRepository.existsByProjectKeyNotDeleted("MAS")) {
-      log.info("ScrumDemoInitializer: MAS project already exists — skipping");
+      // Project exists — verify tasks were also seeded. A prior run could have committed
+      // the project + cycles but crashed before the task inserts (e.g. missing DB column).
+      projectRepository.findByProjectKey("MAS").ifPresent(masProject -> {
+        List<Cycle> cycles = cycleRepository.findByProjectIdOrderByStartDateDesc(masProject.getId());
+        long totalTasks = cycles.stream()
+            .mapToLong(c -> taskRepository.countByCycleId(c.getId()))
+            .sum();
+        if (totalTasks == 0 && !cycles.isEmpty()) {
+          log.info("ScrumDemoInitializer: MAS cycles exist but have 0 tasks — back-filling tasks now");
+          seedTasksForCycles(cycles);
+        } else {
+          log.info("ScrumDemoInitializer: MAS already fully seeded ({} cycles, {} tasks) — skipping",
+              cycles.size(), totalTasks);
+        }
+      });
       return;
     }
 
@@ -121,6 +137,45 @@ public class ScrumDemoInitializer implements CommandLineRunner {
     task("Performance: lazy-load images", TaskStatus.TODO,        TaskPriority.LOW,    2, sprint3, minaPerson, saraPerson, "performance,frontend", null);
 
     log.info("ScrumDemoInitializer: complete — 3 sprints + 10 tasks seeded for Mobile App — Scrum Demo");
+  }
+
+  /**
+   * Back-fills tasks into existing MAS cycles when a prior startup seeded the project and cycles
+   * but crashed before reaching the task-insert section (e.g. due to a missing DB column or
+   * constraint). Cycles are matched by start-date order: oldest → Sprint 1, …, newest → Sprint 3.
+   */
+  private void seedTasksForCycles(List<Cycle> cycles) {
+    Person aliPerson = personRepository.findByEmail("ali@shipflow.dev").orElse(null);
+    Person minaPerson = personRepository.findByEmail("mina@shipflow.dev").orElse(null);
+    Person saraPerson = personRepository.findByEmail("sara@shipflow.dev").orElse(null);
+
+    List<Cycle> ordered = cycles.stream()
+        .sorted(Comparator.comparing(Cycle::getStartDate))
+        .toList();
+
+    if (ordered.size() >= 1) {
+      Cycle s1 = ordered.get(0);
+      LocalDate s1Start = s1.getStartDate();
+      task("Email sign-up endpoint",    TaskStatus.DONE, TaskPriority.HIGH,   5, s1, aliPerson,  saraPerson, "backend,auth",    s1Start.plusDays(3).atTime(11, 0));
+      task("Google OAuth integration",  TaskStatus.DONE, TaskPriority.HIGH,   3, s1, aliPerson,  saraPerson, "backend,oauth",   s1Start.plusDays(7).atTime(15, 30));
+      task("Onboarding wizard screens", TaskStatus.DONE, TaskPriority.MEDIUM, 5, s1, minaPerson, saraPerson, "frontend,ux",     s1Start.plusDays(12).atTime(9, 45));
+    }
+    if (ordered.size() >= 2) {
+      Cycle s2 = ordered.get(1);
+      LocalDate s2Start = s2.getStartDate();
+      task("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH,   8, s2, aliPerson,  saraPerson, "backend,notifications", s2Start.plusDays(4).atTime(14, 0));
+      task("Notification preferences UI",   TaskStatus.DONE, TaskPriority.MEDIUM, 3, s2, minaPerson, saraPerson, "frontend",              s2Start.plusDays(8).atTime(10, 15));
+      task("In-app message center",         TaskStatus.DONE, TaskPriority.MEDIUM, 5, s2, minaPerson, saraPerson, "frontend,messaging",     s2Start.plusDays(11).atTime(16, 0));
+    }
+    if (ordered.size() >= 3) {
+      Cycle s3 = ordered.get(2);
+      LocalDate s3Start = s3.getStartDate();
+      task("Dark-mode theme tokens",        TaskStatus.DONE,        TaskPriority.MEDIUM, 2, s3, minaPerson, saraPerson, "frontend,theme",       s3Start.plusDays(3).atTime(11, 0));
+      task("Fix top 5 crash reports",       TaskStatus.DONE,        TaskPriority.HIGH,   5, s3, aliPerson,  saraPerson, "bugfix",               s3Start.plusDays(8).atTime(17, 0));
+      task("Accessibility audit pass",      TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3, s3, minaPerson, saraPerson, "a11y,frontend",        null);
+      task("Performance: lazy-load images", TaskStatus.TODO,        TaskPriority.LOW,    2, s3, minaPerson, saraPerson, "performance,frontend",  null);
+    }
+    log.info("ScrumDemoInitializer: task back-fill complete");
   }
 
   private void task(String title, TaskStatus status, TaskPriority priority, int points,
