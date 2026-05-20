@@ -3391,6 +3391,7 @@
     "sprintBacklog": "Sprint Backlog",
     "selectSprint": "Select Sprint",
     "noSprint": "No sprint selected",
+    "totalPoints": "{{points}} pts",
     "totalPoints_one": "{{points}} point",
     "totalPoints_other": "{{points}} points",
     "unassigned": "Unassigned",

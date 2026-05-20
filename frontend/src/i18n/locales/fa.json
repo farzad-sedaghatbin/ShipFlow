@@ -2885,6 +2885,7 @@
     "sprintBacklog": "بک‌لاگ اسپرینت",
     "selectSprint": "انتخاب اسپرینت",
     "noSprint": "اسپرینتی انتخاب نشده",
+    "totalPoints": "{{points}} امتیاز",
     "totalPoints_one": "{{points}} امتیاز",
     "totalPoints_other": "{{points}} امتیاز",
     "unassigned": "بدون مسئول",
