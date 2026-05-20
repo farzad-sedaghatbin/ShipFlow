@@ -149,9 +149,9 @@ export default function CycleList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('cycles.title')}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{isScrumProject ? t('cycles.sprints') : t('cycles.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {filteredCycles.length} {filteredCycles.length !== 1 ? t('cycles.cyclesFound_plural') : t('cycles.cyclesFound')} 
+            {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {filteredCycles.length} {isScrumProject ? (filteredCycles.length !== 1 ? t('cycles.sprintsFound_plural') : t('cycles.sprintsFound')) : (filteredCycles.length !== 1 ? t('cycles.cyclesFound_plural') : t('cycles.cyclesFound'))}
           </p>
         </div>
         <Button asChild data-tour="new-cycle-btn">
@@ -199,15 +199,15 @@ export default function CycleList() {
         </CardContent>
       </Card>
 
-      {/* Active Cycles */}
+      {/* Active Cycles / Active Sprints */}
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">{t('cycles.activeCycles')}</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{isScrumProject ? t('cycles.activeSprints') : t('cycles.activeCycles')}</h2>
         {activeCycles.length === 0 ? (
           <Card>
             <EmptyState
               illustration={<EmptyCyclesIllustration />}
-              title={t('cycles.noActiveCycles')}
-              description={t('cycles.noActiveCyclesDesc')}
+              title={isScrumProject ? t('cycles.noActiveSprints') : t('cycles.noActiveCycles')}
+              description={isScrumProject ? t('cycles.noActiveSprintsDesc') : t('cycles.noActiveCyclesDesc')}
               action={{
                 label: t('cycles.createFirstCycle'),
                 onClick: () => window.location.href = '/cycles/new',
@@ -250,7 +250,7 @@ export default function CycleList() {
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {t('cycles.pitches')}</span>
+                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />
@@ -311,9 +311,9 @@ export default function CycleList() {
         )}
       </section>
 
-      {/* Past Cycles */}
+      {/* Past Cycles / Past Sprints */}
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">{t('cycles.pastCycles')}</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{isScrumProject ? t('cycles.pastSprints') : t('cycles.pastCycles')}</h2>
         {inactiveCycles.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
@@ -353,7 +353,7 @@ export default function CycleList() {
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {t('cycles.pitches')}</span>
+                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />

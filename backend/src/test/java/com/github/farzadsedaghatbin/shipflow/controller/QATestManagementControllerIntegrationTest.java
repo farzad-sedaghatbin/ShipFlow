@@ -94,7 +94,7 @@ class QATestManagementControllerIntegrationTest {
         get("/api/qa/bug-reports/filter").param("statuses", "OPEN,IN_PROGRESS").param("exclude", "false"))
         .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(2))))
-        .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(2)));
+        .andExpect(jsonPath("$.page.totalElements", greaterThanOrEqualTo(2)));
   }
 
   @Test

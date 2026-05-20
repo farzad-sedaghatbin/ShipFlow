@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useProject } from '../contexts';
 import { CheckCircle, AlertTriangle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import { PitchHealthCard } from './PitchHealthCard';
 import { 
@@ -25,6 +26,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
   onPitchClick 
 }) => {
   const { t } = useTranslation();
+  const { isScrumProject } = useProject();
   const [summary, setSummary] = useState<CycleHealthSummaryDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +152,9 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
               {summary.criticalPitches > 0 && (
               <div
                 className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-md rounded-tr-md"
-                aria-label={`${summary.criticalPitches} critical pitches need action`}
+                aria-label={isScrumProject
+                  ? t('healthOverview.criticalStoriesMessage', { count: summary.criticalPitches })
+                  : `${summary.criticalPitches} critical pitches need action`}
               >
                   ACTION NEEDED
                 </div>
@@ -196,19 +200,20 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium flex items-center gap-1">
                 <Clock className="h-4 w-4" aria-hidden="true" />
-                Cycle Progress
+                {t(isScrumProject ? 'healthOverview.sprintProgress' : 'healthOverview.cycleProgress')}
               </span>
               <span className="text-sm text-muted-foreground">
                 {summary.cycleProgressPercent.toFixed(0)}%
               </span>
             </div>
-            <Progress 
-              value={summary.cycleProgressPercent} 
+            <Progress
+              value={summary.cycleProgressPercent}
               className="h-2"
-              aria-label={`Cycle progress: ${summary.cycleProgressPercent.toFixed(0)}%`}
+              aria-label={`${t(isScrumProject ? 'healthOverview.sprintProgress' : 'healthOverview.cycleProgress')}: ${summary.cycleProgressPercent.toFixed(0)}%`}
             />
           </div>
           
+          {!isScrumProject && (
           <div>
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm font-medium flex items-center gap-1">
@@ -230,21 +235,22 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
                 {summary.totalActualHours.toFixed(1)}h / {summary.totalAppetiteHours.toFixed(0)}h ({summary.budgetUsedPercent.toFixed(0)}%)
               </span>
             </div>
-            <Progress 
-              value={Math.min(100, summary.budgetUsedPercent)} 
+            <Progress
+              value={Math.min(100, summary.budgetUsedPercent)}
               className={cn(
                 "h-2.5",
-                summary.budgetUsedPercent > 100 
-                  ? "[&>div]:bg-red-600 [&>div]:animate-pulse" 
+                summary.budgetUsedPercent > 100
+                  ? "[&>div]:bg-red-600 [&>div]:animate-pulse"
                   : summary.budgetUsedPercent > 90
                     ? "[&>div]:bg-red-500"
-                    : summary.budgetUsedPercent > 80 
-                      ? "[&>div]:bg-yellow-500" 
+                    : summary.budgetUsedPercent > 80
+                      ? "[&>div]:bg-yellow-500"
                       : ""
               )}
               aria-label={`Budget used: ${summary.totalActualHours.toFixed(1)} hours of ${summary.totalAppetiteHours.toFixed(0)} hours`}
             />
           </div>
+          )}
         </div>
 
         {/* Status Breakdown */}
@@ -269,7 +275,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
         {/* Pitch List */}
         <div>
           <h3 className="text-lg font-semibold mb-4">
-            All Pitches ({summary.totalPitches})
+            {t(isScrumProject ? 'healthOverview.allStories' : 'healthOverview.allPitches', { count: summary.totalPitches })}
           </h3>
           {summary.criticalPitches > 0 && (
             <div className="mb-4 p-4 rounded-lg bg-gradient-to-r from-red-500/20 to-red-600/10 border-2 border-red-500/40 flex items-center gap-3 shadow-lg shadow-red-500/20">
@@ -280,8 +286,14 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
                 <p className="text-sm font-bold text-red-600 mb-1">
                 IMMEDIATE ATTENTION REQUIRED
                 </p>
-                <p className="text-sm text-red-600">
-                  {summary.criticalPitches} critical {summary.criticalPitches === 1 ? 'pitch requires' : 'pitches require'} immediate action
+                <p className="text-sm text-red-600"
+                  aria-label={isScrumProject
+                    ? t('healthOverview.criticalStoriesMessage', { count: summary.criticalPitches })
+                    : `${summary.criticalPitches} critical ${summary.criticalPitches === 1 ? 'pitch requires' : 'pitches require'} immediate action`}
+                >
+                  {isScrumProject
+                    ? t('healthOverview.criticalStoriesMessage', { count: summary.criticalPitches })
+                    : `${summary.criticalPitches} critical ${summary.criticalPitches === 1 ? 'pitch requires' : 'pitches require'} immediate action`}
                 </p>
               </div>
             </div>
@@ -290,7 +302,9 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
             <div className="mb-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-yellow-600" />
               <span className="text-sm text-yellow-600 font-medium">
-                {summary.atRiskPitches} {summary.atRiskPitches === 1 ? 'pitch is' : 'pitches are'} at risk - monitor closely
+                {isScrumProject
+                  ? t('healthOverview.atRiskStoriesMessage', { count: summary.atRiskPitches })
+                  : `${summary.atRiskPitches} ${summary.atRiskPitches === 1 ? 'pitch is' : 'pitches are'} at risk - monitor closely`}
               </span>
             </div>
           )}

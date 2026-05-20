@@ -28,7 +28,7 @@ import ProgressBar from '../components/ProgressBar';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import TaskStatisticsCard from '../components/TaskStatisticsCard';
-import { useToast } from '../contexts';
+import { useToast, useProject } from '../contexts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -50,6 +50,7 @@ export default function CycleDetail() {
   const id = safeParseId(idParam);
 
   const { showSuccess, showError } = useToast();
+  const { isScrumProject } = useProject();
   const [cycle, setCycle] = useState<Cycle | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -176,19 +177,23 @@ export default function CycleDetail() {
           <Badge variant={cycle.isActive ? 'default' : 'secondary'} className={cycle.isActive ? 'bg-green-500/10 text-green-400 border-green-500/20' : ''}>
             {cycle.isActive ? t('cycleDetailPage.active') : t('cycleDetailPage.completed')}
           </Badge>
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/cycles/${cycle.id}/hill-chart`}>
-              <BarChart3 className="h-4 w-4 mr-2" />
-              {t('cycleDetailPage.hillChart')}
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/cycles/${cycle.id}/circuit-breaker`}>
-              <Zap className="h-4 w-4 mr-2" />
-              {t('cycleDetailPage.circuitBreaker')}
-            </Link>
-          </Button>
-          {cycle.phase === 'BETTING_COOLDOWN' && (
+          {!isScrumProject && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/cycles/${cycle.id}/hill-chart`}>
+                <BarChart3 className="h-4 w-4 mr-2" />
+                {t('cycleDetailPage.hillChart')}
+              </Link>
+            </Button>
+          )}
+          {!isScrumProject && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to={`/cycles/${cycle.id}/circuit-breaker`}>
+                <Zap className="h-4 w-4 mr-2" />
+                {t('cycleDetailPage.circuitBreaker')}
+              </Link>
+            </Button>
+          )}
+          {!isScrumProject && cycle.phase === 'BETTING_COOLDOWN' && (
             <Button variant="outline" size="sm" asChild>
               <Link to={`/cycles/${cycle.id}/cooldown`}>
                 <Clock className="h-4 w-4 mr-2" />
@@ -243,96 +248,104 @@ export default function CycleDetail() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <FileText className="h-4 w-4" />
-              <span className="text-sm">{t('cycleDetailPage.totalPitches')}</span>
-            </div>
-            <p className="text-3xl font-bold text-foreground">{pitches.length}</p>
-          </CardContent>
-        </Card>
+        {!isScrumProject && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <FileText className="h-4 w-4" />
+                <span className="text-sm">{t('cycleDetailPage.totalPitches')}</span>
+              </div>
+              <p className="text-3xl font-bold text-foreground">{pitches.length}</p>
+            </CardContent>
+          </Card>
+        )}
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <CheckCircle className="h-4 w-4" />
-              <span className="text-sm">{t('cycleDetailPage.completedPitches')}</span>
+              <span className="text-sm">{isScrumProject ? t('cycleDetailPage.completedStories') : t('cycleDetailPage.completedPitches')}</span>
             </div>
             <p className="text-3xl font-bold text-green-400">{completedPitches}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Target className="h-4 w-4" />
-              <span className="text-sm">{t('cycleDetailPage.totalAppetite')}</span>
-            </div>
-            <p className="text-3xl font-bold text-foreground">{totalAppetiteHours.toFixed(0)}h</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm">{t('cycleDetailPage.totalActual')}</span>
-            </div>
-            <p className={`text-3xl font-bold ${totalActualHours > totalAppetiteHours ? 'text-red-400' : 'text-green-400'}`}>
-              {totalActualHours.toFixed(0)}h
-            </p>
-          </CardContent>
-        </Card>
+        {!isScrumProject && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Target className="h-4 w-4" />
+                <span className="text-sm">{t('cycleDetailPage.totalAppetite')}</span>
+              </div>
+              <p className="text-3xl font-bold text-foreground">{totalAppetiteHours.toFixed(0)}h</p>
+            </CardContent>
+          </Card>
+        )}
+        {!isScrumProject && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                <Clock className="h-4 w-4" />
+                <span className="text-sm">{t('cycleDetailPage.totalActual')}</span>
+              </div>
+              <p className={`text-3xl font-bold ${totalActualHours > totalAppetiteHours ? 'text-red-400' : 'text-green-400'}`}>
+                {totalActualHours.toFixed(0)}h
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className={isScrumProject ? "grid grid-cols-1 gap-6" : "grid grid-cols-1 lg:grid-cols-3 gap-6"}>
         {/* Pitches Section */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                <CardTitle>{t('cycleDetailPage.pitches')}</CardTitle>
-              </div>
-              <Button variant="link" asChild className="px-0">
-                <Link to="/pitches">{t('common.viewAll')}</Link>
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {pitches.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">{t('cycleDetailPage.noPitches')}</p>
-              ) : (
-                <div className="space-y-3">
-                  {pitches.map((pitch) => (
-                    <Link
-                      key={pitch.id}
-                      to={`/pitches/${pitch.id}`}
-                      className="block p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-foreground">{pitch.title}</h4>
-                        <StatusChip status={pitch.status} />
-                      </div>
-                      <div className="flex justify-between items-center mb-2 text-sm text-muted-foreground">
-                        <span>{pitch.teamName || t('common.unassigned')} • {pitch.appetiteDays} {t('common.days')} {t('cycles.appetite')}</span>
-                        <span>{pitch.totalHoursSpent?.toFixed(1) || 0}h / {pitch.appetiteHours?.toFixed(0) || 0}h</span>
-                      </div>
-                      {pitch.busiestPerson && (
-                        <div className="text-xs text-muted-foreground mb-2">
-                          Busiest: {pitch.busiestPerson.personName} ({pitch.busiestPerson.utilizationPercent?.toFixed(0)}% utilized)
-                        </div>
-                      )}
-                      <ProgressBar
-                        value={pitch.progressPercentage || 0}
-                        showPercentage={false}
-                        color={(pitch.progressPercentage || 0) > 100 ? 'error' : 'primary'}
-                      />
-                    </Link>
-                  ))}
+        {!isScrumProject && (
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <CardTitle>{t('cycleDetailPage.pitches')}</CardTitle>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                <Button variant="link" asChild className="px-0">
+                  <Link to="/pitches">{t('common.viewAll')}</Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {pitches.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">{t('cycleDetailPage.noPitches')}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {pitches.map((pitch) => (
+                      <Link
+                        key={pitch.id}
+                        to={`/pitches/${pitch.id}`}
+                        className="block p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-semibold text-foreground">{pitch.title}</h4>
+                          <StatusChip status={pitch.status} />
+                        </div>
+                        <div className="flex justify-between items-center mb-2 text-sm text-muted-foreground">
+                          <span>{pitch.teamName || t('common.unassigned')} • {pitch.appetiteDays} {t('common.days')} {t('cycles.appetite')}</span>
+                          <span>{pitch.totalHoursSpent?.toFixed(1) || 0}h / {pitch.appetiteHours?.toFixed(0) || 0}h</span>
+                        </div>
+                        {pitch.busiestPerson && (
+                          <div className="text-xs text-muted-foreground mb-2">
+                            Busiest: {pitch.busiestPerson.personName} ({pitch.busiestPerson.utilizationPercent?.toFixed(0)}% utilized)
+                          </div>
+                        )}
+                        <ProgressBar
+                          value={pitch.progressPercentage || 0}
+                          showPercentage={false}
+                          color={(pitch.progressPercentage || 0) > 100 ? 'error' : 'primary'}
+                        />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Sidebar */}
         <div className="space-y-6">

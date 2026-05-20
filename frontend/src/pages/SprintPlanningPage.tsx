@@ -201,7 +201,7 @@ export default function SprintPlanningPage() {
             <CardTitle className="flex items-center justify-between text-base">
               <span>{t('sprintPlanning.productBacklog')}</span>
               <Badge variant="secondary">
-                {t('sprintPlanning.totalPoints', { points: productBacklogPoints })}
+                {t('sprintPlanning.totalPoints', { count: productBacklogPoints, points: productBacklogPoints })}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -243,7 +243,7 @@ export default function SprintPlanningPage() {
                   : t('sprintPlanning.sprintBacklog')}
               </span>
               <Badge variant="secondary">
-                {t('sprintPlanning.totalPoints', { points: sprintPoints })}
+                {t('sprintPlanning.totalPoints', { count: sprintPoints, points: sprintPoints })}
               </Badge>
             </CardTitle>
           </CardHeader>

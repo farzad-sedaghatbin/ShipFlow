@@ -930,18 +930,23 @@ public class SampleDataInitializer implements CommandLineRunner {
    * that were already seeded by an older version (before v1.1.0).
    */
   private void seedScrumDemoProjectIfAbsent() {
-    if (projectRepository.existsByProjectKey("MAS")) {
+    if (projectRepository.existsByProjectKeyNotDeleted("MAS")) {
+      log.info("Scrum demo back-fill: MAS project already exists — skipping");
       return;
     }
-    User saraUser = userRepository.findByUsername("sara").orElse(null);
-    if (saraUser == null) {
-      // Seed data hasn't run yet; the regular run() call will seed everything including MAS.
+    // Prefer the seed 'sara' manager; fall back to any existing user so custom DBs work too.
+    User ownerUser = userRepository.findByUsername("sara")
+        .orElseGet(() -> userRepository.findAll().stream().findFirst().orElse(null));
+    if (ownerUser == null) {
+      log.info("Scrum demo back-fill: no users exist yet — will be seeded by the full initializer");
       return;
     }
+    log.info("Scrum demo back-fill: seeding Mobile App — Scrum Demo (MAS) with owner '{}'", ownerUser.getUsername());
     Person aliPerson = personRepository.findByEmail("ali@shipflow.dev").orElse(null);
     Person minaPerson = personRepository.findByEmail("mina@shipflow.dev").orElse(null);
     Person saraPerson = personRepository.findByEmail("sara@shipflow.dev").orElse(null);
-    seedScrumDemoProject(saraUser, aliPerson, minaPerson, saraPerson);
+    seedScrumDemoProject(ownerUser, aliPerson, minaPerson, saraPerson);
+    log.info("Scrum demo back-fill: complete — Mobile App — Scrum Demo seeded successfully");
   }
 
   /**
@@ -951,7 +956,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private void seedScrumDemoProject(
       User ownerUser, Person aliPerson, Person minaPerson, Person saraPerson) {
     // Guard against duplicate seeding on subsequent application restarts or test reruns
-    if (projectRepository.existsByProjectKey("MAS")) {
+    if (projectRepository.existsByProjectKeyNotDeleted("MAS")) {
       log.info("Scrum demo project (MAS) already exists — skipping seed");
       return;
     }

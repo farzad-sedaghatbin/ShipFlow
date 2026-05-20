@@ -242,7 +242,7 @@ export default function CycleForm() {
     <div className="flex justify-center">
       <div className="w-full max-w-xl space-y-6">
         <h1 className="text-2xl font-bold text-foreground">
-          {isEdit ? t('cycleForm.editCycle') : t('cycleForm.createNewCycle')}
+          {t(isScrumProject && isEdit ? 'cycleForm.editSprint' : isScrumProject ? 'cycleForm.createNewSprint' : isEdit ? 'cycleForm.editCycle' : 'cycleForm.createNewCycle')}
         </h1>
 
         <Card>
@@ -287,7 +287,7 @@ export default function CycleForm() {
 
             {/* Cycle Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">{t('cycleForm.cycleNameRequired')}</Label>
+              <Label htmlFor="name">{t(isScrumProject ? 'cycleForm.sprintNameRequired' : 'cycleForm.cycleNameRequired')}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -295,7 +295,7 @@ export default function CycleForm() {
                   setFormData({ ...formData, name: e.target.value });
                   setFieldErrors((prev) => ({ ...prev, name: '' }));
                 }}
-                placeholder={t('cycleForm.cycleNamePlaceholder')}
+                placeholder={t(isScrumProject ? 'cycleForm.sprintNamePlaceholder' : 'cycleForm.cycleNamePlaceholder')}
                 className={fieldErrors.name ? 'border-destructive' : ''}
               />
               {fieldErrors.name ? (
@@ -390,6 +390,7 @@ export default function CycleForm() {
             </div>
 
             {/* Phase */}
+            {!isScrumProject && (
             <div className="space-y-2">
               <Label>{t('cycleForm.phase')}</Label>
               <Select
@@ -405,6 +406,7 @@ export default function CycleForm() {
                 </SelectContent>
               </Select>
             </div>
+            )}
 
             {/* Sprint Goal (Scrum only) */}
             {isScrumProject && (

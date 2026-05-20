@@ -31,10 +31,13 @@ export function VelocityChart({ projectId }: VelocityChartProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Gauge className="h-4 w-4 text-primary" />
-          {t('charts.velocity.title')}
-        </CardTitle>
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Gauge className="h-4 w-4 text-primary" />
+            {t('charts.velocity.title')}
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('charts.velocity.allSprints')}</p>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -64,14 +67,14 @@ export function VelocityChart({ projectId }: VelocityChartProps) {
               <Bar
                 dataKey="plannedPoints"
                 name={t('charts.velocity.planned')}
-                fill="hsl(var(--muted-foreground))"
+                fill="#6366f1"
                 radius={[4, 4, 0, 0]}
-                opacity={0.6}
+                opacity={0.7}
               />
               <Bar
                 dataKey="completedPoints"
                 name={t('charts.velocity.completed')}
-                fill="hsl(var(--primary))"
+                fill="#22c55e"
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>

@@ -50,7 +50,7 @@ export const taskService = {
         },
       });
     }
-    return api.get<Task[]>(`/tasks/cycle/${cycleId}`);
+    return api.get<Task[]>(`/tasks/cycle/${cycleId}/all`);
   },
   getByCycleIdAndCategory: (cycleId: number, category: TaskCategory, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>(`/tasks/cycle/${cycleId}/category/${category}`, {

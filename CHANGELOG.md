@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Velocity chart colors**: Planned and completed bars were nearly identical dark shades in dark mode. Planned bars are now indigo (`#6366f1`) and completed bars are green (`#22c55e`) for clear visual differentiation.
+- **Velocity chart scope label**: Added "All Sprints · Project Overview" subtitle to clarify the chart shows project-wide data, distinguishing it from the adjacent per-sprint Burndown tab.
+- **Burndown diagnostics**: `BurndownService` now logs cycle ID, task count, and story-pointed task count on every call, plus a WARN when it returns an empty series — makes startup seeding issues diagnosable from logs without needing a debugger.
+- **Sprint terminology — sidebar, CycleList, CycleDetail, CycleForm, HealthOverview, CycleHealthSummary**: All Scrum projects now show sprint-specific labels (Sprints, Sprint Tools, Sprint Progress, Sprint Goal, etc.) instead of Shape Up terminology (Cycles, Cycle Tools, Pitches, Betting Table) throughout the app.
+- **Sprint planning crash (`S.reduce is not a function`)**: Added `GET /api/tasks/cycle/{id}/all` endpoint returning a plain `List<TaskDTO>` (not paginated) so the Sprint Planning board can load sprint tasks without hitting the page-only endpoint.
+- **PageImpl serialization warning**: Added `@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)` to suppress the startup warning and stabilise paginated response format (`$.page.totalElements`, `$.page.number`, etc.).
+- **`sprintPlanning.totalPoints` untranslated**: i18next pluralisation requires `count` as the interpolation variable — added `count` alongside `points` in both `t()` calls.
+- **`chk_project_type` constraint blocking Scrum project insert**: Added Flyway migration `V104` to drop and recreate the constraint to include `SCRUM` alongside `SHAPE_UP` and `KANBAN`.
+- **Burndown empty for seeded sprints**: `ScrumDemoInitializer` now detects when MAS cycles exist with 0 tasks (partial prior commit) and back-fills all 10 sprint tasks with correct `completedAt` values.
+
+### Changed
+- **Test suite: 100% pass rule added to `CLAUDE.md`**: Infrastructure changes (serialization mode, renamed fields) can silently break unrelated tests. All 11 affected integration test assertions (`$.pageable` → `$.page`, `$.totalElements` → `$.page.totalElements`) were updated; `./mvnw verify` now exits with 0 failures.
+
 ## [1.1.0] - 2026-05-19
 
 ### Added
