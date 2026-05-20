@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - **Stop timer directly from task detail page**: The "Running" timer button on `TaskDetailPage` was a dead indicator — clicking it did nothing and users had to scroll to the floating `TimerWidget` to stop the timer. The button now shows a live elapsed clock (`HH:MM:SS`) and opens a "Stop & Log Work" dialog right on the task, with the same note + rounded-hours flow as the global widget.
 - **Sprint cards showing "0 stories"**: `CycleDTO.pitchCount` counts pitches (Shape Up concept), which is always 0 for Scrum projects. Added `taskCount` to `CycleDTO` populated from `TaskRepository.countByCycleId()`. `CycleList.tsx` now shows `taskCount` for Scrum projects and `pitchCount` for Shape Up.
 - **"Shaping & Building" badge on active Scrum sprints**: Active sprint cards now show "Active Sprint" badge instead of the Shape Up phase label. Completed past sprints show "Completed" instead of "inactive".
+- **Breadcrumb shows "Cycles" and CTA says "New Cycle" in Scrum projects**: `Breadcrumbs.tsx` now reads `isScrumProject` from context and swaps `/cycles` labels to "Sprints", "New Sprint", and "Sprint #N" throughout. `CycleList.tsx` CTA button also switches to "New Sprint" for Scrum projects.
 
 ## [1.1.0] - 2026-05-20
 

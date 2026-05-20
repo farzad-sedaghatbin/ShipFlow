@@ -157,7 +157,7 @@ export default function CycleList() {
         <Button asChild data-tour="new-cycle-btn">
           <Link to="/cycles/new">
             <Plus className="h-4 w-4 mr-2" />
-            {t('cycles.newCycle')}
+            {isScrumProject ? t('cycles.newSprint') : t('cycles.newCycle')}
           </Link>
         </Button>
       </div>

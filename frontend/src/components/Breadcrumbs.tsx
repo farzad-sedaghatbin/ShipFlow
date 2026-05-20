@@ -22,6 +22,7 @@ import {
   Beaker,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useProject } from '../contexts';
 
 interface BreadcrumbItem {
   label: string;
@@ -105,6 +106,7 @@ const parseDynamicSegment = (t: (key: string, options?: any) => string, segment:
 export default function Breadcrumbs() {
   const { t } = useTranslation();
   const location = useLocation();
+  const { isScrumProject } = useProject();
   
   // Don't show breadcrumbs on dashboard
   if (location.pathname === '/dashboard' || location.pathname === '/') {
@@ -127,16 +129,28 @@ export default function Breadcrumbs() {
     const config = routeConfig[currentPath];
     
     if (config) {
+      // Swap cycle labels to sprint labels for Scrum projects
+      let label = t(config.key);
+      if (isScrumProject) {
+        if (config.key === 'breadcrumbs.cycles') label = t('breadcrumbs.sprints');
+        else if (config.key === 'breadcrumbs.newCycle') label = t('breadcrumbs.newSprint');
+        else if (config.key === 'breadcrumbs.cycleNumber') label = t('breadcrumbs.sprintNumber', { number: '' }).trim();
+      }
       breadcrumbs.push({
-        label: t(config.key),
+        label,
         path: isLast ? undefined : currentPath,
         icon: config.icon,
       });
     } else {
       // Parse dynamic segment
       const dynamicConfig = parseDynamicSegment(t, segment, currentPath);
+      // For Scrum projects, "Cycle #N" becomes "Sprint #N"
+      let dynLabel = dynamicConfig.label;
+      if (isScrumProject && currentPath.includes('/cycles/') && /^\d+$/.test(segment)) {
+        dynLabel = t('breadcrumbs.sprintNumber', { number: segment });
+      }
       breadcrumbs.push({
-        label: dynamicConfig.label,
+        label: dynLabel,
         path: isLast ? undefined : currentPath,
         icon: dynamicConfig.icon,
       });
