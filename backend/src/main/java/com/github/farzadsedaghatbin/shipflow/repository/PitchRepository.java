@@ -83,24 +83,38 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   /**
    * Find all pitches for projects accessible to a user. Access is granted
    * through: 1. Project ownership 2. Direct project assignment (user_projects) 3.
-   * Team membership
+   * Team membership on a cycle within the project.
+   *
+   * Uses LEFT JOIN on cycle and epic so pre-cycle pitches (IDEA/DRAFT/SHAPED with
+   * no cycle assigned) are included when they belong to an accessible project
+   * via their epic link.
    */
   @Query("""
       SELECT DISTINCT p FROM Pitch p
-      JOIN FETCH p.cycle c
-      JOIN c.project proj
-      WHERE p.deletedAt IS NULL AND proj.id IN (
-          SELECT DISTINCT prj.id FROM Project prj
-          WHERE prj.owner.id = :userId
-          OR prj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
-          OR prj.id IN (
-              SELECT DISTINCT p2.cycle.project.id
-              FROM Pitch p2
-              JOIN p2.team t
-              JOIN TeamAssignment ta ON ta.team.id = t.id
-              JOIN ta.person per
-              JOIN User u ON u.person.id = per.id
-              WHERE u.id = :userId AND p2.cycle IS NOT NULL AND p2.deletedAt IS NULL
+      LEFT JOIN p.cycle c
+      LEFT JOIN c.project cproj
+      LEFT JOIN p.epic e
+      LEFT JOIN e.project eproj
+      WHERE p.deletedAt IS NULL
+      AND (
+          cproj.id IN (
+              SELECT DISTINCT prj.id FROM Project prj
+              WHERE prj.owner.id = :userId
+              OR prj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
+              OR prj.id IN (
+                  SELECT DISTINCT p2.cycle.project.id
+                  FROM Pitch p2
+                  JOIN p2.team t
+                  JOIN TeamAssignment ta ON ta.team.id = t.id
+                  JOIN ta.person per
+                  JOIN User u ON u.person.id = per.id
+                  WHERE u.id = :userId AND p2.cycle IS NOT NULL AND p2.deletedAt IS NULL
+              )
+          )
+          OR eproj.id IN (
+              SELECT DISTINCT prj.id FROM Project prj
+              WHERE prj.owner.id = :userId
+              OR prj.id IN (SELECT up.project.id FROM UserProject up WHERE up.user.id = :userId)
           )
       )
       ORDER BY p.id DESC
