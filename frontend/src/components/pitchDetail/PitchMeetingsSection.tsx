@@ -367,16 +367,16 @@ export function PitchMeetingsSection({
                 </div>
               )}
 
-              {/* DOR Items (only completed) */}
+              {/* DOR Items */}
               {viewMeeting.dorItems && viewMeeting.dorItems.length > 0 && (
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.dor')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dorItems.map((item, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        <Checkbox checked disabled className="mt-0.5" />
+                      <div key={index} className={`flex items-start gap-2 text-sm ${!item.isCompleted ? 'opacity-50' : ''}`}>
+                        <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? '' : 'line-through'}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}
@@ -387,16 +387,16 @@ export function PitchMeetingsSection({
                 </div>
               )}
 
-              {/* DOD Items (only completed) */}
+              {/* DOD Items */}
               {viewMeeting.dodItems && viewMeeting.dodItems.length > 0 && (
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.dod')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dodItems.map((item, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        <Checkbox checked disabled className="mt-0.5" />
+                      <div key={index} className={`flex items-start gap-2 text-sm ${!item.isCompleted ? 'opacity-50' : ''}`}>
+                        <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? '' : 'line-through'}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}
