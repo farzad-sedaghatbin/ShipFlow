@@ -175,6 +175,12 @@ A modern project management application implementing the [Shape Up](https://base
   - Supported forms: Epic, Initiative, Bug Report, Pitch, Task
   - Rendered views: Epic Detail, Initiative Detail, Bug View, Task Detail, Pitch Detail (description + Shape Up fields)
   - Uses GFM (GitHub Flavored Markdown) with headings, lists, code blocks, tables, links, and more
+- **Competitor Migration Tooling (v1.2.0)**: Import your existing projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow
+  - Auto-detects source format from CSV column headers (no manual format selection required)
+  - Maps rows to Tasks, Epics, and Cycles inside a new Kanban project; teams migrate to Shape Up or Scrum at their own pace
+  - 3-step stepper UI: drag-and-drop upload → importing progress → results summary with per-row error log
+  - Import history page — review past imports, row counts, and errors
+  - REST API: `POST /api/import/csv`, `GET /api/import`, `GET /api/import/{id}`
 - **Smart Project Selection**: Mandatory project selection dialog for project-scoped pages
   - Modal popup replaces the subtle empty-state card when "All Projects" is selected
   - Shows project list with avatar, name, and project key for one-click selection

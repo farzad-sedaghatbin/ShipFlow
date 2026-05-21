@@ -48,6 +48,9 @@ import {
   Workflow,
   TrendingDown,
   Gauge,
+  Upload,
+  FileSpreadsheet,
+  FolderInput,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -66,6 +69,38 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.2.0',
+    date: 'Coming soon',
+    title: 'Competitor Migration Tooling — Import from Jira, Linear & Asana',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Upload className="h-5 w-5" />,
+        title: 'CSV Import — Jira, Linear, Asana & Generic',
+        description:
+          'Upload a CSV export from Jira, Linear, or Asana and ShipFlow auto-detects the format from column headers. Tasks, epics, and sprints are mapped into a new Kanban project. A 3-step stepper guides you through upload → processing → results.',
+      },
+      {
+        icon: <FileSpreadsheet className="h-5 w-5" />,
+        title: 'Per-Row Error Log',
+        description:
+          'Failed rows are captured individually with their error reason — the rest of the import still completes. A detailed error log is shown on the results screen so you can fix and re-import only the broken rows.',
+      },
+      {
+        icon: <FolderInput className="h-5 w-5" />,
+        title: 'Import History',
+        description:
+          'View all past imports with file name, source format, row counts (imported / failed), and status. REST API: POST /api/import/csv, GET /api/import, GET /api/import/{id}.',
+      },
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: 'Always Imports into Kanban',
+        description:
+          'Imported projects start as Kanban so teams can onboard immediately. Switch to Shape Up or Scrum at your own pace — no forced methodology change on day one.',
+      },
+    ],
+  },
   {
     version: '1.1.0',
     date: 'May 19, 2026',

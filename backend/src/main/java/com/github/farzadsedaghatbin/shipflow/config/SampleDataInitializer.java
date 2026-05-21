@@ -61,6 +61,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final RetrospectiveRepository retrospectiveRepository;
   private final RetroItemRepository retroItemRepository;
   private final SavedViewRepository savedViewRepository;
+  private final ImportJobRepository importJobRepository;
 
   @Override
   @Transactional
@@ -921,6 +922,11 @@ public class SampleDataInitializer implements CommandLineRunner {
     // ── SCRUM Demo Project ────────────────────────────────────────────────────
     seedScrumDemoProject(saraUser, aliPerson, minaPerson, saraPerson);
 
+    // ── Import Jobs history ───────────────────────────────────────────────────
+    if (adminUser != null) {
+      createSampleImportJobs(adminUser, saraUser);
+    }
+
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
   }
@@ -1665,5 +1671,43 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build());
 
     log.info("Saved views sample data created: 4 entries");
+  }
+
+  /** Seeds demo import job history so the Import History page shows realistic entries. */
+  private void createSampleImportJobs(User adminUser, User saraUser) {
+    // Completed Jira import (with a few row-level errors)
+    importJobRepository.save(
+        ImportJob.builder()
+            .fileName("jira-mobile-banking-export.csv")
+            .sourceFormat(ImportSourceFormat.JIRA_CSV)
+            .status(ImportJobStatus.COMPLETED)
+            .totalRows(142)
+            .importedRows(139)
+            .failedRows(3)
+            .errorLog(
+                "Row 47: missing 'Summary' field — skipped\n"
+                    + "Row 93: unrecognised status 'AWAITING_REVIEW' — mapped to IN_PROGRESS\n"
+                    + "Row 118: empty assignee — task created unassigned")
+            .createdBy(adminUser)
+            .createdAt(LocalDateTime.of(2026, 5, 10, 14, 23))
+            .completedAt(LocalDateTime.of(2026, 5, 10, 14, 24))
+            .build());
+
+    // Completed Linear import (clean — zero failures)
+    importJobRepository.save(
+        ImportJob.builder()
+            .fileName("linear-devops-issues.csv")
+            .sourceFormat(ImportSourceFormat.LINEAR_CSV)
+            .status(ImportJobStatus.COMPLETED)
+            .totalRows(58)
+            .importedRows(58)
+            .failedRows(0)
+            .errorLog(null)
+            .createdBy(saraUser != null ? saraUser : adminUser)
+            .createdAt(LocalDateTime.of(2026, 5, 15, 9, 5))
+            .completedAt(LocalDateTime.of(2026, 5, 15, 9, 6))
+            .build());
+
+    log.info("Import jobs sample data created: 2 demo entries (Jira + Linear)");
   }
 }
