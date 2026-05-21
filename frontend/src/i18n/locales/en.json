@@ -145,6 +145,7 @@
     "releases": "Releases",
     "sprintPlanning": "Sprint Planning",
     "sprints": "Sprints",
+    "importData": "Import Data",
     "sections": {
       "overview": "Overview",
       "cycleWorkspace": "Cycle Workspace",
@@ -208,7 +209,8 @@
     "new": "New",
     "hillChart": "Hill Chart",
     "generate": "Generate",
-    "run": "Run"
+    "run": "Run",
+    "importData": "Import Data"
   },
   "integrations": {
     "title": "Integrations",
@@ -7135,5 +7137,55 @@
     "thu": "Thu",
     "fri": "Fri",
     "sat": "Sat"
+  },
+  "importPage": {
+    "title": "Import Data",
+    "subtitle": "Import tasks and projects from Jira, Linear, Asana, or any CSV file",
+    "step1": "Upload",
+    "step2": "Importing",
+    "step3": "Done",
+    "dropZone": "Drop a CSV file here or click to browse",
+    "dropZoneActive": "Drop your CSV file here",
+    "selectedFile": "Selected: {{name}}",
+    "projectName": "Project Name",
+    "projectNamePlaceholder": "e.g. Migrated from Jira",
+    "projectNameRequired": "Project name is required",
+    "format": "Source Format",
+    "formatAuto": "Auto-detect",
+    "formatJira": "Jira CSV",
+    "formatLinear": "Linear CSV",
+    "formatAsana": "Asana CSV",
+    "formatGeneric": "Generic CSV",
+    "startImport": "Start Import",
+    "importing": "Importing…",
+    "importingFile": "Importing {{fileName}}…",
+    "importingDesc": "Creating project and mapping rows…",
+    "importComplete": "Import Complete",
+    "importFailed": "Import Failed",
+    "totalRows": "Total Rows",
+    "imported": "Imported",
+    "failed": "Failed",
+    "openProject": "View Projects",
+    "importAnother": "Import Another File",
+    "errorDetails": "Error Details",
+    "supportedFormats": "Supported Formats",
+    "formatTable": {
+      "format": "Format",
+      "keyColumns": "Key Columns",
+      "tools": "Example Tools"
+    },
+    "jiraColumns": "Summary, Issue Type, Sprint, Story Points",
+    "linearColumns": "Title, Status, Cycle, Estimate",
+    "asanaColumns": "Task Name, Section, Assignee, Due Date",
+    "genericColumns": "name/title, status, priority, assignee",
+    "jiraTools": "Jira Cloud, Jira Data Center",
+    "linearTools": "Linear",
+    "asanaTools": "Asana",
+    "genericTools": "Any CSV",
+    "detectedFormat": "Detected format: {{format}}",
+    "noFile": "Please select a CSV file",
+    "wrongFormat": "Only CSV files are accepted",
+    "importError": "Import failed. Please check your file and try again.",
+    "projectCreated": "A new Kanban project has been created with your imported data."
   }
 }

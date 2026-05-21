@@ -20,6 +20,7 @@ import {
   Settings,
   MessageSquare,
   Beaker,
+  Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProject } from '../contexts';
@@ -60,6 +61,7 @@ const routeConfig: Record<string, { key: string; icon: React.ReactNode }> = {
   '/time': { key: 'breadcrumbs.time', icon: <Clock className="h-4 w-4" /> },
   '/time/logs': { key: 'breadcrumbs.timeLogs', icon: <Clock className="h-4 w-4" /> },
   '/backlog': { key: 'breadcrumbs.backlog', icon: <FileText className="h-4 w-4" /> },
+  '/import': { key: 'breadcrumbs.importData', icon: <Upload className="h-4 w-4" /> },
 };
 
 // Parse dynamic route segments

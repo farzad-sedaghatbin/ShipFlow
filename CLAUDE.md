@@ -7,10 +7,19 @@ Read it before touching any code.
 
 ## Current Milestone: v1.2.0 — "Competitor Migration Tooling"
 
-**Current version**: v1.1.0 (released 2026-05-19) → targeting v1.2.0
+**Current version**: v1.1.0 (released 2026-05-20) → targeting v1.2.0
 **All PRs target**: `main` branch
 
 ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Next: competitor migration tooling (v1.2.0) — CSV import → Linear API → Jira API. Always import into Kanban by default; teams adopt Shape Up/Scrum at their own pace.
+
+### v1.2.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S27 | CSV import backend — `ImportJob` entity, `CsvImportService` (Jira/Linear/Asana/Generic), `ImportController` | ✅ done |
+| S28 | CSV import frontend — stepper UI (Upload → Preview → Done), import history page | 🔲 next |
+| S29 | Linear API import — OAuth token, fetch issues/sprints via Linear GraphQL API | 🔲 planned |
+| S30 | Jira API import — OAuth token, fetch issues/sprints via Jira REST API | 🔲 planned |
 
 ### v0.8.0 session map (sessions S01–S13)
 

@@ -113,6 +113,9 @@ const ReleaseListPage = lazy(() => import('./pages/ReleaseListPage'));
 const ReleaseDetailPage = lazy(() => import('./pages/ReleaseDetailPage'));
 const ReleaseFormPage = lazy(() => import('./pages/ReleaseFormPage'));
 
+// Import
+const ImportPage = lazy(() => import('./pages/ImportPage'));
+
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
 const GettingStartedGuide = lazy(() => import('./pages/guides/GettingStartedGuide'));
@@ -309,6 +312,9 @@ function App() {
                       <Route path="releases-management/new" element={<ReleaseFormPage />} />
                       <Route path="releases-management/:id" element={<ReleaseDetailPage />} />
                       <Route path="releases-management/:id/edit" element={<ReleaseFormPage />} />
+
+                      {/* Import */}
+                      <Route path="import" element={<ImportPage />} />
 
                       {/* Help & Guides */}
                       <Route path="help" element={<HelpGuides />} />

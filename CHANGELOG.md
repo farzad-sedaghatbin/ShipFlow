@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **CSV import — full stack (v1.2.0)**: Import tasks and projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow. Backend auto-detects format from column headers and maps rows to Tasks, Epics, and Cycles inside a new Kanban project. Frontend: new `/import` page with 3-step stepper (Upload → Importing → Done), drag-and-drop file zone, project name input, format selector, stats summary, and per-row error log. "Import Data" nav link added to sidebar. API: `POST /api/import/csv`, `GET /api/import`, `GET /api/import/{id}`.
+
 ### Fixed
 - **Stop timer directly from task detail page**: The "Running" timer button on `TaskDetailPage` was a dead indicator — clicking it did nothing and users had to scroll to the floating `TimerWidget` to stop the timer. The button now shows a live elapsed clock (`HH:MM:SS`) and opens a "Stop & Log Work" dialog right on the task, with the same note + rounded-hours flow as the global widget.
 - **Sprint cards showing "0 stories"**: `CycleDTO.pitchCount` counts pitches (Shape Up concept), which is always 0 for Scrum projects. Added `taskCount` to `CycleDTO` populated from `TaskRepository.countByCycleId()`. `CycleList.tsx` now shows `taskCount` for Scrum projects and `pitchCount` for Shape Up.
