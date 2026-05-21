@@ -191,7 +191,7 @@ export default function PublicRoadmap() {
     {
       version: 'v1.2.0',
       theme: t('publicRoadmap.phase120Theme'),
-      status: 'planned',
+      status: 'in-progress',
       items: [
         { icon: <ArrowDownToLine className="h-5 w-5" />, title: t('publicRoadmap.phase120Item0Title'), description: t('publicRoadmap.phase120Item0Desc') },
         { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.phase120Item1Title'), description: t('publicRoadmap.phase120Item1Desc') },
