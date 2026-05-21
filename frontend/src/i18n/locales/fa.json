@@ -4929,7 +4929,13 @@
     "updateSuccess": "پروژه با موفقیت به‌روزرسانی شد",
     "viewBacklog": "مشاهده باکلاگ",
     "viewCycle": "[TODO: Persian translation] View Cycle",
-    "viewTeam": "[TODO: Persian translation] View Team"
+    "viewTeam": "[TODO: Persian translation] View Team",
+    "activeSprints": "اسپرینت‌های فعال",
+    "completedSprints": "اسپرینت‌های تکمیل‌شده",
+    "sprints": "اسپرینت‌ها",
+    "newSprint": "اسپرینت جدید",
+    "noSprints": "هنوز اسپرینتی وجود ندارد",
+    "stories": "داستان"
   },
   "priority": {
     "label": "اولویت",

@@ -50,7 +50,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { refreshProjects, selectProject, projects } = useProject();
+  const { refreshProjects, selectProject, projects, isScrumProject } = useProject();
   
   const [project, setProject] = useState<Project | null>(null);
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -292,14 +292,18 @@ export default function ProjectDetail() {
               <div>
                 <p className="text-sm text-muted-foreground">{t('projectDetail.projectType')}</p>
                 <p className="text-2xl font-bold">
-                  {project.projectType === 'KANBAN' ? t('projects.kanban') : t('projects.shapeUp')}
+                  {project.projectType === 'KANBAN'
+                    ? t('projects.kanban')
+                    : isScrumProject
+                    ? t('projects.scrum')
+                    : t('projects.shapeUp')}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Shape Up specific stats */}
+        {/* Shape Up / Scrum specific stats */}
         {project.projectType !== 'KANBAN' && (
           <>
             <Card>
@@ -309,7 +313,9 @@ export default function ProjectDetail() {
                     <Play className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{t('projectDetail.activeCycles')}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isScrumProject ? t('projectDetail.activeSprints') : t('projectDetail.activeCycles')}
+                    </p>
                     <p className="text-2xl font-bold">{activeCycles.length}</p>
                   </div>
                 </div>
@@ -323,7 +329,9 @@ export default function ProjectDetail() {
                     <CheckCircle2 className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{t('projectDetail.completedCycles')}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isScrumProject ? t('projectDetail.completedSprints') : t('projectDetail.completedCycles')}
+                    </p>
                     <p className="text-2xl font-bold">{completedCycles.length}</p>
                   </div>
                 </div>
@@ -386,22 +394,24 @@ export default function ProjectDetail() {
         </Card>
       )}
 
-      {/* Shape Up: Cycles List */}
+      {/* Shape Up / Scrum: Cycles / Sprints List */}
       {project.projectType !== 'KANBAN' && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{t('projectDetail.cycles')}</CardTitle>
+              <CardTitle className="text-lg">
+                {isScrumProject ? t('projectDetail.sprints') : t('projectDetail.cycles')}
+              </CardTitle>
               <Button size="sm" onClick={() => navigate(`/cycles/new?project=${project.id}`)}>
                 <Plus className="h-4 w-4 mr-2" />
-                {t('projectDetail.newCycle')}
+                {isScrumProject ? t('projectDetail.newSprint') : t('projectDetail.newCycle')}
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             {cycles.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                {t('projectDetail.noCycles')}
+                {isScrumProject ? t('projectDetail.noSprints') : t('projectDetail.noCycles')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -424,7 +434,7 @@ export default function ProjectDetail() {
                             {' - '}
                             <time dateTime={cycle.endDate}>{formatDate(cycle.endDate)}</time>
                           </div>
-                          {cycle.pitchCount !== undefined && (
+                          {!isScrumProject && cycle.pitchCount !== undefined && (
                             <div className="flex items-center gap-1">
                               <TrendingUp className="h-3 w-3" />
                               {cycle.pitchCount} {t('projectDetail.pitches')}

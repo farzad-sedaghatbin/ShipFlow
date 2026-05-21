@@ -1626,7 +1626,13 @@
     "key": "[Translation needed: کلید پروژه]",
     "owner": "[Translation needed: مالک پروژه]",
     "status": "Status",
-    "updateSuccess": "[Translation needed: پروژه با موفقیت به‌روزرسانی شد]"
+    "updateSuccess": "[Translation needed: پروژه با موفقیت به‌روزرسانی شد]",
+    "activeSprints": "Active Sprints",
+    "completedSprints": "Completed Sprints",
+    "sprints": "Sprints",
+    "newSprint": "New Sprint",
+    "noSprints": "No sprints yet",
+    "stories": "stories"
   },
   "taskDetail": {
     "title": "Title",

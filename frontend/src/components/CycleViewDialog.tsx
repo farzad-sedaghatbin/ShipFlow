@@ -110,7 +110,7 @@ export function CycleViewDialog({ cycle, open, onOpenChange }: CycleViewDialogPr
 
           {/* Counts */}
           <div className="grid grid-cols-2 gap-4">
-            {cycle.pitchCount !== undefined && (
+            {cycle.pitchCount !== undefined && cycle.projectType !== 'SCRUM' && (
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">{t('cycles.pitches')}</Label>
                 <div className="font-medium text-lg">{cycle.pitchCount}</div>
