@@ -227,7 +227,7 @@ export default function PitchBoard() {
 
   const loadAllPitches = async () => {
     try {
-      const response = await pitchService.getAll();
+      const response = await pitchService.getMyPitches();
       setPitches(response.data);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchBoard.errors.loadFailed')));
