@@ -1784,3 +1784,18 @@ export interface GlobalSearchResult {
 
 export * from './betting-analytics';
 export * from './circuit-breaker';
+
+export interface ImportJobDTO {
+  id: number;
+  fileName: string;
+  sourceFormat: 'JIRA_CSV' | 'LINEAR_CSV' | 'ASANA_CSV' | 'GENERIC_CSV';
+  status: 'PENDING' | 'PARSING' | 'IMPORTING' | 'COMPLETED' | 'FAILED';
+  totalRows: number;
+  importedRows: number;
+  failedRows: number;
+  errorLog: string | null;
+  projectId: number | null;
+  projectName: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}

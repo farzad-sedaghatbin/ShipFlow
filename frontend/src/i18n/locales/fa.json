@@ -567,7 +567,8 @@
     "time": "پیگیری زمان",
     "timeLogs": "گزارش زمان",
     "userManagement": "مدیریت کاربران",
-    "workLogs": "گزارش کار"
+    "workLogs": "گزارش کار",
+    "importData": "وارد کردن داده"
   },
   "bugReports": {
     "actions": {
@@ -3831,7 +3832,8 @@
     "userManagement": "مدیریت کاربران",
     "workLogs": "گزارش کار",
     "sprintPlanning": "برنامه‌ریزی اسپرینت",
-    "sprints": "اسپرینت‌ها"
+    "sprints": "اسپرینت‌ها",
+    "importData": "وارد کردن داده"
   },
   "organizationSettings": {
     "accentColor": "[TODO: Persian translation] Accent Color",
@@ -7135,5 +7137,55 @@
     "thu": "پنج",
     "fri": "جمعه",
     "sat": "شنبه"
+  },
+  "importPage": {
+    "title": "وارد کردن داده",
+    "subtitle": "وارد کردن وظایف و پروژه‌ها از Jira، Linear، Asana یا هر فایل CSV",
+    "step1": "آپلود",
+    "step2": "در حال وارد کردن",
+    "step3": "انجام شد",
+    "dropZone": "فایل CSV را اینجا رها کنید یا برای انتخاب کلیک کنید",
+    "dropZoneActive": "فایل CSV خود را اینجا رها کنید",
+    "selectedFile": "انتخاب شده: {{name}}",
+    "projectName": "نام پروژه",
+    "projectNamePlaceholder": "مثلاً: مهاجرت از جیرا",
+    "projectNameRequired": "نام پروژه الزامی است",
+    "format": "فرمت منبع",
+    "formatAuto": "تشخیص خودکار",
+    "formatJira": "CSV جیرا",
+    "formatLinear": "CSV لینیر",
+    "formatAsana": "CSV آسانا",
+    "formatGeneric": "CSV عمومی",
+    "startImport": "شروع واردسازی",
+    "importing": "در حال وارد کردن…",
+    "importingFile": "در حال وارد کردن {{fileName}}…",
+    "importingDesc": "در حال ایجاد پروژه و نگاشت ردیف‌ها…",
+    "importComplete": "واردسازی کامل شد",
+    "importFailed": "واردسازی ناموفق بود",
+    "totalRows": "کل ردیف‌ها",
+    "imported": "وارد شده",
+    "failed": "ناموفق",
+    "openProject": "مشاهده پروژه‌ها",
+    "importAnother": "وارد کردن فایل دیگر",
+    "errorDetails": "جزئیات خطا",
+    "supportedFormats": "فرمت‌های پشتیبانی‌شده",
+    "formatTable": {
+      "format": "فرمت",
+      "keyColumns": "ستون‌های کلیدی",
+      "tools": "ابزارهای نمونه"
+    },
+    "jiraColumns": "Summary، Issue Type، Sprint، Story Points",
+    "linearColumns": "Title، Status، Cycle، Estimate",
+    "asanaColumns": "Task Name، Section، Assignee، Due Date",
+    "genericColumns": "name/title، status، priority، assignee",
+    "jiraTools": "Jira Cloud، Jira Data Center",
+    "linearTools": "Linear",
+    "asanaTools": "Asana",
+    "genericTools": "هر CSV",
+    "detectedFormat": "فرمت تشخیص داده شده: {{format}}",
+    "noFile": "لطفاً یک فایل CSV انتخاب کنید",
+    "wrongFormat": "فقط فایل‌های CSV پذیرفته می‌شوند",
+    "importError": "واردسازی ناموفق بود. لطفاً فایل خود را بررسی کنید.",
+    "projectCreated": "یک پروژه کانبان جدید با داده‌های وارد شده شما ایجاد شده است."
   }
 }

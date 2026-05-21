@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **CSV import backend (v1.2.0)**: `POST /api/import/csv` accepts a multipart CSV file plus `projectName` and optional `format` hint. Auto-detects Jira, Linear, Asana, or Generic format from column headers. Parses rows into a new Kanban project with tasks, epics, and cycles. `GET /api/import` and `GET /api/import/{id}` return job status with per-row error log. Backed by `import_jobs` table (Flyway V2026_05_20_0001).
+- **CSV import — full stack (v1.2.0)**: Import tasks and projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow. Backend auto-detects format from column headers and maps rows to Tasks, Epics, and Cycles inside a new Kanban project. Frontend: new `/import` page with 3-step stepper (Upload → Importing → Done), drag-and-drop file zone, project name input, format selector, stats summary, and per-row error log. "Import Data" nav link added to sidebar. API: `POST /api/import/csv`, `GET /api/import`, `GET /api/import/{id}`.
 
 ### Fixed
 - **Stop timer directly from task detail page**: The "Running" timer button on `TaskDetailPage` was a dead indicator — clicking it did nothing and users had to scroll to the floating `TimerWidget` to stop the timer. The button now shows a live elapsed clock (`HH:MM:SS`) and opens a "Stop & Log Work" dialog right on the task, with the same note + rounded-hours flow as the global widget.
