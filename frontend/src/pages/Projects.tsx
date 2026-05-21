@@ -79,7 +79,7 @@ export default function Projects() {
     project: null,
   });
   const { showToast } = useToast();
-  const { refreshProjects } = useProject();
+  const { refreshProjects, selectProject } = useProject();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -226,7 +226,7 @@ export default function Projects() {
   };
 
   const handleViewCycles = (project: Project) => {
-    // For Kanban projects, navigate to backlog instead of cycles
+    selectProject(project);
     if (project.projectType === 'KANBAN') {
       navigate(`/backlog`);
     } else {
@@ -236,10 +236,12 @@ export default function Projects() {
 
   const handleViewDetails = (project: Project, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    selectProject(project);
     navigate(`/projects/${project.id}`);
   };
 
   const handleCardClick = (project: Project) => {
+    selectProject(project);
     navigate(`/projects/${project.id}`);
   };
 

@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 - **Sprint cards showing "0 stories"**: `CycleDTO.pitchCount` counts pitches (Shape Up concept), which is always 0 for Scrum projects. Added `taskCount` to `CycleDTO` populated from `TaskRepository.countByCycleId()`. `CycleList.tsx` now shows `taskCount` for Scrum projects and `pitchCount` for Shape Up.
 - **"Shaping & Building" badge on active Scrum sprints**: Active sprint cards now show "Active Sprint" badge instead of the Shape Up phase label. Completed past sprints show "Completed" instead of "inactive".
 - **Breadcrumb shows "Cycles" and CTA says "New Cycle" in Scrum projects**: `Breadcrumbs.tsx` now reads `isScrumProject` from context and swaps `/cycles` labels to "Sprints", "New Sprint", and "Sprint #N" throughout. `CycleList.tsx` CTA button also switches to "New Sprint" for Scrum projects.
+- **Scrum terminology in Project Detail page**: `ProjectDetail.tsx` now shows "Scrum" as the project type badge (not "Shape Up"), "Active Sprints" / "Completed Sprints" in stats, "Sprints" as the section header, "+ New Sprint" as the CTA, and hides the pitch count on sprint cards. `RecentActivityFeed` and `CycleViewDialog` also suppress pitch count for Scrum projects.
+- **Clicking a project in the Projects list now switches the project selector**: `handleCardClick`, `handleViewDetails`, and `handleViewCycles` in `Projects.tsx` all call `selectProject()` before navigating, so the toolbar project selector updates immediately when the user opens a project.
 
 ## [1.1.0] - 2026-05-20
 
