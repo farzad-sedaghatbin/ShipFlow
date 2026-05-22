@@ -1799,3 +1799,16 @@ export interface ImportJobDTO {
   createdAt: string;
   completedAt: string | null;
 }
+
+export interface LinearConnectionStatus {
+  connected: boolean;
+  configured: boolean;
+  teamId: string | null;
+  teamName: string | null;
+}
+
+export interface LinearTeam {
+  id: string;
+  name: string;
+  key: string;
+}
