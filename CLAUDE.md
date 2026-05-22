@@ -17,9 +17,9 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | Session | Task | Status |
 |---------|------|--------|
 | S27 | CSV import backend — `ImportJob` entity, `CsvImportService` (Jira/Linear/Asana/Generic), `ImportController` | ✅ done |
-| S28 | CSV import frontend — stepper UI (Upload → Preview → Done), import history page | 🔲 next |
-| S29 | Linear API import — OAuth token, fetch issues/sprints via Linear GraphQL API | 🔲 planned |
-| S30 | Jira API import — OAuth token, fetch issues/sprints via Jira REST API | 🔲 planned |
+| S28 | CSV import frontend — stepper UI (Upload → Preview → Done), import history page | ✅ done |
+| S29 | Linear API import — OAuth2 flow, GraphQL fetch of issues/cycles/projects | ✅ done |
+| S30 | Jira API import — OAuth token, fetch issues/sprints via Jira REST API | 🔲 next |
 
 ### v0.8.0 session map (sessions S01–S13)
 

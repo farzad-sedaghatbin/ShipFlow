@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Linear API import — OAuth2 + GraphQL (v1.2.0 S29)**: Connect ShipFlow to Linear via OAuth2 and import issues, cycles, and projects directly — no CSV export needed. Cycles → ShipFlow Cycles, Projects → Epics, Issues → Tasks (priority and state mapped). Target project type is Kanban or Scrum (user's choice). OAuth flow: `POST /api/import/linear/authorize` → redirect to Linear → `GET /api/import/linear/callback`. Team picker, connection status, and one-click disconnect. New endpoints: `GET /api/import/linear/status`, `GET /api/import/linear/teams`, `POST /api/import/linear/team`, `DELETE /api/import/linear/disconnect`, `POST /api/import/linear`.
 - **CSV import — full stack (v1.2.0)**: Import tasks and projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow. Backend auto-detects format from column headers and maps rows to Tasks, Epics, and Cycles inside a new Kanban project. Frontend: new `/import` page with 3-step stepper (Upload → Importing → Done), drag-and-drop file zone, project name input, format selector, stats summary, and per-row error log. "Import Data" nav link added to sidebar. API: `POST /api/import/csv`, `GET /api/import`, `GET /api/import/{id}`.
 
 ### Fixed

@@ -99,6 +99,12 @@ const releases: Release[] = [
         description:
           'Imported projects start as Kanban so teams can onboard immediately. Switch to Shape Up or Scrum at your own pace — no forced methodology change on day one.',
       },
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'Linear API Import — OAuth2 + GraphQL',
+        description:
+          'Connect ShipFlow to Linear via OAuth2 and import issues, cycles, and projects directly — no CSV export required. Linear Cycles → ShipFlow Cycles, Projects → Epics, Issues → Tasks with priority and state preserved. Target project type is Kanban or Scrum.',
+      },
     ],
   },
   {

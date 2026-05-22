@@ -146,6 +146,16 @@ public class OrganizationSettings {
   @Builder.Default
   private String defaultGithubBranch = "main";
 
+  // Linear OAuth Configuration (v1.2.0 S29)
+  @Column(name = "linear_access_token", columnDefinition = "TEXT")
+  private String linearAccessToken;
+
+  @Column(name = "linear_team_id")
+  private String linearTeamId;
+
+  @Column(name = "linear_team_name")
+  private String linearTeamName;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
