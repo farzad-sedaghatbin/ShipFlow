@@ -15,11 +15,11 @@ import * as CollapsiblePrimitive from '@radix-ui/react-collapsible';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { cn } from '@/lib/utils';
 import { importService } from '../services/importService';
-import { ImportJobDTO, LinearConnectionStatus, LinearTeam } from '../types';
+import { ImportJobDTO, JiraConnectionStatus, JiraProject, LinearConnectionStatus, LinearTeam } from '../types';
 import { useToast } from '../contexts';
 
 type Step = 1 | 2 | 3;
-type TabSource = 'csv' | 'linear';
+type TabSource = 'csv' | 'linear' | 'jira';
 
 const FORMAT_OPTIONS = [
   { value: 'auto', labelKey: 'importPage.formatAuto' },
@@ -503,6 +503,333 @@ function LinearTab() {
   );
 }
 
+// ── Jira Tab ──────────────────────────────────────────────────────────────────
+function JiraTab() {
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+
+  const [status, setStatus] = useState<JiraConnectionStatus | null>(null);
+  const [statusLoading, setStatusLoading] = useState(true);
+
+  const [projects, setProjects] = useState<JiraProject[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+
+  const [selectedProject, setSelectedProject] = useState<JiraProject | null>(null);
+
+  const [jiraProjectName, setJiraProjectName] = useState('');
+  const [jiraProjectType, setJiraProjectType] = useState<'KANBAN' | 'SCRUM'>('KANBAN');
+  const [jiraProjectNameError, setJiraProjectNameError] = useState('');
+
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportJobDTO | null>(null);
+
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [authorizing, setAuthorizing] = useState(false);
+
+  // Load status on mount
+  useEffect(() => {
+    let cancelled = false;
+    setStatusLoading(true);
+    importService
+      .getJiraStatus()
+      .then((s) => {
+        if (!cancelled) setStatus(s);
+      })
+      .catch(() => {
+        if (!cancelled) setStatus({ connected: false, configured: false, cloudId: null, cloudName: null });
+      })
+      .finally(() => {
+        if (!cancelled) setStatusLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function fetchProjects() {
+    setProjectsLoading(true);
+    importService
+      .getJiraProjects()
+      .then(setProjects)
+      .catch(() => setProjects([]))
+      .finally(() => setProjectsLoading(false));
+  }
+
+  async function handleConnect() {
+    setAuthorizing(true);
+    try {
+      const { authorizationUrl } = await importService.authorizeJira(window.location.origin);
+      window.location.href = authorizationUrl;
+    } catch {
+      showToast(t('importPage.jiraErrorToast', { error: t('common.retry') }), 'error');
+      setAuthorizing(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      await importService.disconnectJira();
+      setStatus({ connected: false, configured: status?.configured ?? false, cloudId: null, cloudName: null });
+      setSelectedProject(null);
+      setProjects([]);
+      setImportResult(null);
+      showToast(t('importPage.jiraDisconnectedToast'), 'success');
+    } catch {
+      showToast(t('importPage.jiraErrorToast', { error: t('common.retry') }), 'error');
+    } finally {
+      setDisconnecting(false);
+    }
+  }
+
+  async function handleImport() {
+    if (!jiraProjectName.trim()) {
+      setJiraProjectNameError(t('importPage.projectNameRequired'));
+      return;
+    }
+    if (!selectedProject) return;
+    setJiraProjectNameError('');
+    setImporting(true);
+    try {
+      const job = await importService.importFromJira(
+        selectedProject.key,
+        jiraProjectName.trim(),
+        jiraProjectType
+      );
+      setImportResult(job);
+    } catch {
+      showToast(t('importPage.importError'), 'error');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function handleResetImport() {
+    setImportResult(null);
+    setJiraProjectName('');
+    setJiraProjectType('KANBAN');
+    setJiraProjectNameError('');
+  }
+
+  if (statusLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // State A: not configured
+  if (!status?.configured) {
+    return (
+      <div className="rounded-lg border border-border bg-muted/40 p-6">
+        <p className="text-sm text-muted-foreground">{t('importPage.jiraNotConfigured')}</p>
+      </div>
+    );
+  }
+
+  // State B: configured but not connected
+  if (!status.connected) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-10 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+          <Plug className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-foreground">{t('importPage.tabJira')}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('importPage.jiraSelectProject')}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleConnect}
+          disabled={authorizing}
+          className="flex items-center gap-2 rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
+        >
+          {authorizing && <Loader2 className="h-4 w-4 animate-spin" />}
+          {t('importPage.jiraConnectBtn')}
+        </button>
+      </div>
+    );
+  }
+
+  // State C: connected — show import result if done
+  if (importResult) {
+    return (
+      <ImportResultCard
+        result={importResult}
+        onReset={handleResetImport}
+        resetLabel={t('importPage.importAnother')}
+      />
+    );
+  }
+
+  // State C: connected — show project picker or import form
+  return (
+    <div className="space-y-6">
+      {/* Connected badge + disconnect */}
+      <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-900 dark:bg-green-950/30">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-semibold text-white">
+            <CheckCircle2 className="h-3 w-3" />
+            {t('importPage.jiraConnectedBadge')}
+          </span>
+          {status.cloudName && (
+            <span className="text-sm text-muted-foreground">— {status.cloudName}</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={handleDisconnect}
+          disabled={disconnecting}
+          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-60 transition-colors"
+        >
+          {disconnecting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Unplug className="h-3.5 w-3.5" />
+          )}
+          {t('importPage.jiraDisconnectBtn')}
+        </button>
+      </div>
+
+      {/* Project picker */}
+      {!selectedProject && (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-foreground">{t('importPage.jiraSelectProject')}</p>
+          {!projects.length && !projectsLoading && (
+            <button
+              type="button"
+              onClick={fetchProjects}
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+            >
+              {t('importPage.jiraProjectPickerPlaceholder')}
+            </button>
+          )}
+          {projectsLoading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t('common.loading')}
+            </div>
+          )}
+          {projects.length > 0 && (
+            <div className="space-y-2">
+              {projects.map((project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedProject(project);
+                    setJiraProjectName(project.name);
+                  }}
+                  className="flex w-full items-center justify-between rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:border-primary hover:bg-accent transition-colors"
+                >
+                  <span>{project.name}</span>
+                  <span className="text-xs text-muted-foreground">{project.key}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Import form — once project is selected */}
+      {selectedProject && (
+        <div className="space-y-5">
+          {/* Change project link */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              {selectedProject.name} ({selectedProject.key})
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedProject(null);
+                setProjects([]);
+                setJiraProjectName('');
+              }}
+              className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+            >
+              {t('importPage.jiraChangeProject')}
+            </button>
+          </div>
+
+          {/* Project name */}
+          <div className="space-y-1">
+            <label
+              htmlFor="jiraProjectName"
+              className="block text-sm font-medium text-foreground"
+            >
+              {t('importPage.jiraProjectName')}
+            </label>
+            <input
+              id="jiraProjectName"
+              type="text"
+              value={jiraProjectName}
+              onChange={(e) => {
+                setJiraProjectName(e.target.value);
+                if (e.target.value.trim()) setJiraProjectNameError('');
+              }}
+              placeholder={t('importPage.jiraProjectNamePlaceholder')}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            {jiraProjectNameError && (
+              <p className="text-xs text-destructive">{jiraProjectNameError}</p>
+            )}
+          </div>
+
+          {/* Project type radio */}
+          <div className="space-y-2">
+            <span className="block text-sm font-medium text-foreground">
+              {t('importPage.jiraProjectType')}
+            </span>
+            <div className="flex gap-6">
+              {(
+                [
+                  { value: 'KANBAN', labelKey: 'importPage.jiraProjectTypeKanban' },
+                  { value: 'SCRUM', labelKey: 'importPage.jiraProjectTypeScrum' },
+                ] as const
+              ).map(({ value, labelKey }) => (
+                <label
+                  key={value}
+                  className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                >
+                  <input
+                    type="radio"
+                    name="jiraProjectType"
+                    value={value}
+                    checked={jiraProjectType === value}
+                    onChange={() => setJiraProjectType(value)}
+                    className="accent-primary"
+                  />
+                  {t(labelKey)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Import button */}
+          <button
+            type="button"
+            onClick={handleImport}
+            disabled={importing || !jiraProjectName.trim()}
+            className={cn(
+              'flex w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors',
+              importing || !jiraProjectName.trim()
+                ? 'cursor-not-allowed bg-muted text-muted-foreground'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90'
+            )}
+          >
+            {importing && <Loader2 className="h-4 w-4 animate-spin" />}
+            {importing ? t('importPage.jiraImporting') : t('importPage.jiraImportBtn')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ImportPage() {
   const { t } = useTranslation();
@@ -511,21 +838,32 @@ export default function ImportPage() {
   // ── Tab state — driven by ?tab= URL param ────────────────────────────────
   const [activeTab, setActiveTab] = useState<TabSource>(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('tab') === 'linear' ? 'linear' : 'csv';
+    const tab = params.get('tab');
+    if (tab === 'linear') return 'linear';
+    if (tab === 'jira') return 'jira';
+    return 'csv';
   });
 
-  // Handle ?linear_connected / ?linear_error URL params on mount
+  // Handle ?linear_connected / ?linear_error and ?jira_connected / ?jira_error URL params on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const linearConnected = params.get('linear_connected');
     const linearError = params.get('linear_error');
+    const jiraConnected = params.get('jira_connected');
+    const jiraError = params.get('jira_error');
     if (linearConnected === 'true') {
       showToast(t('importPage.linearConnectedToast'), 'success');
     }
     if (linearError) {
       showToast(t('importPage.linearErrorToast', { error: decodeURIComponent(linearError) }), 'error');
     }
-    if (linearConnected || linearError) {
+    if (jiraConnected === 'true') {
+      showToast(t('importPage.jiraConnectedToast'), 'success');
+    }
+    if (jiraError) {
+      showToast(t('importPage.jiraErrorToast', { error: decodeURIComponent(jiraError) }), 'error');
+    }
+    if (linearConnected || linearError || jiraConnected || jiraError) {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [showToast, t]);
@@ -634,6 +972,7 @@ export default function ImportPage() {
           [
             { id: 'csv' as const, labelKey: 'importPage.tabCsv' },
             { id: 'linear' as const, labelKey: 'importPage.tabLinear' },
+            { id: 'jira' as const, labelKey: 'importPage.tabJira' },
           ] as const
         ).map(({ id, labelKey }) => (
           <button
@@ -866,6 +1205,9 @@ export default function ImportPage() {
 
       {/* ── Linear tab ───────────────────────────────────────────────────── */}
       {activeTab === 'linear' && <LinearTab />}
+
+      {/* ── Jira tab ─────────────────────────────────────────────────────── */}
+      {activeTab === 'jira' && <JiraTab />}
     </div>
   );
 }

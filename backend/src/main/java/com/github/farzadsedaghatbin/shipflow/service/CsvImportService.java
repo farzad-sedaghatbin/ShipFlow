@@ -346,8 +346,9 @@ public class CsvImportService {
       case LINEAR_CSV -> importLinearRow(record, project, currentUser, cycleCache, epicCache);
       case ASANA_CSV -> importAsanaRow(record, project, currentUser);
       case GENERIC_CSV -> importGenericRow(record, project, currentUser);
-      // LINEAR_API is handled by LinearApiImportService — not reachable via CSV upload
+      // LINEAR_API / JIRA_API are handled by their own *ApiImportService — not reachable via CSV
       case LINEAR_API -> importGenericRow(record, project, currentUser);
+      case JIRA_API -> importGenericRow(record, project, currentUser);
     };
   }
 
