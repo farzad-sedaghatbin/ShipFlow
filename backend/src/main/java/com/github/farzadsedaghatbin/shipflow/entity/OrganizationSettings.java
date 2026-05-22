@@ -156,6 +156,19 @@ public class OrganizationSettings {
   @Column(name = "linear_team_name")
   private String linearTeamName;
 
+  // Jira OAuth Configuration (v1.2.0 S30)
+  @Column(name = "jira_access_token", columnDefinition = "TEXT")
+  private String jiraAccessToken;
+
+  @Column(name = "jira_refresh_token", columnDefinition = "TEXT")
+  private String jiraRefreshToken;
+
+  @Column(name = "jira_cloud_id")
+  private String jiraCloudId;
+
+  @Column(name = "jira_cloud_name")
+  private String jiraCloudName;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();

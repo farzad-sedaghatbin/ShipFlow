@@ -1812,3 +1812,17 @@ export interface LinearTeam {
   name: string;
   key: string;
 }
+
+export interface JiraConnectionStatus {
+  connected: boolean;
+  configured: boolean;
+  cloudId: string | null;
+  cloudName: string | null;
+}
+
+export interface JiraProject {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+}

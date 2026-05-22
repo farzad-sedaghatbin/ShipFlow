@@ -105,6 +105,12 @@ const releases: Release[] = [
         description:
           'Connect ShipFlow to Linear via OAuth2 and import issues, cycles, and projects directly — no CSV export required. Linear Cycles → ShipFlow Cycles, Projects → Epics, Issues → Tasks with priority and state preserved. Target project type is Kanban or Scrum.',
       },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Jira API Import — Atlassian OAuth 2.0 + REST',
+        description:
+          'Connect ShipFlow to Jira Cloud via Atlassian OAuth 2.0 (3-legged) and import issues, sprints, and epics directly. Jira Epics → ShipFlow Epics, Sprints → Cycles, Issues → Tasks. Atlassian Document Format descriptions extracted to plain text. Cloud workspace auto-detected.',
+      },
     ],
   },
   {

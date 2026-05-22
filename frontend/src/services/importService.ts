@@ -1,5 +1,5 @@
 import api from './api';
-import { ImportJobDTO, LinearConnectionStatus, LinearTeam } from '../types';
+import { ImportJobDTO, JiraConnectionStatus, JiraProject, LinearConnectionStatus, LinearTeam } from '../types';
 
 export const importService = {
   importCsv: async (file: File, projectName: string, format: string): Promise<ImportJobDTO> => {
@@ -46,6 +46,31 @@ export const importService = {
     projectType: string
   ): Promise<ImportJobDTO> => {
     const res = await api.post('/import/linear', { teamId, projectName, projectType });
+    return res.data;
+  },
+
+  // ── Jira API import ──────────────────────────────────────────────────────
+  getJiraStatus: async (): Promise<JiraConnectionStatus> => {
+    const res = await api.get('/import/jira/status');
+    return res.data;
+  },
+  authorizeJira: async (baseUrl: string): Promise<{ authorizationUrl: string }> => {
+    const res = await api.post('/import/jira/authorize', { baseUrl });
+    return res.data;
+  },
+  getJiraProjects: async (): Promise<JiraProject[]> => {
+    const res = await api.get('/import/jira/projects');
+    return res.data;
+  },
+  disconnectJira: async (): Promise<void> => {
+    await api.delete('/import/jira/disconnect');
+  },
+  importFromJira: async (
+    projectKey: string,
+    projectName: string,
+    projectType: string
+  ): Promise<ImportJobDTO> => {
+    const res = await api.post('/import/jira', { projectKey, projectName, projectType });
     return res.data;
   },
 };
