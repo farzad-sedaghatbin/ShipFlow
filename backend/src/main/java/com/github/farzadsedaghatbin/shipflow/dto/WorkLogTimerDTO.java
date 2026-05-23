@@ -20,5 +20,7 @@ public class WorkLogTimerDTO {
   private String taskTitle;
   private LocalDateTime startTime;
   private String note;
-  private Long elapsedSeconds; // Calculated duration
+  private Long elapsedSeconds; // Calculated duration (excludes paused periods)
+  private String status; // RUNNING or PAUSED
+  private LocalDateTime pausedAt;
 }

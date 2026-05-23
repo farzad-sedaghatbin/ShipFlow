@@ -38,11 +38,28 @@ public class WorkLogTimer {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "status", nullable = false)
+  @Builder.Default
+  private String status = "RUNNING";
+
+  @Column(name = "paused_at")
+  private LocalDateTime pausedAt;
+
+  @Column(name = "total_paused_seconds", nullable = false)
+  @Builder.Default
+  private Long totalPausedSeconds = 0L;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
     if (startTime == null) {
       startTime = LocalDateTime.now();
+    }
+    if (status == null) {
+      status = "RUNNING";
+    }
+    if (totalPausedSeconds == null) {
+      totalPausedSeconds = 0L;
     }
   }
 }

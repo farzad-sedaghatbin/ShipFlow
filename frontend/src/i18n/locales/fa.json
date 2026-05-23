@@ -7230,5 +7230,39 @@
     "jiraConnectedToast": "اتصال به جیرا با موفقیت انجام شد",
     "jiraErrorToast": "خطا در اتصال به جیرا: {{error}}",
     "jiraDisconnectedToast": "اتصال جیرا قطع شد"
+  },
+  "timerWidget": {
+    "activeTimer": "تایمر فعال",
+    "running": "در حال اجرا",
+    "paused": "متوقف",
+    "expand": "بزرگ‌نمایی تایمر",
+    "minimize": "کوچک‌نمایی تایمر",
+    "hours": "ساعت",
+    "task": "وظیفه",
+    "pitch": "پیچ",
+    "note": "یادداشت",
+    "pause": "توقف",
+    "resume": "ادامه",
+    "stopAndLog": "توقف و ثبت",
+    "cancelTitle": "لغو تایمر بدون ثبت",
+    "pauseFailed": "توقف تایمر ناموفق بود",
+    "resumeFailed": "ادامه تایمر ناموفق بود",
+    "stopDialog": {
+      "title": "توقف تایمر و ایجاد گزارش کار",
+      "timeToLog": "زمان برای ثبت",
+      "rounded": "گرد شده به نزدیک‌ترین ۰.۲۵",
+      "for": "برای",
+      "notes": "یادداشت‌ها (اختیاری)",
+      "notesPlaceholder": "توضیح دهید روی چه چیزی کار کردید...",
+      "cancel": "لغو",
+      "confirm": "توقف و ثبت زمان"
+    },
+    "cancelDialog": {
+      "title": "لغو تایمر",
+      "message": "آیا می‌خواهید تایمر را بدون ثبت گزارش کار لغو کنید؟",
+      "discardMessage": "زمان ردیابی شده حذف خواهد شد.",
+      "keep": "نگه داشتن تایمر",
+      "discard": "حذف تایمر"
+    }
   }
 }

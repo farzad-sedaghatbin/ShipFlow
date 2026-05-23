@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Square, X, Timer as TimerIcon, Clock, MinusCircle, Maximize2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Square, X, Timer as TimerIcon, Clock, MinusCircle, Maximize2, Pause, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import timerService, { WorkLogTimer } from '../services/timerService';
 import { workLogService } from '../services/workLogService';
@@ -24,36 +24,56 @@ interface TimerWidgetProps {
 const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
   const { t } = useTranslation();
   const [activeTimer, setActiveTimer] = useState<WorkLogTimer | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<'stop' | 'cancel' | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [workLogNote, setWorkLogNote] = useState('');
 
+  // Drift-free elapsed: store server snapshot + wall-clock reference
+  const baseElapsedRef = useRef<number>(0);
+  const mountTimestampRef = useRef<number>(Date.now());
+  const [displayedElapsed, setDisplayedElapsed] = useState(0);
+
   // Load active timer on mount
   useEffect(() => {
     loadActiveTimer();
   }, []);
 
-  // Update elapsed time every second
+  // Ticker: only count wall-clock delta when timer is RUNNING
   useEffect(() => {
     if (!activeTimer) return;
 
-    const interval = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
+    if (activeTimer.status === 'PAUSED') {
+      // Show frozen elapsed when paused — no interval needed
+      setDisplayedElapsed(baseElapsedRef.current);
+      return;
+    }
 
+    // RUNNING: display = baseElapsed + (Date.now() - mountTimestamp) / 1000
+    const tick = () => {
+      const deltaSecs = Math.floor((Date.now() - mountTimestampRef.current) / 1000);
+      setDisplayedElapsed(baseElapsedRef.current + deltaSecs);
+    };
+
+    tick(); // immediate first render
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [activeTimer]);
+
+  const applyTimerSnapshot = (timer: WorkLogTimer) => {
+    setActiveTimer(timer);
+    baseElapsedRef.current = timer.elapsedSeconds;
+    mountTimestampRef.current = Date.now();
+    setDisplayedElapsed(timer.elapsedSeconds);
+    setWorkLogNote(timer.note || '');
+  };
 
   const loadActiveTimer = async () => {
     try {
       const timer = await timerService.getActiveTimer();
       if (timer) {
-        setActiveTimer(timer);
-        setElapsedSeconds(timer.elapsedSeconds);
-        setWorkLogNote(timer.note || '');
+        applyTimerSnapshot(timer);
       }
     } catch (err) {
       console.error('Failed to load active timer:', err);
@@ -67,14 +87,14 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
 
   const handleStopTimer = async () => {
     if (!activeTimer) return;
-    
+
     try {
       setLoading(true);
       setError(null);
-      
+
       // Calculate hours (rounded to nearest 0.25)
-      const hours = Math.round((elapsedSeconds / 3600) * 4) / 4;
-      
+      const hours = Math.round((displayedElapsed / 3600) * 4) / 4;
+
       // Create work log with the custom note
       await workLogService.createMy({
         pitchId: activeTimer.pitchId,
@@ -83,12 +103,12 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
         hoursSpent: hours,
         note: workLogNote.trim() || undefined,
       });
-      
+
       // Cancel the timer (no work log created by timer)
       await timerService.cancelTimer();
-      
+
       setActiveTimer(null);
-      setElapsedSeconds(0);
+      setDisplayedElapsed(0);
       setWorkLogNote('');
       setConfirmDialog(null);
       if (onTimerStopped) {
@@ -107,10 +127,36 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
       setError(null);
       await timerService.cancelTimer();
       setActiveTimer(null);
-      setElapsedSeconds(0);
+      setDisplayedElapsed(0);
       setConfirmDialog(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('errors.cancelTimerFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePauseTimer = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const updated = await timerService.pauseTimer();
+      applyTimerSnapshot(updated);
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('timerWidget.pauseFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResumeTimer = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const updated = await timerService.resumeTimer();
+      applyTimerSnapshot(updated);
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('timerWidget.resumeFailed'));
     } finally {
       setLoading(false);
     }
@@ -132,6 +178,8 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
     return null;
   }
 
+  const isPaused = activeTimer.status === 'PAUSED';
+
   return (
     <>
       <Card className="fixed bottom-6 right-6 w-80 z-50 shadow-lg border-2 border-primary">
@@ -139,19 +187,19 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TimerIcon className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Active Timer</CardTitle>
+              <CardTitle className="text-lg">{t('timerWidget.activeTimer')}</CardTitle>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="default" className="gap-1">
+              <Badge variant={isPaused ? 'secondary' : 'default'} className="gap-1">
                 <Clock className="h-3 w-3" />
-                Running
+                {isPaused ? t('timerWidget.paused') : t('timerWidget.running')}
               </Badge>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
                 onClick={() => setIsMinimized(!isMinimized)}
-                title={isMinimized ? 'Expand timer' : 'Minimize timer'}
+                title={isMinimized ? t('timerWidget.expand') : t('timerWidget.minimize')}
               >
                 {isMinimized ? <Maximize2 className="h-4 w-4" /> : <MinusCircle className="h-4 w-4" />}
               </Button>
@@ -161,19 +209,22 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
         {!isMinimized && (
         <CardContent className="space-y-4">
           {/* Timer Display */}
-          <div className="text-center py-4 bg-muted rounded-lg">
+          <div className={`text-center py-4 bg-muted rounded-lg${isPaused ? ' opacity-70' : ''}`}>
             <div className="text-4xl font-bold text-primary tabular-nums">
-              {formatTime(elapsedSeconds)}
+              {formatTime(displayedElapsed)}
             </div>
             <div className="text-sm text-muted-foreground mt-1">
-              {formatHours(elapsedSeconds)} hours
+              {formatHours(displayedElapsed)} {t('timerWidget.hours')}
+              {isPaused && (
+                <span className="ml-2 text-xs text-muted-foreground">({t('timerWidget.paused')})</span>
+              )}
             </div>
           </div>
 
           {/* Work Item */}
           <div>
             <div className="text-xs text-muted-foreground mb-1">
-              {activeTimer.taskId ? 'Task' : 'Pitch'}:
+              {activeTimer.taskId ? t('timerWidget.task') : t('timerWidget.pitch')}:
             </div>
             <div className="font-medium">
               {activeTimer.taskTitle || activeTimer.pitchTitle}
@@ -181,7 +232,7 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
             {activeTimer.note && (
               <>
                 <div className="text-xs text-muted-foreground mt-2 mb-1">
-                  Note:
+                  {t('timerWidget.note')}:
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {activeTimer.note}
@@ -192,20 +243,41 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
 
           {/* Actions */}
           <div className="flex gap-2">
+            {isPaused ? (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleResumeTimer}
+                disabled={loading}
+                title={t('timerWidget.resume')}
+              >
+                <Play className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePauseTimer}
+                disabled={loading}
+                title={t('timerWidget.pause')}
+              >
+                <Pause className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               className="flex-1"
               onClick={handleOpenStopDialog}
               disabled={loading}
             >
               <Square className="h-4 w-4 mr-2" />
-              Stop & Log
+              {t('timerWidget.stopAndLog')}
             </Button>
             <Button
               variant="destructive"
               size="icon"
               onClick={() => setConfirmDialog('cancel')}
               disabled={loading}
-              title="Cancel timer without logging"
+              title={t('timerWidget.cancelTitle')}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -225,24 +297,24 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
       <Dialog open={confirmDialog === 'stop'} onOpenChange={() => setConfirmDialog(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Stop Timer & Create Work Log</DialogTitle>
+            <DialogTitle>{t('timerWidget.stopDialog.title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <p className="font-medium">
-                Time to log: <strong className="text-primary">{formatHours(elapsedSeconds)} hours</strong>
-                <span className="text-sm text-muted-foreground ml-1">(rounded to nearest 0.25)</span>
+                {t('timerWidget.stopDialog.timeToLog')}: <strong className="text-primary">{formatHours(displayedElapsed)} {t('timerWidget.hours')}</strong>
+                <span className="text-sm text-muted-foreground ml-1">({t('timerWidget.stopDialog.rounded')})</span>
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                For: {activeTimer?.taskTitle || activeTimer?.pitchTitle}
+                {t('timerWidget.stopDialog.for')}: {activeTimer?.taskTitle || activeTimer?.pitchTitle}
               </p>
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="worklog-note">Notes (optional)</Label>
+              <Label htmlFor="worklog-note">{t('timerWidget.stopDialog.notes')}</Label>
               <Textarea
                 id="worklog-note"
-                placeholder="Add notes about what you worked on..."
+                placeholder={t('timerWidget.stopDialog.notesPlaceholder')}
                 value={workLogNote}
                 onChange={(e) => setWorkLogNote(e.target.value)}
                 rows={4}
@@ -252,10 +324,10 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialog(null)} disabled={loading}>
-              Cancel
+              {t('timerWidget.stopDialog.cancel')}
             </Button>
             <Button onClick={handleStopTimer} disabled={loading}>
-              Stop & Log Time
+              {t('timerWidget.stopDialog.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -265,20 +337,20 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
       <Dialog open={confirmDialog === 'cancel'} onOpenChange={() => setConfirmDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Cancel Timer</DialogTitle>
+            <DialogTitle>{t('timerWidget.cancelDialog.title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p>Cancel the timer without creating a work log entry?</p>
+            <p>{t('timerWidget.cancelDialog.message')}</p>
             <p className="text-sm text-muted-foreground">
-              {formatTime(elapsedSeconds)} of tracked time will be discarded.
+              {formatTime(displayedElapsed)} {t('timerWidget.cancelDialog.discardMessage')}
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialog(null)} disabled={loading}>
-              Keep Timer
+              {t('timerWidget.cancelDialog.keep')}
             </Button>
             <Button variant="destructive" onClick={handleCancelTimer} disabled={loading}>
-              Discard Timer
+              {t('timerWidget.cancelDialog.discard')}
             </Button>
           </DialogFooter>
         </DialogContent>

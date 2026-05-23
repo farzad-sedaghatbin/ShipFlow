@@ -7230,5 +7230,39 @@
     "jiraConnectedToast": "Jira connected successfully",
     "jiraErrorToast": "Jira connection failed: {{error}}",
     "jiraDisconnectedToast": "Jira disconnected"
+  },
+  "timerWidget": {
+    "activeTimer": "Active Timer",
+    "running": "Running",
+    "paused": "Paused",
+    "expand": "Expand timer",
+    "minimize": "Minimize timer",
+    "hours": "hours",
+    "task": "Task",
+    "pitch": "Pitch",
+    "note": "Note",
+    "pause": "Pause",
+    "resume": "Resume",
+    "stopAndLog": "Stop & Log",
+    "cancelTitle": "Cancel timer without logging",
+    "pauseFailed": "Failed to pause timer",
+    "resumeFailed": "Failed to resume timer",
+    "stopDialog": {
+      "title": "Stop Timer & Create Work Log",
+      "timeToLog": "Time to log",
+      "rounded": "rounded to nearest 0.25",
+      "for": "For",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "Add notes about what you worked on...",
+      "cancel": "Cancel",
+      "confirm": "Stop & Log Time"
+    },
+    "cancelDialog": {
+      "title": "Cancel Timer",
+      "message": "Cancel the timer without creating a work log entry?",
+      "discardMessage": "of tracked time will be discarded.",
+      "keep": "Keep Timer",
+      "discard": "Discard Timer"
+    }
   }
 }
