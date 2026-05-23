@@ -207,8 +207,9 @@ export function BacklogViewDialog({
                           className="h-8 w-8"
                           onClick={() => onViewTask(subtask)}
                           title={t('backlogPage.viewDetails')}
+                          aria-label={t('aria.viewTask')}
                         >
-                          <Eye className="h-3 w-3" />
+                          <Eye className="h-3 w-3" aria-hidden="true" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -219,8 +220,9 @@ export function BacklogViewDialog({
                             onEditTask(subtask);
                           }}
                           title={t('backlogPage.edit')}
+                          aria-label={t('aria.editTask')}
                         >
-                          <Pencil className="h-3 w-3" />
+                          <Pencil className="h-3 w-3" aria-hidden="true" />
                         </Button>
                       </div>
                     </div>

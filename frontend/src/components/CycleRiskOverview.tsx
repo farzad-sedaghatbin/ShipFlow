@@ -267,8 +267,8 @@ export default function CycleRiskOverview({
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
+              <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={refreshing} aria-label={t('aria.refreshData')}>
+                <RefreshCw className={cn('w-4 h-4', refreshing && 'animate-spin')} aria-hidden="true" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Refresh analysis</TooltipContent>

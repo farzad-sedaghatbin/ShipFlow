@@ -395,8 +395,9 @@ function SortableTaskRow({
                   variant="ghost"
                   size="icon"
                   onClick={() => onViewTask(task)}
+                  aria-label={t('aria.viewTask')}
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.viewDetails')}</TooltipContent>
@@ -409,8 +410,9 @@ function SortableTaskRow({
                   variant="ghost"
                   size="icon"
                   onClick={() => onEditTask(task)}
+                  aria-label={t('aria.editTask')}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.edit')}</TooltipContent>
@@ -423,8 +425,9 @@ function SortableTaskRow({
                   variant="ghost"
                   size="icon"
                   onClick={() => onDeleteTask(task.id)}
+                  aria-label={t('aria.deleteTask')}
                 >
-                  <Trash2 className="h-4 w-4 text-destructive" />
+                  <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.delete')}</TooltipContent>
@@ -771,8 +774,9 @@ export function BacklogTaskTable({
                 size="icon"
                 onClick={() => onChangePage(page - 1)}
                 disabled={page === 0}
+                aria-label={t('aria.previousPage')}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </Button>
               <span className="text-sm px-2">
                 Page {page + 1} of {totalPages}
@@ -782,8 +786,9 @@ export function BacklogTaskTable({
                 size="icon"
                 onClick={() => onChangePage(page + 1)}
                 disabled={page >= totalPages - 1}
+                aria-label={t('aria.nextPage')}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </div>

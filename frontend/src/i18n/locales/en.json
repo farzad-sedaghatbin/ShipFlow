@@ -6654,7 +6654,30 @@
     "sprintPlanning": {
       "title": "Sprint Planning",
       "description": "For Scrum projects, plan your sprint here. Move tasks between the product backlog and the active sprint."
+    },
+    "importNav": {
+      "title": "Migrate from Jira, Linear, or Asana",
+      "description": "Import your existing projects in minutes — upload a CSV or connect directly via API."
+    },
+    "backlogBoard": {
+      "title": "Task Backlog",
+      "description": "All your tasks in one place. Filter by status, priority, or assignee. Switch between list, kanban, gantt, and calendar views."
+    },
+    "reportsOverview": {
+      "title": "Reports & Analytics",
+      "description": "Track cycle velocity, task completion rates, and team performance. Export reports for stakeholder updates."
     }
+  },
+  "aria": {
+    "viewTask": "View task details",
+    "editTask": "Edit task",
+    "deleteTask": "Delete task",
+    "previousPage": "Go to previous page",
+    "nextPage": "Go to next page",
+    "dragWidget": "Drag to reorder widget",
+    "configureWidget": "Configure widget",
+    "removeWidget": "Remove widget",
+    "refreshData": "Refresh data"
   },
   "cooldownActivity": {
     "pageTitle": "Cooldown Activities",

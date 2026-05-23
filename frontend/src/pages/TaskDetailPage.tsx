@@ -329,7 +329,7 @@ export default function TaskDetailPage() {
       </div>
 
       {/* Task Header */}
-      <Card>
+      <Card data-tour="task-detail">
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="space-y-2 flex-1">

@@ -71,7 +71,7 @@ export default function BacklogPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="backlog-board">
       <TimerWidget onTimerStopped={bp.handleTimerStopped} />
 
       <BacklogHeader

@@ -273,22 +273,23 @@ export default function CycleList() {
                       <div className="flex gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8"
                               onClick={() => handleToggleActive(cycle)}
+                              aria-label={t('cycles.pauseCycle')}
                             >
-                              <Pause className="h-4 w-4" />
+                              <Pause className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('cycles.pauseCycle')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild aria-label={t('cycles.editCycleTooltip')}>
                               <Link to={`/cycles/${cycle.id}/edit`}>
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-4 w-4" aria-hidden="true" />
                               </Link>
                             </Button>
                           </TooltipTrigger>
@@ -296,13 +297,14 @@ export default function CycleList() {
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
                               onClick={() => setDeleteDialog({ open: true, cycle })}
+                              aria-label={t('cycles.deleteCycleTooltip')}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('cycles.deleteCycleTooltip')}</TooltipContent>
@@ -376,29 +378,31 @@ export default function CycleList() {
                       <div className="flex gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8"
                               onClick={() => handleToggleActive(cycle)}
+                              aria-label={t('cycles.reactivateCycle')}
                             >
-                              <Play className="h-4 w-4" />
+                              <Play className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('cycles.reactivateCycle')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
                               onClick={() => setDeleteDialog({ open: true, cycle })}
+                              aria-label={t('cycles.deleteCycleTooltip')}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Delete cycle</TooltipContent>
+                          <TooltipContent>{t('cycles.deleteCycleTooltip')}</TooltipContent>
                         </Tooltip>
                       </div>
                     </TooltipProvider>
