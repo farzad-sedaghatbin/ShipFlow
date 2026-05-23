@@ -10,9 +10,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -46,6 +49,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
   @Value("${app.rate-limit.jira-import.capacity:3}")
   private int jiraImportCapacity;
 
+  @Value("${app.rate-limit.trusted-proxies:127.0.0.1,::1}")
+  private String trustedProxiesRaw;
+
+  private List<String> trustedProxies;
+
   private static final Duration AUTH_PERIOD = Duration.ofMinutes(1);
   private static final Duration SEARCH_PERIOD = Duration.ofMinutes(1);
   private static final Duration AI_PERIOD = Duration.ofMinutes(1);
@@ -56,6 +64,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private static final Duration JIRA_IMPORT_PERIOD = Duration.ofMinutes(1);
 
   private static final int MAX_BUCKETS = 10_000;
+
+  @PostConstruct
+  void initTrustedProxies() {
+    trustedProxies =
+        Arrays.stream(trustedProxiesRaw.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
+    log.info("RateLimitFilter trusted proxies: {}", trustedProxies);
+  }
 
   private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
@@ -165,16 +183,21 @@ public class RateLimitFilter extends OncePerRequestFilter {
   }
 
   private String resolveClientIp(HttpServletRequest request) {
-    String xff = request.getHeader("X-Forwarded-For");
-    if (xff != null && !xff.isBlank()) {
-      int commaIdx = xff.indexOf(',');
-      return commaIdx >= 0 ? xff.substring(0, commaIdx).trim() : xff.trim();
+    String remoteAddr = request.getRemoteAddr();
+    // Only honour proxy-injected headers when the direct connection comes from a trusted proxy.
+    // Without this check, any external client could forge X-Forwarded-For to bypass rate limits.
+    if (trustedProxies != null && trustedProxies.contains(remoteAddr)) {
+      String xff = request.getHeader("X-Forwarded-For");
+      if (xff != null && !xff.isBlank()) {
+        int commaIdx = xff.indexOf(',');
+        return commaIdx >= 0 ? xff.substring(0, commaIdx).trim() : xff.trim();
+      }
+      String realIp = request.getHeader("X-Real-IP");
+      if (realIp != null && !realIp.isBlank()) {
+        return realIp.trim();
+      }
     }
-    String realIp = request.getHeader("X-Real-IP");
-    if (realIp != null && !realIp.isBlank()) {
-      return realIp.trim();
-    }
-    return request.getRemoteAddr();
+    return remoteAddr;
   }
 
   private record RateLimit(String group, int capacity, Duration period) {}

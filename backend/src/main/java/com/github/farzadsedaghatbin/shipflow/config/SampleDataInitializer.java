@@ -919,9 +919,6 @@ public class SampleDataInitializer implements CommandLineRunner {
       createSampleSavedViews(adminUser, saraUser, bankingProject.getId(), devopsProject.getId());
     }
 
-    // ── SCRUM Demo Project ────────────────────────────────────────────────────
-    seedScrumDemoProject(saraUser, aliPerson, minaPerson, saraPerson);
-
     // ── Import Jobs history ───────────────────────────────────────────────────
     if (adminUser != null) {
       createSampleImportJobs(adminUser, saraUser);
