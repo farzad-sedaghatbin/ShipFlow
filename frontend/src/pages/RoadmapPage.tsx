@@ -759,7 +759,7 @@ export default function RoadmapPage() {
                                 ) : (
                                   <span className="w-3.5 shrink-0" />
                                 )}
-                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
                                 <Link
                                   to={`/epics/${epic.id}`}
                                   className="text-sm hover:underline truncate"
@@ -784,7 +784,6 @@ export default function RoadmapPage() {
                                 timelineStart={timelineStart}
                                 timelineEnd={timelineEnd}
                                 status={epic.status}
-                                color={epic.color}
                                 progress={epic.progress}
                                 onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
                               />
@@ -849,7 +848,7 @@ export default function RoadmapPage() {
                               ) : (
                                 <span className="w-3.5 shrink-0" />
                               )}
-                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
                               <Link
                                 to={`/epics/${epic.id}`}
                                 className="text-sm hover:underline truncate"
@@ -874,7 +873,6 @@ export default function RoadmapPage() {
                               timelineStart={timelineStart}
                               timelineEnd={timelineEnd}
                               status={epic.status}
-                              color={epic.color}
                               progress={epic.progress}
                               onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
                             />
@@ -932,6 +930,22 @@ export default function RoadmapPage() {
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }} />
               <span>{t('roadmap.onHold')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+              <span>{t('roadmap.cancelled')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#60a5fa' }} />
+              <span>{t('roadmap.planning')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#a855f7' }} />
+              <span>{t('roadmap.staging')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+              <span>{t('roadmap.released')}</span>
             </div>
           </div>
         </CardContent>
