@@ -37,11 +37,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
   @Value("${app.rate-limit.poll.capacity:120}")
   private int pollCapacity;
 
+  @Value("${app.rate-limit.csv-import.capacity:5}")
+  private int csvImportCapacity;
+
+  @Value("${app.rate-limit.linear-import.capacity:3}")
+  private int linearImportCapacity;
+
+  @Value("${app.rate-limit.jira-import.capacity:3}")
+  private int jiraImportCapacity;
+
   private static final Duration AUTH_PERIOD = Duration.ofMinutes(1);
   private static final Duration SEARCH_PERIOD = Duration.ofMinutes(1);
   private static final Duration AI_PERIOD = Duration.ofMinutes(1);
   private static final Duration RISK_READ_PERIOD = Duration.ofMinutes(1);
   private static final Duration POLL_PERIOD = Duration.ofMinutes(1);
+  private static final Duration CSV_IMPORT_PERIOD = Duration.ofMinutes(1);
+  private static final Duration LINEAR_IMPORT_PERIOD = Duration.ofMinutes(1);
+  private static final Duration JIRA_IMPORT_PERIOD = Duration.ofMinutes(1);
 
   private static final int MAX_BUCKETS = 10_000;
 
@@ -52,6 +64,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private static final String WISE_ARCH_PREFIX = "/api/wise-architecture";
   private static final String RISK_PREFIX = "/api/risk";
   private static final String ASYNC_JOBS_PREFIX = "/api/risk/async/jobs/";
+  private static final String CSV_IMPORT_PREFIX = "/api/import/";
+  private static final String LINEAR_IMPORT_PREFIX = "/api/linear-import/";
+  private static final String JIRA_IMPORT_PREFIX = "/api/jira-import/";
 
   @Override
   protected void doFilterInternal(
@@ -59,7 +74,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     String path = request.getRequestURI();
-    RateLimit limit = resolveLimit(path);
+    RateLimit limit = resolveLimit(path, request.getMethod());
 
     if (limit == null) {
       filterChain.doFilter(request, response);
@@ -107,6 +122,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
       return new RateLimit("risk-read", riskReadCapacity, RISK_READ_PERIOD);
     }
     return null;
+  }
+
+  private RateLimit resolveLimit(String path, String method) {
+    if (path == null) return null;
+    // Apply stricter rate limits on POST requests to import endpoints
+    if ("POST".equalsIgnoreCase(method)) {
+      if (path.startsWith(CSV_IMPORT_PREFIX)) {
+        return new RateLimit("csv-import", csvImportCapacity, CSV_IMPORT_PERIOD);
+      }
+      if (path.startsWith(LINEAR_IMPORT_PREFIX)) {
+        return new RateLimit("linear-import", linearImportCapacity, LINEAR_IMPORT_PERIOD);
+      }
+      if (path.startsWith(JIRA_IMPORT_PREFIX)) {
+        return new RateLimit("jira-import", jiraImportCapacity, JIRA_IMPORT_PERIOD);
+      }
+    }
+    return resolveLimit(path);
   }
 
   private boolean isAiTriggerPath(String path) {

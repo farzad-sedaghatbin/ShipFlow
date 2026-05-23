@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,30 +29,35 @@ public class EpicController {
   private final EpicService epicService;
 
   @GetMapping
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get all epics across projects")
   public ResponseEntity<List<EpicDTO>> getAllEpics() {
     return ResponseEntity.ok(epicService.getAllEpics());
   }
 
   @GetMapping("/project/{projectId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get all epics for a project")
   public ResponseEntity<List<EpicDTO>> getEpicsByProject(@PathVariable Long projectId) {
     return ResponseEntity.ok(epicService.getEpicsByProjectId(projectId));
   }
 
   @GetMapping("/project/{projectId}/orphans")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get epics not linked to any initiative")
   public ResponseEntity<List<EpicDTO>> getOrphanEpics(@PathVariable Long projectId) {
     return ResponseEntity.ok(epicService.getOrphanEpics(projectId));
   }
 
   @GetMapping("/initiative/{initiativeId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get epics by initiative ID")
   public ResponseEntity<List<EpicDTO>> getEpicsByInitiative(@PathVariable Long initiativeId) {
     return ResponseEntity.ok(epicService.getEpicsByInitiativeId(initiativeId));
   }
 
   @GetMapping("/project/{projectId}/status/{status}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get epics by project and status")
   public ResponseEntity<List<EpicDTO>> getEpicsByProjectAndStatus(
       @PathVariable Long projectId,
@@ -60,18 +66,21 @@ public class EpicController {
   }
 
   @GetMapping("/project/{projectId}/active")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get active epics for a project (PLANNED or IN_PROGRESS)")
   public ResponseEntity<List<EpicDTO>> getActiveEpics(@PathVariable Long projectId) {
     return ResponseEntity.ok(epicService.getActiveEpics(projectId));
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get epic by ID")
   public ResponseEntity<EpicDTO> getEpicById(@PathVariable Long id) {
     return ResponseEntity.ok(epicService.getEpicById(id));
   }
 
   @PostMapping
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.CREATE)
   @Operation(summary = "Create a new epic")
   public ResponseEntity<EpicDTO> createEpic(@Valid @RequestBody CreateEpicRequest request) {
@@ -79,6 +88,7 @@ public class EpicController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Update an epic")
   public ResponseEntity<EpicDTO> updateEpic(
@@ -88,6 +98,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/status")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Update epic status")
   public ResponseEntity<EpicDTO> updateEpicStatus(
@@ -97,6 +108,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/link-initiative")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Link epic to an initiative")
   public ResponseEntity<EpicDTO> linkToInitiative(
@@ -106,6 +118,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/unlink-initiative")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Unlink epic from its initiative")
   public ResponseEntity<EpicDTO> unlinkFromInitiative(@PathVariable Long id) {
@@ -113,6 +126,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/dates")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Update epic target dates")
   public ResponseEntity<EpicDTO> updateEpicDates(
@@ -123,6 +137,7 @@ public class EpicController {
   }
 
   @PatchMapping("/reorder")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Reorder epics (batch update sort order)")
   public ResponseEntity<Void> reorderEpics(@Valid @RequestBody ReorderRequest request) {
@@ -131,6 +146,7 @@ public class EpicController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.DELETE)
   @Operation(summary = "Delete an epic (soft delete)")
   public ResponseEntity<Void> deleteEpic(@PathVariable Long id) {

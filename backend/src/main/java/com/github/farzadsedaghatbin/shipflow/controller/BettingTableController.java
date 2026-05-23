@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,30 +24,35 @@ public class BettingTableController {
   private final BettingTableService bettingTableService;
 
   @GetMapping("/cycle/{cycleId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get betting table for a cycle", description = "Returns the full betting table view including shaped pitches, team tracks, and assigned slots")
   public ResponseEntity<BettingTableDTO> getBettingTable(@PathVariable Long cycleId) {
     return ResponseEntity.ok(bettingTableService.getBettingTable(cycleId));
   }
 
   @GetMapping("/shaped-pitches")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get shaped pitches available for betting", description = "Returns pitches with SHAPED status that haven't been assigned to any slot yet")
   public ResponseEntity<List<PitchDTO>> getShapedPitches(@RequestParam(required = false) Long projectId) {
     return ResponseEntity.ok(bettingTableService.getShapedPitchesForBetting(projectId));
   }
 
   @PostMapping("/slots")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Create a new betting slot", description = "Creates a new slot for a team in a cycle. Can optionally assign a pitch immediately.")
   public ResponseEntity<BettingSlotDTO> createSlot(@Valid @RequestBody CreateBettingSlotRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(bettingTableService.createSlot(request));
   }
 
   @PostMapping("/cycle/{cycleId}/generate-slots")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Auto-generate slots for all teams in a cycle", description = "Creates default slots spanning the entire cycle for each team that doesn't have slots yet")
   public ResponseEntity<List<BettingSlotDTO>> generateSlots(@PathVariable Long cycleId) {
     return ResponseEntity.status(HttpStatus.CREATED).body(bettingTableService.generateSlotsForCycle(cycleId));
   }
 
   @PatchMapping("/slots/{slotId}/assign/{pitchId}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Assign a pitch to a slot", description = "The main betting action - assigns a shaped pitch to a team's slot. "
       + "Validates that the pitch fits within the slot's duration.")
   public ResponseEntity<BettingSlotDTO> assignPitchToSlot(@PathVariable Long slotId, @PathVariable Long pitchId) {
@@ -54,12 +60,14 @@ public class BettingTableController {
   }
 
   @PatchMapping("/slots/{slotId}/unassign")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Remove pitch from a slot", description = "Unassigns the pitch from the slot, returning it to the shaped pitches pool")
   public ResponseEntity<BettingSlotDTO> removePitchFromSlot(@PathVariable Long slotId) {
     return ResponseEntity.ok(bettingTableService.removePitchFromSlot(slotId));
   }
 
   @PatchMapping("/slots/{slotId}/dates")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Update slot dates", description = "Resize a slot by changing its start and end dates. "
       + "Validates that any assigned pitch still fits.")
   public ResponseEntity<BettingSlotDTO> updateSlotDates(@PathVariable Long slotId,
@@ -69,6 +77,7 @@ public class BettingTableController {
   }
 
   @DeleteMapping("/slots/{slotId}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Delete a betting slot", description = "Removes the slot. If a pitch is assigned, it will be returned to SHAPED status.")
   public ResponseEntity<Void> deleteSlot(@PathVariable Long slotId) {
     bettingTableService.deleteSlot(slotId);
@@ -76,6 +85,7 @@ public class BettingTableController {
   }
 
   @GetMapping("/slots/{slotId}/can-fit/{pitchId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Check if pitch fits in slot", description = "Validates if a pitch's appetite fits within the slot's duration. "
       + "Useful for drag-and-drop preview validation.")
   public ResponseEntity<Boolean> canPitchFitInSlot(@PathVariable Long slotId, @PathVariable Long pitchId) {
@@ -85,18 +95,21 @@ public class BettingTableController {
   // === NEW: Pitch Comparison and Analytics Endpoints ===
 
   @GetMapping("/team/{teamId}/performance-history")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get team performance history", description = "Returns historical betting success rates and performance metrics for a team")
   public ResponseEntity<TeamPerformanceHistoryDTO> getTeamPerformanceHistory(@PathVariable Long teamId) {
     return ResponseEntity.ok(bettingTableService.getTeamPerformanceHistory(teamId));
   }
 
   @GetMapping("/cycle/{cycleId}/pitch-comparisons")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get pitch comparison analysis", description = "Returns shaped pitches with team fit analysis and capacity warnings for betting meetings")
   public ResponseEntity<List<PitchComparisonDTO>> getPitchComparisons(@PathVariable Long cycleId) {
     return ResponseEntity.ok(bettingTableService.getPitchComparisons(cycleId));
   }
 
   @GetMapping("/cycle/{cycleId}/capacity-analysis")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get capacity analysis", description = "Returns overall capacity utilization and warnings for over/under-allocation")
   public ResponseEntity<CapacityAnalysisDTO> getCapacityAnalysis(@PathVariable Long cycleId) {
     return ResponseEntity.ok(bettingTableService.getCapacityAnalysis(cycleId));

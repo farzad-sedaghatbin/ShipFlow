@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -28,6 +29,7 @@ public class PitchHealthController {
   private final PitchHealthService pitchHealthService;
 
   @GetMapping("/pitch/{pitchId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get pitch health summary (fast)", description = "Returns a simplified health snapshot for a single pitch using rule-based analysis")
   public ResponseEntity<PitchHealthDTO> getPitchHealth(@PathVariable Long pitchId) {
     PitchHealthDTO health = pitchHealthService.getPitchHealth(pitchId, false);
@@ -35,6 +37,7 @@ public class PitchHealthController {
   }
 
   @GetMapping("/pitch/{pitchId}/ai")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get pitch health summary with AI", description = "Returns health snapshot with AI-powered risk analysis (slower)")
   public ResponseEntity<PitchHealthDTO> getPitchHealthWithAI(@PathVariable Long pitchId) {
     PitchHealthDTO health = pitchHealthService.getPitchHealth(pitchId, true);
@@ -42,6 +45,7 @@ public class PitchHealthController {
   }
 
   @GetMapping("/cycle/{cycleId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get cycle health summary (fast)", description = "Returns aggregated health summary for an entire cycle using rule-based analysis")
   public ResponseEntity<CycleHealthSummaryDTO> getCycleHealth(@PathVariable Long cycleId) {
     CycleHealthSummaryDTO summary = pitchHealthService.getCycleHealthSummary(cycleId, false);
@@ -49,6 +53,7 @@ public class PitchHealthController {
   }
 
   @GetMapping("/cycle/{cycleId}/ai")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get cycle health summary with AI", description = "Returns health summary with AI-powered risk analysis for all pitches (slower)")
   public ResponseEntity<CycleHealthSummaryDTO> getCycleHealthWithAI(@PathVariable Long cycleId) {
     CycleHealthSummaryDTO summary = pitchHealthService.getCycleHealthSummary(cycleId, true);
@@ -56,6 +61,7 @@ public class PitchHealthController {
   }
 
   @GetMapping("/active-cycles")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get all active cycles health (fast)", description = "Returns health summaries for all active cycles using rule-based analysis")
   public ResponseEntity<List<CycleHealthSummaryDTO>> getAllActiveCycleHealth() {
     List<CycleHealthSummaryDTO> summaries = pitchHealthService.getAllActiveCycleHealth(false);
@@ -63,6 +69,7 @@ public class PitchHealthController {
   }
 
   @GetMapping("/active-cycles/ai")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get all active cycles health with AI", description = "Returns health summaries with AI-powered risk analysis (slower)")
   public ResponseEntity<List<CycleHealthSummaryDTO>> getAllActiveCycleHealthWithAI() {
     List<CycleHealthSummaryDTO> summaries = pitchHealthService.getAllActiveCycleHealth(true);
@@ -70,7 +77,8 @@ public class PitchHealthController {
   }
 
   @GetMapping("/cycle/{cycleId}/stagnation")
-  @Operation(summary = "Detect stagnating pitches in cycle", 
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Detect stagnating pitches in cycle",
       description = "Returns alerts for pitches showing signs of stagnation (no progress, stuck at peak, etc.)")
   public ResponseEntity<List<StagnationAlertDTO>> getStagnationAlerts(@PathVariable Long cycleId) {
     List<StagnationAlertDTO> alerts = pitchHealthService.detectStagnatingPitches(cycleId);
@@ -78,7 +86,8 @@ public class PitchHealthController {
   }
 
   @GetMapping("/stagnation/all")
-  @Operation(summary = "Detect all stagnating pitches", 
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Detect all stagnating pitches",
       description = "Returns stagnation alerts for all pitches in active cycles")
   public ResponseEntity<List<StagnationAlertDTO>> getAllStagnationAlerts() {
     List<StagnationAlertDTO> alerts = pitchHealthService.detectAllStagnatingPitches();

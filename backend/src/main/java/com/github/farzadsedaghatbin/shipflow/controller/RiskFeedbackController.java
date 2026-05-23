@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +31,7 @@ public class RiskFeedbackController {
   private final UserService userService;
 
   @PostMapping
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Submit risk feedback", description = "Submit feedback on an AI risk assessment to help improve accuracy")
   public ResponseEntity<RiskFeedbackDTO> submitFeedback(@Valid @RequestBody CreateRiskFeedbackRequest request) {
     Long userId = getCurrentUserId();
@@ -38,6 +40,7 @@ public class RiskFeedbackController {
   }
 
   @GetMapping("/pitch/{pitchId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get feedback for pitch", description = "Get all feedback entries for a specific pitch")
   public ResponseEntity<List<RiskFeedbackDTO>> getFeedbackByPitch(@PathVariable Long pitchId) {
     List<RiskFeedbackDTO> feedback = riskFeedbackService.getFeedbackByPitch(pitchId);
@@ -45,6 +48,7 @@ public class RiskFeedbackController {
   }
 
   @GetMapping("/cycle/{cycleId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get feedback for cycle", description = "Get all feedback entries for a specific cycle")
   public ResponseEntity<List<RiskFeedbackDTO>> getFeedbackByCycle(@PathVariable Long cycleId) {
     List<RiskFeedbackDTO> feedback = riskFeedbackService.getFeedbackByCycle(cycleId);
@@ -52,6 +56,7 @@ public class RiskFeedbackController {
   }
 
   @GetMapping("/stats")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Get feedback statistics", description = "Get aggregated statistics on AI risk assessment accuracy")
   public ResponseEntity<RiskFeedbackStatsDTO> getFeedbackStats() {
     RiskFeedbackStatsDTO stats = riskFeedbackService.getFeedbackStats();
@@ -59,6 +64,7 @@ public class RiskFeedbackController {
   }
 
   @GetMapping("/recent")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Get recent feedback", description = "Get feedback from the last 30 days")
   public ResponseEntity<List<RiskFeedbackDTO>> getRecentFeedback() {
     List<RiskFeedbackDTO> feedback = riskFeedbackService.getRecentFeedback();
@@ -66,6 +72,7 @@ public class RiskFeedbackController {
   }
 
   @GetMapping("/pitch/{pitchId}/check")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Check if user submitted feedback", description = "Check if current user has already submitted feedback for a pitch")
   public ResponseEntity<Map<String, Boolean>> checkUserFeedback(@PathVariable Long pitchId) {
     Long userId = getCurrentUserId();

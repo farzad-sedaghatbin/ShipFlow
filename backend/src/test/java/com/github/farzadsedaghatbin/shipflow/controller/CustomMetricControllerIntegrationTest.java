@@ -68,7 +68,7 @@ class CustomMetricControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser(username = "testuser", roles = "DEVELOPER")
+  @WithMockUser(username = "testuser", roles = "MANAGER")
   @DisplayName("Should create a new custom metric")
   void createMetric_ShouldReturnCreatedMetric() throws Exception {
     CreateCustomMetricRequest request = CreateCustomMetricRequest.builder().name("Velocity Metric")
@@ -88,7 +88,7 @@ class CustomMetricControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser(username = "testuser", roles = "DEVELOPER")
+  @WithMockUser(username = "testuser", roles = "MANAGER")
   @DisplayName("Should reject metric with invalid formula")
   void createMetric_WithInvalidFormula_ShouldReturnBadRequest() throws Exception {
     CreateCustomMetricRequest request = CreateCustomMetricRequest.builder().name("Invalid Metric")
@@ -145,7 +145,7 @@ class CustomMetricControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser(username = "testuser", roles = "DEVELOPER")
+  @WithMockUser(username = "testuser", roles = "MANAGER")
   @DisplayName("Should update existing metric")
   void updateMetric_ShouldReturnUpdatedMetric() throws Exception {
     CustomMetric metric = CustomMetric.builder().user(testUser).name("Original Name").formula("10")
@@ -165,7 +165,7 @@ class CustomMetricControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser(username = "testuser", roles = "DEVELOPER")
+  @WithMockUser(username = "testuser", roles = "MANAGER")
   @DisplayName("Should delete metric")
   void deleteMetric_ShouldReturnNoContent() throws Exception {
     CustomMetric metric = CustomMetric.builder().user(testUser).name("To Delete").formula("10")
@@ -231,7 +231,7 @@ class CustomMetricControllerIntegrationTest {
   }
 
   @Test
-  @WithMockUser(username = "testuser", roles = "DEVELOPER")
+  @WithMockUser(username = "testuser", roles = "MANAGER")
   @DisplayName("Should prevent duplicate metric names")
   void createMetric_WithDuplicateName_ShouldReturnBadRequest() throws Exception {
     // Create first metric

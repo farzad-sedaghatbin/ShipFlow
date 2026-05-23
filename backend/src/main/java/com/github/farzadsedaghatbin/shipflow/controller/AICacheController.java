@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -30,12 +31,14 @@ public class AICacheController {
   private final AIConfig aiConfig;
 
   @GetMapping("/stats")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Get cache statistics", description = "Returns current cache statistics including entry counts and hit rates")
   public ResponseEntity<AICacheService.CacheStats> getCacheStats() {
     return ResponseEntity.ok(cacheService.getCacheStats());
   }
 
   @GetMapping("/ai-provider")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Get AI provider information", description = "Returns information about the currently configured AI provider")
   public ResponseEntity<Map<String, Object>> getAIProviderInfo() {
     Map<String, Object> info = new HashMap<>();
@@ -58,6 +61,7 @@ public class AICacheController {
   }
 
   @GetMapping("/config")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Get cache configuration", description = "Returns current cache feature flags and TTL settings")
   public ResponseEntity<Map<String, Object>> getCacheConfig() {
     Map<String, Object> config = new HashMap<>();
@@ -82,6 +86,7 @@ public class AICacheController {
   }
 
   @PostMapping("/clear")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Clear all caches", description = "Clears all cached AI responses (risk analysis and Q&A)")
   public ResponseEntity<Map<String, String>> clearAllCaches() {
     cacheService.clearAllCaches();
@@ -93,6 +98,7 @@ public class AICacheController {
   }
 
   @PostMapping("/clear/risk")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Clear risk analysis cache", description = "Clears cached risk analysis responses only")
   public ResponseEntity<Map<String, String>> clearRiskCache() {
     // Clear risk caches by clearing all and then the stats will rebuild
@@ -106,6 +112,7 @@ public class AICacheController {
   }
 
   @PostMapping("/clear/qa")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Clear Q&A cache", description = "Clears cached Q&A responses only")
   public ResponseEntity<Map<String, String>> clearQACache() {
     cacheService.clearAllCaches();
@@ -117,6 +124,7 @@ public class AICacheController {
   }
 
   @DeleteMapping("/risk/pitch/{pitchId}")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Invalidate pitch risk cache", description = "Invalidates cached risk analysis for a specific pitch")
   public ResponseEntity<Map<String, String>> invalidatePitchCache(@PathVariable Long pitchId) {
     cacheService.invalidatePitchRiskCache(pitchId);
@@ -128,6 +136,7 @@ public class AICacheController {
   }
 
   @DeleteMapping("/risk/cycle/{cycleId}")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Invalidate cycle risk cache", description = "Invalidates cached risk overview for a specific cycle")
   public ResponseEntity<Map<String, String>> invalidateCycleCache(@PathVariable Long cycleId) {
     cacheService.invalidateCycleRiskCache(cycleId);
@@ -139,6 +148,7 @@ public class AICacheController {
   }
 
   @DeleteMapping("/qa/{contextType}/{contextId}")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Invalidate Q&A cache for context", description = "Invalidates cached Q&A responses for a specific context")
   public ResponseEntity<Map<String, String>> invalidateQACache(@PathVariable String contextType,
       @PathVariable Long contextId) {

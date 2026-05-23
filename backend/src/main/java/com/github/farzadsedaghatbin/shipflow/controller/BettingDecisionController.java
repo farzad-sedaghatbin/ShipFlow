@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +32,7 @@ public class BettingDecisionController {
   private final UserService userService;
 
   @PostMapping
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(
       summary = "Record a betting decision",
       description = "Record a commit/reject/defer decision for a pitch in a cycle with reasoning. "
@@ -43,6 +45,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/pitch/{pitchId}/history")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Get pitch decision history",
       description = "Get all betting decisions made for a pitch across all cycles. "
@@ -52,6 +55,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/pitch/{pitchId}/latest")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Get most recent decision for a pitch",
       description = "Returns the most recent betting decision made for a pitch.")
@@ -62,6 +66,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/cycle/{cycleId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Get cycle decisions",
       description = "Get all betting decisions for a specific cycle.")
@@ -70,6 +75,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/cycle/{cycleId}/history")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Get comprehensive cycle decision history",
       description = "Get detailed decision history with statistics including decision counts, "
@@ -79,6 +85,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/cycle/{cycleId}/committed")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Get committed decisions for a cycle",
       description = "Get only the pitches that were committed to for a cycle.")
@@ -87,6 +94,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/cycle/{cycleId}/rejected")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Get rejected decisions for a cycle",
       description = "Get pitches that were rejected for a cycle with their rejection reasons.")
@@ -95,6 +103,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/pitch/{pitchId}/exists")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Check if decision exists",
       description = "Check if a decision has already been recorded for a pitch in a cycle.")
@@ -105,6 +114,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/project/{projectId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Get project decisions (paginated)",
       description = "Get all betting decisions for a project across all cycles, paginated.")
@@ -117,6 +127,7 @@ public class BettingDecisionController {
   // === Appetite Comparison Endpoints ===
 
   @GetMapping("/compare/pitch/{pitchId}/team/{teamId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Compare pitch appetite vs team capacity",
       description = "Analyze if a pitch's appetite fits within a team's available capacity. "
@@ -129,6 +140,7 @@ public class BettingDecisionController {
   }
 
   @GetMapping("/compare/pitch/{pitchId}/all-teams")
+  @PreAuthorize("isAuthenticated()")
   @Operation(
       summary = "Compare pitch appetite against all teams",
       description = "Analyze a pitch against all teams in a cycle to find the best fit. "
