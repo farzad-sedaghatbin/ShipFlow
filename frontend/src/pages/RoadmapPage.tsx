@@ -911,6 +911,7 @@ export default function RoadmapPage() {
         <CardContent className="py-3">
           <div className="flex flex-wrap gap-4 text-xs">
             <span className="font-medium">{t('roadmap.legend')}:</span>
+            {/* Lifecycle states */}
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#94a3b8' }} />
               <span>{t('roadmap.draft')}</span>
@@ -920,13 +921,27 @@ export default function RoadmapPage() {
               <span>{t('roadmap.planned')}</span>
             </div>
             <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#60a5fa' }} />
+              <span>{t('roadmap.planning')}</span>
+            </div>
+            <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
               <span>{t('roadmap.inProgress')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#a855f7' }} />
+              <span>{t('roadmap.staging')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
               <span>{t('roadmap.completed')}</span>
             </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+              <span>{t('roadmap.released')}</span>
+            </div>
+            {/* Exception states */}
+            <div className="w-px self-stretch bg-border" />
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }} />
               <span>{t('roadmap.onHold')}</span>
@@ -934,18 +949,6 @@ export default function RoadmapPage() {
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444' }} />
               <span>{t('roadmap.cancelled')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#60a5fa' }} />
-              <span>{t('roadmap.planning')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#a855f7' }} />
-              <span>{t('roadmap.staging')}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }} />
-              <span>{t('roadmap.released')}</span>
             </div>
           </div>
         </CardContent>
