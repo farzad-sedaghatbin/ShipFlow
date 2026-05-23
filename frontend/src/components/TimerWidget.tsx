@@ -200,8 +200,9 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
                 className="h-6 w-6"
                 onClick={() => setIsMinimized(!isMinimized)}
                 title={isMinimized ? t('timerWidget.expand') : t('timerWidget.minimize')}
+                aria-label={isMinimized ? t('timerWidget.expand') : t('timerWidget.minimize')}
               >
-                {isMinimized ? <Maximize2 className="h-4 w-4" /> : <MinusCircle className="h-4 w-4" />}
+                {isMinimized ? <Maximize2 className="h-4 w-4" aria-hidden="true" /> : <MinusCircle className="h-4 w-4" aria-hidden="true" />}
               </Button>
             </div>
           </div>
@@ -250,8 +251,9 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
                 onClick={handleResumeTimer}
                 disabled={loading}
                 title={t('timerWidget.resume')}
+                aria-label={t('timerWidget.resume')}
               >
-                <Play className="h-4 w-4" />
+                <Play className="h-4 w-4" aria-hidden="true" />
               </Button>
             ) : (
               <Button
@@ -260,8 +262,9 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
                 onClick={handlePauseTimer}
                 disabled={loading}
                 title={t('timerWidget.pause')}
+                aria-label={t('timerWidget.pause')}
               >
-                <Pause className="h-4 w-4" />
+                <Pause className="h-4 w-4" aria-hidden="true" />
               </Button>
             )}
             <Button
@@ -278,8 +281,9 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
               onClick={() => setConfirmDialog('cancel')}
               disabled={loading}
               title={t('timerWidget.cancelTitle')}
+              aria-label={t('timerWidget.cancelTitle')}
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
 
