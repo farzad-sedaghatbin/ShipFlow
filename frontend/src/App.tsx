@@ -135,6 +135,9 @@ const WebhooksGuide = lazy(() => import('./pages/guides/WebhooksGuide'));
 const PublicApiGuide = lazy(() => import('./pages/guides/PublicApiGuide'));
 const McpServerGuide = lazy(() => import('./pages/guides/McpServerGuide'));
 const IdeaToRoadmapGuide = lazy(() => import('./pages/guides/IdeaToRoadmapGuide'));
+const ImportGuide = lazy(() => import('./pages/guides/ImportGuide'));
+const ScrumModeGuide = lazy(() => import('./pages/guides/ScrumModeGuide'));
+const MigrationGuide = lazy(() => import('./pages/guides/MigrationGuide'));
 
 // ── Suspense fallback ─────────────────────────────────────────────────────────
 function PageLoader() {
@@ -338,6 +341,9 @@ function App() {
                       <Route path="help/public-api" element={<PublicApiGuide />} />
                       <Route path="help/mcp-server" element={<McpServerGuide />} />
                       <Route path="help/idea-to-roadmap" element={<IdeaToRoadmapGuide />} />
+                      <Route path="help/import" element={<ImportGuide />} />
+                      <Route path="help/scrum-mode" element={<ScrumModeGuide />} />
+                      <Route path="help/migration" element={<MigrationGuide />} />
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
