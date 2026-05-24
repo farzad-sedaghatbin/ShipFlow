@@ -19,7 +19,10 @@ import {
     Webhook,
     Code,
     Server,
-    Lightbulb
+    Lightbulb,
+    FolderInput,
+    Workflow,
+    GitMerge,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -157,6 +160,27 @@ export default function HelpGuides() {
             icon: Server,
             path: '/help/mcp-server',
             color: 'text-fuchsia-500',
+        },
+        {
+            title: t('helpGuides.importData'),
+            description: t('helpGuides.importDataDesc'),
+            icon: FolderInput,
+            path: '/help/import',
+            color: 'text-blue-600',
+        },
+        {
+            title: t('helpGuides.scrumMode'),
+            description: t('helpGuides.scrumModeDesc'),
+            icon: Workflow,
+            path: '/help/scrum-mode',
+            color: 'text-violet-600',
+        },
+        {
+            title: t('helpGuides.migration'),
+            description: t('helpGuides.migrationDesc'),
+            icon: GitMerge,
+            path: '/help/migration',
+            color: 'text-orange-600',
         },
     ];
     return (

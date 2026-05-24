@@ -71,9 +71,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.2.0',
-    date: 'Coming soon',
+    date: 'May 23, 2026',
     title: 'Competitor Migration Tooling — Import from Jira, Linear & Asana',
-    upcoming: true,
     highlights: [
       {
         icon: <Upload className="h-5 w-5" />,
