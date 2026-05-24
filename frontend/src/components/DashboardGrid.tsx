@@ -43,7 +43,7 @@ export default function DashboardGrid({
   onWidgetRemove,
   onWidgetConfigure
 }: DashboardGridProps) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [layout, setLayout] = useState<Layout>([]);
@@ -265,8 +265,8 @@ export default function DashboardGrid({
             {editable && (
               <div className="absolute top-2 end-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="drag-handle cursor-move">
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <GripVertical className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t('aria.dragWidget')}>
+                    <GripVertical className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </div>
                 <Button
@@ -275,8 +275,9 @@ export default function DashboardGrid({
                   className="h-7 w-7"
                   onClick={() => widget.id && onWidgetConfigure?.(widget.id)}
                   disabled={!widget.id}
+                  aria-label={t('aria.configureWidget')}
                 >
-                  <Settings className="h-4 w-4" />
+                  <Settings className="h-4 w-4" aria-hidden="true" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -284,8 +285,9 @@ export default function DashboardGrid({
                   className="h-7 w-7 text-destructive hover:text-destructive"
                   onClick={() => widget.id && onWidgetRemove?.(widget.id)}
                   disabled={!widget.id}
+                  aria-label={t('aria.removeWidget')}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
             )}

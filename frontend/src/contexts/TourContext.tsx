@@ -238,6 +238,36 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       route: '/time/logs',
     },
     {
+      element: '[data-tour="import-nav"]',
+      popover: {
+        title: t('tour.importNav.title'),
+        description: t('tour.importNav.description'),
+        side: 'right',
+        align: 'start',
+      },
+      route: '/import',
+    },
+    {
+      element: '[data-tour="backlog-board"]',
+      popover: {
+        title: t('tour.backlogBoard.title'),
+        description: t('tour.backlogBoard.description'),
+        side: 'top',
+        align: 'center',
+      },
+      route: '/backlog',
+    },
+    {
+      element: '[data-tour="reports-overview"]',
+      popover: {
+        title: t('tour.reportsOverview.title'),
+        description: t('tour.reportsOverview.description'),
+        side: 'top',
+        align: 'center',
+      },
+      route: '/reports',
+    },
+    {
       element: '[data-tour="sprint-planning-board"]',
       popover: {
         title: t('tour.sprintPlanning.title'),

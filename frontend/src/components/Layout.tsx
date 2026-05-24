@@ -396,7 +396,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 
           {/* Import Data */}
           <NavItem
-            item={{ textKey: 'nav.importData', icon: Upload, path: '/import' }}
+            item={{ textKey: 'nav.importData', icon: Upload, path: '/import', tourId: 'import-nav' }}
             isActive={currentPath === '/import'}
             onClick={onItemClick}
           />
