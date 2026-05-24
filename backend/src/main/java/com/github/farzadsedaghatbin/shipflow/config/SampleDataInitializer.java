@@ -919,9 +919,6 @@ public class SampleDataInitializer implements CommandLineRunner {
       createSampleSavedViews(adminUser, saraUser, bankingProject.getId(), devopsProject.getId());
     }
 
-    // ── SCRUM Demo Project ────────────────────────────────────────────────────
-    seedScrumDemoProject(saraUser, aliPerson, minaPerson, saraPerson);
-
     // ── Import Jobs history ───────────────────────────────────────────────────
     if (adminUser != null) {
       createSampleImportJobs(adminUser, saraUser);
@@ -1708,6 +1705,53 @@ public class SampleDataInitializer implements CommandLineRunner {
             .completedAt(LocalDateTime.of(2026, 5, 15, 9, 6))
             .build());
 
-    log.info("Import jobs sample data created: 2 demo entries (Jira + Linear)");
+    // Completed Jira CSV import (~50 tasks — small project snapshot)
+    importJobRepository.save(
+        ImportJob.builder()
+            .fileName("jira-payments-backlog-small.csv")
+            .sourceFormat(ImportSourceFormat.JIRA_CSV)
+            .status(ImportJobStatus.COMPLETED)
+            .totalRows(52)
+            .importedRows(50)
+            .failedRows(2)
+            .errorLog(
+                "Row 21: missing 'Assignee' field — task created unassigned\n"
+                    + "Row 38: invalid priority value 'HOTFIX' — defaulted to MEDIUM")
+            .createdBy(adminUser)
+            .createdAt(LocalDateTime.of(2026, 5, 18, 11, 30))
+            .completedAt(LocalDateTime.of(2026, 5, 18, 11, 31))
+            .build());
+
+    // Completed Linear API import (~30 tasks via OAuth)
+    importJobRepository.save(
+        ImportJob.builder()
+            .fileName("linear-api-import")
+            .sourceFormat(ImportSourceFormat.LINEAR_API)
+            .status(ImportJobStatus.COMPLETED)
+            .totalRows(30)
+            .importedRows(30)
+            .failedRows(0)
+            .errorLog(null)
+            .createdBy(saraUser != null ? saraUser : adminUser)
+            .createdAt(LocalDateTime.of(2026, 5, 20, 14, 0))
+            .completedAt(LocalDateTime.of(2026, 5, 20, 14, 2))
+            .build());
+
+    // Failed Jira API import — OAuth token expired
+    importJobRepository.save(
+        ImportJob.builder()
+            .fileName("jira-api-import")
+            .sourceFormat(ImportSourceFormat.JIRA_API)
+            .status(ImportJobStatus.FAILED)
+            .totalRows(0)
+            .importedRows(0)
+            .failedRows(0)
+            .errorLog("OAuth token expired — please re-authorise the Jira integration and retry")
+            .createdBy(adminUser)
+            .createdAt(LocalDateTime.of(2026, 5, 21, 10, 15))
+            .completedAt(LocalDateTime.of(2026, 5, 21, 10, 15))
+            .build());
+
+    log.info("Import jobs sample data created: 5 demo entries (Jira CSV x2, Linear CSV, Linear API, Jira API failed)");
   }
 }

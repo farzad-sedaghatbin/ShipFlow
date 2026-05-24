@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,7 @@ public class CustomDashboardController {
 
   /** Create a new custom dashboard */
   @PostMapping
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<CustomDashboardDTO> createDashboard(@AuthenticationPrincipal UserDetails userDetails,
       @Valid @RequestBody CreateDashboardRequest request) {
     Long userId = getUserId(userDetails);
@@ -38,6 +40,7 @@ public class CustomDashboardController {
 
   /** Get all dashboards for the current user */
   @GetMapping
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<List<CustomDashboardDTO>> getUserDashboards(
       @AuthenticationPrincipal UserDetails userDetails) {
     Long userId = getUserId(userDetails);
@@ -48,6 +51,7 @@ public class CustomDashboardController {
 
   /** Get a specific dashboard by ID */
   @GetMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<CustomDashboardDTO> getDashboard(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id) {
     Long userId = getUserId(userDetails);
@@ -58,6 +62,7 @@ public class CustomDashboardController {
 
   /** Update an existing dashboard */
   @PutMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<CustomDashboardDTO> updateDashboard(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id, @Valid @RequestBody UpdateDashboardRequest request) {
     Long userId = getUserId(userDetails);
@@ -68,6 +73,7 @@ public class CustomDashboardController {
 
   /** Delete a dashboard */
   @DeleteMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> deleteDashboard(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id) {
     Long userId = getUserId(userDetails);
@@ -78,6 +84,7 @@ public class CustomDashboardController {
 
   /** Set a dashboard as the default */
   @PostMapping("/{id}/set-default")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> setDefaultDashboard(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id) {
     Long userId = getUserId(userDetails);
@@ -92,6 +99,7 @@ public class CustomDashboardController {
    * widgets show organization-wide data
    */
   @PutMapping("/{id}/toggle-context-filter")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<CustomDashboardDTO> toggleUserContextFilter(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id) {
     Long userId = getUserId(userDetails);
@@ -102,6 +110,7 @@ public class CustomDashboardController {
 
   /** Get available dashboard templates */
   @GetMapping("/templates")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<List<CustomDashboardDTO>> getTemplates() {
     log.info("Fetching dashboard templates");
     List<CustomDashboardDTO> templates = customDashboardService.getTemplates();
@@ -110,6 +119,7 @@ public class CustomDashboardController {
 
   /** Add a widget to a dashboard */
   @PostMapping("/{id}/widgets")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<DashboardWidgetConfig> addWidget(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id, @Valid @RequestBody AddWidgetRequest request) {
     Long userId = getUserId(userDetails);
@@ -120,6 +130,7 @@ public class CustomDashboardController {
 
   /** Get all widgets for a dashboard */
   @GetMapping("/{id}/widgets")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<List<DashboardWidgetConfig>> getDashboardWidgets(
       @AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
     Long userId = getUserId(userDetails);
@@ -130,6 +141,7 @@ public class CustomDashboardController {
 
   /** Update a widget configuration */
   @PutMapping("/{dashboardId}/widgets/{widgetId}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<DashboardWidgetConfig> updateWidget(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long dashboardId, @PathVariable Long widgetId,
       @Valid @RequestBody UpdateWidgetRequest request) {
@@ -141,6 +153,7 @@ public class CustomDashboardController {
 
   /** Remove a widget from a dashboard */
   @DeleteMapping("/{dashboardId}/widgets/{widgetId}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> removeWidget(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long dashboardId, @PathVariable Long widgetId) {
     Long userId = getUserId(userDetails);

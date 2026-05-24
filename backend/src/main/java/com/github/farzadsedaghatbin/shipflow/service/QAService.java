@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.QAFeedbackType;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.QAInteractionRepository;
+import com.github.farzadsedaghatbin.shipflow.service.UserService;
 import com.github.farzadsedaghatbin.shipflow.service.qa.*;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -24,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +68,7 @@ public class QAService {
   private final PromptCompressor promptCompressor;
   private final ContentGuardrails contentGuardrails;
   private final CycleRepository cycleRepository;
+  private final UserService userService;
 
   @Autowired
   public QAService(KnowledgeItemRepository knowledgeItemRepository, QAInteractionRepository qaInteractionRepository,
@@ -84,7 +87,8 @@ public class QAService {
       @Autowired(required = false) LLMCacheService llmCacheService,
       @Autowired(required = false) PromptCompressor promptCompressor,
       @Autowired(required = false) ContentGuardrails contentGuardrails, MessageService messageService,
-      @Autowired(required = false) CycleRepository cycleRepository) {
+      @Autowired(required = false) CycleRepository cycleRepository,
+      UserService userService) {
     this.knowledgeItemRepository = knowledgeItemRepository;
     this.qaInteractionRepository = qaInteractionRepository;
     this.embeddingModel = embeddingModel;
@@ -106,6 +110,7 @@ public class QAService {
     this.securityFilter = securityFilter;
     this.messageService = messageService;
     this.cycleRepository = cycleRepository;
+    this.userService = userService;
   }
 
   /**
@@ -278,11 +283,15 @@ public class QAService {
       }
 
       // 3. Apply security filtering
-      if (securityFilter != null) {
-        // TODO: Get user's team and project IDs from UserService
-        // For now, skip security filtering
-        // matches = securityFilter.filterByUserAccess(matches, userId, userTeamIds,
-        // userProjectIds);
+      if (securityFilter != null && userId != null) {
+        try {
+          Set<Long> userTeamIds = userService.getTeamIdsForUser(userId);
+          Set<Long> userProjectIds = userService.getProjectIdsForUser(userId);
+          matches = securityFilter.filterByUserAccess(matches, userId, userTeamIds, userProjectIds);
+        } catch (Exception e) {
+          log.warn("Security filtering skipped due to error resolving user context for userId={}: {}",
+              userId, e.getMessage());
+        }
       }
 
       // 4. Filter by context
@@ -860,21 +869,33 @@ public class QAService {
   }
 
   /**
-   * Attempt fallback search when vector store fails. This could use a backup
-   * vector store or basic text matching.
+   * Attempt fallback search when vector store fails. Falls back to keyword-based
+   * database search using the question text and optional context hints. This
+   * provides meaningful results even when the embedding store is unavailable.
    */
   private List<EmbeddingMatch<TextSegment>> attemptFallbackSearch(AskQuestionRequest request) {
     try {
-      // TODO: Implement fallback search strategy
-      // Options:
-      // 1. Use Elasticsearch for text-based search
-      // 2. Use a backup vector store
-      // 3. Use cached similar questions
-
-      log.warn("Fallback search not yet implemented, returning empty results");
+      log.info("Attempting keyword-based database fallback search for: {}", request.getQuestion());
+      List<EmbeddingMatch<TextSegment>> databaseMatches = searchDatabaseByKeywords(
+          request.getQuestion(), request.getContextType(), request.getContextId());
+      if (!databaseMatches.isEmpty()) {
+        log.info("Fallback keyword search returned {} matches", databaseMatches.size());
+        return databaseMatches;
+      }
+      // If context-specific search returned nothing, broaden to a context-free search
+      if (request.getContextId() != null || request.getContextType() != null) {
+        log.info("Context-specific fallback returned nothing, broadening to global keyword search");
+        List<EmbeddingMatch<TextSegment>> broadMatches = searchDatabaseByKeywords(
+            request.getQuestion(), null, null);
+        if (!broadMatches.isEmpty()) {
+          log.info("Broad fallback search returned {} matches", broadMatches.size());
+          return broadMatches;
+        }
+      }
+      log.warn("Fallback search found no results");
       return Collections.emptyList();
     } catch (Exception e) {
-      log.error("Fallback search also failed: {}", e.getMessage());
+      log.error("Fallback search failed: {}", e.getMessage());
       return Collections.emptyList();
     }
   }

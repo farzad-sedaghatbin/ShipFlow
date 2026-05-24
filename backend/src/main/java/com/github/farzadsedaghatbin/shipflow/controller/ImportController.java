@@ -69,7 +69,7 @@ public class ImportController {
 
   /** Get the status and result of an import job by id. */
   @GetMapping("/{id}")
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "Get an import job by id")
   public ResponseEntity<ImportJobDTO> getJob(
       @PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
@@ -98,7 +98,7 @@ public class ImportController {
 
   /** List all import jobs belonging to the current user. */
   @GetMapping
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @Operation(summary = "List all import jobs for the current user")
   public ResponseEntity<List<ImportJobDTO>> listJobs(
       @AuthenticationPrincipal UserDetails userDetails) {
