@@ -60,7 +60,7 @@ public class WorkLogTimerService {
 
     // Create timer
     WorkLogTimer timer = WorkLogTimer.builder().person(person).pitch(pitch).task(task)
-        .startTime(LocalDateTime.now()).note(request.getNote()).build();
+        .startTime(LocalDateTime.now()).note(request.getNote()).status("RUNNING").totalPausedSeconds(0L).build();
 
     WorkLogTimer saved = timerRepository.save(timer);
     log.info("Started timer {} for person {}", saved.getId(), person.getName());
@@ -75,10 +75,13 @@ public class WorkLogTimerService {
         .orElseThrow(() -> new BadRequestException("No active timer found"));
 
     LocalDateTime stopTime = LocalDateTime.now();
-    Duration duration = Duration.between(timer.getStartTime(), stopTime);
+
+    // Compute effective elapsed seconds (exclude paused time)
+    long elapsedSeconds = computeElapsedSeconds(timer, stopTime);
 
     // Calculate hours with 2 decimal places (minimum 0.25 hours = 15 minutes)
-    double hours = Math.max(0.25, Math.round(duration.toMinutes() / 15.0) * 0.25);
+    double elapsedMinutes = elapsedSeconds / 60.0;
+    double hours = Math.max(0.25, Math.round(elapsedMinutes / 15.0) * 0.25);
 
     // Create work log from timer
     WorkLog workLog = WorkLog.builder().person(person).pitch(timer.getPitch()).task(timer.getTask())
@@ -111,8 +114,54 @@ public class WorkLogTimerService {
     log.info("Cancelled timer {} for person {}", timer.getId(), person.getName());
   }
 
+  public WorkLogTimerDTO pauseTimer() {
+    Person person = getCurrentUserPerson();
+
+    WorkLogTimer timer = timerRepository.findByPersonIdAndStatus(person.getId(), "RUNNING")
+        .orElseThrow(() -> new BadRequestException("No running timer found to pause"));
+
+    timer.setStatus("PAUSED");
+    timer.setPausedAt(LocalDateTime.now());
+    WorkLogTimer saved = timerRepository.save(timer);
+
+    log.info("Paused timer {} for person {}", saved.getId(), person.getName());
+    return toDTO(saved);
+  }
+
+  public WorkLogTimerDTO resumeTimer() {
+    Person person = getCurrentUserPerson();
+
+    WorkLogTimer timer = timerRepository.findByPersonIdAndStatus(person.getId(), "PAUSED")
+        .orElseThrow(() -> new BadRequestException("No paused timer found to resume"));
+
+    LocalDateTime now = LocalDateTime.now();
+    if (timer.getPausedAt() != null) {
+      long additionalPausedSeconds = Duration.between(timer.getPausedAt(), now).getSeconds();
+      timer.setTotalPausedSeconds(timer.getTotalPausedSeconds() + additionalPausedSeconds);
+    }
+
+    timer.setStatus("RUNNING");
+    timer.setPausedAt(null);
+    WorkLogTimer saved = timerRepository.save(timer);
+
+    log.info("Resumed timer {} for person {}", saved.getId(), person.getName());
+    return toDTO(saved);
+  }
+
+  private long computeElapsedSeconds(WorkLogTimer timer, LocalDateTime referenceTime) {
+    if ("PAUSED".equals(timer.getStatus()) && timer.getPausedAt() != null) {
+      // For a paused timer: elapsed = (pausedAt - startTime) - totalPausedSeconds
+      long wallClockSeconds = Duration.between(timer.getStartTime(), timer.getPausedAt()).getSeconds();
+      return Math.max(0, wallClockSeconds - timer.getTotalPausedSeconds());
+    } else {
+      // For a running timer: elapsed = (now - startTime) - totalPausedSeconds
+      long wallClockSeconds = Duration.between(timer.getStartTime(), referenceTime).getSeconds();
+      return Math.max(0, wallClockSeconds - timer.getTotalPausedSeconds());
+    }
+  }
+
   private WorkLogTimerDTO toDTO(WorkLogTimer timer) {
-    Duration elapsed = Duration.between(timer.getStartTime(), LocalDateTime.now());
+    long elapsedSeconds = computeElapsedSeconds(timer, LocalDateTime.now());
 
     return WorkLogTimerDTO.builder().id(timer.getId()).personId(timer.getPerson().getId())
         .personName(timer.getPerson().getName())
@@ -120,7 +169,8 @@ public class WorkLogTimerService {
         .pitchTitle(timer.getPitch() != null ? timer.getPitch().getTitle() : null)
         .taskId(timer.getTask() != null ? timer.getTask().getId() : null)
         .taskTitle(timer.getTask() != null ? timer.getTask().getTitle() : null).startTime(timer.getStartTime())
-        .note(timer.getNote()).elapsedSeconds(elapsed.getSeconds()).build();
+        .note(timer.getNote()).elapsedSeconds(elapsedSeconds).status(timer.getStatus())
+        .pausedAt(timer.getPausedAt()).build();
   }
 
   private Person getCurrentUserPerson() {

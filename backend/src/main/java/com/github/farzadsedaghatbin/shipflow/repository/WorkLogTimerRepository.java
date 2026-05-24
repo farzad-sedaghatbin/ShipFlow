@@ -10,6 +10,8 @@ public interface WorkLogTimerRepository extends JpaRepository<WorkLogTimer, Long
 
   Optional<WorkLogTimer> findByPersonId(Long personId);
 
+  Optional<WorkLogTimer> findByPersonIdAndStatus(Long personId, String status);
+
   boolean existsByPersonId(Long personId);
 
   void deleteByPersonId(Long personId);
