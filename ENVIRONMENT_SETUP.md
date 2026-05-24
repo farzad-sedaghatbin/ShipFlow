@@ -260,3 +260,33 @@ To add support for a new vector store provider:
 4. Register the provider with Spring `@Component` annotation
 
 See the [RAG Architecture](RAG_ARCHITECTURE.md) for details on the vector store plugin system.
+
+## Feature Flags
+
+ShipFlow uses Spring Boot property-based feature flags. Set in `application-dev.properties` or via environment variables.
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `app.features.qa.enabled` | `true` | Enable QA test-case generation from pitches |
+| `app.features.wise-architecture.enabled` | `true` | Enable AI Wise Architecture advisor |
+| `app.features.rag.enabled` | `true` | Enable RAG document Q&A |
+| `app.features.risk-analysis.enabled` | `true` | Enable AI pitch risk scoring |
+| `app.features.ai-cache.enabled` | `true` | Enable Redis-backed AI response cache |
+| `app.features.import.csv.enabled` | `true` | Enable CSV import (Jira/Linear/Asana/Generic) |
+| `app.features.import.linear.enabled` | `true` | Enable Linear API import via OAuth2 |
+| `app.features.import.jira.enabled` | `true` | Enable Jira API import via Atlassian OAuth 2.0 |
+| `app.features.notifications.sse.enabled` | `true` | Enable Server-Sent Events real-time notifications |
+| `app.features.notifications.email.enabled` | `false` | Enable email notifications (requires SMTP config) |
+| `app.features.bulk-operations.enabled` | `true` | Enable bulk task operations |
+| `app.features.file-attachments.enabled` | `true` | Enable file attachments on tasks |
+| `app.features.csv-export.enabled` | `true` | Enable CSV export from backlog |
+| `app.features.saved-filters.enabled` | `true` | Enable saved filter views |
+| `app.features.work-log.enabled` | `true` | Enable work log timer |
+| `mcp.server.enabled` | `false` | Expose ShipFlow as an MCP server for AI editors |
+| `mcp.server.write-enabled` | `false` | Allow write tools via MCP server (requires `mcp.server.enabled`) |
+| `mcp.github.enabled` | `false` | Enable GitHub MCP client for Wise Architecture |
+| `mcp.figma.enabled` | `false` | Enable Figma MCP client for Wise Architecture |
+| `app.ai.cache.ttl-minutes` | `60` | AI cache TTL in minutes |
+| `app.rate-limit.trusted-proxies` | `127.0.0.1,::1` | Comma-separated trusted proxy IPs for `X-Forwarded-For` |
+
+To disable a flag at runtime, set it to `false` in your `application-dev.properties` or as a `SPRING_APPLICATION_JSON` environment variable in production.
