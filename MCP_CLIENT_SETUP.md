@@ -171,7 +171,7 @@ Content-Type: application/json   (for /mcp/messages)
 
 Once connected, your AI assistant has access to these tools:
 
-### Read Tools (v0.7.0 — available now)
+### Read Tools (v0.7.0 — 12 tools)
 
 | Tool | What it returns |
 |------|----------------|
@@ -189,7 +189,7 @@ Once connected, your AI assistant has access to these tools:
 | `wise_architecture_get_files` | Retrieve generated Markdown implementation guides for a past analysis |
 | `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId` or `cycleId`) |
 
-### Write Tools (v0.9.0 — requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
+### Write Tools (v0.9.0 S18 — 7 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
@@ -199,6 +199,7 @@ Once connected, your AI assistant has access to these tools:
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
 | `add_comment` | Add a comment to a TASK or BUG_REPORT (entityType, entityId, content required) |
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
+| `create_scope` | Create a Hill Chart scope for a pitch (pitchId, title required; optional: description, progress) |
 
 ### Wise Architecture Tools (v0.9.0)
 
