@@ -196,7 +196,7 @@ public class RoadmapService {
         .status(pitch.getStatus().name())
         .startDate(pitch.getCycle() != null ? pitch.getCycle().getStartDate() : null)
         .endDate(pitch.getCycle() != null ? pitch.getCycle().getEndDate() : null)
-        .progressPercentage(progress)
+        .progress(progress)
         .epicId(pitch.getEpic() != null ? pitch.getEpic().getId() : null)
         .targetReleaseId(pitch.getTargetRelease() != null ? pitch.getTargetRelease().getId() : null)
         .build();

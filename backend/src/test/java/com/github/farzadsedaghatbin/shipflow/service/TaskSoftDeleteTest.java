@@ -140,7 +140,7 @@ class TaskSoftDeleteTest {
     when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.empty());
 
     // When & Then
-    assertThatThrownBy(() -> taskService.getTaskById(1L)).isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> taskService.getTaskById(1L)).isInstanceOf(ResourceNotFoundException.class)
         .hasMessage("Task not found with id: 1");
   }
 
