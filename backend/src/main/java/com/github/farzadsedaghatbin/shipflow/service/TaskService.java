@@ -147,7 +147,7 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByProjectId(Long projectId) {
-    return taskRepository.findByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+    return taskRepository.findByProjectIdNotDeleted(projectId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /**
@@ -173,7 +173,7 @@ public class TaskService {
   }
 
   public TaskStatisticsDTO getTaskStatisticsByProjectId(Long projectId) {
-    List<Task> tasks = taskRepository.findByProjectId(projectId);
+    List<Task> tasks = taskRepository.findByProjectIdNotDeleted(projectId);
 
     long totalTasks = tasks.size();
     long backlogTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.BACKLOG).count();
