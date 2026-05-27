@@ -1026,8 +1026,9 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {
-    return taskRepository.findByCycleIdAndCategory(cycleId, category).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByCycleIdNotDeleted(cycleId).stream()
+        .filter(t -> category.equals(t.getCategory()))
+        .map(this::toDTO).collect(Collectors.toList());
   }
 
   public int countTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {

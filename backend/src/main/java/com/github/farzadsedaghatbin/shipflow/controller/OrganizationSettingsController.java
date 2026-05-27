@@ -46,6 +46,7 @@ public class OrganizationSettingsController {
 
   @GetMapping("/settings/meeting-types")
   @Operation(summary = "Get meeting type configurations (accessible to all authenticated users)")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<java.util.List<com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.MeetingTypeConfig>> getMeetingTypes() {
     return ResponseEntity.ok(settingsService.getSettings().getMeetingTypes());
   }
