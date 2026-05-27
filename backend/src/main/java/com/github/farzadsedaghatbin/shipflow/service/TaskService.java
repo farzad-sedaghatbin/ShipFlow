@@ -147,7 +147,7 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByProjectId(Long projectId) {
-    return taskRepository.findByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+    return taskRepository.findByProjectIdNotDeleted(projectId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /**
@@ -173,7 +173,7 @@ public class TaskService {
   }
 
   public TaskStatisticsDTO getTaskStatisticsByProjectId(Long projectId) {
-    List<Task> tasks = taskRepository.findByProjectId(projectId);
+    List<Task> tasks = taskRepository.findByProjectIdNotDeleted(projectId);
 
     long totalTasks = tasks.size();
     long backlogTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.BACKLOG).count();
@@ -1026,8 +1026,9 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {
-    return taskRepository.findByCycleIdAndCategory(cycleId, category).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByCycleIdNotDeleted(cycleId).stream()
+        .filter(t -> category.equals(t.getCategory()))
+        .map(this::toDTO).collect(Collectors.toList());
   }
 
   public int countTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {

@@ -112,7 +112,7 @@ export default function MyWorkLogs() {
     try {
       const [cyclesRes, pitchesRes] = await Promise.all([
         cycleService.getMyActiveCycles(),
-        pitchService.getAll(),
+        pitchService.getMyPitches(),
       ]);
       setCycles(cyclesRes.data);
       setAllPitches(pitchesRes.data);

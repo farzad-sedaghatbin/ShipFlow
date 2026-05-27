@@ -340,7 +340,7 @@ export function PitchMeetingsSection({
         </DialogContent>
       </Dialog>
 
-      {/* View Meeting Dialog (Read-only, shows only completed items) */}
+      {/* View Meeting Dialog (Read-only, shows all items; completed ones are struck through) */}
       {viewMeeting && (
         <Dialog open={viewMeetingDialog} onOpenChange={onSetViewMeetingDialog}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">

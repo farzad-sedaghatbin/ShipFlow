@@ -120,6 +120,8 @@ public class WorkLogService {
     WorkLog workLog = workLogRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
 
+    Pitch previousPitch = workLog.getPitch();
+
     Pitch pitch = null;
     Task task = null;
     if (request.getPitchId() != null) {
@@ -143,7 +145,8 @@ public class WorkLogService {
       eventPublisher.publishEvent(new KnowledgeEventListener.WorkLogKnowledgeEvent(saved.getId()));
     }
 
-    // Invalidate risk analysis cache since hours changed
+    // Invalidate both the previous and new pitch caches when the association changes
+    invalidateCacheForPitch(previousPitch);
     invalidateCacheForPitch(saved.getPitch());
 
     return toDTO(saved);
