@@ -1022,7 +1022,7 @@ public class TaskService {
   // ========== Category-based methods ==========
 
   public Page<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category, Pageable pageable) {
-    return taskRepository.findByCycleIdAndCategory(cycleId, category, pageable).map(this::toDTO);
+    return taskRepository.findByCycleIdAndCategoryNotDeleted(cycleId, category, pageable).map(this::toDTO);
   }
 
   public List<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {

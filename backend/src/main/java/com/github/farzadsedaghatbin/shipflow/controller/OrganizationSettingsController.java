@@ -44,6 +44,12 @@ public class OrganizationSettingsController {
     return ResponseEntity.ok(settingsService.getSettings());
   }
 
+  @GetMapping("/settings/meeting-types")
+  @Operation(summary = "Get meeting type configurations (accessible to all authenticated users)")
+  public ResponseEntity<java.util.List<com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.MeetingTypeConfig>> getMeetingTypes() {
+    return ResponseEntity.ok(settingsService.getSettings().getMeetingTypes());
+  }
+
   @PutMapping("/settings")
   @Operation(summary = "Update organization settings")
   @PreAuthorize("hasRole('ADMIN')")

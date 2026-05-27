@@ -127,7 +127,7 @@ export default function PitchDetail() {
         pitchService.getById(pitchId),
         meetingService.getByPitchId(pitchId),
         documentService.getDocumentsForPitch(pitchId),
-        organizationSettingsService.getSettings(),
+        organizationSettingsService.getMeetingTypes().catch(() => ({ data: [] })),
         taskService.getByPitchId(pitchId).catch(() => ({ data: [] })),
       ]);
       const pitchData = pitchRes.data;
@@ -135,7 +135,7 @@ export default function PitchDetail() {
       setMeetings(meetingsRes.data);
       setDocuments(docsRes.data);
       setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
-      setMeetingTypeConfigs(orgSettingsRes.data.meetingTypes || []);
+      setMeetingTypeConfigs(Array.isArray(orgSettingsRes.data) ? orgSettingsRes.data : []);
 
       // Sync Shape Up fields
       setShapeUpFields({

@@ -53,6 +53,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND (t.assignee.id = :personId OR t.pairAssignee.id = :personId) AND t.deletedAt IS NULL")
     List<Task> findByCycleIdAndPersonIdNotDeleted(@Param("cycleId") Long cycleId, @Param("personId") Long personId);
 
+    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.category = :category AND t.deletedAt IS NULL")
+    Page<Task> findByCycleIdAndCategoryNotDeleted(@Param("cycleId") Long cycleId,
+            @Param("category") TaskCategory category, Pageable pageable);
+
     // Pageable queries
     Page<Task> findAll(Pageable pageable);
 
