@@ -9,6 +9,7 @@ export const organizationSettingsService = {
    * Get current organization settings
    */
   getSettings: () => api.get<OrganizationSettings>('/admin/settings'),
+  getMeetingTypes: () => api.get<OrganizationSettings['meetingTypes']>('/admin/settings/meeting-types'),
 
   /**
    * Update organization settings

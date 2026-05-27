@@ -119,8 +119,8 @@ class TaskControllerIntegrationTest {
   }
 
   @Test
-  void getTaskById_WhenNotExists_ShouldReturn400() throws Exception {
-    mockMvc.perform(get("/api/tasks/{id}", 9999L)).andExpect(status().isBadRequest());
+  void getTaskById_WhenNotExists_ShouldReturn404() throws Exception {
+    mockMvc.perform(get("/api/tasks/{id}", 9999L)).andExpect(status().isNotFound());
   }
 
   @Test

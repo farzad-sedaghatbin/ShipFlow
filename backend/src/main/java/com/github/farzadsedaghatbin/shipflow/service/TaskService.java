@@ -91,7 +91,7 @@ public class TaskService {
 
   public TaskDTO getTaskById(Long id) {
     Task task = taskRepository.findByIdNotDeleted(id)
-        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
     TaskDTO dto = toDTO(task);
     // Attachments are only loaded for the single-task detail view to avoid N+1 on list endpoints
     dto.setAttachments(attachmentRepository.findByTaskIdOrderByCreatedAtDesc(id).stream()
@@ -1022,7 +1022,7 @@ public class TaskService {
   // ========== Category-based methods ==========
 
   public Page<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category, Pageable pageable) {
-    return taskRepository.findByCycleIdAndCategory(cycleId, category, pageable).map(this::toDTO);
+    return taskRepository.findByCycleIdAndCategoryNotDeleted(cycleId, category, pageable).map(this::toDTO);
   }
 
   public List<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {

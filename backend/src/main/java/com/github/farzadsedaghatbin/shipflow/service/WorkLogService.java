@@ -112,9 +112,26 @@ public class WorkLogService {
   }
 
   public WorkLogDTO updateWorkLog(Long id, CreateWorkLogRequest request) {
+    if ((request.getPitchId() == null && request.getTaskId() == null)
+        || (request.getPitchId() != null && request.getTaskId() != null)) {
+      throw new IllegalArgumentException(messageService.getMessage("error.worklog.pitch.or.task.required"));
+    }
+
     WorkLog workLog = workLogRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
 
+    Pitch pitch = null;
+    Task task = null;
+    if (request.getPitchId() != null) {
+      pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
+          () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+    } else {
+      task = taskRepository.findById(request.getTaskId())
+          .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + request.getTaskId()));
+    }
+
+    workLog.setPitch(pitch);
+    workLog.setTask(task);
     workLog.setDate(request.getDate());
     workLog.setHoursSpent(request.getHoursSpent());
     workLog.setNote(request.getNote());

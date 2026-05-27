@@ -136,9 +136,14 @@ export default function TaskDetailPage() {
       // Load subtasks
       const subtasksResponse = await taskService.getSubTasks(id);
       setSubtasks(subtasksResponse.data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load task:', error);
-      toast.error('Failed to load task');
+      const status = error?.response?.status;
+      if (status === 404) {
+        toast.error('This task no longer exists');
+      } else {
+        toast.error('Failed to load task');
+      }
       navigate('/backlog');
     } finally {
       setLoading(false);

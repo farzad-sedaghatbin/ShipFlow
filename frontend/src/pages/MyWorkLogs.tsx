@@ -56,6 +56,7 @@ export default function MyWorkLogs() {
   const [totalElements, setTotalElements] = useState(0);
   const PAGE_SIZE = 20;
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [allPitches, setAllPitches] = useState<Pitch[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('all');
@@ -109,8 +110,12 @@ export default function MyWorkLogs() {
 
   const loadInitialData = async () => {
     try {
-      const cyclesRes = await cycleService.getMyActiveCycles();
+      const [cyclesRes, pitchesRes] = await Promise.all([
+        cycleService.getMyActiveCycles(),
+        pitchService.getAll(),
+      ]);
       setCycles(cyclesRes.data);
+      setAllPitches(pitchesRes.data);
       // Default to 'all' - load all work logs
       loadAllWorkLogs();
     } catch (error) {
@@ -295,7 +300,9 @@ export default function MyWorkLogs() {
       showSuccess('Work log updated successfully');
       setEditDialogOpen(false);
       setEditingWorkLog(null);
-      if (selectedCycle) {
+      if (selectedCycle === 'all') {
+        loadAllWorkLogs();
+      } else if (selectedCycle) {
         loadWorkLogs(parseInt(selectedCycle, 10));
       }
     } catch (error: any) {
@@ -692,7 +699,7 @@ export default function MyWorkLogs() {
                     <SelectValue placeholder="Select a pitch" />
                   </SelectTrigger>
                   <SelectContent>
-                    {pitches.map((p) => (
+                    {(pitches.length > 0 ? pitches : allPitches).map((p) => (
                       <SelectItem key={p.id} value={p.id.toString()}>
                         {p.title}
                       </SelectItem>

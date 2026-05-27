@@ -373,10 +373,10 @@ export function PitchMeetingsSection({
                   <Label>{t('meetingList.dialog.dor')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dorItems.map((item, index) => (
-                      <div key={index} className={`flex items-start gap-2 text-sm ${!item.isCompleted ? 'opacity-50' : ''}`}>
+                      <div key={index} className={`flex items-start gap-2 text-sm ${item.isCompleted ? 'opacity-50' : ''}`}>
                         <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className={`font-medium ${item.isCompleted ? '' : 'line-through'}`}>{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}
@@ -393,10 +393,10 @@ export function PitchMeetingsSection({
                   <Label>{t('meetingList.dialog.dod')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dodItems.map((item, index) => (
-                      <div key={index} className={`flex items-start gap-2 text-sm ${!item.isCompleted ? 'opacity-50' : ''}`}>
+                      <div key={index} className={`flex items-start gap-2 text-sm ${item.isCompleted ? 'opacity-50' : ''}`}>
                         <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className={`font-medium ${item.isCompleted ? '' : 'line-through'}`}>{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}
