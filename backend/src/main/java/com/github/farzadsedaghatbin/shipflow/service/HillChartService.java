@@ -90,8 +90,10 @@ public class HillChartService {
 
     HillChartPoint saved = hillChartPointRepository.save(point);
 
-    // Auto-create linked task if requested (default: true)
-    if (shouldCreateTaskAutomatically(request)) {
+    // Auto-create linked task if requested (default: true). Only possible once the
+    // pitch is bet into a cycle — pre-cycle pitches (board/shaping) get a standalone
+    // scope, since a task needs a cycle for backlog/project association.
+    if (shouldCreateTaskAutomatically(request) && pitch.getCycle() != null) {
       Task linkedTask = createLinkedTask(saved, pitch, request.getAssigneeId());
       saved.setLinkedTask(linkedTask);
       saved = hillChartPointRepository.save(saved);

@@ -34,6 +34,7 @@ import { Combobox } from '../components/ui/combobox';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { getChecklistBadgeState } from '../utils/meetingChecklist';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
@@ -596,18 +597,24 @@ export default function MeetingList() {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge
-                          variant={meeting.dorReady ? 'success' : 'outline'}
-                        >
-                          {meeting.dorReady ? t('meetingList.table.yes') : t('meetingList.table.no')}
-                        </Badge>
+                        {(() => {
+                          const { variant, completed, total } = getChecklistBadgeState(meeting.dorItems);
+                          return (
+                            <Badge variant={variant}>
+                              {total > 0 ? `${completed}/${total}` : t('meetingList.table.no')}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge
-                          variant={meeting.dodReady ? 'success' : 'outline'}
-                        >
-                          {meeting.dodReady ? t('meetingList.table.yes') : t('meetingList.table.no')}
-                        </Badge>
+                        {(() => {
+                          const { variant, completed, total } = getChecklistBadgeState(meeting.dodItems);
+                          return (
+                            <Badge variant={variant}>
+                              {total > 0 ? `${completed}/${total}` : t('meetingList.table.no')}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">

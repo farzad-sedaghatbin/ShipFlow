@@ -44,7 +44,6 @@ export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated }: Pi
         status,
         priority,
         category: 'PITCH_SCOPE',
-        createScopeAutomatically: false,
       });
       onTaskCreated?.(res.data);
       setDialogOpen(false);
