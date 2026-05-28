@@ -80,6 +80,7 @@ public class TaskService {
   private final ApplicationEventPublisher eventPublisher;
   private final PermissionService permissionService;
   private final ProjectService projectService;
+  private final ScopeProgressService scopeProgressService;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -285,7 +286,7 @@ public class TaskService {
     Task saved = taskRepository.save(task);
 
     // Auto-create hill chart scope for root tasks with pitch (Scope-Task Bridge)
-    if (shouldCreateScopeAutomatically(request, saved)) {
+    if (shouldCreateScopeAutomatically(saved)) {
       createLinkedScope(saved, request.getInitialHillPosition());
     }
 
@@ -303,27 +304,30 @@ public class TaskService {
   }
 
   /**
-   * Check if a scope should be auto-created for this task.
-   * Scope is created when:
-   * - createScopeAutomatically flag is true (or null, default true)
+   * Check if a scope should be auto-created for this task (Scope-Task Bridge).
+   * The decision is owned entirely by the backend, derived from the task's own
+   * state — clients cannot suppress it. Scope is created when:
    * - Task has a pitch association
    * - Task has no parent (is a root task)
-   * - Task doesn't already have an explicit scope
+   * - Task isn't already linked to an explicit scope
    */
-  private boolean shouldCreateScopeAutomatically(CreateTaskRequest request, Task task) {
-    boolean createFlag = request.getCreateScopeAutomatically() == null || request.getCreateScopeAutomatically();
+  private boolean shouldCreateScopeAutomatically(Task task) {
     boolean hasPitch = task.getPitch() != null;
     boolean isRootTask = task.getParentTask() == null;
-    boolean noExistingScope = request.getScopeId() == null;
+    boolean noExistingScope = task.getScope() == null;
 
-    return createFlag && hasPitch && isRootTask && noExistingScope;
+    return hasPitch && isRootTask && noExistingScope;
   }
 
   /**
    * Create a hill chart scope linked to the given task.
    */
   private void createLinkedScope(Task task, Integer initialPosition) {
-    int position = initialPosition != null ? initialPosition : 0;
+    // Derive the starting position from the task's status when not explicitly set,
+    // so a task created as IN_PROGRESS/DONE lands at the right spot on the hill
+    // instead of being pinned at 0.
+    int position = initialPosition != null ? initialPosition
+        : scopeProgressService.calculatePositionFromTask(task);
 
     HillChartPoint scope = HillChartPoint.builder()
         .pitch(task.getPitch())

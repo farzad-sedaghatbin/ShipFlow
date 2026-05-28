@@ -904,9 +904,9 @@ export interface CreateTaskRequest {
   dueDate?: string;
   tags?: string;
   
-  // Scope-Task Bridge fields
-  createScopeAutomatically?: boolean; // When true and pitchId set (no parentTaskId), auto-creates a scope (default: true)
-  initialHillPosition?: number; // Initial position on hill chart (0-100), only used when createScopeAutomatically is true
+  // Scope-Task Bridge: scope auto-creation is decided entirely backend-side
+  // (root task + pitch + no existing scope). Clients cannot toggle it.
+  initialHillPosition?: number; // Initial hill chart position (0-100) applied to the auto-created scope
 
   // Scrum: story point estimate
   storyPoints?: number | null;

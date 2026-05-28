@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { formatLocalizedDate } from '../../utils/dateLocalization';
 import { LocalizedDateInput } from '../LocalizedDateInput';
-import { Meeting, CreateMeetingRequest, MeetingType } from '../../types';
+import { Meeting, CreateMeetingRequest, MeetingType, MeetingChecklistItem } from '../../types';
 import { MeetingTypeConfig } from '../../types/organizationSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -31,6 +31,7 @@ import {
   CollapsibleTrigger,
 } from '../ui/collapsible';
 import { cn } from '../../lib/utils';
+import { getChecklistBadgeState } from '../../utils/meetingChecklist';
 
 interface PitchMeetingsSectionProps {
   meetings: Meeting[];
@@ -86,6 +87,15 @@ export function PitchMeetingsSection({
   const { t } = useTranslation();
   const meetingDocUploadRef = useRef<HTMLInputElement>(null);
 
+  const renderChecklistBadge = (label: string, items?: MeetingChecklistItem[]) => {
+    const { variant, completed, total } = getChecklistBadgeState(items);
+    return (
+      <Badge variant={variant} className={cn(variant === 'outline' && 'text-muted-foreground')}>
+        {label}{total > 0 && ` ${completed}/${total}`}
+      </Badge>
+    );
+  };
+
   return (
     <>
       <Card>
@@ -119,18 +129,8 @@ export function PitchMeetingsSection({
                       </span>
                     </div>
                     <div className="flex gap-2 mb-2">
-                      <Badge
-                        variant={m.dorReady ? 'success' : 'outline'}
-                        className={cn(!m.dorReady && 'text-muted-foreground')}
-                      >
-                        DOR
-                      </Badge>
-                      <Badge
-                        variant={m.dodReady ? 'success' : 'outline'}
-                        className={cn(!m.dodReady && 'text-muted-foreground')}
-                      >
-                        DOD
-                      </Badge>
+                      {renderChecklistBadge('DOR', m.dorItems)}
+                      {renderChecklistBadge('DOD', m.dodItems)}
                     </div>
                     {m.notes && (
                       <p className="text-sm text-muted-foreground">{m.notes}</p>

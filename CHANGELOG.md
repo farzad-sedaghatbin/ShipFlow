@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Hill chart "failed to save point" on pre-cycle pitches**: Adding a scope to a pitch that isn't bet into a cycle yet (board/shaping) threw `"Pitch must have a cycle to create a linked task"`. The scope now saves standalone and the auto-linked task is only created once the pitch has a cycle.
+- **Pitch tasks now always appear on the hill chart (Scope-Task Bridge)**: Creating a task from a pitch was sending `createScopeAutomatically: false`, so no scope was created. Removed the client-side flag entirely — scope auto-creation is now fully backend-owned (`hasPitch && isRootTask && noExistingScope`) and cannot be suppressed by any client.
+- **Auto-created scope position reflects task status**: A scope auto-created for a task was pinned at position 0 regardless of the task's status, so a task added as `IN_PROGRESS`/`DONE` showed no progress on the hill. The initial position is now derived from the task's status.
+- **Misleading DOR/DOD meeting badges**: Badges showed green even when checklist items were unchecked (an untouched all-optional checklist counted as "ready"). Badges now show a `completed/total` count and only turn green when all required items are done with real engagement; partial completion shows amber, untouched shows outline. Applied on both the pitch detail meetings card and the Meeting List table.
+- **Roadmap not showing pitches under orphan epics**: Epics not attached to an initiative rendered an expand control but never listed their pitches. The orphan-epics section now renders pitch rows when expanded, matching the initiative-grouped section.
+
 ## [1.2.0] - 2026-05-24
 
 ### Added

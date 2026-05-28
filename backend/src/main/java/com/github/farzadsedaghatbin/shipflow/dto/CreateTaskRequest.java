@@ -64,21 +64,13 @@ public class CreateTaskRequest {
   private String tags;
 
   /**
-   * When true and pitchId is set (and no parentTaskId), auto-creates a hill chart scope.
-   * Defaults to true for root tasks with pitch association.
-   */
-  @Builder.Default
-  private Boolean createScopeAutomatically = true;
-
-  /**
-   * Initial position on the hill chart (0-100).
-   * Only used when createScopeAutomatically is true.
-   * Defaults to 0 (start of hill - figuring things out).
+   * Initial position on the hill chart (0-100) for the auto-created scope.
+   * When null (the usual case), the position is derived from the task's status
+   * so the scope reflects real progress immediately instead of being pinned at 0.
    */
   @Min(value = 0, message = "Initial hill position must be between 0 and 100")
   @Max(value = 100, message = "Initial hill position must be between 0 and 100")
-  @Builder.Default
-  private Integer initialHillPosition = 0;
+  private Integer initialHillPosition;
 
   /**
    * Cross-field validation: at least one of {@code cycleId} or {@code projectId} must be provided.

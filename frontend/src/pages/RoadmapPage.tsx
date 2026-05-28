@@ -460,6 +460,11 @@ export default function RoadmapPage() {
     }
     for (const epic of timeline?.orphanEpics ?? []) {
       indices.set(`orphan-${epic.id}`, idx++);
+      if (expandedEpics.has(epic.id)) {
+        for (const pitch of epic.pitches ?? []) {
+          indices.set(`pitch-${pitch.id}`, idx++);
+        }
+      }
     }
     return indices;
   }, [timeline, expandedInitiatives, expandedEpics]);
@@ -878,6 +883,32 @@ export default function RoadmapPage() {
                             />
                           </div>
                         </div>
+
+                        {/* Expanded Pitches */}
+                        {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
+                            <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${(rowIndices.get(`pitch-${pitch.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                              <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-10 pr-2">
+                                <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <Link
+                                  to={`/pitches/${pitch.id}`}
+                                  className="text-xs truncate hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {pitch.title}
+                                </Link>
+                              </div>
+                              <div className="flex-1 relative h-9">
+                                <TimelineBar
+                                  startDate={pitch.startDate}
+                                  endDate={pitch.endDate}
+                                  timelineStart={timelineStart}
+                                  timelineEnd={timelineEnd}
+                                  status={pitch.status}
+                                  progress={pitch.progress}
+                                />
+                              </div>
+                            </div>
+                        ))}
                       </div>
                   ))}
                 </div>
