@@ -72,6 +72,10 @@ public class OrganizationSettingsDTO {
   // GitHub MCP Configuration (token not exposed, only flag)
   private Boolean hasGithubAccessToken;
 
+  // MCP Server runtime toggle (effective values: DB override if set, else env default)
+  private Boolean mcpServerEnabled;
+  private Boolean mcpServerWriteEnabled;
+
   /**
    * Configurable risk detection thresholds for automated health assessment. These
    * values control how the system calculates pitch health status.

@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -43,7 +42,6 @@ import org.springframework.stereotype.Component;
  * </ol>
  */
 @Component
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 public class WiseArchitectureMcpTools {

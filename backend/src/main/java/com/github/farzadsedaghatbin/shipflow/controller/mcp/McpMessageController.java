@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller.mcp;
 
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpServerSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSession;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSessionManager;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpToolDispatcher;
@@ -8,7 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,16 +30,18 @@ import org.springframework.web.bind.annotation.RestController;
  * principal that opened the target session, preventing one API key from injecting tool calls into
  * another user's session.
  *
- * <p>Only active when {@code mcp.server.enabled=true}.
+ * <p>The MCP server is enabled/disabled at runtime via {@link McpServerSettingsService} (admin
+ * toggle, falling back to the {@code mcp.server.enabled} environment default). When disabled, this
+ * endpoint responds {@code 503 Service Unavailable}.
  */
 @RestController
 @RequestMapping("/mcp")
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @Slf4j
 public class McpMessageController {
 
   private final McpToolDispatcher dispatcher;
   private final McpSessionManager sessionManager;
+  private final McpServerSettingsService serverSettings;
 
   /**
    * Bounded virtual-thread executor — limits concurrent dispatches so MCP traffic cannot exhaust
@@ -48,14 +51,22 @@ public class McpMessageController {
   private final ExecutorService mcpExecutor =
       Executors.newFixedThreadPool(100, Thread.ofVirtual().factory());
 
-  public McpMessageController(McpToolDispatcher dispatcher, McpSessionManager sessionManager) {
+  public McpMessageController(
+      McpToolDispatcher dispatcher,
+      McpSessionManager sessionManager,
+      McpServerSettingsService serverSettings) {
     this.dispatcher = dispatcher;
     this.sessionManager = sessionManager;
+    this.serverSettings = serverSettings;
   }
 
   @PostMapping("/messages")
   public ResponseEntity<Void> handleMessage(
       @RequestParam String sessionId, @RequestBody Map<String, Object> request) {
+
+    if (!serverSettings.isEnabled()) {
+      return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
+    }
 
     // Verify that the caller owns the target session (prevents session-hijacking)
     Optional<McpSession> session = sessionManager.get(sessionId);

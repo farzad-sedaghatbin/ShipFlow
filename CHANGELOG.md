@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **MCP server admin UI**: Admins can enable/disable the built-in MCP server at runtime from Integrations → MCP → "MCP Server" tab. This is a DB-backed toggle that overrides the `MCP_SERVER_ENABLED` environment default and **takes effect immediately — no restart required**. A second toggle controls MCP write tools (disabled while the server is off). The tab also shows live status plus the SSE URL and bearer-auth instructions for Claude Code.
+- **API key management UI**: Create, list, and revoke API keys from the new "API Keys" tab. Keys support READ / WRITE / ADMIN scopes and an optional expiry date. The raw key (`sf_…`) is shown **once** at creation with a copy button and a clear "copy it now — it won't be shown again" warning. (The API-key REST endpoints at `/api/api-keys` already existed; this adds the management UI and a runtime MCP-enablement service, `McpServerSettingsService`.)
+
 ### Fixed
 - **Betting board crashed on pitches without an appetite**: A `SHAPED` pitch with no appetite (`appetiteDays = null`) made the betting board throw HTTP 500s — drag-and-drop placement NPE'd in `BettingTableService.canPitchFitInSlot`, and recording a decision violated the `betting_decisions.requested_appetite_days` NOT NULL constraint. Root cause was `PitchService.updatePitch` flipping a pitch to `SHAPED`+ without the appetite check that `markAsShaped`/`validatePitchForStatus` enforce. Now: `updatePitch` validates appetite for `SHAPED`+ (prevents appetite-less betting candidates), the drag preview returns a clean "doesn't fit" instead of NPE-ing, and both placement and betting decisions reject appetite-less pitches with a clear 400 (`error.betting.pitch.no.appetite`, en + fa) instead of a 500.
 - **Hill chart "failed to save point" on pre-cycle pitches**: Adding a scope to a pitch that isn't bet into a cycle yet (board/shaping) threw `"Pitch must have a cycle to create a linked task"`. The scope now saves standalone and the auto-linked task is only created once the pitch has a cycle.
