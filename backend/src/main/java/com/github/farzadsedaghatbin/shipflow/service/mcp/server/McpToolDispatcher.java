@@ -186,7 +186,8 @@ public class McpToolDispatcher {
     if (isWriteTool(toolName)) {
       if (!isWriteEnabled()) {
         throw new SecurityException("Write tools are disabled on this ShipFlow instance. "
-            + "Set MCP_SERVER_WRITE_ENABLED=true to enable them.");
+            + "An admin can enable them in Integrations → MCP → MCP Server, "
+            + "or by setting MCP_SERVER_WRITE_ENABLED=true.");
       }
       if (!hasWriteScope(auth)) {
         throw new SecurityException("This API key does not have WRITE scope. "

@@ -297,7 +297,11 @@ export default function McpIntegration() {
     return new Date(value).toLocaleDateString();
   };
 
-  const sseUrl = `${window.location.protocol}//${window.location.host}/mcp/sse`;
+  // The MCP endpoints are served by the backend. Prefer the configured API base
+  // (VITE_API_BASE_URL) so the URL is correct when the frontend talks to a different
+  // backend host; fall back to the current origin for same-origin deployments.
+  const mcpBaseUrl = (import.meta.env.VITE_API_BASE_URL || window.location.origin).replace(/\/$/, '');
+  const sseUrl = `${mcpBaseUrl}/mcp/sse`;
 
   const renderServerStatus = (status: {
     enabled: boolean;

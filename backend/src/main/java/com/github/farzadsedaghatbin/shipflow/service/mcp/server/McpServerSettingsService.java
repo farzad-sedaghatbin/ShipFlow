@@ -36,11 +36,7 @@ public class McpServerSettingsService {
   /** Whether the MCP server is currently enabled (DB override, else env default). */
   @Transactional(readOnly = true)
   public boolean isEnabled() {
-    return settingsRepository
-        .findFirstByOrderByIdAsc()
-        .map(OrganizationSettings::getMcpServerEnabled)
-        .filter(value -> value != null)
-        .orElse(properties.isEnabled());
+    return resolveEnabled(loadSettings());
   }
 
   /**
@@ -49,13 +45,29 @@ public class McpServerSettingsService {
    */
   @Transactional(readOnly = true)
   public boolean isWriteEnabled() {
-    if (!isEnabled()) {
+    OrganizationSettings settings = loadSettings();
+    if (!resolveEnabled(settings)) {
       return false;
     }
-    return settingsRepository
-        .findFirstByOrderByIdAsc()
-        .map(OrganizationSettings::getMcpServerWriteEnabled)
-        .filter(value -> value != null)
-        .orElse(properties.isWriteEnabled());
+    return resolveWriteEnabled(settings);
+  }
+
+  /** Loads the singleton settings row, or {@code null} when none exists yet. */
+  private OrganizationSettings loadSettings() {
+    return settingsRepository.findFirstByOrderByIdAsc().orElse(null);
+  }
+
+  private boolean resolveEnabled(OrganizationSettings settings) {
+    if (settings != null && settings.getMcpServerEnabled() != null) {
+      return settings.getMcpServerEnabled();
+    }
+    return properties.isEnabled();
+  }
+
+  private boolean resolveWriteEnabled(OrganizationSettings settings) {
+    if (settings != null && settings.getMcpServerWriteEnabled() != null) {
+      return settings.getMcpServerWriteEnabled();
+    }
+    return properties.isWriteEnabled();
   }
 }
