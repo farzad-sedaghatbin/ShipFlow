@@ -67,9 +67,16 @@ export async function listApiKeys(): Promise<ApiKey[]> {
 
 export async function createApiKey(req: CreateApiKeyRequest): Promise<CreatedApiKey> {
   const response = await apiKeyApi.post<Record<string, unknown>>('/api/api-keys', req);
+  const rawKey = response.data.rawKey as string | undefined;
+  // The raw secret is returned exactly once. If it is missing (e.g. a proxy
+  // stripped it), fail loudly rather than handing the user a blank credential
+  // they can never recover.
+  if (!rawKey) {
+    throw new Error('API key was created but its secret was not returned. Please revoke it and create a new key.');
+  }
   return {
     ...normalize(response.data),
-    rawKey: (response.data.rawKey as string) ?? '',
+    rawKey,
   };
 }
 
