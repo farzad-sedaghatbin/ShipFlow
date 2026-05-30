@@ -9,13 +9,11 @@ import com.github.farzadsedaghatbin.shipflow.service.CommentService;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 /** MCP tool implementations for comment operations (write). */
 @Component
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class CommentMcpTools {
 

@@ -125,6 +125,14 @@ public class OrganizationSettings {
   @Builder.Default
   private Boolean enableWiseArchitecture = false;
 
+  // MCP Server runtime toggle. NULL = fall back to the environment-variable default
+  // (mcp.server.enabled / mcp.server.write-enabled). Set by an admin from the UI.
+  @Column(name = "mcp_server_enabled")
+  private Boolean mcpServerEnabled;
+
+  @Column(name = "mcp_server_write_enabled")
+  private Boolean mcpServerWriteEnabled;
+
   // Figma MCP Configuration
   @Column(name = "figma_access_token", columnDefinition = "TEXT")
   private String figmaAccessToken;

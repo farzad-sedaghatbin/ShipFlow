@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.UpdateOrganizationSettingsRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.OrganizationSettings;
@@ -22,6 +23,7 @@ public class OrganizationSettingsService {
 
   private final OrganizationSettingsRepository settingsRepository;
   private final ObjectMapper objectMapper;
+  private final McpServerProperties mcpServerProperties;
 
   /**
    * Get current organization settings. Creates default settings if none exist.
@@ -139,6 +141,14 @@ public class OrganizationSettingsService {
     // GitHub MCP Configuration (token only, managed via MCP settings API)
     if (request.getGithubAccessToken() != null) {
       settings.setGithubAccessToken(request.getGithubAccessToken());
+    }
+
+    // MCP Server runtime toggle (null = leave unchanged)
+    if (request.getMcpServerEnabled() != null) {
+      settings.setMcpServerEnabled(request.getMcpServerEnabled());
+    }
+    if (request.getMcpServerWriteEnabled() != null) {
+      settings.setMcpServerWriteEnabled(request.getMcpServerWriteEnabled());
     }
 
     settings.setUpdatedBy(username);
@@ -457,6 +467,11 @@ public class OrganizationSettingsService {
         // MCP Configuration (tokens not exposed, only presence flags)
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
         .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
+        // MCP Server runtime toggle — effective value: DB override if set, else env default
+        .mcpServerEnabled(entity.getMcpServerEnabled() != null
+            ? entity.getMcpServerEnabled() : mcpServerProperties.isEnabled())
+        .mcpServerWriteEnabled(entity.getMcpServerWriteEnabled() != null
+            ? entity.getMcpServerWriteEnabled() : mcpServerProperties.isWriteEnabled())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 

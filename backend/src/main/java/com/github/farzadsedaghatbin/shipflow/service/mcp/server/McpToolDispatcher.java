@@ -19,7 +19,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +40,6 @@ import org.springframework.stereotype.Service;
  * {@code SCOPE_ADMIN} authority. Read tools are available to any authenticated key.
  */
 @Service
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 public class McpToolDispatcher {
@@ -51,6 +49,22 @@ public class McpToolDispatcher {
   private final McpSessionManager sessionManager;
   private final McpServerProperties properties;
   private final ObjectMapper objectMapper;
+
+  /**
+   * Resolves the effective write-enabled state (DB runtime toggle, else env default). Injected via
+   * setter so unit tests that construct this dispatcher directly fall back to {@link #properties}.
+   */
+  private McpServerSettingsService serverSettings;
+
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  public void setServerSettings(McpServerSettingsService serverSettings) {
+    this.serverSettings = serverSettings;
+  }
+
+  /** Effective write-enabled state: DB runtime toggle when wired, otherwise the env default. */
+  private boolean isWriteEnabled() {
+    return serverSettings != null ? serverSettings.isWriteEnabled() : properties.isWriteEnabled();
+  }
 
   private final ProjectMcpTools projectTools;
   private final CycleMcpTools cycleTools;
@@ -146,7 +160,7 @@ public class McpToolDispatcher {
         .orElseThrow(() -> new McpToolException("Session not found"));
 
     List<Map<String, Object>> tools = new ArrayList<>(readTools());
-    if (properties.isWriteEnabled() && hasWriteScope(auth)) {
+    if (isWriteEnabled() && hasWriteScope(auth)) {
       tools.addAll(writeTools());
     }
     return Map.of("tools", tools);
@@ -170,7 +184,7 @@ public class McpToolDispatcher {
 
     // Enforce write scope for mutating tools
     if (isWriteTool(toolName)) {
-      if (!properties.isWriteEnabled()) {
+      if (!isWriteEnabled()) {
         throw new SecurityException("Write tools are disabled on this ShipFlow instance. "
             + "Set MCP_SERVER_WRITE_ENABLED=true to enable them.");
       }

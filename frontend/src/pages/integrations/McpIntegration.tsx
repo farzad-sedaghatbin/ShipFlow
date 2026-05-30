@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Eye, EyeOff, RefreshCw, CheckCircle2, XCircle, Info, HelpCircle, Github, Figma } from 'lucide-react';
+import {
+  Save,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  Info,
+  HelpCircle,
+  Github,
+  Figma,
+  Server,
+  KeyRound,
+  Copy,
+  Trash2,
+} from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -8,21 +23,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
+import { Switch } from '../../components/ui/switch';
+import { Checkbox } from '../../components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '../../components/ui/dialog';
 import {
   getMcpStatus,
   getMcpSettings,
   updateMcpSettings,
+  getMcpServerSettings,
+  updateMcpServerToggle,
   McpStatus,
   McpOrganizationSettings,
+  McpServerSettings,
   UpdateMcpSettingsRequest,
 } from '../../services/mcpService';
+import {
+  listApiKeys,
+  createApiKey,
+  revokeApiKey,
+  ApiKey,
+  CreatedApiKey,
+} from '../../services/apiKeyService';
+
+const ALL_SCOPES = ['READ', 'WRITE', 'ADMIN'] as const;
 
 export default function McpIntegration() {
   const { t } = useTranslation();
@@ -32,18 +62,32 @@ export default function McpIntegration() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
-  
+
   // MCP status from environment
   const [mcpStatus, setMcpStatus] = useState<McpStatus | null>(null);
-  
+
   // Organization settings
   const [settings, setSettings] = useState<McpOrganizationSettings | null>(null);
-  
+
   // Form states for tokens (we need separate state since they're not returned)
   const [githubToken, setGithubToken] = useState('');
   const [figmaToken, setFigmaToken] = useState('');
   const [showGithubToken, setShowGithubToken] = useState(false);
   const [showFigmaToken, setShowFigmaToken] = useState(false);
+
+  // Built-in MCP server runtime toggle
+  const [serverSettings, setServerSettings] = useState<McpServerSettings | null>(null);
+  const [savingToggle, setSavingToggle] = useState(false);
+
+  // API key management
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [showCreateKeyDialog, setShowCreateKeyDialog] = useState(false);
+  const [keyName, setKeyName] = useState('');
+  const [keyScopes, setKeyScopes] = useState<string[]>(['READ']);
+  const [keyExpiresAt, setKeyExpiresAt] = useState('');
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -63,18 +107,27 @@ export default function McpIntegration() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [status, orgSettings] = await Promise.all([
-        getMcpStatus(),
-        getMcpSettings(),
-      ]);
+      const [status, orgSettings] = await Promise.all([getMcpStatus(), getMcpSettings()]);
       setMcpStatus(status);
       setSettings(orgSettings);
-      
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.fetchFailed'));
     } finally {
       setLoading(false);
+    }
+
+    // These are independent and non-fatal — load them separately so a failure
+    // in one does not blank out the whole page.
+    try {
+      setServerSettings(await getMcpServerSettings());
+    } catch {
+      setServerSettings({ mcpServerEnabled: false, mcpServerWriteEnabled: false });
+    }
+    try {
+      setApiKeys(await listApiKeys());
+    } catch {
+      setApiKeys([]);
     }
   };
 
@@ -82,15 +135,12 @@ export default function McpIntegration() {
     try {
       setSaving(true);
       const request: UpdateMcpSettingsRequest = {};
-      
-      // Only include token if user entered something
       if (githubToken) {
         request.githubAccessToken = githubToken;
       }
-      
       const updated = await updateMcpSettings(request);
       setSettings(updated);
-      setGithubToken(''); // Clear token field after save
+      setGithubToken('');
       setSuccess(t('mcpIntegration.githubSaved'));
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
@@ -103,15 +153,12 @@ export default function McpIntegration() {
     try {
       setSaving(true);
       const request: UpdateMcpSettingsRequest = {};
-      
-      // Only include token if user entered something
       if (figmaToken) {
         request.figmaAccessToken = figmaToken;
       }
-      
       const updated = await updateMcpSettings(request);
       setSettings(updated);
-      setFigmaToken(''); // Clear token field after save
+      setFigmaToken('');
       setSuccess(t('mcpIntegration.figmaSaved'));
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
@@ -148,7 +195,116 @@ export default function McpIntegration() {
     }
   };
 
-  const renderServerStatus = (status: { enabled: boolean; configured: boolean; serverUrlMasked: string | null; timeoutSeconds: number }) => {
+  // --- Built-in MCP server toggle handlers ---
+  const handleToggleServer = async (enabled: boolean) => {
+    setError(null);
+    setSuccess(null);
+    setSavingToggle(true);
+    try {
+      const updated = await updateMcpServerToggle({ mcpServerEnabled: enabled });
+      setServerSettings(updated);
+      setSuccess(t('mcpIntegration.serverToggleSuccess'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.serverToggleError'));
+    } finally {
+      setSavingToggle(false);
+    }
+  };
+
+  const handleToggleWrite = async (enabled: boolean) => {
+    setError(null);
+    setSuccess(null);
+    setSavingToggle(true);
+    try {
+      const updated = await updateMcpServerToggle({ mcpServerWriteEnabled: enabled });
+      setServerSettings(updated);
+      setSuccess(t('mcpIntegration.serverToggleSuccess'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.serverToggleError'));
+    } finally {
+      setSavingToggle(false);
+    }
+  };
+
+  // --- API key handlers ---
+  const handleToggleScope = (scope: string) => {
+    setKeyScopes((prev) =>
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]
+    );
+  };
+
+  const resetKeyForm = () => {
+    setKeyName('');
+    setKeyScopes(['READ']);
+    setKeyExpiresAt('');
+  };
+
+  const handleCreateKey = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!keyName.trim() || keyScopes.length === 0) {
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setCreatingKey(true);
+    try {
+      const created = await createApiKey({
+        name: keyName.trim(),
+        scopes: keyScopes,
+        // Backend expects a LocalDateTime; pad the date input to start-of-day.
+        expiresAt: keyExpiresAt ? `${keyExpiresAt}T00:00:00` : undefined,
+      });
+      setShowCreateKeyDialog(false);
+      resetKeyForm();
+      setCreatedKey(created);
+      setCopied(false);
+      setApiKeys(await listApiKeys());
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.keyCreateError'));
+    } finally {
+      setCreatingKey(false);
+    }
+  };
+
+  const handleRevokeKey = async (id: number) => {
+    if (!window.confirm(t('mcpIntegration.keyRevokeConfirm'))) {
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    try {
+      await revokeApiKey(id);
+      setSuccess(t('mcpIntegration.keyRevokeSuccess'));
+      setApiKeys(await listApiKeys());
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.keyRevokeError'));
+    }
+  };
+
+  const handleCopyKey = async () => {
+    if (!createdKey) return;
+    try {
+      await navigator.clipboard.writeText(createdKey.rawKey);
+      setCopied(true);
+    } catch {
+      // Clipboard may be unavailable (insecure context); leave the key visible to copy manually.
+      setCopied(false);
+    }
+  };
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return t('mcpIntegration.never');
+    return new Date(value).toLocaleDateString();
+  };
+
+  const sseUrl = `${window.location.protocol}//${window.location.host}/mcp/sse`;
+
+  const renderServerStatus = (status: {
+    enabled: boolean;
+    configured: boolean;
+    serverUrlMasked: string | null;
+    timeoutSeconds: number;
+  }) => {
     if (!status.enabled) {
       return (
         <div className="flex items-center gap-2">
@@ -157,7 +313,7 @@ export default function McpIntegration() {
         </div>
       );
     }
-    
+
     if (!status.configured) {
       return (
         <div className="flex items-center gap-2">
@@ -166,13 +322,15 @@ export default function McpIntegration() {
         </div>
       );
     }
-    
+
     return (
       <div className="flex items-center gap-2">
         <CheckCircle2 className="h-4 w-4 text-green-500" />
         <span className="text-green-500">{t('mcpIntegration.connected')}</span>
         {status.serverUrlMasked && (
-          <Badge variant="outline" className="ml-2">{status.serverUrlMasked}</Badge>
+          <Badge variant="outline" className="ml-2">
+            {status.serverUrlMasked}
+          </Badge>
         )}
       </div>
     );
@@ -186,15 +344,16 @@ export default function McpIntegration() {
     );
   }
 
+  const serverEnabled = serverSettings?.mcpServerEnabled ?? false;
+  const writeEnabled = serverSettings?.mcpServerWriteEnabled ?? false;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('mcpIntegration.title')}</h1>
-          <p className="text-muted-foreground mt-2">
-            {t('mcpIntegration.description')}
-          </p>
+          <p className="text-muted-foreground mt-2">{t('mcpIntegration.description')}</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => setHelpDialogOpen(true)}>
           <HelpCircle className="h-4 w-4 mr-2" />
@@ -217,7 +376,7 @@ export default function McpIntegration() {
 
       {/* Tabs */}
       <Tabs value={tabValue} onValueChange={setTabValue}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="github" className="flex items-center gap-2">
             <Github className="h-4 w-4" />
             GitHub
@@ -225,6 +384,14 @@ export default function McpIntegration() {
           <TabsTrigger value="figma" className="flex items-center gap-2">
             <Figma className="h-4 w-4" />
             Figma
+          </TabsTrigger>
+          <TabsTrigger value="server" className="flex items-center gap-2">
+            <Server className="h-4 w-4" />
+            {t('mcpIntegration.serverTab')}
+          </TabsTrigger>
+          <TabsTrigger value="apikeys" className="flex items-center gap-2">
+            <KeyRound className="h-4 w-4" />
+            {t('mcpIntegration.apiKeysTab')}
           </TabsTrigger>
         </TabsList>
 
@@ -237,9 +404,7 @@ export default function McpIntegration() {
                 <Info className="h-5 w-5" />
                 {t('mcpIntegration.serverStatus')}
               </CardTitle>
-              <CardDescription>
-                {t('mcpIntegration.serverStatusDescription')}
-              </CardDescription>
+              <CardDescription>{t('mcpIntegration.serverStatusDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               {mcpStatus && renderServerStatus(mcpStatus.github)}
@@ -255,33 +420,26 @@ export default function McpIntegration() {
           <Card>
             <CardHeader>
               <CardTitle>{t('mcpIntegration.accessToken')}</CardTitle>
-              <CardDescription>
-                {t('mcpIntegration.githubTokenDescription')}
-              </CardDescription>
+              <CardDescription>{t('mcpIntegration.githubTokenDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
                 <Badge variant={settings?.hasGithubAccessToken ? 'default' : 'secondary'}>
-                  {settings?.hasGithubAccessToken 
-                    ? t('mcpIntegration.tokenConfigured') 
+                  {settings?.hasGithubAccessToken
+                    ? t('mcpIntegration.tokenConfigured')
                     : t('mcpIntegration.tokenNotConfigured')}
                 </Badge>
                 {settings?.hasGithubAccessToken && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleClearGithubToken}
-                    disabled={saving}
-                  >
+                  <Button variant="ghost" size="sm" onClick={handleClearGithubToken} disabled={saving}>
                     {t('mcpIntegration.clearToken')}
                   </Button>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="github-token">
-                  {settings?.hasGithubAccessToken 
-                    ? t('mcpIntegration.updateToken') 
+                  {settings?.hasGithubAccessToken
+                    ? t('mcpIntegration.updateToken')
                     : t('mcpIntegration.enterToken')}
                 </Label>
                 <div className="flex gap-2">
@@ -304,9 +462,7 @@ export default function McpIntegration() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {t('mcpIntegration.githubTokenHint')}
-                </p>
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.githubTokenHint')}</p>
               </div>
             </CardContent>
           </Card>
@@ -314,7 +470,11 @@ export default function McpIntegration() {
           {/* Save Button */}
           <div className="flex justify-end">
             <Button onClick={handleSaveGithub} disabled={saving}>
-              {saving ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              {saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
               {t('common.save')}
             </Button>
           </div>
@@ -329,9 +489,7 @@ export default function McpIntegration() {
                 <Info className="h-5 w-5" />
                 {t('mcpIntegration.serverStatus')}
               </CardTitle>
-              <CardDescription>
-                {t('mcpIntegration.serverStatusDescription')}
-              </CardDescription>
+              <CardDescription>{t('mcpIntegration.serverStatusDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               {mcpStatus && renderServerStatus(mcpStatus.figma)}
@@ -347,33 +505,26 @@ export default function McpIntegration() {
           <Card>
             <CardHeader>
               <CardTitle>{t('mcpIntegration.accessToken')}</CardTitle>
-              <CardDescription>
-                {t('mcpIntegration.figmaTokenDescription')}
-              </CardDescription>
+              <CardDescription>{t('mcpIntegration.figmaTokenDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
                 <Badge variant={settings?.hasFigmaAccessToken ? 'default' : 'secondary'}>
-                  {settings?.hasFigmaAccessToken 
-                    ? t('mcpIntegration.tokenConfigured') 
+                  {settings?.hasFigmaAccessToken
+                    ? t('mcpIntegration.tokenConfigured')
                     : t('mcpIntegration.tokenNotConfigured')}
                 </Badge>
                 {settings?.hasFigmaAccessToken && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleClearFigmaToken}
-                    disabled={saving}
-                  >
+                  <Button variant="ghost" size="sm" onClick={handleClearFigmaToken} disabled={saving}>
                     {t('mcpIntegration.clearToken')}
                   </Button>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="figma-token">
-                  {settings?.hasFigmaAccessToken 
-                    ? t('mcpIntegration.updateToken') 
+                  {settings?.hasFigmaAccessToken
+                    ? t('mcpIntegration.updateToken')
                     : t('mcpIntegration.enterToken')}
                 </Label>
                 <div className="flex gap-2">
@@ -396,9 +547,7 @@ export default function McpIntegration() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {t('mcpIntegration.figmaTokenHint')}
-                </p>
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.figmaTokenHint')}</p>
               </div>
             </CardContent>
           </Card>
@@ -406,10 +555,190 @@ export default function McpIntegration() {
           {/* Save Button */}
           <div className="flex justify-end">
             <Button onClick={handleSaveFigma} disabled={saving}>
-              {saving ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              {saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
               {t('common.save')}
             </Button>
           </div>
+        </TabsContent>
+
+        {/* Built-in MCP Server Tab */}
+        <TabsContent value="server" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Server className="h-5 w-5" />
+                    {t('mcpIntegration.serverTitle')}
+                  </CardTitle>
+                  <CardDescription>{t('mcpIntegration.serverDescription')}</CardDescription>
+                </div>
+                <Badge variant={serverEnabled ? 'default' : 'secondary'}>
+                  {serverEnabled
+                    ? t('mcpIntegration.serverStatusEnabled')
+                    : t('mcpIntegration.serverStatusDisabled')}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="pr-4">
+                  <Label htmlFor="mcp-server-toggle" className="font-medium">
+                    {t('mcpIntegration.serverEnableLabel')}
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('mcpIntegration.serverEnableHint')}
+                  </p>
+                </div>
+                <Switch
+                  id="mcp-server-toggle"
+                  checked={serverEnabled}
+                  onCheckedChange={handleToggleServer}
+                  disabled={savingToggle}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="pr-4">
+                  <Label htmlFor="mcp-write-toggle" className="font-medium">
+                    {t('mcpIntegration.serverWriteLabel')}
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t('mcpIntegration.serverWriteHint')}
+                  </p>
+                </div>
+                <Switch
+                  id="mcp-write-toggle"
+                  checked={writeEnabled}
+                  onCheckedChange={handleToggleWrite}
+                  disabled={savingToggle || !serverEnabled}
+                />
+              </div>
+
+              <div className="rounded-md border p-4 bg-muted/50 space-y-2">
+                <h4 className="font-semibold text-sm">{t('mcpIntegration.connectTitle')}</h4>
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.connectIntro')}</p>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">{t('mcpIntegration.connectSseUrl')}: </span>
+                  <code className="px-1 py-0.5 rounded bg-muted font-mono text-xs">{sseUrl}</code>
+                </div>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">{t('mcpIntegration.connectAuth')}: </span>
+                  <code className="px-1 py-0.5 rounded bg-muted font-mono text-xs">
+                    Authorization: Bearer &lt;api-key&gt;
+                  </code>
+                </div>
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.connectKeyHint')}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('mcpIntegration.connectNoRestart')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* API Keys Tab */}
+        <TabsContent value="apikeys" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <KeyRound className="h-5 w-5" />
+                    {t('mcpIntegration.apiKeysTitle')}
+                  </CardTitle>
+                  <CardDescription>{t('mcpIntegration.apiKeysDescription')}</CardDescription>
+                </div>
+                <Button
+                  onClick={() => {
+                    resetKeyForm();
+                    setShowCreateKeyDialog(true);
+                  }}
+                >
+                  {t('mcpIntegration.createKey')}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {apiKeys.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  {t('mcpIntegration.noApiKeys')}
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left text-muted-foreground">
+                        <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTableName')}</th>
+                        <th className="py-2 pr-4 font-medium">
+                          {t('mcpIntegration.keyTablePrefix')}
+                        </th>
+                        <th className="py-2 pr-4 font-medium">
+                          {t('mcpIntegration.keyTableScopes')}
+                        </th>
+                        <th className="py-2 pr-4 font-medium">
+                          {t('mcpIntegration.keyTableLastUsed')}
+                        </th>
+                        <th className="py-2 pr-4 font-medium">
+                          {t('mcpIntegration.keyTableCreated')}
+                        </th>
+                        <th className="py-2 pr-4 font-medium">
+                          {t('mcpIntegration.keyTableStatus')}
+                        </th>
+                        <th className="py-2 pr-4 font-medium text-right">
+                          {t('mcpIntegration.keyTableActions')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {apiKeys.map((key) => (
+                        <tr key={key.id} className="border-b last:border-0">
+                          <td className="py-2 pr-4">{key.name}</td>
+                          <td className="py-2 pr-4">
+                            <code className="font-mono text-xs">{key.keyPrefix}…</code>
+                          </td>
+                          <td className="py-2 pr-4">
+                            <div className="flex flex-wrap gap-1">
+                              {key.scopes.map((scope) => (
+                                <Badge key={scope} variant="secondary">
+                                  {scope}
+                                </Badge>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 pr-4">{formatDate(key.lastUsedAt)}</td>
+                          <td className="py-2 pr-4">{formatDate(key.createdAt)}</td>
+                          <td className="py-2 pr-4">
+                            <Badge variant={key.isActive ? 'default' : 'secondary'}>
+                              {key.isActive
+                                ? t('mcpIntegration.keyStatusActive')
+                                : t('mcpIntegration.keyStatusRevoked')}
+                            </Badge>
+                          </td>
+                          <td className="py-2 pr-4 text-right">
+                            {key.isActive && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRevokeKey(key.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
+                                {t('mcpIntegration.revokeKey')}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
@@ -418,9 +747,7 @@ export default function McpIntegration() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t('mcpIntegration.helpTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('mcpIntegration.helpDescription')}
-            </DialogDescription>
+            <DialogDescription>{t('mcpIntegration.helpDescription')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -443,11 +770,97 @@ export default function McpIntegration() {
             </div>
             <div>
               <h4 className="font-semibold mb-2">{t('mcpIntegration.tokens')}</h4>
-              <p className="text-sm text-muted-foreground">
-                {t('mcpIntegration.tokensDescription')}
-              </p>
+              <p className="text-sm text-muted-foreground">{t('mcpIntegration.tokensDescription')}</p>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create API Key Dialog */}
+      <Dialog
+        open={showCreateKeyDialog}
+        onOpenChange={(open) => !open && setShowCreateKeyDialog(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('mcpIntegration.createKeyTitle')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateKey} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="keyName">{t('mcpIntegration.keyName')}</Label>
+              <Input
+                id="keyName"
+                value={keyName}
+                onChange={(e) => setKeyName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('mcpIntegration.keyScopes')}</Label>
+              <div className="space-y-2">
+                {ALL_SCOPES.map((scope) => (
+                  <div key={scope} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`scope-${scope}`}
+                      checked={keyScopes.includes(scope)}
+                      onCheckedChange={() => handleToggleScope(scope)}
+                    />
+                    <Label htmlFor={`scope-${scope}`} className="font-normal">
+                      {t(`mcpIntegration.scope${scope}`)}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="keyExpiresAt">{t('mcpIntegration.keyExpiresAt')}</Label>
+              <Input
+                id="keyExpiresAt"
+                type="date"
+                value={keyExpiresAt}
+                onChange={(e) => setKeyExpiresAt(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowCreateKeyDialog(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={creatingKey || !keyName.trim() || keyScopes.length === 0}
+              >
+                {creatingKey ? t('mcpIntegration.creating') : t('mcpIntegration.createKey')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Show-once Raw Key Dialog */}
+      <Dialog open={!!createdKey} onOpenChange={(open) => !open && setCreatedKey(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('mcpIntegration.keyCreatedTitle')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Alert variant="destructive">
+              <AlertDescription>{t('mcpIntegration.keyShowOnceWarning')}</AlertDescription>
+            </Alert>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 break-all rounded bg-muted px-3 py-2 font-mono text-sm">
+                {createdKey?.rawKey}
+              </code>
+              <Button type="button" variant="outline" size="sm" onClick={handleCopyKey}>
+                <Copy className="h-4 w-4 mr-1" />
+                {copied ? t('mcpIntegration.copied') : t('mcpIntegration.copy')}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => setCreatedKey(null)}>
+              {t('common.close')}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
