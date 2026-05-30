@@ -320,6 +320,32 @@ class BettingTableServiceTest {
   }
 
   @Test
+  void canPitchFitInSlot_WhenPitchHasNoAppetite_ShouldReturnFalse() {
+    Pitch noAppetitePitch = Pitch.builder().id(3L).title("Idea without appetite")
+        .status(PitchStatus.SHAPED).appetiteDays(null).build();
+
+    when(pitchRepository.findById(3L)).thenReturn(Optional.of(noAppetitePitch));
+    when(bettingSlotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+
+    // Must not NPE; an appetite-less pitch simply cannot fit any slot.
+    assertThat(bettingTableService.canPitchFitInSlot(3L, 1L)).isFalse();
+  }
+
+  @Test
+  void assignPitchToSlot_WhenPitchHasNoAppetite_ShouldThrowException() {
+    Pitch noAppetitePitch = Pitch.builder().id(3L).title("Idea without appetite")
+        .status(PitchStatus.SHAPED).appetiteDays(null).build();
+
+    when(bettingSlotRepository.findById(1L)).thenReturn(Optional.of(testSlot));
+    when(pitchRepository.findById(3L)).thenReturn(Optional.of(noAppetitePitch));
+    when(bettingSlotRepository.findByPitchId(3L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> bettingTableService.assignPitchToSlot(1L, 3L))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("appetite");
+  }
+
+  @Test
   void generateSlotsForCycle_ShouldCreateSlotsForTeamsWithoutSlots() {
     Team team2 = Team.builder().id(2L).name("Beta Team").build();
 

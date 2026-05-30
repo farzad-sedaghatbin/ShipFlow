@@ -217,6 +217,26 @@ class BettingDecisionServiceTest {
     }
 
     @Test
+    @DisplayName("Should throw exception when pitch has no appetite set")
+    void recordDecision_PitchWithoutAppetite_ShouldThrow() {
+      // Given a SHAPED pitch that never had an appetite set
+      testPitch.setAppetiteDays(null);
+      RecordBettingDecisionRequest request = RecordBettingDecisionRequest.builder()
+          .pitchId(1L)
+          .cycleId(1L)
+          .decision(BettingDecisionType.COMMITTED)
+          .reason("Test")
+          .build();
+
+      when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
+
+      // When/Then: a clean 400 instead of a DB NOT NULL constraint violation
+      assertThatThrownBy(() -> bettingDecisionService.recordDecision(request, 1L))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("error.betting.pitch.no.appetite");
+    }
+
+    @Test
     @DisplayName("Should throw exception when cycle not found")
     void recordDecision_CycleNotFound_ShouldThrow() {
       // Given

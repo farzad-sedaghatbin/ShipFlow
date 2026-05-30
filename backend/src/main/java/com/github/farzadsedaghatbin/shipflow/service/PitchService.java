@@ -523,6 +523,11 @@ public class PitchService {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
+    // Validate the target status has its required fields. In particular, SHAPED and beyond
+    // require an appetite — without this guard a pitch can become a betting candidate with a
+    // null appetite, which breaks drag-and-drop placement and betting decisions on the board.
+    validatePitchForStatus(request, request.getStatus());
+
     pitch.setTitle(request.getTitle());
     pitch.setDescription(request.getDescription());
     pitch.setAppetiteDays(request.getAppetiteDays());
