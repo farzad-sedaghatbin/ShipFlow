@@ -375,7 +375,7 @@ docker compose up -d
   - Configurable via Organization Settings with per-org Figma token storage
 - **MCP Server (AI Editor Integration)**: Use ShipFlow data directly from your AI coding assistant — no context switching
   - Works with **Claude Code**, **Cursor**, **Claude Desktop**, **GitHub Copilot**, and any MCP-compatible client
-  - **Opt-in** — disabled by default, enable with `MCP_SERVER_ENABLED=true` (self-hosters stay in control)
+  - **Opt-in** — disabled by default; enable with `MCP_SERVER_ENABLED=true` **or** flip the runtime toggle in the UI (Integrations → MCP → "MCP Server" tab, no restart). Manage API keys from the "API Keys" tab.
   - **13 read tools**: `list_projects`, `get_project`, `get_cycles`, `get_cycle`, `get_tasks`, `get_task`, `get_blockers`, `get_pitches`, `get_pitch_detail`, `get_betting_candidates`, `wise_architecture_list_analyses`, `wise_architecture_get_files`, `get_work_context`
   - **6 write tools**: `create_task`, `update_task_status`, `create_pitch`, `update_pitch_status`, `add_comment`, `wise_architecture_analyze` (requires `MCP_SERVER_WRITE_ENABLED=true`)
   - **`get_work_context`** — one call returns cycle + pitches + tasks + blockers + hill-chart scopes + retros (the full relationship graph, no chaining needed)

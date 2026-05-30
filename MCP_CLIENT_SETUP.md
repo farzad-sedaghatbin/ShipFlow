@@ -11,8 +11,9 @@ pitches, tasks, and more — directly from your editor.
 
 ShipFlow's MCP server is **opt-in**. The instance owner must enable it.
 
-- **Self-hosted**: set `MCP_SERVER_ENABLED=true` when starting the backend (see below)
-- **shipflow.dev**: check the Admin panel → Integrations → MCP Server
+- **From the UI (recommended, no restart)**: an admin opens **Integrations → MCP → "MCP Server" tab** and toggles **Enable MCP server** on. This DB-backed setting overrides the environment default and takes effect immediately.
+- **Self-hosted via environment**: set `MCP_SERVER_ENABLED=true` when starting the backend (see below)
+- **shipflow.dev**: check Integrations → MCP → "MCP Server" tab
 
 If you are the instance owner, see [Enabling the MCP Server](#enabling-the-mcp-server) below.
 
@@ -21,9 +22,9 @@ If you are the instance owner, see [Enabling the MCP Server](#enabling-the-mcp-s
 All MCP clients authenticate with a ShipFlow API key.
 
 1. Log in to ShipFlow
-2. Go to **Settings → API Keys**
-3. Click **Create Key**, give it a name like `claude-code-local`
-4. Copy the key — you will not see it again
+2. Go to **Integrations → MCP → "API Keys" tab**
+3. Click **Create Key**, give it a name like `claude-code-local`, pick scopes (READ / WRITE / ADMIN) and an optional expiry
+4. Copy the `sf_…` key — you will not see it again
 
 > Treat API keys like passwords. Do not commit them to git.
 
@@ -295,12 +296,20 @@ curl http://localhost:8080/mcp/health
 > This section is for **instance owners / self-hosters** who want to turn the MCP server on.
 > If you are a developer connecting to an already-running instance, skip this section.
 
-The MCP server is disabled by default. To enable it, set the following environment variable
-before starting the backend:
+The MCP server is disabled by default.
+
+**The quickest way to enable it is from the UI** — no restart, no env editing: an admin opens
+**Integrations → MCP → "MCP Server" tab** and flips **Enable MCP server** on (and optionally
+**Enable write tools**). This DB-backed runtime toggle overrides the environment default below.
+
+For headless / infrastructure-as-code deployments, set the following environment variable before
+starting the backend instead:
 
 ```bash
 MCP_SERVER_ENABLED=true
 ```
+
+> If no admin has touched the UI toggle, this environment value is used as the default.
 
 ### Docker Compose (production / self-hosted)
 

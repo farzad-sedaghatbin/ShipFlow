@@ -5,7 +5,6 @@ import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Component;
  * the REST API applies here. ADMIN users see all projects; others see only accessible projects.
  */
 @Component
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class ProjectMcpTools {
 

@@ -1,17 +1,19 @@
 package com.github.farzadsedaghatbin.shipflow.controller.mcp;
 
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpServerSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSession;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSessionManager;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -24,19 +26,25 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * <p>Authentication: {@code Authorization: Bearer <api-key>} header (handled by
  * {@code McpAuthFilter}).
  *
- * <p>Only active when {@code mcp.server.enabled=true}.
+ * <p>The MCP server is enabled/disabled at runtime via {@link McpServerSettingsService} (admin
+ * toggle, falling back to the {@code mcp.server.enabled} environment default). When disabled, this
+ * endpoint responds {@code 503 Service Unavailable}.
  */
 @RestController
 @RequestMapping("/mcp")
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 public class McpSseController {
 
   private final McpSessionManager sessionManager;
+  private final McpServerSettingsService serverSettings;
 
   @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter connect() {
+    if (!serverSettings.isEnabled()) {
+      throw new ResponseStatusException(
+          HttpStatus.SERVICE_UNAVAILABLE, "MCP server is disabled on this ShipFlow instance");
+    }
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     McpSession session = sessionManager.create(auth);
     String sessionId = session.getSessionId();

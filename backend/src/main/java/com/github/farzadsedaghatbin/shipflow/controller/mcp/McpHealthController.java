@@ -1,6 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller.mcp;
 
-import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpServerSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpSessionManager;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpToolDispatcher;
 import java.util.LinkedHashMap;
@@ -47,19 +47,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class McpHealthController {
 
-  private final McpServerProperties properties;
+  private final McpServerSettingsService serverSettings;
 
-  // ObjectProvider allows optional injection — these beans only exist when MCP is enabled
+  // ObjectProvider keeps the controller resilient if the MCP beans are ever absent.
   private final ObjectProvider<McpSessionManager> sessionManagerProvider;
   private final ObjectProvider<McpToolDispatcher> dispatcherProvider;
 
   @GetMapping("/health")
   public Map<String, Object> health() {
     Map<String, Object> mcpInfo = new LinkedHashMap<>();
-    mcpInfo.put("enabled", properties.isEnabled());
+    boolean enabled = serverSettings.isEnabled();
+    mcpInfo.put("enabled", enabled);
 
-    if (properties.isEnabled()) {
-      mcpInfo.put("writeEnabled", properties.isWriteEnabled());
+    if (enabled) {
+      mcpInfo.put("writeEnabled", serverSettings.isWriteEnabled());
       McpSessionManager mgr = sessionManagerProvider.getIfAvailable();
       McpToolDispatcher dispatcher = dispatcherProvider.getIfAvailable();
       mcpInfo.put("activeSessions", mgr != null ? mgr.activeCount() : 0);

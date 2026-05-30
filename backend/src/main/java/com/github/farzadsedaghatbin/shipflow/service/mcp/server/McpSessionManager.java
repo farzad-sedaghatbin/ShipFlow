@@ -8,7 +8,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -21,10 +20,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * SSE emitter and the authenticated user. When the client POSTs to {@code /mcp/messages}, the
  * dispatcher looks up the session to send the JSON-RPC response back through the SSE stream.
  *
- * <p>Only active when {@code mcp.server.enabled=true}.
+ * <p>This bean always exists; whether the MCP server actually responds to requests is decided at
+ * runtime by {@link McpServerSettingsService} (env default + admin toggle).
  */
 @Service
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 public class McpSessionManager {
