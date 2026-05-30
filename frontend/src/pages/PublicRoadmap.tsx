@@ -192,9 +192,19 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
+      version: 'v1.3.0',
+      theme: t('publicRoadmap.phase130Theme'),
+      status: 'in-progress',
+      items: [
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.phase130Item0Title'), description: t('publicRoadmap.phase130Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase130Item1Title'), description: t('publicRoadmap.phase130Item1Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase130Item2Title'), description: t('publicRoadmap.phase130Item2Desc') },
+      ],
+    },
+    {
       version: 'v1.0.1',
       theme: t('publicRoadmap.phase101Theme'),
-      status: 'in-progress',
+      status: 'planned',
       items: [
         { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.phase101Item0Title'), description: t('publicRoadmap.phase101Item0Desc') },
         { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.phase101Item1Title'), description: t('publicRoadmap.phase101Item1Desc') },

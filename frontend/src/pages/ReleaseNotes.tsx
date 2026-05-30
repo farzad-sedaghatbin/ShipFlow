@@ -70,6 +70,32 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.3.0',
+    date: 'In Development',
+    title: 'MCP Server Admin & API Keys',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'MCP Server Runtime Toggle',
+        description:
+          'Enable or disable the built-in MCP server from Integrations → MCP — a DB-backed toggle that overrides the environment default and takes effect immediately, no restart required.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'MCP Write-Tools Toggle',
+        description:
+          'Separately allow connected AI tools to create and update data, with write tools disabled whenever the server is off.',
+      },
+      {
+        icon: <Key className="h-5 w-5" />,
+        title: 'API Key Management UI',
+        description:
+          'Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry. The raw key is shown once with a copy button and a copy-it-now warning.',
+      },
+    ],
+  },
+  {
     version: '1.2.0',
     date: 'May 23, 2026',
     title: 'Competitor Migration Tooling — Import from Jira, Linear & Asana',
