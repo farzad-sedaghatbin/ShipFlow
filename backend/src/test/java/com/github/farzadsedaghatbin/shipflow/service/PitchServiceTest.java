@@ -176,6 +176,21 @@ class PitchServiceTest {
   }
 
   @Test
+  void updatePitch_ToShapedWithoutAppetite_ShouldThrow() {
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+
+    // Editing a pitch to SHAPED without an appetite must be rejected so it cannot become a
+    // betting candidate with a null appetite (which breaks drag-and-drop and betting decisions).
+    testRequest.setStatus(PitchStatus.SHAPED);
+    testRequest.setAppetiteDays(null);
+
+    assertThatThrownBy(() -> pitchService.updatePitch(1L, testRequest))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Appetite days is required");
+    verify(pitchRepository, never()).save(any(Pitch.class));
+  }
+
+  @Test
   void deletePitch_ShouldCallRepository() {
     // Setup security context
     SecurityContextHolder.setContext(securityContext);

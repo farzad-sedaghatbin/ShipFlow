@@ -52,6 +52,14 @@ public class BettingDecisionService {
         .orElseThrow(() -> new IllegalArgumentException(
             messageService.getMessage("error.pitch.not.found", request.getPitchId())));
 
+    // The requested_appetite_days column is NOT NULL and is copied from the pitch's appetite.
+    // Reject the decision with a clear message rather than letting the insert fail with a
+    // database constraint violation (HTTP 500).
+    if (pitch.getAppetiteDays() == null) {
+      throw new IllegalArgumentException(
+          messageService.getMessage("error.betting.pitch.no.appetite", pitch.getTitle()));
+    }
+
     Cycle cycle = cycleRepository.findById(request.getCycleId())
         .orElseThrow(() -> new IllegalArgumentException(
             messageService.getMessage("error.cycle.not.found", request.getCycleId())));

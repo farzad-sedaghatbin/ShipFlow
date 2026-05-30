@@ -345,7 +345,9 @@ public class BettingTableService {
     Pitch pitch = pitchRepository.findById(pitchId).orElse(null);
     BettingSlot slot = bettingSlotRepository.findById(slotId).orElse(null);
 
-    if (pitch == null || slot == null)
+    // A pitch with no appetite has no defined size, so it cannot fit any slot. Guard against
+    // the null here so the drag preview returns a clean "false" instead of a 500 NPE.
+    if (pitch == null || slot == null || pitch.getAppetiteDays() == null)
       return false;
 
     return slot.canFitPitch(pitch.getAppetiteDays());
@@ -354,6 +356,10 @@ public class BettingTableService {
   // === Helper Methods ===
 
   private void validatePitchFits(Pitch pitch, BettingSlot slot) {
+    if (pitch.getAppetiteDays() == null) {
+      throw new IllegalArgumentException(
+          messageService.getMessage("error.betting.pitch.no.appetite", pitch.getTitle()));
+    }
     if (!slot.canFitPitch(pitch.getAppetiteDays())) {
       long slotDays = ChronoUnit.DAYS.between(slot.getStartDate(), slot.getEndDate());
       throw new IllegalArgumentException(messageService.getMessage("error.betting.pitch.doesnt.fit",
