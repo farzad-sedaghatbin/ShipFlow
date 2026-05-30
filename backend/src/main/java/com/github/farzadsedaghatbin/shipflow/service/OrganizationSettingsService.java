@@ -467,12 +467,27 @@ public class OrganizationSettingsService {
         // MCP Configuration (tokens not exposed, only presence flags)
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
         .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
-        // MCP Server runtime toggle — effective value: DB override if set, else env default
-        .mcpServerEnabled(entity.getMcpServerEnabled() != null
-            ? entity.getMcpServerEnabled() : mcpServerProperties.isEnabled())
-        .mcpServerWriteEnabled(entity.getMcpServerWriteEnabled() != null
-            ? entity.getMcpServerWriteEnabled() : mcpServerProperties.isWriteEnabled())
+        // MCP Server runtime toggle — effective value: DB override if set, else env default.
+        // Write mode is only effective when the server itself is enabled, mirroring
+        // McpServerSettingsService.isWriteEnabled() so the DTO never reports a misleading
+        // "write enabled" while the server is off.
+        .mcpServerEnabled(resolveMcpEnabled(entity))
+        .mcpServerWriteEnabled(resolveMcpEnabled(entity) && resolveMcpWriteEnabled(entity))
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
+  }
+
+  /** Effective MCP server enabled state: DB override if set, else the env default. */
+  private boolean resolveMcpEnabled(OrganizationSettings entity) {
+    return entity.getMcpServerEnabled() != null
+        ? entity.getMcpServerEnabled()
+        : mcpServerProperties.isEnabled();
+  }
+
+  /** Effective MCP write-tools state ignoring the server-enabled gate (callers apply it). */
+  private boolean resolveMcpWriteEnabled(OrganizationSettings entity) {
+    return entity.getMcpServerWriteEnabled() != null
+        ? entity.getMcpServerWriteEnabled()
+        : mcpServerProperties.isWriteEnabled();
   }
 
   /** Convert object to JSON string. */

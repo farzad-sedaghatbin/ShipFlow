@@ -37,7 +37,6 @@ import {
   getMcpStatus,
   getMcpSettings,
   updateMcpSettings,
-  getMcpServerSettings,
   updateMcpServerToggle,
   McpStatus,
   McpOrganizationSettings,
@@ -110,20 +109,23 @@ export default function McpIntegration() {
       const [status, orgSettings] = await Promise.all([getMcpStatus(), getMcpSettings()]);
       setMcpStatus(status);
       setSettings(orgSettings);
+      // The MCP server runtime toggle is part of the same /settings payload — derive it
+      // here instead of making a second identical request.
+      setServerSettings({
+        mcpServerEnabled: orgSettings.mcpServerEnabled,
+        mcpServerWriteEnabled: orgSettings.mcpServerWriteEnabled,
+      });
       setError(null);
     } catch (err: any) {
+      // Keep serverSettings null so the UI shows an "unavailable" state rather than
+      // misrepresenting a network error as "server disabled".
+      setServerSettings(null);
       setError(err.response?.data?.message || t('mcpIntegration.fetchFailed'));
     } finally {
       setLoading(false);
     }
 
-    // These are independent and non-fatal — load them separately so a failure
-    // in one does not blank out the whole page.
-    try {
-      setServerSettings(await getMcpServerSettings());
-    } catch {
-      setServerSettings({ mcpServerEnabled: false, mcpServerWriteEnabled: false });
-    }
+    // API keys are independent and non-fatal — a failure here must not blank the page.
     try {
       setApiKeys(await listApiKeys());
     } catch {

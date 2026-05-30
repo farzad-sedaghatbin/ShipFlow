@@ -41,6 +41,9 @@ export interface McpOrganizationSettings {
   hasFigmaAccessToken: boolean;
   // GitHub settings
   hasGithubAccessToken: boolean;
+  // Built-in MCP server runtime toggle (effective values: DB override else env default)
+  mcpServerEnabled: boolean;
+  mcpServerWriteEnabled: boolean;
 }
 
 /**
@@ -98,6 +101,8 @@ export async function getMcpSettings(): Promise<McpOrganizationSettings> {
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
+    mcpServerEnabled: Boolean(data.mcpServerEnabled),
+    mcpServerWriteEnabled: Boolean(data.mcpServerWriteEnabled),
   };
 }
 
@@ -110,6 +115,8 @@ export async function updateMcpSettings(request: UpdateMcpSettingsRequest): Prom
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
+    mcpServerEnabled: Boolean(data.mcpServerEnabled),
+    mcpServerWriteEnabled: Boolean(data.mcpServerWriteEnabled),
   };
 }
 
