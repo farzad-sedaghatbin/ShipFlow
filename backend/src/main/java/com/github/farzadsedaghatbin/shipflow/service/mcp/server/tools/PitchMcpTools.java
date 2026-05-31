@@ -168,10 +168,12 @@ public class PitchMcpTools {
           .toList();
     }
     if (projectIdArg != null) {
-      // Use accessible pitches filtered client-side by project
-      long projectId = toLong(projectIdArg, "projectId");
+      // Use accessible pitches filtered client-side by project. Pitches not yet tied to a project
+      // (e.g. idea-stage pitches) have a null projectId, so compare with the boxed Long to avoid a
+      // NullPointerException from auto-unboxing.
+      Long projectId = toLong(projectIdArg, "projectId");
       return pitchService.getAccessiblePitches().stream()
-          .filter(p -> projectId == p.getProjectId())
+          .filter(p -> projectId.equals(p.getProjectId()))
           .map(McpPitchDTO::from)
           .toList();
     }
