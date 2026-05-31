@@ -280,6 +280,41 @@ class McpToolDispatcherTest {
   }
 
   @Test
+  void toolsCall_getPitchesByProject_skipsPitchesWithNullProjectId() throws Exception {
+    // Idea-stage pitches have a null projectId. The project filter must not NPE on them
+    // (regression: `projectId == p.getProjectId()` auto-unboxed null -> NullPointerException).
+    PitchDTO inProject = PitchDTO.builder().id(1L).title("In Project").projectId(5L).build();
+    PitchDTO orphan = PitchDTO.builder().id(2L).title("Idea Pitch").projectId(null).build();
+    when(pitchService.getAccessiblePitches()).thenReturn(List.of(inProject, orphan));
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "get_pitches", "arguments", Map.of("projectId", 5)),
+        "id", 31);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    // No error, and only the project-5 pitch comes back (the null-projectId one is filtered out).
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result).as("should not have errored on null projectId").isNotNull();
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("In Project");
+    assertThat(text).doesNotContain("Idea Pitch");
+  }
+
+  @Test
   void toolsCall_getPitchDetail_includesWireframeLinks() throws Exception {
     PitchDTO pitch = PitchDTO.builder()
         .id(42L)
