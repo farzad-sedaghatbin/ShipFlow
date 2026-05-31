@@ -107,6 +107,9 @@ public class PitchMcpTools {
         TOOL_CREATE_PITCH,
         "description",
             "Create a new pitch (Shape Up artefact). The pitch starts in IDEA status. "
+                + "Supply epicId to place the pitch in the project hierarchy (Epic → Pitch). "
+                + "Supply appetiteDays upfront if known — required before the pitch can be SHAPED "
+                + "and committed to a betting table. "
                 + "Requires WRITE API key scope.",
         "inputSchema",
             Map.of(
@@ -123,7 +126,15 @@ public class PitchMcpTools {
                             "type",
                             "integer",
                             "description",
-                            "Time budget in days (e.g. 14 for a Small Batch, 42 for a Big Batch)")),
+                            "Time budget in days (e.g. 14 for a Small Batch, 42 for a Big Batch). "
+                                + "Required before the pitch can be marked SHAPED."),
+                        "epicId",
+                        Map.of(
+                            "type",
+                            "integer",
+                            "description",
+                            "Optional epic ID to attach this pitch to. Places the pitch in the "
+                                + "Initiative → Epic → Pitch hierarchy.")),
                 "required",
                 List.of("title")));
   }
@@ -133,8 +144,10 @@ public class PitchMcpTools {
         "name",
         TOOL_UPDATE_PITCH_STATUS,
         "description",
-            "Update the status of a pitch. Valid statuses: IDEA, DRAFT, SHAPED, PENDING. "
-                + "Use SHAPED to mark a pitch as ready for the betting table. "
+            "Update the status of a pitch. Pre-cycle statuses: IDEA (raw idea), DRAFT (being shaped), "
+                + "SHAPED (ready for betting table), PENDING (assigned to cycle, not started). "
+                + "In-cycle statuses: STARTED, IN_PROGRESS, TESTING, DONE, COOLDOWN, CANCELLED, CIRCUIT_BREAKER. "
+                + "Use SHAPED to mark a pitch as ready for betting. Use DONE to mark completion. "
                 + "Requires WRITE API key scope.",
         "inputSchema",
             Map.of(
@@ -149,9 +162,12 @@ public class PitchMcpTools {
                             "type",
                             "string",
                             "description",
-                            "New status: IDEA, DRAFT, SHAPED, or PENDING",
+                            "New status (see description for full list)",
                             "enum",
-                            List.of("IDEA", "DRAFT", "SHAPED", "PENDING"))),
+                            List.of(
+                                "IDEA", "DRAFT", "SHAPED", "PENDING",
+                                "STARTED", "IN_PROGRESS", "TESTING",
+                                "DONE", "COOLDOWN", "CANCELLED", "CIRCUIT_BREAKER"))),
                 "required",
                 List.of("pitchId", "status")));
   }
@@ -224,6 +240,11 @@ public class PitchMcpTools {
       }
     }
 
+    Object epicIdArg = args.get("epicId");
+    if (epicIdArg != null) {
+      request.setEpicId(toLong(epicIdArg, "epicId"));
+    }
+
     return McpPitchDTO.from(pitchService.createPitch(request));
   }
 
@@ -242,7 +263,9 @@ public class PitchMcpTools {
       status = PitchStatus.valueOf(statusStr.toUpperCase());
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
-          "Invalid status '" + statusStr + "'. Must be IDEA, DRAFT, SHAPED, or PENDING");
+          "Invalid status '" + statusStr + "'. Must be one of: "
+              + "IDEA, DRAFT, SHAPED, PENDING, STARTED, IN_PROGRESS, TESTING, "
+              + "DONE, COOLDOWN, CANCELLED, CIRCUIT_BREAKER");
     }
     return McpPitchDTO.from(pitchService.updateStatus(pitchId, status));
   }

@@ -98,7 +98,9 @@ public class TaskMcpTools {
         "name",
         TOOL_CREATE_TASK,
         "description",
-            "Create a new task inside a cycle. Returns the created task. "
+            "Create a new task inside a cycle, optionally linked to a pitch. Returns the created task. "
+                + "Supply pitchId to wire the task into a Shape Up pitch — this populates the pitch "
+                + "dropdown in the UI and associates the task with the pitch's hill-chart scope. "
                 + "Requires WRITE API key scope.",
         "inputSchema",
             Map.of(
@@ -112,6 +114,12 @@ public class TaskMcpTools {
                         Map.of("type", "string", "description", "Task title (required)"),
                         "description",
                         Map.of("type", "string", "description", "Optional task description"),
+                        "pitchId",
+                        Map.of(
+                            "type", "integer",
+                            "description",
+                                "Optional pitch ID to link this task to. The pitch must be assigned "
+                                    + "to the same cycle (PENDING or later status)."),
                         "assigneeUsername",
                         Map.of("type", "string", "description", "Optional username to assign the task to"),
                         "priority",
@@ -225,6 +233,11 @@ public class TaskMcpTools {
         throw new IllegalArgumentException(
             "Invalid priority '" + priorityArg + "'. Must be LOW, MEDIUM, HIGH, or URGENT");
       }
+    }
+
+    Object pitchIdArg = args.get("pitchId");
+    if (pitchIdArg != null) {
+      request.setPitchId(toLong(pitchIdArg));
     }
 
     Object assigneeUsernameArg = args.get("assigneeUsername");

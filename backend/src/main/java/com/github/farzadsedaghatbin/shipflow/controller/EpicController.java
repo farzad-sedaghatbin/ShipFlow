@@ -80,7 +80,7 @@ public class EpicController {
   }
 
   @PostMapping
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.CREATE)
   @Operation(summary = "Create a new epic")
   public ResponseEntity<EpicDTO> createEpic(@Valid @RequestBody CreateEpicRequest request) {
@@ -88,7 +88,7 @@ public class EpicController {
   }
 
   @PutMapping("/{id}")
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Update an epic")
   public ResponseEntity<EpicDTO> updateEpic(
@@ -98,7 +98,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/status")
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Update epic status")
   public ResponseEntity<EpicDTO> updateEpicStatus(
@@ -108,7 +108,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/link-initiative")
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Link epic to an initiative")
   public ResponseEntity<EpicDTO> linkToInitiative(
@@ -118,7 +118,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/unlink-initiative")
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Unlink epic from its initiative")
   public ResponseEntity<EpicDTO> unlinkFromInitiative(@PathVariable Long id) {
@@ -126,7 +126,7 @@ public class EpicController {
   }
 
   @PatchMapping("/{id}/dates")
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Update epic target dates")
   public ResponseEntity<EpicDTO> updateEpicDates(
@@ -137,7 +137,7 @@ public class EpicController {
   }
 
   @PatchMapping("/reorder")
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.EPIC, permission = PermissionType.UPDATE)
   @Operation(summary = "Reorder epics (batch update sort order)")
   public ResponseEntity<Void> reorderEpics(@Valid @RequestBody ReorderRequest request) {

@@ -46,6 +46,7 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
+import { PermissionGate } from '../hooks/usePermission';
 
 const getStatusBadgeVariant = (status: EpicStatus): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (status) {
@@ -247,17 +248,21 @@ export default function EpicListPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => navigate(`/epics/${epic.id}/edit`)}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        {t('common.edit')}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => setDeleteDialog({ open: true, epic })}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        {t('common.delete')}
-                      </DropdownMenuItem>
+                      <PermissionGate resource="EPIC" permission="UPDATE">
+                        <DropdownMenuItem onClick={() => navigate(`/epics/${epic.id}/edit`)}>
+                          <Pencil className="h-4 w-4 mr-2" />
+                          {t('common.edit')}
+                        </DropdownMenuItem>
+                      </PermissionGate>
+                      <PermissionGate resource="EPIC" permission="DELETE">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setDeleteDialog({ open: true, epic })}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          {t('common.delete')}
+                        </DropdownMenuItem>
+                      </PermissionGate>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

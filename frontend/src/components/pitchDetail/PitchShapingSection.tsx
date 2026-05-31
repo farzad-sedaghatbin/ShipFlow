@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { PermissionGate } from '../../hooks/usePermission';
 import {
   X,
   AlertTriangle,
@@ -75,10 +76,12 @@ export function PitchShapingSection({
             {t('pitchDetailPage.shapeUpDetails')}
           </CardTitle>
           {!editingShapeUp ? (
-            <Button variant="outline" size="sm" onClick={() => onSetEditingShapeUp(true)}>
-              <Edit2 className="h-4 w-4 mr-1" />
-              {t('pitchDetailPage.editShapeUp')}
-            </Button>
+            <PermissionGate resource="PITCH" permission="UPDATE">
+              <Button variant="outline" size="sm" onClick={() => onSetEditingShapeUp(true)}>
+                <Edit2 className="h-4 w-4 mr-1" />
+                {t('pitchDetailPage.editShapeUp')}
+              </Button>
+            </PermissionGate>
           ) : (
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={onCancelShapeUpEdit} disabled={savingShapeUp}>
