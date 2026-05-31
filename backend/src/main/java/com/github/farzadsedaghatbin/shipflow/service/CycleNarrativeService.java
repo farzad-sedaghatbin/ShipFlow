@@ -60,13 +60,31 @@ public class CycleNarrativeService {
   }
 
   /**
-   * Helper to get current user from Spring Security context.
+   * Resolve the user to attribute a narrative to.
+   *
+   * <p>Narratives can be generated two ways: by an authenticated user (web request) or
+   * automatically by the async {@code CycleNarrativeEventListener} on a pitch/cycle status change.
+   * The async path runs on a {@code TaskExecutor} thread with no {@link
+   * org.springframework.security.core.context.SecurityContext}, so we fall back to the cycle's
+   * project owner rather than dereferencing a null authentication (which previously NPE'd and
+   * aborted the auto-regeneration). {@code generated_by_id} is nullable, so a missing owner is fine.
+   *
+   * @param cycle the cycle whose narrative is being generated (used for the owner fallback)
    */
-  private User getCurrentUser() {
-    String username = org.springframework.security.core.context.SecurityContextHolder
-        .getContext().getAuthentication().getName();
-    return userRepository.findByUsername(username)
-        .orElseThrow(() -> new RuntimeException("User not found: " + username));
+  private User resolveGeneratedBy(Cycle cycle) {
+    var authentication = org.springframework.security.core.context.SecurityContextHolder
+        .getContext().getAuthentication();
+    if (authentication != null && authentication.isAuthenticated()) {
+      User user = userRepository.findByUsername(authentication.getName()).orElse(null);
+      if (user != null) {
+        return user;
+      }
+    }
+    // System/async trigger: attribute to the project owner if available.
+    if (cycle.getProject() != null) {
+      return cycle.getProject().getOwner();
+    }
+    return null;
   }
 
   /**
@@ -199,7 +217,7 @@ public class CycleNarrativeService {
     narrative.setIsAiGenerated(isAI);
     narrative.setAiModel(aiModel);
     narrative.setGeneratedAt(LocalDateTime.now());
-    narrative.setGeneratedBy(getCurrentUser());
+    narrative.setGeneratedBy(resolveGeneratedBy(cycle));
 
     try {
       narrative = narrativeRepository.save(narrative);
@@ -213,7 +231,7 @@ public class CycleNarrativeService {
       narrative.setIsAiGenerated(isAI);
       narrative.setAiModel(aiModel);
       narrative.setGeneratedAt(LocalDateTime.now());
-      narrative.setGeneratedBy(getCurrentUser());
+      narrative.setGeneratedBy(resolveGeneratedBy(cycle));
       narrative = narrativeRepository.save(narrative);
     }
     return toDTO(narrative);
