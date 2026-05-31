@@ -231,7 +231,7 @@ public class CycleNarrativeService {
       narrative.setIsAiGenerated(isAI);
       narrative.setAiModel(aiModel);
       narrative.setGeneratedAt(LocalDateTime.now());
-      narrative.setGeneratedBy(getCurrentUser());
+      narrative.setGeneratedBy(resolveGeneratedBy(cycle));
       narrative = narrativeRepository.save(narrative);
     }
     return toDTO(narrative);
