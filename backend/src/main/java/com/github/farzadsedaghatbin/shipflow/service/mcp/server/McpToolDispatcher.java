@@ -129,8 +129,10 @@ public class McpToolDispatcher {
 
       sessionManager.send(sessionId, jsonRpcSuccess(id, result));
 
-    } catch (McpToolException e) {
-      log.warn("MCP tool error [session={} method={}]: {}", sessionId, method, e.getMessage());
+    } catch (McpToolException | IllegalArgumentException e) {
+      // Invalid/missing tool arguments are a client error (JSON-RPC -32602 Invalid params), not a
+      // server fault. Log at WARN without a stack trace so a bad LLM call doesn't look like a crash.
+      log.warn("MCP invalid params [session={} method={}]: {}", sessionId, method, e.getMessage());
       trySendError(sessionId, id, -32602, e.getMessage());
     } catch (SecurityException e) {
       log.warn("MCP auth error [session={} method={}]: {}", sessionId, method, e.getMessage());

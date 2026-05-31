@@ -340,6 +340,32 @@ class McpToolDispatcherTest {
   }
 
   @Test
+  void toolsCall_missingRequiredArgument_returnsInvalidParamsNotInternalError() throws Exception {
+    // A bad LLM call (missing a required arg) is a client error, not a server crash. It should come
+    // back as JSON-RPC -32602 (Invalid params), not -32603 (Internal error).
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "get_pitch_detail", "arguments", Map.of()), // pitchId omitted
+        "id", 8);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat(error.get("code")).isEqualTo(-32602);
+    assertThat((String) error.get("message")).contains("pitchId");
+  }
+
+  @Test
   void toolsCall_writeToolWhenWriteDisabled_sendsSecurityError() throws Exception {
     Map<String, Object> request = Map.of(
         "jsonrpc", "2.0",
