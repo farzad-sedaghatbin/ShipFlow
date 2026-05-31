@@ -247,6 +247,39 @@ class McpToolDispatcherTest {
   }
 
   @Test
+  void toolsCall_bindsSessionAuthToSecurityContextDuringToolExecution() throws Exception {
+    // Read tools (e.g. ProjectService.getCurrentUser) read SecurityContextHolder, but tools run
+    // on a virtual executor thread where McpAuthFilter's context is not visible. Verify the
+    // dispatcher binds the session's Authentication to the thread for the duration of the call.
+    org.mockito.Mockito.doReturn("mcpuser").when(auth).getName();
+
+    var seenAuthName = new java.util.concurrent.atomic.AtomicReference<String>();
+    when(projectService.findAccessibleProjects()).thenAnswer(inv -> {
+      var ctxAuth = org.springframework.security.core.context.SecurityContextHolder
+          .getContext().getAuthentication();
+      seenAuthName.set(ctxAuth != null ? ctxAuth.getName() : null);
+      return List.of();
+    });
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "list_projects", "arguments", Map.of()),
+        "id", 30);
+
+    org.mockito.Mockito.doAnswer(inv -> null).when(sessionManager)
+        .send(org.mockito.ArgumentMatchers.eq(SESSION_ID), org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    // The service saw the authenticated principal while executing...
+    assertThat(seenAuthName.get()).isEqualTo("mcpuser");
+    // ...and the context is cleared afterwards so it doesn't leak to the next task on this thread.
+    assertThat(org.springframework.security.core.context.SecurityContextHolder
+        .getContext().getAuthentication()).isNull();
+  }
+
+  @Test
   void toolsCall_getPitchDetail_includesWireframeLinks() throws Exception {
     PitchDTO pitch = PitchDTO.builder()
         .id(42L)
