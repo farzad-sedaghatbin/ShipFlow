@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.service.ScopeProgressService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -33,11 +34,13 @@ public class ScopeProgressListener {
    * so the sync reads the task's committed status — not the pre-commit value. The previous
    * {@code @Async @EventListener} combination fired on a separate thread before the status change
    * was committed, so the scope position was recomputed from the stale (e.g. IN_PROGRESS) status and
-   * the move to 100% was lost. This listener is itself {@code @Transactional}, so
-   * {@code syncProgressIfEnabled} runs in a fresh transaction.
+   * the move to 100% was lost. Because this runs after the publishing transaction has already
+   * committed, there is no transaction to join — the listener must open its own. Hence
+   * {@code Propagation.REQUIRES_NEW}, which Spring also requires for an {@code AFTER_COMMIT}
+   * {@code @TransactionalEventListener} (a plain {@code @Transactional} here fails at startup).
    */
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void onTaskStatusChanged(TaskStatusChangedEvent event) {
     if (!event.affectsProgress()) {
       return;
