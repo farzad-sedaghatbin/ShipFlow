@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -195,7 +197,22 @@ public class McpToolDispatcher {
       }
     }
 
-    Object result = dispatchTool(toolName, args, auth);
+    // Tools run on a virtual executor thread (dispatched from McpMessageController), so the
+    // SecurityContext set by McpAuthFilter on the request thread is not visible here. Bind the
+    // session's authenticated principal to this thread for the duration of the tool call so that
+    // services reading SecurityContextHolder (e.g. ProjectService.getCurrentUser()) see the caller.
+    Object result;
+    SecurityContext previousContext = SecurityContextHolder.getContext();
+    try {
+      SecurityContext toolContext = SecurityContextHolder.createEmptyContext();
+      toolContext.setAuthentication(auth);
+      SecurityContextHolder.setContext(toolContext);
+      result = dispatchTool(toolName, args, auth);
+    } finally {
+      SecurityContextHolder.setContext(previousContext);
+      SecurityContextHolder.clearContext();
+    }
+
     String json;
     try {
       json = objectMapper.writeValueAsString(result);
