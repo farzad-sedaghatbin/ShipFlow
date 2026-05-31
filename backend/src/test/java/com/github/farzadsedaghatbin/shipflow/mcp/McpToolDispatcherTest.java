@@ -35,7 +35,9 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcp
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorklogMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureHistoryService;
+import com.github.farzadsedaghatbin.shipflow.service.WorkLogService;
 import com.github.farzadsedaghatbin.shipflow.service.wisearchitecture.WiseArchitectureService;
 import java.time.Instant;
 import java.util.HashMap;
@@ -70,6 +72,7 @@ class McpToolDispatcherTest {
   @Mock private WiseArchitectureHistoryService wiseArchHistoryService;
   @Mock private HillChartService hillChartService;
   @Mock private RetroService retroService;
+  @Mock private WorkLogService workLogService;
 
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
@@ -92,11 +95,12 @@ class McpToolDispatcherTest {
     CommentMcpTools commentTools = new CommentMcpTools(commentService, userRepository);
     WiseArchitectureMcpTools wiseArchTools = new WiseArchitectureMcpTools(wiseArchitectureService, wiseArchHistoryService, userRepository);
     WorkContextMcpTools workContextTools = new WorkContextMcpTools(pitchService, cycleService, taskService, hillChartService, retroService);
+    WorklogMcpTools worklogTools = new WorklogMcpTools(workLogService, userRepository);
 
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
         projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools,
-        workContextTools);
+        workContextTools, worklogTools);
 
     McpSession session = new McpSession(
         SESSION_ID,
@@ -642,7 +646,95 @@ class McpToolDispatcherTest {
     assertThat(toolNames).contains(
         "create_task", "update_task_status",
         "create_pitch", "update_pitch_status",
-        "add_comment");
+        "add_comment", "log_work");
+  }
+
+  // ── log_work ──────────────────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_logWork_logsTimeAndReturnsWorklog() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+    org.mockito.Mockito.doReturn("mcpuser").when(auth).getName();
+
+    com.github.farzadsedaghatbin.shipflow.entity.Person person =
+        com.github.farzadsedaghatbin.shipflow.entity.Person.builder()
+            .id(3L)
+            .name("MCP User")
+            .build();
+    com.github.farzadsedaghatbin.shipflow.entity.User mcpUser =
+        com.github.farzadsedaghatbin.shipflow.entity.User.builder()
+            .id(7L)
+            .username("mcpuser")
+            .person(person)
+            .build();
+    when(userRepository.findByUsernameWithPerson("mcpuser")).thenReturn(Optional.of(mcpUser));
+
+    com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO worklog =
+        com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO.builder()
+            .id(201L)
+            .taskId(59L)
+            .taskTitle("POST /shorten")
+            .personId(3L)
+            .personName("MCP User")
+            .hoursSpent(new java.math.BigDecimal("1.5"))
+            .date(java.time.LocalDate.of(2026, 6, 1))
+            .build();
+    when(workLogService.createWorkLog(org.mockito.ArgumentMatchers.any())).thenReturn(worklog);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "log_work",
+            "arguments", Map.of("taskId", 59, "hoursSpent", 1.5, "date", "2026-06-01",
+                "note", "Implemented POST /shorten endpoint")),
+        "id", 40);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("1.5");
+    assertThat(text).contains("POST /shorten");
+  }
+
+  @Test
+  void toolsCall_logWork_rejectsWhenWriteDisabled() throws Exception {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "log_work",
+            "arguments", Map.of("taskId", 1, "hoursSpent", 1.0)),
+        "id", 41);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).contains("Write tools are disabled");
   }
 
   // ── Tool definitions ──────────────────────────────────────────────────────
@@ -861,7 +953,8 @@ class McpToolDispatcherTest {
         PitchMcpTools.createPitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
         CommentMcpTools.addCommentDefinition(),
-        WorkContextMcpTools.getWorkContextDefinition());
+        WorkContextMcpTools.getWorkContextDefinition(),
+        WorklogMcpTools.logWorkDefinition());
 
     for (Map<String, Object> def : all) {
       assertThat(def).as("Tool definition " + def.get("name"))

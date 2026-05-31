@@ -50,6 +50,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import MarkdownEditor from '../components/MarkdownEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { PermissionGate } from '../hooks/usePermission';
 
 export default function EpicDetailPage() {
   const { t, i18n } = useTranslation();
@@ -370,27 +371,31 @@ export default function EpicDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={epic.status} onValueChange={(v) => handleStatusChange(v as EpicStatus)}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="DRAFT">{t('epics.status.draft')}</SelectItem>
-              <SelectItem value="PLANNED">{t('epics.status.planned')}</SelectItem>
-              <SelectItem value="IN_PROGRESS">{t('epics.status.in_progress')}</SelectItem>
-              <SelectItem value="COMPLETED">{t('epics.status.completed')}</SelectItem>
-              <SelectItem value="ON_HOLD">{t('epics.status.on_hold')}</SelectItem>
-              <SelectItem value="CANCELLED">{t('epics.status.cancelled')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={() => navigate(`/epics/${epic.id}/edit`)}>
-            <Pencil className="h-4 w-4 mr-2" />
-            {t('common.edit')}
-          </Button>
-          <Button variant="destructive" onClick={() => setDeleteDialog(true)}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            {t('common.delete')}
-          </Button>
+          <PermissionGate resource="EPIC" permission="UPDATE">
+            <Select value={epic.status} onValueChange={(v) => handleStatusChange(v as EpicStatus)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DRAFT">{t('epics.status.draft')}</SelectItem>
+                <SelectItem value="PLANNED">{t('epics.status.planned')}</SelectItem>
+                <SelectItem value="IN_PROGRESS">{t('epics.status.in_progress')}</SelectItem>
+                <SelectItem value="COMPLETED">{t('epics.status.completed')}</SelectItem>
+                <SelectItem value="ON_HOLD">{t('epics.status.on_hold')}</SelectItem>
+                <SelectItem value="CANCELLED">{t('epics.status.cancelled')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => navigate(`/epics/${epic.id}/edit`)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              {t('common.edit')}
+            </Button>
+          </PermissionGate>
+          <PermissionGate resource="EPIC" permission="DELETE">
+            <Button variant="destructive" onClick={() => setDeleteDialog(true)}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {t('common.delete')}
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 

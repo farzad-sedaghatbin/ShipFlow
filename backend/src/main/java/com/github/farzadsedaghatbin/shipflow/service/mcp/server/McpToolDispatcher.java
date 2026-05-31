@@ -10,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcp
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorklogMcpTools;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -75,6 +76,7 @@ public class McpToolDispatcher {
   private final CommentMcpTools commentTools;
   private final WiseArchitectureMcpTools wiseArchitectureTools;
   private final WorkContextMcpTools workContextTools;
+  private final WorklogMcpTools worklogTools;
 
   /**
    * Names of all write tools, derived once from {@link #writeTools()} at construction time.
@@ -256,6 +258,9 @@ public class McpToolDispatcher {
       // Comment write tools — auth passed explicitly to avoid SecurityContextHolder on executor thread
       case CommentMcpTools.TOOL_ADD_COMMENT -> commentTools.addComment(args, auth);
 
+      // Worklog write tools — auth passed explicitly for user/person resolution
+      case WorklogMcpTools.TOOL_LOG_WORK -> worklogTools.logWork(args, auth);
+
       // Wise Architecture tools — auth passed for user scoping and history persistence
       case WiseArchitectureMcpTools.TOOL_LIST_ANALYSES -> wiseArchitectureTools.listAnalyses(args, auth);
       case WiseArchitectureMcpTools.TOOL_GET_FILES -> wiseArchitectureTools.getFiles(args);
@@ -300,7 +305,8 @@ public class McpToolDispatcher {
         PitchMcpTools.createPitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
         CommentMcpTools.addCommentDefinition(),
-        WiseArchitectureMcpTools.analyzeDefinition());
+        WiseArchitectureMcpTools.analyzeDefinition(),
+        WorklogMcpTools.logWorkDefinition());
   }
 
   /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */
