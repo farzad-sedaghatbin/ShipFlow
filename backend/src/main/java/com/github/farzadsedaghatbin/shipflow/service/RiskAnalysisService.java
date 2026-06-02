@@ -324,9 +324,13 @@ public class RiskAnalysisService {
 
   /**
    * Answer a question about pitch risk using AI.
-   * The pitch is fetched with eager loading, so no transaction is needed.
-   * AI work should not hold DB connections.
+   *
+   * Runs inside a read-only transaction so that lazy associations on the pitch
+   * (team assignments → person) can be navigated while building the prompt
+   * context. With {@code spring.jpa.open-in-view=false}, touching these outside
+   * a tx throws {@code LazyInitializationException}.
    */
+  @Transactional(readOnly = true)
   public RiskQuestionResponse answerRiskQuestion(Long pitchId, String question) {
     // Get pitch first
     Pitch pitch;
