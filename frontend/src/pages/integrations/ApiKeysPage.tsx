@@ -310,7 +310,7 @@ export default function ApiKeysPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('mcpIntegration.keyCreatedTitle')}</DialogTitle>
-            <DialogDescription>{t('mcpIntegration.keyCreatedDescription')}</DialogDescription>
+            <DialogDescription>{t('mcpIntegration.keyShowOnceWarning')}</DialogDescription>
           </DialogHeader>
           {createdKey && (
             <div className="space-y-3">
@@ -326,7 +326,7 @@ export default function ApiKeysPage() {
                 ) : (
                   <>
                     <Copy className="h-4 w-4 mr-2" />
-                    {t('mcpIntegration.copyKey')}
+                    {t('mcpIntegration.copy')}
                   </>
                 )}
               </Button>
