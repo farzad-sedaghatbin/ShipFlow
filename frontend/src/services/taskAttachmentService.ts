@@ -27,9 +27,29 @@ export const taskAttachmentService = {
     });
   },
 
-  /** Returns the API endpoint path for an attachment download. Use as an anchor href or navigate to it to trigger the browser download. */
-  getDownloadUrl: (taskId: number, attachmentId: number) =>
-    `/api/tasks/${taskId}/attachments/${attachmentId}/download`,
+  /**
+   * Download an attachment via the authenticated axios client and trigger a
+   * browser save. A plain anchor href cannot be used because the JWT lives in
+   * localStorage and is only attached by the axios request interceptor.
+   */
+  downloadAttachment: async (
+    taskId: number,
+    attachmentId: number,
+    fileName: string
+  ) => {
+    const response = await api.get<Blob>(
+      `/tasks/${taskId}/attachments/${attachmentId}/download`,
+      { responseType: 'blob' }
+    );
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
 
   /** Delete an attachment (uploader or ADMIN only). */
   deleteAttachment: (taskId: number, attachmentId: number) =>
