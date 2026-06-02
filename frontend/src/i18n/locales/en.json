@@ -3141,6 +3141,8 @@
     "otherProjects": "Other Projects",
     "newTask": "New Task",
     "selectCycleToCreate": "Please select a cycle to create a task",
+    "selectProjectToCreate": "Switch to a specific project to create a task",
+    "allProjectsHint": "You're viewing All Projects. Tasks belong to a single project — switch to a specific project from the sidebar to create or edit tasks.",
     "noDefaultCycle": "No default cycle found for this project",
     "pitchTasks": "Pitch Tasks",
     "featureTasks": "Feature Tasks",
