@@ -7383,6 +7383,7 @@
     "uploadError": "Failed to upload file",
     "deleted": "Attachment deleted",
     "deleteError": "Failed to delete attachment",
+    "downloadError": "Failed to download attachment",
     "tooLarge": "File exceeds the 10 MB limit",
     "unsupportedType": "Unsupported file type",
     "uploading": "Uploading...",
