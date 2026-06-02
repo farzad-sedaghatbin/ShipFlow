@@ -41,6 +41,7 @@ import {
   Search,
   Workflow,
   Upload,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -166,13 +167,19 @@ const userAccessItems: NavItemConfig[] = [
 ];
 
 // Integrations section
-const integrationItems: NavItemConfig[] = [
+// `memberIntegrationItems` are visible to every authenticated user — anything
+// here must not require admin permissions on the backend.
+const memberIntegrationItems: NavItemConfig[] = [
+  { textKey: 'integrations.apiKeys', icon: KeyRound, path: '/integrations/api-keys' },
+];
+const adminIntegrationItems: NavItemConfig[] = [
   { textKey: 'integrations.slack', icon: MessageSquare, path: '/integrations/slack' },
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
   { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
   { textKey: 'integrations.inboundWebhooks', icon: ArrowDownToLine, path: '/integrations/inbound-webhooks' },
 ];
+const integrationItems: NavItemConfig[] = [...memberIntegrationItems, ...adminIntegrationItems];
 
 function NavItem({
   item,
@@ -459,6 +466,21 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onItemClick={onItemClick}
           />
         </nav>
+
+        {/* Member-visible integrations (API Keys etc.) — accessible to non-admins
+            so they can mint personal keys without needing admin elevation. */}
+        {!hasPermissionSync('SYSTEM', 'MANAGE') && (
+          <nav className="flex flex-col gap-1">
+            <SectionHeader textKey="nav.sections.integrations" />
+            <NavGroup
+              titleKey="nav.groups.integrations"
+              icon={Plug}
+              items={memberIntegrationItems}
+              currentPath={currentPath}
+              onItemClick={onItemClick}
+            />
+          </nav>
+        )}
 
         {/* Admin Section */}
         {hasPermissionSync('SYSTEM', 'MANAGE') && (

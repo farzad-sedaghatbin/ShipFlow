@@ -1,5 +1,6 @@
-import { FileText, Wrench } from 'lucide-react';
+import { FileText, Wrench, Info } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TaskCategory, Task } from '../types';
 import TimerWidget from '../components/TimerWidget';
 import KanbanBoard from '../components/KanbanBoard';
@@ -87,6 +88,15 @@ export default function BacklogPage() {
         onNewTask={() => bp.handleOpenDialog()}
         onExportCsv={bp.handleExportCsv}
       />
+
+      {/* "All Projects" view can't create tasks (they belong to one project),
+          and the disabled button alone reads as broken — surface why inline. */}
+      {!bp.currentProject && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>{t('backlogPage.allProjectsHint')}</AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={bp.activeCategory} onValueChange={(v) => bp.handleCategoryChange(v as TaskCategory)} className="w-full">
         <div className="flex items-center gap-2">
