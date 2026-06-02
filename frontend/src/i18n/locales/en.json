@@ -156,7 +156,8 @@
       "rd": "Research & Development",
       "roadmap": "Roadmap & Planning",
       "helpSupport": "Help & Support",
-      "administration": "Administration"
+      "administration": "Administration",
+      "integrations": "Integrations"
     },
     "groups": {
       "cycleTools": "Cycle Tools",
@@ -219,6 +220,7 @@
     "teams": "Microsoft Teams",
     "mcp": "MCP Servers",
     "inboundWebhooks": "Inbound Webhooks",
+    "apiKeys": "API Keys",
     "connect": "Connect",
     "disconnect": "Disconnect",
     "connected": "Connected",
@@ -7149,6 +7151,10 @@
         "cancel": "Cancel"
       }
     }
+  },
+  "apiKeysPage": {
+    "title": "API Keys",
+    "description": "Create personal API keys to connect external tools (MCP, CI, scripts) to ShipFlow on your behalf. Keys are scoped to your user account."
   },
   "mcpIntegration": {
     "title": "MCP Server Integration",

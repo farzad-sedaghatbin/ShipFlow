@@ -82,6 +82,7 @@ const SlackIntegration = lazy(() => import('./pages/SlackIntegration'));
 const GitHubIntegration = lazy(() => import('./pages/integrations/GitHubIntegration'));
 const TeamsIntegration = lazy(() => import('./pages/integrations/TeamsIntegration'));
 const McpIntegration = lazy(() => import('./pages/integrations/McpIntegration'));
+const ApiKeysPage = lazy(() => import('./pages/integrations/ApiKeysPage'));
 const InboundWebhooksIntegration = lazy(
   () => import('./pages/integrations/InboundWebhooksIntegration')
 );
@@ -269,6 +270,7 @@ function App() {
                       <Route path="integrations/github" element={<GitHubIntegration />} />
                       <Route path="integrations/teams" element={<TeamsIntegration />} />
                       <Route path="integrations/mcp" element={<McpIntegration />} />
+                      <Route path="integrations/api-keys" element={<ApiKeysPage />} />
                       <Route
                         path="integrations/inbound-webhooks"
                         element={<InboundWebhooksIntegration />}
