@@ -4442,6 +4442,26 @@
     "description": "Upload meeting notes, agendas, or other documents. The text will be extracted and added to the knowledge base for Q&A.",
     "close": "Close"
   },
+  "taskWorkLogs": {
+    "title": "Work Logs",
+    "add": "Log time",
+    "adding": "Adding…",
+    "addTitle": "Log time on this task",
+    "date": "Date",
+    "hours": "Hours",
+    "note": "Note",
+    "notePlaceholder": "What did you work on?",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this work log? This cannot be undone.",
+    "empty": "No time has been logged on this task yet.",
+    "added": "Work log added.",
+    "addFailed": "Failed to add work log.",
+    "deleted": "Work log deleted.",
+    "deleteFailed": "Failed to delete work log.",
+    "loadFailed": "Failed to load work logs.",
+    "totalShown": "{{hours}}h logged on this page",
+    "moreNotShown": "{{count}} more not shown"
+  },
   "taskDetailPage": {
     "title": "Title",
     "editTask": "Edit Task",

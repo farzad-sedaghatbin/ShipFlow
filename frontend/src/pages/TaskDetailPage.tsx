@@ -34,6 +34,7 @@ import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskAttachments from '../components/TaskAttachments';
 import TaskDependencies from '../components/TaskDependencies';
 import Comments from '../components/Comments';
+import TaskWorkLogsSection from '../components/TaskWorkLogsSection';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { ActivityTimeline } from '../components/ActivityTimeline';
 import { getUserFriendlyError } from '../utils/errorMessages';
@@ -542,10 +543,13 @@ export default function TaskDetailPage() {
       />
 
       {/* Comments */}
-      <Comments 
-        entityType="task" 
+      <Comments
+        entityType="task"
         entityId={task.id}
       />
+
+      {/* Work Logs */}
+      <TaskWorkLogsSection taskId={task.id} />
 
       {/* Activity Timeline */}
       <ActivityTimeline
