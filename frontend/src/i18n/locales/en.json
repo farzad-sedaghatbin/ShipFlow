@@ -4422,7 +4422,9 @@
     "allTasks": "All Tasks",
     "clearFilters": "Clear Filters",
     "filterByPerson": "Person",
-    "allPersons": "All People"
+    "allPersons": "All People",
+    "filterFrom": "From",
+    "filterTo": "To"
   },
   "myWorkLogsPage": {
     "title": "My Work Logs",

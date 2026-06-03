@@ -66,6 +66,18 @@ public class WorkLogService {
     return workLogRepository.findByProjectId(projectId, pageable).map(this::toDTO);
   }
 
+  public Page<WorkLogDTO> getAllWorkLogsByDateRange(LocalDate from, LocalDate to, Pageable pageable) {
+    return workLogRepository.findByDateBetween(from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getAllWorkLogsByProjectIdAndDateRange(Long projectId, LocalDate from, LocalDate to, Pageable pageable) {
+    return workLogRepository.findByProjectIdAndDateBetween(projectId, from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getWorkLogsByCycleIdAndDateRange(Long cycleId, LocalDate from, LocalDate to, Pageable pageable) {
+    return workLogRepository.findByCycleIdAndDateBetween(cycleId, from, to, pageable).map(this::toDTO);
+  }
+
   public WorkLogDTO getWorkLogById(Long id) {
     WorkLog workLog = workLogRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
@@ -211,6 +223,21 @@ public class WorkLogService {
   public Page<WorkLogDTO> getMyWorkLogsByDate(LocalDate date, Pageable pageable) {
     Person person = getCurrentUserPerson();
     return workLogRepository.findByPersonIdAndDate(person.getId(), date, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getMyWorkLogsByDateRange(LocalDate from, LocalDate to, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return workLogRepository.findByPersonIdAndDateBetween(person.getId(), from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getMyWorkLogsByProjectIdAndDateRange(Long projectId, LocalDate from, LocalDate to, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return workLogRepository.findByPersonIdAndProjectIdAndDateBetween(person.getId(), projectId, from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getMyWorkLogsByCycleAndDateRange(Long cycleId, LocalDate from, LocalDate to, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return workLogRepository.findByPersonIdAndCycleIdAndDateBetween(person.getId(), cycleId, from, to, pageable).map(this::toDTO);
   }
 
   /** Create a work log for the current user (for themselves) */
