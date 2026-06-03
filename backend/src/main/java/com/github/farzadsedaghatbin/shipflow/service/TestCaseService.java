@@ -223,6 +223,22 @@ public class TestCaseService {
         .collect(Collectors.toList());
   }
 
+  /** Get test cases linked to a specific task. */
+  @Transactional(readOnly = true)
+  public List<TestCaseDTO> getTestCasesByTask(Long taskId) {
+    checkFeatureEnabled();
+
+    return testCaseRepository.findByTaskId(taskId).stream().map(this::toDTO)
+        .collect(Collectors.toList());
+  }
+
+  /** Number of test cases linked to a task — cheap count for context aggregators. */
+  @Transactional(readOnly = true)
+  public long countTestCasesByTask(Long taskId) {
+    checkFeatureEnabled();
+    return testCaseRepository.countByTaskId(taskId);
+  }
+
   /** Get test cases by cycle. */
   @Transactional(readOnly = true)
   public List<TestCaseDTO> getTestCasesByCycle(Long cycleId) {
