@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 /** MCP tool implementations for task operations (read and write). */
@@ -34,11 +35,14 @@ public class TaskMcpTools {
     return Map.of(
         "name", TOOL_GET_TASKS,
         "description",
-            "List tasks for a cycle or project. Returns id, title, status "
-                + "(TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED), priority, assigneeName, "
+            "List tasks with one or more filters. Returns id, title, status "
+                + "(TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED), priority, assigneeName, pitchId, "
                 + "pitchTitle, isBlocked, blockedByCount, and dueDate. "
-                + "One of cycleId or projectId is REQUIRED (cycleId takes precedence). "
-                + "Omitting both is rejected to prevent unscoped enumeration.",
+                + "At least one scope is REQUIRED: cycleId, projectId, pitchId, assigneeId, or "
+                + "mine=true. Omitting all scopes is rejected to prevent unscoped enumeration. "
+                + "Filters compose (e.g. cycleId + mine returns your tasks in that cycle); "
+                + "precedence when multiple scopes are given: cycleId > projectId > pitchId > "
+                + "assigneeId/mine.",
         "inputSchema",
             Map.of(
                 "type", "object",
@@ -51,7 +55,24 @@ public class TaskMcpTools {
                         "projectId",
                         Map.of(
                             "type", "integer",
-                            "description", "Filter tasks by project ID")),
+                            "description", "Filter tasks by project ID"),
+                        "pitchId",
+                        Map.of(
+                            "type", "integer",
+                            "description", "Filter tasks linked to this pitch"),
+                        "assigneeId",
+                        Map.of(
+                            "type", "integer",
+                            "description",
+                                "Filter to tasks assigned to this person (personId, not userId — "
+                                    + "get it from whoami or a person lookup)"),
+                        "mine",
+                        Map.of(
+                            "type", "boolean",
+                            "description",
+                                "When true, filter to tasks assigned to the authenticated MCP "
+                                    + "user. Equivalent to assigneeId=<my personId> without the "
+                                    + "extra whoami round-trip.")),
                 "required", List.of()));
   }
 
@@ -98,10 +119,12 @@ public class TaskMcpTools {
         "name",
         TOOL_CREATE_TASK,
         "description",
-            "Create a new task inside a cycle, optionally linked to a pitch. Returns the created task. "
-                + "Supply pitchId to wire the task into a Shape Up pitch — this populates the pitch "
-                + "dropdown in the UI and associates the task with the pitch's hill-chart scope. "
-                + "Requires WRITE API key scope.",
+            "Create a new task inside a cycle, optionally linked to a pitch or nested under a "
+                + "parent task. Returns the created task. Supply pitchId to wire the task into a "
+                + "Shape Up pitch — this populates the pitch dropdown in the UI and associates the "
+                + "task with the pitch's hill-chart scope. Supply parentTaskId to create the task "
+                + "as a subtask of another task (it will appear under the parent in the task tree "
+                + "and in get_task_context's task.children list). Requires WRITE API key scope.",
         "inputSchema",
             Map.of(
                 "type",
@@ -120,6 +143,13 @@ public class TaskMcpTools {
                             "description",
                                 "Optional pitch ID to link this task to. The pitch must be assigned "
                                     + "to the same cycle (PENDING or later status)."),
+                        "parentTaskId",
+                        Map.of(
+                            "type", "integer",
+                            "description",
+                                "Optional parent task ID. When set, the created task is a subtask "
+                                    + "of that parent and will appear under it in the task tree. "
+                                    + "Use this to break a task down into checklist-style children."),
                         "assigneeUsername",
                         Map.of("type", "string", "description", "Optional username to assign the task to"),
                         "priority",
@@ -159,23 +189,76 @@ public class TaskMcpTools {
 
   // ── Implementations ───────────────────────────────────────────────────────
 
-  public List<McpTaskDTO> getTasks(Map<String, Object> args) {
+  public List<McpTaskDTO> getTasks(Map<String, Object> args, Authentication auth) {
     Object cycleIdArg = args.get("cycleId");
     Object projectIdArg = args.get("projectId");
+    Object pitchIdArg = args.get("pitchId");
+    Object assigneeIdArg = args.get("assigneeId");
+    boolean mine = Boolean.TRUE.equals(args.get("mine"));
 
+    if (cycleIdArg == null && projectIdArg == null && pitchIdArg == null
+        && assigneeIdArg == null && !mine) {
+      throw new IllegalArgumentException(
+          "At least one scope is required: cycleId, projectId, pitchId, assigneeId, or mine=true. "
+              + "Listing all tasks across projects is not permitted via MCP.");
+    }
+
+    // Resolve 'mine' to a personId once — used as a post-filter when combined with other scopes.
+    Long minePersonId = null;
+    if (mine) {
+      User caller = resolveUser(auth);
+      if (caller.getPerson() == null) {
+        throw new IllegalArgumentException(
+            "MCP user '" + caller.getUsername() + "' has no linked person profile; "
+                + "cannot resolve 'mine'.");
+      }
+      minePersonId = caller.getPerson().getId();
+    }
+
+    // Resolve the primary scope (cycle > project > pitch > assignee/mine).
+    List<TaskDTO> tasks;
     if (cycleIdArg != null) {
-      return taskService.getTasksByCycleId(toLong(cycleIdArg)).stream()
-          .map(McpTaskDTO::from)
-          .toList();
+      tasks = taskService.getTasksByCycleId(toLong(cycleIdArg));
+    } else if (projectIdArg != null) {
+      tasks = taskService.getTasksByProjectId(toLong(projectIdArg));
+    } else if (pitchIdArg != null) {
+      tasks = taskService.getTasksByPitchId(toLong(pitchIdArg));
+    } else if (assigneeIdArg != null) {
+      tasks = taskService.getTasksByPersonId(toLong(assigneeIdArg));
+    } else {
+      // mine=true with no other scope — caller's tasks across all accessible projects.
+      tasks = taskService.getTasksByPersonId(minePersonId);
     }
-    if (projectIdArg != null) {
-      return taskService.getTasksByProjectId(toLong(projectIdArg)).stream()
-          .map(McpTaskDTO::from)
-          .toList();
+
+    // Compose extra filters that weren't the primary scope.
+    if (pitchIdArg != null && (cycleIdArg != null || projectIdArg != null)) {
+      long pitchId = toLong(pitchIdArg);
+      tasks = tasks.stream().filter(t -> pitchId == nullSafe(t.getPitchId())).toList();
     }
-    throw new IllegalArgumentException(
-        "Either 'cycleId' or 'projectId' must be provided. "
-            + "Listing all tasks across projects is not permitted via MCP.");
+    if (assigneeIdArg != null
+        && (cycleIdArg != null || projectIdArg != null || pitchIdArg != null)) {
+      long assigneeId = toLong(assigneeIdArg);
+      tasks = tasks.stream().filter(t -> assigneeId == nullSafe(t.getAssigneeId())).toList();
+    }
+    if (mine && (cycleIdArg != null || projectIdArg != null
+        || pitchIdArg != null || assigneeIdArg != null)) {
+      final long pid = minePersonId;
+      tasks = tasks.stream().filter(t -> pid == nullSafe(t.getAssigneeId())).toList();
+    }
+
+    return tasks.stream().map(McpTaskDTO::from).toList();
+  }
+
+  private static long nullSafe(Long val) {
+    return val == null ? Long.MIN_VALUE : val;
+  }
+
+  private User resolveUser(Authentication auth) {
+    if (auth == null || auth.getName() == null) {
+      throw new SecurityException("No authenticated user in MCP session");
+    }
+    return userRepository.findByUsernameWithPerson(auth.getName())
+        .orElseThrow(() -> new SecurityException("MCP user not found: " + auth.getName()));
   }
 
   public McpTaskDTO getTask(Map<String, Object> args) {
@@ -183,8 +266,8 @@ public class TaskMcpTools {
     return McpTaskDTO.from(taskService.getTaskById(taskId));
   }
 
-  public List<McpTaskDTO> getBlockers(Map<String, Object> args) {
-    return getTasks(args).stream()
+  public List<McpTaskDTO> getBlockers(Map<String, Object> args, Authentication auth) {
+    return getTasks(args, auth).stream()
         .filter(t -> Boolean.TRUE.equals(t.getIsBlocked()))
         .toList();
   }
@@ -238,6 +321,11 @@ public class TaskMcpTools {
     Object pitchIdArg = args.get("pitchId");
     if (pitchIdArg != null) {
       request.setPitchId(toLong(pitchIdArg));
+    }
+
+    Object parentTaskIdArg = args.get("parentTaskId");
+    if (parentTaskIdArg != null) {
+      request.setParentTaskId(toLong(parentTaskIdArg));
     }
 
     Object assigneeUsernameArg = args.get("assigneeUsername");
