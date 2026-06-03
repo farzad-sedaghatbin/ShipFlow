@@ -6003,7 +6003,16 @@
     "totalHours": "کل ساعات",
     "workLogAdded": "گزارش کار با موفقیت افزوده شد",
     "workLogDeleted": "گزارش کار با موفقیت حذف شد",
-    "workLogUpdated": "گزارش کار با موفقیت به‌روزرسانی شد"
+    "workLogUpdated": "گزارش کار با موفقیت به‌روزرسانی شد",
+    "filterFrom": "از تاریخ",
+    "filterTo": "تا تاریخ",
+    "clearFilters": "پاک کردن فیلترها",
+    "filterByPitch": "پیچ",
+    "allPitches": "همه پیچ‌ها",
+    "filterByTask": "وظیفه",
+    "allTasks": "همه وظایف",
+    "filterByPerson": "فرد",
+    "allPersons": "همه افراد"
   },
   "status": {
     "pending": "در انتظار",
