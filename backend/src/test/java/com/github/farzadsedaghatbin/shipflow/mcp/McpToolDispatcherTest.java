@@ -1646,6 +1646,152 @@ class McpToolDispatcherTest {
     assertThat(text).containsIgnoringCase("bug report(s) linked");
   }
 
+  // ── update_task_assignee ─────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_updateTaskAssignee_byUsername_resolvesPersonAndUpdates() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+
+    com.github.farzadsedaghatbin.shipflow.entity.Person person =
+        new com.github.farzadsedaghatbin.shipflow.entity.Person();
+    person.setId(42L);
+    person.setName("Farzad Sedaghatbin");
+    com.github.farzadsedaghatbin.shipflow.entity.User assignee =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    assignee.setUsername("farzad");
+    assignee.setPerson(person);
+    when(userRepository.findByUsernameWithPerson("farzad")).thenReturn(Optional.of(assignee));
+
+    TaskDTO updated = TaskDTO.builder().id(8L).title("Wire click analytics")
+        .assigneeId(42L).assigneeName("Farzad Sedaghatbin").build();
+    when(taskService.updateTaskAssignee(8L, 42L)).thenReturn(updated);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_task_assignee",
+            "arguments", Map.of("taskId", 8, "assigneeUsername", "farzad")),
+        "id", 80);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("Farzad Sedaghatbin");
+    org.mockito.Mockito.verify(taskService).updateTaskAssignee(8L, 42L);
+  }
+
+  @Test
+  void toolsCall_updateTaskAssignee_mine_resolvesToCaller() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+    when(auth.getName()).thenReturn("farzad");
+
+    com.github.farzadsedaghatbin.shipflow.entity.Person person =
+        new com.github.farzadsedaghatbin.shipflow.entity.Person();
+    person.setId(42L);
+    com.github.farzadsedaghatbin.shipflow.entity.User caller =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    caller.setUsername("farzad");
+    caller.setPerson(person);
+    when(userRepository.findByUsernameWithPerson("farzad")).thenReturn(Optional.of(caller));
+
+    TaskDTO updated = TaskDTO.builder().id(8L).title("T").assigneeId(42L).build();
+    when(taskService.updateTaskAssignee(8L, 42L)).thenReturn(updated);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_task_assignee",
+            "arguments", Map.of("taskId", 8, "mine", true)),
+        "id", 81);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    org.mockito.Mockito.verify(taskService).updateTaskAssignee(8L, 42L);
+  }
+
+  @Test
+  void toolsCall_updateTaskAssignee_unassign_clearsAssignee() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+
+    TaskDTO updated = TaskDTO.builder().id(8L).title("T").build();
+    when(taskService.updateTaskAssignee(8L, null)).thenReturn(updated);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_task_assignee",
+            "arguments", Map.of("taskId", 8, "unassign", true)),
+        "id", 82);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    org.mockito.Mockito.verify(taskService).updateTaskAssignee(8L, null);
+  }
+
+  @Test
+  void toolsCall_updateTaskAssignee_noOption_sendsError() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_task_assignee",
+            "arguments", Map.of("taskId", 8)),
+        "id", 83);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).containsIgnoringCase("assigneeUsername");
+  }
+
   // ── tools/list now includes all new tools ────────────────────────────────
 
   @Test

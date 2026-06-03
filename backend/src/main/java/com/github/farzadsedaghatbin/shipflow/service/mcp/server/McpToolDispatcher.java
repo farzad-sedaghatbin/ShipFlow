@@ -255,6 +255,7 @@ public class McpToolDispatcher {
       case TaskMcpTools.TOOL_GET_BLOCKERS -> taskTools.getBlockers(args, auth);
       case TaskMcpTools.TOOL_CREATE_TASK -> taskTools.createTask(args);
       case TaskMcpTools.TOOL_UPDATE_TASK_STATUS -> taskTools.updateTaskStatus(args);
+      case TaskMcpTools.TOOL_UPDATE_TASK_ASSIGNEE -> taskTools.updateTaskAssignee(args, auth);
 
       // Pitch tools
       case PitchMcpTools.TOOL_GET_PITCHES -> pitchTools.getPitches(args);
@@ -332,6 +333,7 @@ public class McpToolDispatcher {
     return List.of(
         TaskMcpTools.createTaskDefinition(),
         TaskMcpTools.updateTaskStatusDefinition(),
+        TaskMcpTools.updateTaskAssigneeDefinition(),
         PitchMcpTools.createPitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
         CommentMcpTools.addCommentDefinition(),

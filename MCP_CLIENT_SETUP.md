@@ -203,6 +203,7 @@ Once connected, your AI assistant has access to these tools:
 |------|-------------|
 | `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **parentTaskId** for subtasks, assigneeUsername, priority) |
 | `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
+| `update_task_assignee` | Reassign an existing task — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true` |
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
 | `add_comment` | Add a comment to a TASK or BUG_REPORT (entityType, entityId, content required) |
@@ -313,6 +314,15 @@ get_tasks(assigneeId: 42, projectId: 1)    # someone else's tasks in a project
 # Explicit identity lookup (when the agent needs to display "I'm working as ...")
 whoami()
 # → { userId, username, email, role, personId, fullName }
+
+# Claim an unassigned task — no separate whoami call needed
+update_task_assignee(taskId: 8, mine: true)
+
+# Reassign to a specific teammate
+update_task_assignee(taskId: 8, assigneeUsername: "alice")
+
+# Release a task you can't take
+update_task_assignee(taskId: 8, unassign: true)
 ```
 
 **QA / verification workflow:**

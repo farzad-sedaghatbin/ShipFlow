@@ -29,6 +29,7 @@ public class TaskMcpTools {
   public static final String TOOL_GET_TASK = "get_task";
   public static final String TOOL_GET_BLOCKERS = "get_blockers";
   public static final String TOOL_UPDATE_TASK_STATUS = "update_task_status";
+  public static final String TOOL_UPDATE_TASK_ASSIGNEE = "update_task_assignee";
   public static final String TOOL_CREATE_TASK = "create_task";
 
   public static Map<String, Object> getTasksDefinition() {
@@ -164,6 +165,45 @@ public class TaskMcpTools {
                 List.of("cycleId", "title")));
   }
 
+  public static Map<String, Object> updateTaskAssigneeDefinition() {
+    return Map.of(
+        "name", TOOL_UPDATE_TASK_ASSIGNEE,
+        "description",
+            "Assign a task to a person, or unassign it. Specify exactly one of: "
+                + "assigneeUsername (looked up server-side), assigneeId (personId, e.g. from "
+                + "whoami), mine=true (assign to the authenticated MCP user), or unassign=true "
+                + "(clear the assignee). Status, pitch, dependencies, and other fields are not "
+                + "touched. Requires WRITE API key scope.",
+        "inputSchema",
+            Map.of(
+                "type", "object",
+                "properties",
+                    Map.of(
+                        "taskId",
+                        Map.of("type", "integer", "description", "The numeric task ID"),
+                        "assigneeUsername",
+                        Map.of(
+                            "type", "string",
+                            "description", "Username of the person to assign to"),
+                        "assigneeId",
+                        Map.of(
+                            "type", "integer",
+                            "description", "personId of the person to assign to"),
+                        "mine",
+                        Map.of(
+                            "type", "boolean",
+                            "description",
+                                "When true, assign to the authenticated MCP user — no separate "
+                                    + "whoami round-trip needed."),
+                        "unassign",
+                        Map.of(
+                            "type", "boolean",
+                            "description",
+                                "When true, clear the task's assignee. Mutually exclusive with "
+                                    + "the assign options.")),
+                "required", List.of("taskId")));
+  }
+
   public static Map<String, Object> updateTaskStatusDefinition() {
     return Map.of(
         "name", TOOL_UPDATE_TASK_STATUS,
@@ -270,6 +310,56 @@ public class TaskMcpTools {
     return getTasks(args, auth).stream()
         .filter(t -> Boolean.TRUE.equals(t.getIsBlocked()))
         .toList();
+  }
+
+  public McpTaskDTO updateTaskAssignee(Map<String, Object> args, Authentication auth) {
+    long taskId = toLong(args.get("taskId"));
+    Object usernameArg = args.get("assigneeUsername");
+    Object assigneeIdArg = args.get("assigneeId");
+    boolean mine = Boolean.TRUE.equals(args.get("mine"));
+    boolean unassign = Boolean.TRUE.equals(args.get("unassign"));
+
+    // Exactly-one validation — empty strings count as "not provided".
+    boolean usernameSet = usernameArg != null && !usernameArg.toString().isBlank();
+    int optionsSet =
+        (usernameSet ? 1 : 0)
+            + (assigneeIdArg != null ? 1 : 0)
+            + (mine ? 1 : 0)
+            + (unassign ? 1 : 0);
+    if (optionsSet == 0) {
+      throw new IllegalArgumentException(
+          "Specify one of: assigneeUsername, assigneeId, mine=true, or unassign=true.");
+    }
+    if (optionsSet > 1) {
+      throw new IllegalArgumentException(
+          "Only one of assigneeUsername, assigneeId, mine, unassign may be set.");
+    }
+
+    Long personId;
+    if (unassign) {
+      personId = null;
+    } else if (mine) {
+      User caller = resolveUser(auth);
+      if (caller.getPerson() == null) {
+        throw new IllegalArgumentException(
+            "MCP user '" + caller.getUsername() + "' has no linked person profile.");
+      }
+      personId = caller.getPerson().getId();
+    } else if (assigneeIdArg != null) {
+      personId = toLong(assigneeIdArg);
+    } else {
+      User assignee = userRepository.findByUsernameWithPerson(usernameArg.toString())
+          .orElseThrow(() -> new IllegalArgumentException(
+              "User not found: " + usernameArg));
+      if (assignee.getPerson() == null) {
+        throw new IllegalArgumentException(
+            "User '" + usernameArg + "' has no linked person profile.");
+      }
+      personId = assignee.getPerson().getId();
+    }
+
+    TaskDTO updated = taskService.updateTaskAssignee(taskId, personId);
+    return McpTaskDTO.from(updated);
   }
 
   public McpTaskDTO updateTaskStatus(Map<String, Object> args) {
