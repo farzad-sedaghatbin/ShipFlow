@@ -96,6 +96,37 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.2.1',
+    date: 'June 3, 2026',
+    title: 'MCP Expansion, Bug Fixes & QA Improvements',
+    highlights: [
+      {
+        icon: <Network className="h-5 w-5" />,
+        title: 'MCP Context Aggregator & 12 New Tools',
+        description:
+          'New get_task_context tool returns everything a coding agent needs in one call — task, pitch (Shape Up fields + Figma URL), cycle, siblings, and hints. Plus: whoami, get_test_cases/runs, record_test_run, get/update_bug_reports, update_task_assignee, and get_tasks filters (assigneeId, pitchId, mine).',
+      },
+      {
+        icon: <Wrench className="h-5 w-5" />,
+        title: 'Date Range Filter on Work Logs',
+        description:
+          'From / To date pickers now appear on both the My Logs and Team Logs tabs. The filter runs server-side so it works correctly across paginated pages.',
+      },
+      {
+        icon: <Bug className="h-5 w-5" />,
+        title: 'Pitch Notes & Wireframe Links Fixed',
+        description:
+          'Creating a note on a pitch in IDEA/DRAFT/SHAPED status no longer crashes with a 500 (null cycle NPE). Saving wireframe links or Shape Up fields on a PENDING/ACTIVE pitch no longer gets blocked by a spurious appetite validation 400.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'MEMBER Access Fixed for Bug & Test-Case Writes',
+        description:
+          'QATestManagementController PreAuthorize annotations referenced roles that no longer exist — MEMBER users received 403 on all bug and test-case create/update. Updated to the current MEMBER/MANAGER/ADMIN role model.',
+      },
+    ],
+  },
+  {
     version: '1.2.0',
     date: 'May 23, 2026',
     title: 'Competitor Migration Tooling — Import from Jira, Linear & Asana',

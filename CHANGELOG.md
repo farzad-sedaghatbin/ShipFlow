@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-06-03
+
 ### Added
 - **`update_task_assignee` MCP write tool**: Reassign an existing task to a person (by `assigneeUsername`, `assigneeId`, or `mine: true`) or clear the assignee with `unassign: true`. Previously the only mutation on an existing task was `update_task_status` — agents who needed to reassign had to delete and recreate. Now an agent can answer "find the unassigned bug-fix task in this cycle and take it" in two MCP calls (`get_tasks` + `update_task_assignee`).
 - **MCP tools for the QA domain — test cases and test runs**: New read tools `get_test_cases(taskId | pitchId | cycleId)`, `get_test_case(testCaseId)`, `get_test_runs(testCaseId)` surface acceptance criteria (preconditions, steps, expectedResult) and execution history that were previously invisible to MCP clients despite a full TestCase/TestRun domain existing in the backend. New write tool `record_test_run(testCaseId, status, notes, actualResult, buildVersion, environment)` lets an agent record PASSED/FAILED/BLOCKED/SKIPPED outcomes after verifying. `McpTaskDetailDTO` now carries `testCaseCount`, and `get_task_context` hints prompt the agent to call `get_test_cases` whenever a task has linked criteria.
@@ -24,6 +26,13 @@ All notable changes to this project will be documented in this file.
 - **Auto-created scope position reflects task status**: A scope auto-created for a task was pinned at position 0 regardless of the task's status, so a task added as `IN_PROGRESS`/`DONE` showed no progress on the hill. The initial position is now derived from the task's status.
 - **Misleading DOR/DOD meeting badges**: Badges showed green even when checklist items were unchecked (an untouched all-optional checklist counted as "ready"). Badges now show a `completed/total` count and only turn green when all required items are done with real engagement; partial completion shows amber, untouched shows outline. Applied on both the pitch detail meetings card and the Meeting List table.
 - **Roadmap not showing pitches under orphan epics**: Epics not attached to an initiative rendered an expand control but never listed their pitches. The orphan-epics section now renders pitch rows when expanded, matching the initiative-grouped section.
+- **MEMBER users got 403 on all bug and test-case writes (stale role names)**: `QATestManagementController` `@PreAuthorize` annotations referenced roles that no longer exist (`QA`, `DEVELOPER`, `TEAM_LEAD`, `PROJECT_MANAGER`). Spring never matched them, so every `MEMBER` user got silently rejected. Updated to the current four-role model (`MEMBER`, `MANAGER`, `ADMIN`).
+- **Notes NPE on pitches without a cycle**: `NoteService.setRelatedIds` called `pitch.getCycle().getId()` unconditionally. Pitches in IDEA, DRAFT, or SHAPED status have no cycle assigned, so creating a note on any such pitch threw `NullPointerException → 500`. Added null guard before accessing cycle/team.
+- **Saving wireframe links blocked for PENDING/ACTIVE pitches**: `PitchService.updatePitch` ran the full status validation on every PUT, including in-place Shape Up field edits. If `appetiteDays` was null, saving wireframe links, solution, or any other field on a PENDING/ACTIVE pitch returned 400. Validation is now only applied when the status actually changes.
+- **Document upload: silent failure on unsupported file types**: `DocumentDropZone` silently dropped files outside the allowed list (PDF/DOCX/DOC/TXT/MD) with no feedback. Now shows a 4-second error banner listing the rejected filenames and allowed types.
+- **Work logs date range filter**: Added server-side `fromDate`/`toDate` filters to the times/logs page. Both ends must be set; setting only one is ignored. Filter works across all pages (not just the current paginated page). Date filter inputs appear in both the My Logs and Team Logs filter bars.
+- **Change Role dialog showed `{{username}}` literally**: `UserManagement.tsx` was appending the username as a separate JSX node rather than passing it as an i18n interpolation variable. The Farsi translation was also missing the `{{username}}` placeholder.
+- **`update_task_assignee` MCP tool**: New write tool allowing agents to reassign or unassign existing tasks — by `assigneeUsername`, `assigneeId`, `mine: true`, or `unassign: true`.
 
 ## [1.2.0] - 2026-05-24
 
