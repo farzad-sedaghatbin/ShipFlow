@@ -40,6 +40,7 @@ import {
   Upload,
   FileSpreadsheet,
   FolderInput,
+  Key,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -199,6 +200,7 @@ export default function PublicRoadmap() {
         { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.phase130Item0Title'), description: t('publicRoadmap.phase130Item0Desc') },
         { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase130Item1Title'), description: t('publicRoadmap.phase130Item1Desc') },
         { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase130Item2Title'), description: t('publicRoadmap.phase130Item2Desc') },
+        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.phase130Item3Title'), description: t('publicRoadmap.phase130Item3Desc') },
       ],
     },
     {

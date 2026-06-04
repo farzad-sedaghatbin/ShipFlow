@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Admin API key oversight**: Admins can now see all API keys across the entire organization in the MCP Integration → API Keys tab, including who created each key and when. A new "Created by" column is shown for admins, and admins can revoke any user's key directly. New backend endpoints `GET /api/api-keys/admin` and `DELETE /api/api-keys/admin/{keyId}` are guarded by `@PreAuthorize("hasRole('ADMIN')")`.
+
 ### Improved
 - **AI Risk Advisor now uses full project context**: Risk analysis previously saw only the single pitch in isolation. Two layers of enrichment added:
   - *Layer 1 — Structured DB context*: Each risk analysis now includes the pitch's epic goals and status, initiative/roadmap alignment, sibling pitches in the same epic (with same-team warnings), all other pitches sharing the cycle, and the last 3 risk history snapshots showing trend direction. Same data injected into the Risk Q&A advisor prompts.
