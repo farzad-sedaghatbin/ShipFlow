@@ -99,7 +99,6 @@ const TestCasesPage: React.FC = () => {
   // Apply project-scoped filter reactively so it re-evaluates whenever cycles/pitches load
   const testCases = useMemo(() => {
     if (isAllProjectsSelected || !currentProject) return rawTestCases;
-    const projectCycleIds = new Set(filteredCycles.map(c => c.id));
     const projectPitchIds = new Set(filteredPitches.map(p => p.id));
     return rawTestCases.filter(tc => !tc.pitchId || projectPitchIds.has(tc.pitchId));
   }, [rawTestCases, filteredCycles, filteredPitches, currentProject, isAllProjectsSelected]);
@@ -465,7 +464,7 @@ const TestCasesPage: React.FC = () => {
                       entityId={tc.id}
                       entityTitle={tc.title}
                       onSuccess={() => {
-                        setTestCases(testCases.filter((testCase) => testCase.id !== tc.id));
+                        setRawTestCases(prev => prev.filter((testCase) => testCase.id !== tc.id));
                       }}
                       variant="ghost"
                       size="sm"
