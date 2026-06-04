@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **QA test cases not showing on `/qa/test-cases`**: Three bugs combined to hide all test cases from the list. (1) Race condition: `loadTestCases` and `loadCyclesAndPitches` fired concurrently on page mount; the project-scoped filter ran with `cycles = []` (stale closure), making `projectPitchIds` an empty Set and filtering out every record. After cycles loaded, the list never re-evaluated because `cycles`/`pitches` were absent from the effect dependency array. Fix: moved the project filter out of the async function and into a reactive `useMemo` so it re-evaluates whenever cycles or pitches finish loading. (2) Test cases created without a pitch association were always hidden when a project was selected (`tc.pitchId && ...` short-circuited); changed condition to `!tc.pitchId || projectPitchIds.has(tc.pitchId)` so unassigned test cases are visible. (3) The `findWithFilters` JPQL query in `TestCaseRepository` was missing `AND tc.deletedAt IS NULL`, causing soft-deleted records to reappear whenever any filter was active.
+
 ### Added
 - **Admin API key oversight**: Admins can now see all API keys across the entire organization in the MCP Integration → API Keys tab, including who created each key and when. A new "Created by" column is shown for admins, and admins can revoke any user's key directly. New backend endpoints `GET /api/api-keys/admin` and `DELETE /api/api-keys/admin/{keyId}` are guarded by `@PreAuthorize("hasRole('ADMIN')")`.
 
