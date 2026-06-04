@@ -343,7 +343,12 @@ export default function TaskDetailPage() {
                 {task.parentTaskId && (
                   <span className="text-muted-foreground">└─</span>
                 )}
-                <CardTitle className="text-2xl">{task.title}</CardTitle>
+                <div>
+                  <p className="text-sm font-mono text-muted-foreground mb-0.5">
+                    {task.projectKey ? `${task.projectKey}-${task.id}` : `#${task.id}`}
+                  </p>
+                  <CardTitle className="text-2xl">{task.title}</CardTitle>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={statusOptions.find(s => s.value === task.status)?.variant}>

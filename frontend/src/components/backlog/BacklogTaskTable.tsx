@@ -168,8 +168,11 @@ function SortableTaskRow({
             )}
             <Link
               to={`/backlog/${task.id}`}
-              className="hover:underline cursor-pointer text-primary"
+              className="hover:underline cursor-pointer text-primary flex items-center gap-1.5"
             >
+              <span className="text-muted-foreground font-mono text-xs font-normal shrink-0">
+                {task.projectKey ? `${task.projectKey}-${task.id}` : `#${task.id}`}
+              </span>
               {task.title}
             </Link>
             {task.isBlocked && task.blockedByCount && task.blockedByCount > 0 && (
