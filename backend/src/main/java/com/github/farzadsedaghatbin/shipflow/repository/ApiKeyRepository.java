@@ -27,5 +27,8 @@ public interface ApiKeyRepository extends JpaRepository<ApiKey, Long> {
 
   List<ApiKey> findByUserId(Long userId);
 
+  @Query("SELECT ak FROM ApiKey ak JOIN FETCH ak.user ORDER BY ak.createdAt DESC")
+  List<ApiKey> findAllWithUsers();
+
   boolean existsByKeyHash(String keyHash);
 }

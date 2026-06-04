@@ -45,16 +45,21 @@ import {
 } from '../../services/mcpService';
 import {
   listApiKeys,
+  listAllApiKeys,
   createApiKey,
   revokeApiKey,
+  adminRevokeApiKey,
   ApiKey,
   CreatedApiKey,
 } from '../../services/apiKeyService';
+import { useAuth } from '../../contexts';
 
 const ALL_SCOPES = ['READ', 'WRITE', 'ADMIN'] as const;
 
 export default function McpIntegration() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [tabValue, setTabValue] = useState('github');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -127,7 +132,7 @@ export default function McpIntegration() {
 
     // API keys are independent and non-fatal — a failure here must not blank the page.
     try {
-      setApiKeys(await listApiKeys());
+      setApiKeys(isAdmin ? await listAllApiKeys() : await listApiKeys());
     } catch {
       setApiKeys([]);
     }
@@ -260,7 +265,7 @@ export default function McpIntegration() {
       resetKeyForm();
       setCreatedKey(created);
       setCopied(false);
-      setApiKeys(await listApiKeys());
+      setApiKeys(isAdmin ? await listAllApiKeys() : await listApiKeys());
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.keyCreateError'));
     } finally {
@@ -275,9 +280,9 @@ export default function McpIntegration() {
     setError(null);
     setSuccess(null);
     try {
-      await revokeApiKey(id);
+      isAdmin ? await adminRevokeApiKey(id) : await revokeApiKey(id);
       setSuccess(t('mcpIntegration.keyRevokeSuccess'));
-      setApiKeys(await listApiKeys());
+      setApiKeys(isAdmin ? await listAllApiKeys() : await listApiKeys());
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.keyRevokeError'));
     }
@@ -657,7 +662,11 @@ export default function McpIntegration() {
                     <KeyRound className="h-5 w-5" />
                     {t('mcpIntegration.apiKeysTitle')}
                   </CardTitle>
-                  <CardDescription>{t('mcpIntegration.apiKeysDescription')}</CardDescription>
+                  <CardDescription>
+                    {isAdmin
+                      ? t('mcpIntegration.adminApiKeysDescription')
+                      : t('mcpIntegration.apiKeysDescription')}
+                  </CardDescription>
                 </div>
                 <Button
                   onClick={() => {
@@ -692,6 +701,11 @@ export default function McpIntegration() {
                         <th className="py-2 pr-4 font-medium">
                           {t('mcpIntegration.keyTableCreated')}
                         </th>
+                        {isAdmin && (
+                          <th className="py-2 pr-4 font-medium">
+                            {t('mcpIntegration.keyTableCreatedBy')}
+                          </th>
+                        )}
                         <th className="py-2 pr-4 font-medium">
                           {t('mcpIntegration.keyTableStatus')}
                         </th>
@@ -718,6 +732,7 @@ export default function McpIntegration() {
                           </td>
                           <td className="py-2 pr-4">{formatDate(key.lastUsedAt)}</td>
                           <td className="py-2 pr-4">{formatDate(key.createdAt)}</td>
+                          {isAdmin && <td className="py-2 pr-4">{key.createdByUsername ?? '—'}</td>}
                           <td className="py-2 pr-4">
                             <Badge variant={key.isActive ? 'default' : 'secondary'}>
                               {key.isActive

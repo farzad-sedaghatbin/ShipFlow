@@ -5067,7 +5067,9 @@
     "phase130Item1Title": "MCP write-tools toggle",
     "phase130Item1Desc": "Separately allow connected AI tools to create and update data, with write tools disabled whenever the server is off.",
     "phase130Item2Title": "API key management UI",
-    "phase130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry; the raw key is shown once with a copy button."
+    "phase130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry; the raw key is shown once with a copy button.",
+    "phase130Item3Title": "Admin API key oversight",
+    "phase130Item3Desc": "Admins see all API keys across the organization — who created each one and when — and can revoke any key from the MCP Integration page."
   },
   "releaseNotes": {
     "title": "Release Notes",
@@ -7256,6 +7258,8 @@
     "keyTableScopes": "Scopes",
     "keyTableLastUsed": "Last used",
     "keyTableCreated": "Created",
+    "keyTableCreatedBy": "Created by",
+    "adminApiKeysDescription": "All API keys across the organization. As admin you can revoke any key.",
     "keyTableStatus": "Status",
     "keyTableActions": "Actions",
     "keyStatusActive": "Active",

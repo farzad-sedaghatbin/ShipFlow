@@ -93,6 +93,12 @@ const releases: Release[] = [
         description:
           'Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry. The raw key is shown once with a copy button and a copy-it-now warning.',
       },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Admin API Key Oversight',
+        description:
+          'Admins see all API keys across the organization — who created each one and when — and can revoke any key directly from the MCP Integration → API Keys tab.',
+      },
     ],
   },
   {
