@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Chat Q&A no longer hallucinates cycle/pitch data**: The "Ask about your active cycles" AI chat was returning wrong pitches and confusing cycle display names with database IDs (e.g. a cycle named "Cycle 7" with db id 9 caused the AI to say "there is no Cycle 7"). Four root causes fixed in `QAService`:
+  - *Structured entity context*: For entity-scoped questions (e.g. contextType=cycle), the actual pitches, dates, and phase are now loaded from the DB and injected as `=== STRUCTURED DATA (primary source) ===` before vector search results. The LLM no longer guesses at relational facts.
+  - *ID leak removed*: The system prompt no longer appends `(ID: <n>)` to entity headers. Users and models should never see or reason about internal primary keys.
+  - *Anti-hallucination guardrails*: System prompt now includes 5 strict grounding rules — answer only from provided context, never invent entities, never fabricate missing data, treat cycle names as display labels not IDs, and state uncertainty explicitly.
+  - *cycleId sync*: When `contextType=cycle` and `contextId` is set but `cycleId` is null, they are now synced so the metadata-based vector filter fires correctly for every cycle-scoped question.
+
 ## [1.2.1] - 2026-06-03
 
 ### Added
