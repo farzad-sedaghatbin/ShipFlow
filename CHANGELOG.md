@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Improved
+- **AI Risk Advisor now uses full project context**: Risk analysis previously saw only the single pitch in isolation. Two layers of enrichment added:
+  - *Layer 1 — Structured DB context*: Each risk analysis now includes the pitch's epic goals and status, initiative/roadmap alignment, sibling pitches in the same epic (with same-team warnings), all other pitches sharing the cycle, and the last 3 risk history snapshots showing trend direction. Same data injected into the Risk Q&A advisor prompts.
+  - *Layer 2 — Enriched vector store*: Pitch embeddings now include problem statement, proposed solution, rabbit holes, known risks, no-gos, epic name, and initiative name — making semantic similarity search far more meaningful. Epic embeddings now include per-pitch appetite, cycle assignment, and problem summary. After every AI risk analysis, a `Risk Summary` knowledge item is stored (risk level, score, insights, recommendations) so future analyses can retrieve historical patterns for similar pitches.
+
 ### Fixed
 - **Chat Q&A no longer hallucinates cycle/pitch data**: The "Ask about your active cycles" AI chat was returning wrong pitches and confusing cycle display names with database IDs (e.g. a cycle named "Cycle 7" with db id 9 caused the AI to say "there is no Cycle 7"). Four root causes fixed in `QAService`:
   - *Structured entity context*: For entity-scoped questions (e.g. contextType=cycle), the actual pitches, dates, and phase are now loaded from the DB and injected as `=== STRUCTURED DATA (primary source) ===` before vector search results. The LLM no longer guesses at relational facts.
