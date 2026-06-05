@@ -5,12 +5,18 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.2.0 — "Competitor Migration Tooling"
+## Current Milestone: v1.3.0 — "MCP Server Admin & API Keys"
 
-**Current version**: v1.2.1 (released 2026-06-03)
+**Current version**: v1.3.0 (released 2026-06-05)
 **All PRs target**: `main` branch
 
 ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Next: competitor migration tooling (v1.2.0) — CSV import → Linear API → Jira API. Always import into Kanban by default; teams adopt Shape Up/Scrum at their own pace.
+
+### v1.3.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S31 | MCP server admin toggle + API key management UI — DB-backed runtime toggle, write-tools toggle, API key CRUD with scopes/expiry, admin oversight | ✅ done |
 
 ### v1.2.0 session map
 
