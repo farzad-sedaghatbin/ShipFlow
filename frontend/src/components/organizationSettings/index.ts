@@ -9,3 +9,4 @@ export { MeetingsSettingsTab } from './MeetingsSettingsTab';
 export { FeaturesSettingsTab } from './FeaturesSettingsTab';
 export { EmailSettingsTab } from './EmailSettingsTab';
 export { SsoSettingsTab } from './SsoSettingsTab';
+export { ScimSettingsTab } from './ScimSettingsTab';

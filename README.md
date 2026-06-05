@@ -46,7 +46,7 @@ docker compose up -d
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
 | **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
-| **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching |
+| **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---

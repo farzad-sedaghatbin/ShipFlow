@@ -52,6 +52,8 @@ public class User {
   @JoinColumn(name = "identity_provider_id")
   private IdentityProvider identityProvider;
 
+  // --- SCIM / SSO provisioning fields (V2026_06_06_0001) ---
+
   @Column(name = "external_user_id", length = 500)
   private String externalUserId;
 

@@ -36,6 +36,7 @@ import {
   FeaturesSettingsTab,
   EmailSettingsTab,
   SsoSettingsTab,
+  ScimSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -226,6 +227,7 @@ export default function OrganizationSettingsPage() {
           <TabsTrigger value="features"><Sparkles className="h-4 w-4 mr-1" />{t('organizationSettings.features')}</TabsTrigger>
           <TabsTrigger value="email"><Mail className="h-4 w-4 mr-1" />{t('emailSettings.title')}</TabsTrigger>
           <TabsTrigger value="sso"><Shield className="h-4 w-4 mr-1" />{t('sso.tabLabel')}</TabsTrigger>
+          <TabsTrigger value="scim"><Shield className="h-4 w-4 mr-1" />{t('scim.title')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -270,6 +272,10 @@ export default function OrganizationSettingsPage() {
 
         <TabsContent value="sso" className="space-y-4">
           <SsoSettingsTab />
+        </TabsContent>
+
+        <TabsContent value="scim" className="space-y-4">
+          <ScimSettingsTab formData={formData} setFormData={setFormData} />
         </TabsContent>
       </Tabs>
 

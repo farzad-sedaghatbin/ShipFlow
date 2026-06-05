@@ -7732,5 +7732,21 @@
     "noToken": "No authentication token received. Please try signing in again.",
     "processingError": "An error occurred while completing sign-in. Please try again.",
     "backToLogin": "Back to login"
+  },
+  "scim": {
+    "title": "SCIM Provisioning",
+    "enabled": "SCIM 2.0 Enabled",
+    "enabledDesc": "Allow identity providers to automatically provision and deprovision user accounts via the SCIM 2.0 protocol.",
+    "generateToken": "Generate Bearer Token",
+    "generating": "Generating...",
+    "generateTokenFailed": "Failed to generate SCIM token.",
+    "tokenWarning": "Save this token now — it will not be shown again after you close this dialog.",
+    "copyToken": "Bearer Token",
+    "tokenCopied": "Token copied to clipboard.",
+    "copyFailed": "Failed to copy token.",
+    "tokenSaved": "I have saved the token",
+    "tokenDialogTitle": "SCIM Bearer Token",
+    "noTokenGenerated": "No token has been generated yet. Generate a token to enable SCIM provisioning from your identity provider.",
+    "endpointLabel": "SCIM 2.0 Base URL"
   }
 }
