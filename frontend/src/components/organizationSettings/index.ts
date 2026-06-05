@@ -8,3 +8,4 @@ export { CategoriesSettingsTab } from './CategoriesSettingsTab';
 export { MeetingsSettingsTab } from './MeetingsSettingsTab';
 export { FeaturesSettingsTab } from './FeaturesSettingsTab';
 export { EmailSettingsTab } from './EmailSettingsTab';
+export { ScimSettingsTab } from './ScimSettingsTab';

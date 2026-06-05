@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added (v1.4.0 S34 — SCIM 2.0 User Provisioning)
+- **SCIM 2.0 backend**: Full RFC 7643/7644 implementation at `/scim/v2/Users` — `GET` (paginated list), `GET /{id}`, `POST` (create), `PUT` (replace), `PATCH` (deactivate/reactivate via `op=replace active=`), `DELETE` (soft-delete). Bearer-token auth with SHA-256 hashed token storage — raw token shown once at generation.
+- **SCIM audit log**: Every provisioning event (USER_CREATED, USER_UPDATED, USER_DEACTIVATED, USER_REACTIVATED, USER_DELETED) written to `scim_audit_log` table.
+- **`POST /api/admin/settings/scim/generate-token`**: ADMIN-only endpoint that generates a cryptographically random 32-byte bearer token, stores its SHA-256 hash, and returns the raw value once.
+- **SCIM Settings tab** in Organization Settings: enable/disable SCIM toggle, "Generate Token" button with a one-time display dialog (copy button + "save now" warning), SCIM 2.0 base URL display.
+- **`ProvisionedVia` enum**: LOCAL, SAML2, OIDC, SCIM — records how each user account was provisioned.
+- **Flyway migration `V2026_06_06_0001`**: Adds `external_user_id` + `provisioned_via` to `users`, adds `scim_enabled` + `scim_bearer_token` + `scim_token_hash` to `organization_settings`, creates `scim_audit_log` table.
+
 ## [1.3.0] - 2026-06-05
 
 ### Added

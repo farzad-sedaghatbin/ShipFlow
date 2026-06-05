@@ -164,7 +164,7 @@ ShipFlow's self-hosted model gives unlimited users at infrastructure cost only.
 Be honest with evaluators:
 
 - **You don't practice Shape Up** — ShipFlow is optimised for it. A general Kanban team may be happier with Linear or Shortcut.
-- **You need enterprise SSO/SAML today** — not yet implemented (planned).
+- **You need enterprise SSO/SAML today** — SCIM 2.0 auto-provisioning is now live (v1.4.0). Full SAML2/OIDC SSO is also in progress for v1.4.0.
 - **You need a mobile app** — ShipFlow is web-first; mobile is responsive but not a native app.
 - **You need thousands of plugins** — Jira's plugin ecosystem is unmatched.
 - **You need non-technical stakeholder tools** (timesheets, resource planning) — Asana/Monday win here. ShipFlow now has interactive Gantt-style timeline bars for initiatives and epics, but not full resource planning.

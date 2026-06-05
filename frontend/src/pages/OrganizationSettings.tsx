@@ -14,6 +14,7 @@ import {
   Palette,
   Bug,
   Mail,
+  Shield,
 } from 'lucide-react';
 import { useToast } from '../contexts';
 import { organizationSettingsService } from '../services/organizationSettingsService';
@@ -34,6 +35,7 @@ import {
   MeetingsSettingsTab,
   FeaturesSettingsTab,
   EmailSettingsTab,
+  ScimSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -223,6 +225,7 @@ export default function OrganizationSettingsPage() {
           <TabsTrigger value="meetings"><Calendar className="h-4 w-4 mr-1" />{t('organizationSettings.meetingTypes')}</TabsTrigger>
           <TabsTrigger value="features"><Sparkles className="h-4 w-4 mr-1" />{t('organizationSettings.features')}</TabsTrigger>
           <TabsTrigger value="email"><Mail className="h-4 w-4 mr-1" />{t('emailSettings.title')}</TabsTrigger>
+          <TabsTrigger value="scim"><Shield className="h-4 w-4 mr-1" />{t('scim.title')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -263,6 +266,10 @@ export default function OrganizationSettingsPage() {
 
         <TabsContent value="email" className="space-y-4">
           <EmailSettingsTab formData={formData} setFormData={setFormData} />
+        </TabsContent>
+
+        <TabsContent value="scim" className="space-y-4">
+          <ScimSettingsTab formData={formData} setFormData={setFormData} />
         </TabsContent>
       </Tabs>
 
