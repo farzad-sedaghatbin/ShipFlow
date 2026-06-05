@@ -5078,7 +5078,16 @@
     "shipped130Item2Title": "API Key Management UI",
     "shipped130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry. The raw key is shown once with a copy button.",
     "shipped130Item3Title": "Admin API Key Oversight",
-    "shipped130Item3Desc": "Admins see all API keys across the organization — who created each one and when — and can revoke any key from the MCP Integration page."
+    "shipped130Item3Desc": "Admins see all API keys across the organization — who created each one and when — and can revoke any key from the MCP Integration page.",
+    "phase140Theme": "Enterprise Auth & UX Depth",
+    "phase140Item0Title": "SSO / SAML 2.0 & OIDC",
+    "phase140Item0Desc": "Enterprise sign-in via Okta, Keycloak, Auth0, or Azure AD with just-in-time provisioning and SSO enforcement mode.",
+    "phase140Item1Title": "SCIM 2.0 user sync",
+    "phase140Item1Desc": "Automatic user create/deactivate from your IdP group — no manual user management required.",
+    "phase140Item2Title": "Interactive roadmap timeline",
+    "phase140Item2Desc": "Drag to move or resize Gantt bars for epics and initiatives. Progress indicators and one-click date assignment.",
+    "phase140Item3Title": "UX polish & retrospective templates",
+    "phase140Item3Desc": "Inline pitch editing, structured retrospective templates (Went Well / Improve / Action Items), i18n fix sweep, and keyboard shortcut overlay."
   },
   "releaseNotes": {
     "title": "Release Notes",

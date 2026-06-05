@@ -12,6 +12,7 @@ import {
   Command,
   RefreshCw,
   Shield,
+  Users,
   Activity,
   FileText,
   Layout,
@@ -204,14 +205,14 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.0.1',
-      theme: t('publicRoadmap.phase101Theme'),
-      status: 'planned',
+      version: 'v1.4.0',
+      theme: t('publicRoadmap.phase140Theme'),
+      status: 'in-progress',
       items: [
-        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.phase101Item0Title'), description: t('publicRoadmap.phase101Item0Desc') },
-        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.phase101Item1Title'), description: t('publicRoadmap.phase101Item1Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase101Item2Title'), description: t('publicRoadmap.phase101Item2Desc') },
-        { icon: <Bug className="h-5 w-5" />, title: t('publicRoadmap.phase101Item3Title'), description: t('publicRoadmap.phase101Item3Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase140Item0Title'), description: t('publicRoadmap.phase140Item0Desc') },
+        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase140Item1Title'), description: t('publicRoadmap.phase140Item1Desc') },
+        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.phase140Item2Title'), description: t('publicRoadmap.phase140Item2Desc') },
+        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.phase140Item3Title'), description: t('publicRoadmap.phase140Item3Desc') },
       ],
     },
   ];
