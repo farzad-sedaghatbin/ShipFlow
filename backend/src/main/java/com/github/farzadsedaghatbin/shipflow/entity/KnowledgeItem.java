@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.entity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import lombok.*;
 
 /**
@@ -94,6 +95,10 @@ public class KnowledgeItem {
 
   @Column(nullable = false)
   private LocalDateTime updatedAt;
+
+  /** Soft-delete timestamp. Null means active. */
+  @Column(name = "deleted_at")
+  private OffsetDateTime deletedAt;
 
   @PrePersist
   protected void onCreate() {
