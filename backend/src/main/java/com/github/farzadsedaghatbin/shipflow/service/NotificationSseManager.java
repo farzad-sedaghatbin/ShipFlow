@@ -102,6 +102,28 @@ public class NotificationSseManager {
   }
 
   /**
+   * Broadcast an SSE event to every active subscriber. Used for app-wide events (e.g. Knowledge
+   * Center updates) that are not targeted at a single user.
+   *
+   * <p>If sending to an individual emitter fails, that emitter is removed but the broadcast
+   * continues for the remaining subscribers.
+   *
+   * @param eventName the SSE event name (used by the browser EventSource listener)
+   * @param payload   the payload to serialise as JSON
+   */
+  public void broadcast(String eventName, Object payload) {
+    emitters.forEach((userId, emitter) -> {
+      try {
+        emitter.send(SseEmitter.event().name(eventName).data(payload, MediaType.APPLICATION_JSON));
+      } catch (Exception e) {
+        log.debug("SSE broadcast failed for user {} on event {} — removing stale emitter: {}",
+            userId, eventName, e.getMessage());
+        emitters.remove(userId, emitter);
+      }
+    });
+  }
+
+  /**
    * Number of currently active SSE streams. Useful for monitoring/metrics.
    *
    * @return count of open emitters
