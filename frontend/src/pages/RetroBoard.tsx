@@ -17,6 +17,7 @@ import {
   Merge,
   Loader2,
   Rocket,
+  LayoutTemplate,
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
 import { ActOnRetroItemsDialog } from '../components/ActOnRetroItemsDialog';
@@ -44,7 +45,51 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 import { useToast } from '../contexts';
+
+// Retro template definitions
+interface RetroTemplate {
+  key: string;
+  titleKey: string;
+  columns: { type: RetroColumnType; emoji: string; color: string; titleKey: string }[];
+}
+
+const RETRO_TEMPLATES: RetroTemplate[] = [
+  {
+    key: 'went_well',
+    titleKey: 'retroBoardTemplates.templateWentWell',
+    columns: [
+      { type: 'WENT_WELL', emoji: '✅', color: 'border-green-500', titleKey: 'retroBoardPage.wentWell' },
+      { type: 'DID_NOT_GO_WELL', emoji: '⚠️', color: 'border-orange-500', titleKey: 'retroBoardPage.didNotGoWell' },
+      { type: 'ACTIONS', emoji: '🧾', color: 'border-purple-500', titleKey: 'retroBoardPage.actions' },
+    ],
+  },
+  {
+    key: 'start_stop_continue',
+    titleKey: 'retroBoardTemplates.templateStartStopContinue',
+    columns: [
+      { type: 'WENT_WELL', emoji: '▶️', color: 'border-green-500', titleKey: 'retroBoardPage.wentWell' },
+      { type: 'DID_NOT_GO_WELL', emoji: '⏹️', color: 'border-red-500', titleKey: 'retroBoardPage.didNotGoWell' },
+      { type: 'TRY_NEXT', emoji: '🔄', color: 'border-blue-500', titleKey: 'retroBoardPage.tryNext' },
+    ],
+  },
+  {
+    key: '4ls',
+    titleKey: 'retroBoardTemplates.template4Ls',
+    columns: [
+      { type: 'WENT_WELL', emoji: '❤️', color: 'border-green-500', titleKey: 'retroBoardPage.wentWell' },
+      { type: 'TRY_NEXT', emoji: '📚', color: 'border-blue-500', titleKey: 'retroBoardPage.tryNext' },
+      { type: 'DID_NOT_GO_WELL', emoji: '😕', color: 'border-orange-500', titleKey: 'retroBoardPage.didNotGoWell' },
+      { type: 'ACTIONS', emoji: '💭', color: 'border-purple-500', titleKey: 'retroBoardPage.actions' },
+    ],
+  },
+];
 
 const columns: { type: RetroColumnType; title: string; emoji: string; color: string }[] = [
   { type: 'WENT_WELL', title: '', emoji: '✅', color: 'border-green-500' },
@@ -86,6 +131,7 @@ export default function RetroBoard() {
     columnType: null,
   });
   const [actOnItemsDialog, setActOnItemsDialog] = useState(false);
+  const [templateConfirmDialog, setTemplateConfirmDialog] = useState<RetroTemplate | null>(null);
 
   const { user } = useAuth();
   const canManageRetro = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
@@ -209,6 +255,27 @@ export default function RetroBoard() {
     setMergeDialog({ open: true, sourceItem, columnType: sourceItem.columnType });
   };
 
+  const handleSelectTemplate = (template: RetroTemplate) => {
+    if (items.length > 0) {
+      setTemplateConfirmDialog(template);
+    } else {
+      applyTemplate(template);
+    }
+  };
+
+  const applyTemplate = async (_template: RetroTemplate) => {
+    if (!retro) return;
+    try {
+      // Delete all existing items
+      await Promise.all(items.map((item) => retroService.deleteItem(item.id)));
+      setItems([]);
+      showSuccess(t('retroBoardTemplates.templateApplied'));
+    } catch (error) {
+      showError(t('retroBoardPage.saveFailed'));
+    }
+    setTemplateConfirmDialog(null);
+  };
+
   const handleOpenRetro = async () => {
     if (!retro) return;
     try {
@@ -316,6 +383,26 @@ export default function RetroBoard() {
             )}
           </div>
           <div className="flex gap-2">
+            {!isReadOnly && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <LayoutTemplate className="mr-2 h-4 w-4" />
+                    {t('retroBoardTemplates.useTemplate')}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {RETRO_TEMPLATES.map((template) => (
+                    <DropdownMenuItem
+                      key={template.key}
+                      onClick={() => handleSelectTemplate(template)}
+                    >
+                      {t(template.titleKey)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {retro.status === 'DRAFT' && (
               <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={handleOpenRetro}>
                 <Play className="mr-2 h-4 w-4" />
@@ -450,7 +537,7 @@ export default function RetroBoard() {
                                 </Badge>
                               )}
                               <span className="text-xs text-muted-foreground">
-                                {item.authorName || 'Anonymous'}
+                                {item.authorName || t('common.anonymous')}
                               </span>
                             </div>
                             {!isReadOnly && (
@@ -569,7 +656,7 @@ export default function RetroBoard() {
                     >
                       <p className="text-sm">{targetItem.content}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {targetItem.voteCount || 0} votes • by {targetItem.authorName || 'Anonymous'}
+                        {t('common.votesByAuthor', { votes: targetItem.voteCount || 0, author: targetItem.authorName || t('common.anonymous') })}
                       </p>
                     </button>
                   ))}
@@ -607,6 +694,35 @@ export default function RetroBoard() {
             }}
           />
         )}
+
+        {/* Template Confirmation Dialog */}
+        <Dialog
+          open={!!templateConfirmDialog}
+          onOpenChange={(open) => { if (!open) setTemplateConfirmDialog(null); }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('retroBoardTemplates.templateConfirmReplace')}</DialogTitle>
+              <DialogDescription>
+                {t('retroBoardTemplates.templateConfirmReplaceDesc')}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setTemplateConfirmDialog(null)}
+              >
+                {t('retroBoardTemplates.templateConfirmNo')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => { if (templateConfirmDialog) applyTemplate(templateConfirmDialog); }}
+              >
+                {t('retroBoardTemplates.templateConfirmYes')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );

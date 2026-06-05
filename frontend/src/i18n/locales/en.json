@@ -107,7 +107,9 @@
     "saving": "Saving...",
     "noResults": "No results found",
     "new": "New",
-    "noData": "No data available"
+    "noData": "No data available",
+    "anonymous": "Anonymous",
+    "votesByAuthor": "{{votes}} votes by {{author}}"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -4511,7 +4513,8 @@
       "notes": "Notes (optional)",
       "notesPlaceholder": "What did you work on?",
       "confirm": "Stop & Log Time"
-    }
+    },
+    "loadingTask": "Loading task..."
   },
   "bettingTablePage": {
     "title": "Betting Table",
@@ -5270,7 +5273,20 @@
     "testCaseUpdated": "Test case updated successfully",
     "saveFailed": "Failed to save test case",
     "pitchLoadFailed": "Failed to load pitches",
-    "scopeLoadFailed": "Failed to load scopes"
+    "scopeLoadFailed": "Failed to load scopes",
+    "noSpecificScope": "No specific scope",
+    "noScopesFound": "No scopes found",
+    "typeToSearchScopes": "Type to search scopes",
+    "scopesAvailable": "{{count}} scopes available for selected pitch",
+    "refineSearch": "Showing first {{shown}} of {{total}} results. Refine your search.",
+    "noRelatedTask": "No related task",
+    "noTasksFound": "No tasks found",
+    "typeToSearchTasks": "Type to search tasks",
+    "relatedTask": "Related Task (optional)",
+    "selectType": "Select type",
+    "selectPriority": "Select priority",
+    "selectStatus": "Select status",
+    "minCharsForSearch": "Type at least 3 characters to search"
   },
   "testRun": {
     "loadFailed": "Failed to load test run",
@@ -7639,5 +7655,41 @@
       "keep": "Keep Timer",
       "discard": "Discard Timer"
     }
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "pressToOpen": "Press ? to open this panel",
+    "navigation": "Navigation",
+    "actions": "Actions",
+    "view": "View",
+    "general": "General",
+    "navDashboard": "Go to Dashboard",
+    "navProjects": "Go to Projects",
+    "navRoadmap": "Go to Roadmap",
+    "navBacklog": "Go to Backlog",
+    "navCycles": "Go to Cycles",
+    "navPitches": "Go to Pitches",
+    "navMeetings": "Go to Meetings",
+    "navReports": "Go to Reports",
+    "navHealth": "Go to Health Overview",
+    "createNew": "Create New Cycle",
+    "logWork": "Log Work",
+    "openSearch": "Open Search (Cmd+K / Ctrl+K)",
+    "closedialog": "Close Dialog / Cancel",
+    "showShortcuts": "Show Keyboard Shortcuts",
+    "view1": "Board View",
+    "view2": "List View",
+    "view3": "Gantt / Timeline View"
+  },
+  "retroBoardTemplates": {
+    "useTemplate": "Use Template",
+    "templateWentWell": "Went Well / Improve / Action Items",
+    "templateStartStopContinue": "Start / Stop / Continue",
+    "template4Ls": "4Ls: Liked / Learned / Lacked / Longed For",
+    "templateConfirmReplace": "Replace existing board columns?",
+    "templateConfirmReplaceDesc": "The board already has items. Applying a template will clear all existing items and replace the column structure. This action cannot be undone.",
+    "templateApplied": "Template applied successfully",
+    "templateConfirmYes": "Apply Template",
+    "templateConfirmNo": "Keep Existing"
   }
 }

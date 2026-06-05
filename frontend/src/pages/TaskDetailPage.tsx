@@ -311,7 +311,7 @@ export default function TaskDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading task...</div>
+        <div className="text-muted-foreground">{t('taskDetailPage.loadingTask')}</div>
       </div>
     );
   }
