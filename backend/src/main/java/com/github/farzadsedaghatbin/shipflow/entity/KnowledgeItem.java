@@ -81,6 +81,14 @@ public class KnowledgeItem {
   @Column(length = 64)
   private String contentHash;
 
+  /** Optional link to the KnowledgeSource this item was ingested from. */
+  @Column(name = "knowledge_source_id")
+  private Long knowledgeSourceId;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "knowledge_source_id", insertable = false, updatable = false)
+  private KnowledgeSource knowledgeSource;
+
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
