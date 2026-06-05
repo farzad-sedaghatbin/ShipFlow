@@ -298,6 +298,25 @@
             <artifactId>commons-csv</artifactId>
             <version>1.11.0</version>
         </dependency>
+
+        <!-- Apache Tika — text extraction for Knowledge Center file uploads -->
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers-standard-package</artifactId>
+            <version>2.9.2</version>
+        </dependency>
+
+        <!-- Jsoup — HTML parsing for Knowledge Center URL provider -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
     </dependencies>
 
     <profiles>
