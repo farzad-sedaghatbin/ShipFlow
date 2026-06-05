@@ -34,7 +34,6 @@ import {
   Network,
   Pencil,
   GripHorizontal,
-  Bug,
   TrendingDown,
   Gauge,
   Target,
