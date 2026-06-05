@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, LogIn, Info } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Info, KeyRound } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth, useToast } from '../contexts';
 import { authService } from '../services/authService';
+import { getEnabledProviders, initiateSSO } from '../services/ssoService';
 import { LoginIllustration } from '../components/illustrations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +30,26 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState<number | null>(null);
+
+  // Fetch SSO providers — silently ignore errors (no SSO configured is fine)
+  const { data: ssoProviders = [] } = useQuery({
+    queryKey: ['sso-providers-public'],
+    queryFn: getEnabledProviders,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleSsoLogin = async (idpId: number) => {
+    setSsoLoading(idpId);
+    try {
+      const result = await initiateSSO(idpId);
+      window.location.href = result.redirectUrl;
+    } catch {
+      setServerError(t('login.ssoError'));
+      setSsoLoading(null);
+    }
+  };
 
   const {
     register,
@@ -191,6 +213,38 @@ export default function Login() {
                 {loading && t('common.loading')}
               </Button>
             </form>
+
+            {/* SSO Provider Buttons */}
+            {ssoProviders.length > 0 && (
+              <>
+                <div className="relative my-6">
+                  <Separator />
+                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                    {t('login.orSignInWith')}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {ssoProviders.map((provider) => (
+                    <Button
+                      key={provider.id}
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={ssoLoading !== null}
+                      loading={ssoLoading === provider.id}
+                      onClick={() => handleSsoLogin(provider.id)}
+                    >
+                      {ssoLoading !== provider.id && (
+                        <KeyRound className="h-4 w-4 mr-2" />
+                      )}
+                      {ssoLoading === provider.id
+                        ? t('login.ssoLoading')
+                        : t('login.ssoButton', { name: provider.name })}
+                    </Button>
+                  ))}
+                </div>
+              </>
+            )}
 
             <div className="relative my-6">
               <Separator />

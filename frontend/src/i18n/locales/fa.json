@@ -3077,7 +3077,11 @@
     "tagline": "چرخه‌ها را پیگیری کنید، پیچ‌ها را مدیریت کنید و پیشرفت را با نمودارهای تپه تجسم کنید",
     "title": "ورود",
     "username": "نام کاربری",
-    "welcomeBack": "خوش آمدید!"
+    "welcomeBack": "خوش آمدید!",
+    "orSignInWith": "یا با این موارد وارد شوید",
+    "ssoButton": "ادامه با {{name}}",
+    "ssoLoading": "در حال هدایت…",
+    "ssoError": "شروع ورود SSO ناموفق بود. لطفاً دوباره تلاش کنید."
   },
   "meetingDocuments": {
     "close": "بستن",
@@ -6726,5 +6730,42 @@
     "templateApplied": "قالب با موفقیت اعمال شد",
     "templateConfirmYes": "اعمال قالب",
     "templateConfirmNo": "نگه داشتن موجود"
+  },
+  "sso": {
+    "tabLabel": "SSO",
+    "title": "ورود یکپارچه (SSO)",
+    "subtitle": "ارائه‌دهندگان هویت را برای ورود SSO سازمان خود پیکربندی کنید",
+    "addProvider": "افزودن ارائه‌دهنده",
+    "editProvider": "ویرایش ارائه‌دهنده",
+    "providerName": "نام ارائه‌دهنده",
+    "providerType": "نوع ارائه‌دهنده",
+    "oidc": "OpenID Connect (OIDC)",
+    "saml2": "SAML 2.0",
+    "clientId": "شناسه کلاینت",
+    "clientSecret": "رمز کلاینت",
+    "clientSecretPlaceholder": "برای نگه‌داشتن رمز فعلی خالی بگذارید",
+    "metadataUrl": "آدرس متادیتا / Discovery",
+    "entityId": "شناسه موجودیت",
+    "ssoUrl": "آدرس SSO",
+    "certificate": "گواهینامه X.509",
+    "enabled": "فعال",
+    "enforceSso": "اجبار SSO",
+    "enforceSsoWarning": "وقتی «اجبار SSO» فعال است، کاربران بدون حساب SSO نمی‌توانند با رمز عبور وارد شوند.",
+    "enforceSsoActive": "اجبار SSO: فعال",
+    "noProviders": "هنوز ارائه‌دهنده هویتی پیکربندی نشده است",
+    "deleteConfirmTitle": "حذف ارائه‌دهنده هویت",
+    "deleteConfirm": "آیا مطمئن هستید که می‌خواهید ارائه‌دهنده «{{name}}» را حذف کنید؟ این عمل قابل بازگشت نیست.",
+    "saveSuccess": "ارائه‌دهنده هویت ذخیره شد",
+    "saveFailed": "ذخیره ارائه‌دهنده هویت ناموفق بود",
+    "deleteSuccess": "ارائه‌دهنده هویت حذف شد",
+    "deleteFailed": "حذف ارائه‌دهنده هویت ناموفق بود",
+    "statusEnabled": "فعال",
+    "statusDisabled": "غیرفعال"
+  },
+  "ssoCallback": {
+    "processing": "در حال تکمیل ورود…",
+    "noToken": "توکن احراز هویتی دریافت نشد. لطفاً دوباره تلاش کنید.",
+    "processingError": "خطایی در تکمیل ورود رخ داد. لطفاً دوباره تلاش کنید.",
+    "backToLogin": "بازگشت به صفحه ورود"
   }
 }

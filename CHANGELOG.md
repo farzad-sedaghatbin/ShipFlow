@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **SSO Frontend (S33)**: Full identity-provider management UI for admins under Organization Settings → SSO tab. Supports OIDC and SAML 2.0 providers via a form dialog with provider-type-conditional fields (client ID/secret/discovery URL for OIDC; entity ID/SSO URL/certificate for SAML 2.0). Enabled/Disabled toggle and Enforce SSO toggle (with a destructive warning). Edit/Delete actions via Radix DropdownMenu. Admin CRUD routes backed by `ssoService.ts`.
+- **SSO Login buttons**: The Login page now queries `GET /api/sso/providers` on mount; if any enabled identity providers exist a "or sign in with" divider and one button per provider are shown. Clicking initiates the SSO flow via `GET /api/sso/initiate/{idpId}` and redirects the browser to the IdP.
+- **SSO Callback page** (`/sso-callback`): Public route that processes the JWT from `?token=` query param returned by the backend after a successful IdP redirect, stores it in AuthContext, and navigates to the intended deep-link (`?redirect=`) or `/dashboard`.
+- **S37a — Deep-link routing review**: Confirmed all detail routes (`/pitches/:id`, `/backlog/:taskId`, `/cycles/:cycleId`, etc.) are flat top-level registrations that work as direct deep links. ProjectContext bootstraps from localStorage and re-hydrates from the API; pages that require a project use a `<ProjectRequiredDialog>` guard rather than redirect, preserving the URL. No routing changes required; review comment added to `App.tsx`.
+
 ## [1.3.0] - 2026-06-05
 
 ### Added
