@@ -1420,7 +1420,11 @@
     "invalidCredentials": "Invalid username or password",
     "loginSuccess": "Welcome back! Login successful.",
     "shapeUpProjects": "Shape Up Your Projects",
-    "tagline": "Track cycles, manage pitches, and visualize progress with hill charts"
+    "tagline": "Track cycles, manage pitches, and visualize progress with hill charts",
+    "orSignInWith": "or sign in with",
+    "ssoButton": "Continue with {{name}}",
+    "ssoLoading": "Redirecting…",
+    "ssoError": "Failed to initiate SSO login. Please try again."
   },
   "people": {
     "title": "People Management",
@@ -7639,5 +7643,42 @@
       "keep": "Keep Timer",
       "discard": "Discard Timer"
     }
+  },
+  "sso": {
+    "tabLabel": "SSO",
+    "title": "Single Sign-On (SSO)",
+    "subtitle": "Configure identity providers to allow SSO login for your organization",
+    "addProvider": "Add Provider",
+    "editProvider": "Edit Provider",
+    "providerName": "Provider Name",
+    "providerType": "Provider Type",
+    "oidc": "OpenID Connect (OIDC)",
+    "saml2": "SAML 2.0",
+    "clientId": "Client ID",
+    "clientSecret": "Client Secret",
+    "clientSecretPlaceholder": "Leave blank to keep existing secret",
+    "metadataUrl": "Metadata / Discovery URL",
+    "entityId": "Entity ID",
+    "ssoUrl": "SSO URL",
+    "certificate": "X.509 Certificate",
+    "enabled": "Enabled",
+    "enforceSso": "Enforce SSO",
+    "enforceSsoWarning": "When Enforce SSO is active, users without an SSO account will be unable to log in with a password.",
+    "enforceSsoActive": "Enforce SSO: ON",
+    "noProviders": "No identity providers configured yet",
+    "deleteConfirmTitle": "Delete Identity Provider",
+    "deleteConfirm": "Are you sure you want to delete the provider \"{{name}}\"? This cannot be undone.",
+    "saveSuccess": "Identity provider saved",
+    "saveFailed": "Failed to save identity provider",
+    "deleteSuccess": "Identity provider deleted",
+    "deleteFailed": "Failed to delete identity provider",
+    "statusEnabled": "Enabled",
+    "statusDisabled": "Disabled"
+  },
+  "ssoCallback": {
+    "processing": "Completing sign-in…",
+    "noToken": "No authentication token received. Please try signing in again.",
+    "processingError": "An error occurred while completing sign-in. Please try again.",
+    "backToLogin": "Back to login"
   }
 }

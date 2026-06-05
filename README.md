@@ -373,6 +373,12 @@ docker compose up -d
   - **Roadmap Context Integration**: Uses Epic/Initiative relationships for extensibility recommendations
   - **Context Availability Warnings**: Transparent feedback when context sources are missing
   - Configurable via Organization Settings with per-org Figma token storage
+- **SSO / Enterprise Auth (v1.4.0)**: Single Sign-On support via SAML 2.0 and OIDC
+  - Admin UI under Organization Settings → SSO tab: add/edit/delete identity providers (Okta, Azure AD, Keycloak, Auth0, etc.)
+  - Provider-type-conditional config form (OIDC: client ID / secret / discovery URL; SAML 2.0: entity ID / SSO URL / certificate)
+  - Enforce SSO toggle: blocks password login when enabled (with destructive warning in the UI)
+  - Login page auto-discovers enabled providers and shows "Continue with …" buttons
+  - `/sso-callback` public route processes JWT from IdP redirect and logs the user in
 - **MCP Server (AI Editor Integration)**: Use ShipFlow data directly from your AI coding assistant — no context switching
   - Works with **Claude Code**, **Cursor**, **Claude Desktop**, **GitHub Copilot**, and any MCP-compatible client
   - **Opt-in** — disabled by default; enable with `MCP_SERVER_ENABLED=true` **or** flip the runtime toggle in the UI (Integrations → MCP → "MCP Server" tab, no restart). Manage API keys from the "API Keys" tab.
