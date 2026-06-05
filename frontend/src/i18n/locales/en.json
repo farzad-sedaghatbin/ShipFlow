@@ -6943,6 +6943,10 @@
     "reportsOverview": {
       "title": "Reports & Analytics",
       "description": "Track cycle velocity, task completion rates, and team performance. Export reports for stakeholder updates."
+    },
+    "knowledgeCenter": {
+      "title": "Knowledge Center",
+      "description": "Upload docs or paste links here — they feed every AI feature."
     }
   },
   "aria": {
