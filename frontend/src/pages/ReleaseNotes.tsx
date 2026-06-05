@@ -45,6 +45,8 @@ import {
   Network,
   Pencil,
   GripHorizontal,
+  ClipboardList,
+  Keyboard,
   Workflow,
   TrendingDown,
   Gauge,
@@ -69,6 +71,44 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.4.0',
+    date: 'In Development',
+    title: 'Enterprise Auth & UX Depth',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'SSO / SAML 2.0 & OIDC',
+        description: 'Sign in via Okta, Keycloak, Auth0, or Azure AD. SAML 2.0 and OIDC both supported. Just-in-time user provisioning and SSO enforcement mode for enterprise instances.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'SCIM 2.0 User Provisioning',
+        description: 'Automatically create and deactivate users when they join or leave your identity provider group — no manual user management.',
+      },
+      {
+        icon: <GripHorizontal className="h-5 w-5" />,
+        title: 'Interactive Roadmap Timeline',
+        description: 'Drag to move or resize epic and initiative bars on the roadmap. Progress indicators shown on bars. One-click "Set dates" for undated items.',
+      },
+      {
+        icon: <Pencil className="h-5 w-5" />,
+        title: 'Inline Pitch Title Editing',
+        description: 'Edit pitch names directly from the detail header or the epic\'s pitch list. Click to edit, Enter or blur to save, Escape to cancel.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Retrospective Templates',
+        description: 'Structured retrospective format with Went Well, Improve, and Action Items columns. Rich-text entries, required before cycle close.',
+      },
+      {
+        icon: <Keyboard className="h-5 w-5" />,
+        title: 'Keyboard Shortcut Cheat Sheet',
+        description: 'Press ? anywhere to see all keyboard shortcuts. Navigation, quick actions, and search — all documented in a single overlay.',
+      },
+    ],
+  },
   {
     version: '1.3.0',
     date: 'June 5, 2026',
@@ -214,38 +254,6 @@ const releases: Release[] = [
         title: 'Sprint Goal on Cycles',
         description:
           'Capture the goal statement for each sprint when creating or editing a cycle. The goal is surfaced on the sprint planning header and on the cycle list cards.',
-      },
-    ],
-  },
-  {
-    version: '1.0.1',
-    date: 'May 2026',
-    title: 'UX Polish & Roadmap Interactivity',
-    upcoming: true,
-    highlights: [
-      {
-        icon: <Pencil className="h-5 w-5" />,
-        title: 'Inline Pitch Title Editing',
-        description:
-          'Edit pitch names directly from the detail header or the epic\'s pitch list. Click to edit, Enter or blur to save, Escape to cancel.',
-      },
-      {
-        icon: <GripHorizontal className="h-5 w-5" />,
-        title: 'Interactive Roadmap Timeline',
-        description:
-          'Drag-to-move and drag-to-resize timeline bars to adjust epic and initiative dates. Progress percentages and status indicators shown on bars. One-click "Set dates" for items without a timeline.',
-      },
-      {
-        icon: <Shield className="h-5 w-5" />,
-        title: 'Backend Date Validation',
-        description:
-          'Epic and initiative date endpoints now validate that start date ≤ end date, returning 400 on invalid ranges. @DateTimeFormat annotations ensure explicit ISO date parsing.',
-      },
-      {
-        icon: <Bug className="h-5 w-5" />,
-        title: 'Release Form Navigation Fix',
-        description:
-          'After creating or editing a release, the form now correctly navigates to the release detail page instead of a broken route.',
       },
     ],
   },
