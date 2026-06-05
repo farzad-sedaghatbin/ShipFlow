@@ -146,6 +146,7 @@
     "sprintPlanning": "Sprint Planning",
     "sprints": "Sprints",
     "importData": "Import Data",
+    "knowledge": "Knowledge",
     "sections": {
       "overview": "Overview",
       "cycleWorkspace": "Cycle Workspace",
@@ -7617,5 +7618,52 @@
       "keep": "Keep Timer",
       "discard": "Discard Timer"
     }
+  },
+  "knowledgeCenter": {
+    "title": "Knowledge Center",
+    "subtitle": "Sources the AI uses for Q&A, test generation, architecture, and risk advice.",
+    "nav": "Knowledge",
+    "addSource": "+ Add source",
+    "empty": "Nothing here yet. Add docs or links — GitHub / Confluence / Notion / Drive coming soon.",
+    "chunks": "chunks",
+    "synced": "synced {{when}}",
+    "namePlaceholder": "Source name (e.g. Engineering Handbook)",
+    "descriptionPlaceholder": "Optional description",
+    "fileRequired": "Please choose a file",
+    "noChunks": "No chunks yet.",
+    "reIngest": "Re-ingest",
+    "sourceDetail": "Source",
+    "comingSoon": "Coming soon",
+    "name": "Name",
+    "description": "Description",
+    "url": "URL",
+    "file": "File",
+    "providerType": "Provider",
+    "scope": {
+      "org": "Org-wide",
+      "team": "Team",
+      "project": "Project"
+    },
+    "provider": {
+      "FILE_UPLOAD": "File upload",
+      "URL": "URL",
+      "GITHUB": "GitHub",
+      "CONFLUENCE": "Confluence",
+      "NOTION": "Notion",
+      "GOOGLE_DRIVE": "Google Drive"
+    },
+    "status": {
+      "READY": "Ready",
+      "INGESTING": "Ingesting",
+      "PENDING": "Pending",
+      "STALE": "Stale",
+      "FAILED": "Failed"
+    },
+    "cancel": "Cancel",
+    "create": "Create",
+    "delete": "Delete",
+    "close": "Close",
+    "lastError": "Last error",
+    "chunkPreview": "Chunks"
   }
 }

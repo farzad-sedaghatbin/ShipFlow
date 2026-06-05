@@ -3369,6 +3369,7 @@
     "pitchBoard": "برد پیچ",
     "pitches": "پیچ‌ها",
     "projects": "پروژه‌ها",
+    "knowledge": "دانش",
     "qa": "تست و کیفیت",
     "releases": "انتشارها",
     "reports": "گزارش‌ها",
@@ -6626,5 +6627,52 @@
     "phase130Item1Desc": "به‌طور جداگانه به ابزارهای هوش مصنوعی متصل اجازه ایجاد و به‌روزرسانی داده بدهید؛ ابزارهای نوشتن هرگاه سرور خاموش باشد غیرفعال می‌شوند.",
     "phase130Item2Title": "رابط مدیریت کلید API",
     "phase130Item2Desc": "ساخت، فهرست و لغو کلیدهای API با دسترسی‌های READ / WRITE / ADMIN و انقضای اختیاری؛ کلید خام یک‌بار همراه با دکمه کپی نمایش داده می‌شود."
+  },
+  "knowledgeCenter": {
+    "title": "مرکز دانش",
+    "subtitle": "منابعی که هوش مصنوعی برای پرسش و پاسخ، تولید تست، معماری و مشاوره ریسک استفاده می‌کند.",
+    "nav": "دانش",
+    "addSource": "+ افزودن منبع",
+    "empty": "هنوز چیزی اینجا نیست. اسناد یا لینک‌ها را اضافه کنید — GitHub / Confluence / Notion / Drive به‌زودی.",
+    "chunks": "قطعه",
+    "synced": "همگام‌سازی {{when}}",
+    "namePlaceholder": "نام منبع (مثلاً راهنمای مهندسی)",
+    "descriptionPlaceholder": "توضیح اختیاری",
+    "fileRequired": "لطفاً یک فایل انتخاب کنید",
+    "noChunks": "هنوز قطعه‌ای نیست.",
+    "reIngest": "بازخوانی",
+    "sourceDetail": "منبع",
+    "comingSoon": "به‌زودی",
+    "name": "نام",
+    "description": "توضیحات",
+    "url": "آدرس",
+    "file": "فایل",
+    "providerType": "ارائه‌دهنده",
+    "scope": {
+      "org": "سراسر سازمان",
+      "team": "تیم",
+      "project": "پروژه"
+    },
+    "provider": {
+      "FILE_UPLOAD": "بارگذاری فایل",
+      "URL": "آدرس",
+      "GITHUB": "GitHub",
+      "CONFLUENCE": "Confluence",
+      "NOTION": "Notion",
+      "GOOGLE_DRIVE": "Google Drive"
+    },
+    "status": {
+      "READY": "آماده",
+      "INGESTING": "در حال پردازش",
+      "PENDING": "در انتظار",
+      "STALE": "قدیمی",
+      "FAILED": "ناموفق"
+    },
+    "cancel": "انصراف",
+    "create": "ایجاد",
+    "delete": "حذف",
+    "close": "بستن",
+    "lastError": "آخرین خطا",
+    "chunkPreview": "قطعات"
   }
 }

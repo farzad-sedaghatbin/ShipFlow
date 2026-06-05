@@ -117,6 +117,9 @@ const ReleaseFormPage = lazy(() => import('./pages/ReleaseFormPage'));
 // Import
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 
+// Knowledge Center
+const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter'));
+
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
 const GettingStartedGuide = lazy(() => import('./pages/guides/GettingStartedGuide'));
@@ -320,6 +323,9 @@ function App() {
 
                       {/* Import */}
                       <Route path="import" element={<ImportPage />} />
+
+                      {/* Knowledge Center */}
+                      <Route path="knowledge" element={<KnowledgeCenter />} />
 
                       {/* Help & Guides */}
                       <Route path="help" element={<HelpGuides />} />
