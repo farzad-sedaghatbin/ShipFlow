@@ -17,6 +17,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceScope;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeSourceRepository;
+import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.event.KnowledgeSourceCreatedEvent;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.event.KnowledgeSourceDeletedEvent;
 import dev.langchain4j.data.segment.TextSegment;
@@ -40,6 +41,7 @@ class KnowledgeSourceServiceTest {
   @Mock EmbeddingStore<TextSegment> embeddingStore;
   @Mock ApplicationEventPublisher events;
   @Mock KnowledgeSourceProvider provider;
+  @Mock KnowledgeIngestionService ingestionService;
 
   private final ObjectMapper json = new ObjectMapper();
   private KnowledgeSourceService svc;
@@ -48,7 +50,8 @@ class KnowledgeSourceServiceTest {
   void setUp() {
     MockitoAnnotations.openMocks(this);
     svc =
-        new KnowledgeSourceService(sources, items, registry, acl, embeddingStore, events, json);
+        new KnowledgeSourceService(
+            sources, items, registry, acl, embeddingStore, events, json, ingestionService);
   }
 
   @Test
