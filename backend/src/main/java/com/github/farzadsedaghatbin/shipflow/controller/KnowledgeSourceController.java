@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.github.farzadsedaghatbin.shipflow.dto.knowledge.ChunkPreview;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.CreateKnowledgeSourceRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.KnowledgeSourceResponse;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -109,6 +110,13 @@ public class KnowledgeSourceController {
   @Operation(summary = "List project-scoped knowledge sources for a given project")
   public List<KnowledgeSourceResponse> listProject(@RequestParam Long projectId) {
     return svc.listProject(projectId, currentUserId());
+  }
+
+  @GetMapping("/{id}/chunks")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Preview the first ~10 chunks ingested from a knowledge source")
+  public List<ChunkPreview> chunks(@PathVariable Long id) {
+    return svc.previewChunks(id, currentUserId());
   }
 
   @PostMapping("/{id}/refresh")

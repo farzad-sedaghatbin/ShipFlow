@@ -65,4 +65,7 @@ public interface KnowledgeItemRepository extends JpaRepository<KnowledgeItem, Lo
   /** Count active (non-deleted) knowledge items for a source. */
   @Query("SELECT COUNT(k) FROM KnowledgeItem k WHERE k.knowledgeSourceId = :sid AND k.deletedAt IS NULL")
   long countActiveBySourceId(@Param("sid") Long sid);
+
+  /** Find knowledge items for a source ordered by chunk index ascending. */
+  List<KnowledgeItem> findByKnowledgeSourceIdOrderByChunkIndexAsc(Long knowledgeSourceId);
 }

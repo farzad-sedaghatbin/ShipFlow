@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.github.farzadsedaghatbin.shipflow.dto.knowledge.ChunkPreview;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.CreateKnowledgeSourceRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.KnowledgeSourceResponse;
 import com.github.farzadsedaghatbin.shipflow.entity.KnowledgeSource;
@@ -172,6 +173,28 @@ public class KnowledgeSourceService {
   public List<KnowledgeSourceResponse> listProject(Long projectId, Long currentUserId) {
     acl.assertCanListProject(projectId, currentUserId);
     return sources.findActiveByProjectScope(projectId).stream().map(this::toResponse).toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<ChunkPreview> previewChunks(Long sourceId, Long currentUserId) {
+    KnowledgeSource src = loadActive(sourceId);
+    acl.assertCanModify(src, currentUserId);
+    return items.findByKnowledgeSourceIdOrderByChunkIndexAsc(sourceId).stream()
+        .limit(10)
+        .map(
+            item ->
+                ChunkPreview.builder()
+                    .id(item.getId())
+                    .title(item.getTitle())
+                    .contentPreview(
+                        item.getContent() == null
+                            ? ""
+                            : item.getContent()
+                                .substring(0, Math.min(400, item.getContent().length())))
+                    .ordinal(item.getChunkIndex() == null ? 0 : item.getChunkIndex())
+                    .embedded(Boolean.TRUE.equals(item.getIsEmbedded()))
+                    .build())
+        .toList();
   }
 
   @Transactional
