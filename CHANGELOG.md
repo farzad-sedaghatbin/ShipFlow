@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-05
+
+### Added
+- **MCP Server Runtime Toggle**: Enable or disable the built-in MCP server from Integrations → MCP — a DB-backed toggle that overrides the `MCP_SERVER_ENABLED` environment default and takes effect immediately, no restart required.
+- **MCP Write-Tools Toggle**: Separately allow connected AI tools to create and update data; write tools are automatically disabled whenever the server is off.
+- **API Key Management UI**: Create, list, and revoke API keys from a new "API Keys" tab. Keys support READ / WRITE / ADMIN scopes and an optional expiry date. The raw key (`sf_…`) is shown **once** at creation with a copy button and a clear "copy it now — it won't be shown again" warning.
+- **Admin API Key Oversight**: Admins see all API keys across the entire organization — who created each one and when — and can revoke any user's key directly from the MCP Integration → API Keys tab. New backend endpoints `GET /api/api-keys/admin` and `DELETE /api/api-keys/admin/{keyId}` are guarded by `@PreAuthorize("hasRole('ADMIN')")`.
+
 ### Fixed
 - **QA test cases not showing on `/qa/test-cases`**: Three bugs combined to hide all test cases from the list. (1) Race condition: `loadTestCases` and `loadCyclesAndPitches` fired concurrently on page mount; the project-scoped filter ran with `cycles = []` (stale closure), making `projectPitchIds` an empty Set and filtering out every record. After cycles loaded, the list never re-evaluated because `cycles`/`pitches` were absent from the effect dependency array. Fix: moved the project filter out of the async function and into a reactive `useMemo` so it re-evaluates whenever cycles or pitches finish loading. (2) Test cases created without a pitch association were always hidden when a project was selected (`tc.pitchId && ...` short-circuited); changed condition to `!tc.pitchId || projectPitchIds.has(tc.pitchId)` so unassigned test cases are visible. (3) The `findWithFilters` JPQL query in `TestCaseRepository` was missing `AND tc.deletedAt IS NULL`, causing soft-deleted records to reappear whenever any filter was active.
 

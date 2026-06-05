@@ -62,10 +62,14 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final RetroItemRepository retroItemRepository;
   private final SavedViewRepository savedViewRepository;
   private final ImportJobRepository importJobRepository;
+  private final OrganizationSettingsRepository organizationSettingsRepository;
 
   @Override
   @Transactional
   public void run(String... args) {
+    // Always ensure a safe OrganizationSettings row exists (idempotent).
+    seedOrganizationSettingsIfAbsent();
+
     // Always seed the Scrum demo project independently so it appears even when
     // the rest of the sample data was already seeded by an older version.
     seedScrumDemoProjectIfAbsent();
@@ -926,6 +930,27 @@ public class SampleDataInitializer implements CommandLineRunner {
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
+  }
+
+  /**
+   * Ensures that at least one OrganizationSettings row exists with safe MCP defaults. Called
+   * unconditionally so that deployments upgraded from older versions (which had no such row) get
+   * the row without needing a full re-seed.
+   */
+  private void seedOrganizationSettingsIfAbsent() {
+    if (organizationSettingsRepository.findFirstByOrderByIdAsc().isPresent()) {
+      log.info("OrganizationSettings already exists — skipping seed");
+      return;
+    }
+    OrganizationSettings settings =
+        OrganizationSettings.builder()
+            .organizationName("ShipFlow Demo")
+            .mcpServerEnabled(false)
+            .mcpServerWriteEnabled(false)
+            .updatedBy("system")
+            .build();
+    organizationSettingsRepository.save(settings);
+    log.info("OrganizationSettings seeded with safe MCP defaults (server=off, write=off)");
   }
 
   /**

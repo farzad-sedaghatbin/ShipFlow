@@ -5069,7 +5069,16 @@
     "phase130Item2Title": "API key management UI",
     "phase130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry; the raw key is shown once with a copy button.",
     "phase130Item3Title": "Admin API key oversight",
-    "phase130Item3Desc": "Admins see all API keys across the organization — who created each one and when — and can revoke any key from the MCP Integration page."
+    "phase130Item3Desc": "Admins see all API keys across the organization — who created each one and when — and can revoke any key from the MCP Integration page.",
+    "shipped130Title": "MCP Server Admin & API Keys",
+    "shipped130Item0Title": "MCP Server Runtime Toggle",
+    "shipped130Item0Desc": "Enable or disable the built-in MCP server from Integrations → MCP — a DB-backed toggle that takes effect immediately, no restart required.",
+    "shipped130Item1Title": "MCP Write-Tools Toggle",
+    "shipped130Item1Desc": "Separately allow connected AI tools to create and update data, with write tools disabled whenever the server is off.",
+    "shipped130Item2Title": "API Key Management UI",
+    "shipped130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry. The raw key is shown once with a copy button.",
+    "shipped130Item3Title": "Admin API Key Oversight",
+    "shipped130Item3Desc": "Admins see all API keys across the organization — who created each one and when — and can revoke any key from the MCP Integration page."
   },
   "releaseNotes": {
     "title": "Release Notes",

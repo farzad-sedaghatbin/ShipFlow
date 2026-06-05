@@ -71,9 +71,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.3.0',
-    date: 'In Development',
+    date: 'June 5, 2026',
     title: 'MCP Server Admin & API Keys',
-    upcoming: true,
     highlights: [
       {
         icon: <Plug className="h-5 w-5" />,

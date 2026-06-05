@@ -84,6 +84,17 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.3.0',
+      date: 'June 5, 2026',
+      title: t('publicRoadmap.shipped130Title'),
+      highlights: [
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item0Title'), description: t('publicRoadmap.shipped130Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item1Title'), description: t('publicRoadmap.shipped130Item1Desc') },
+        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item2Title'), description: t('publicRoadmap.shipped130Item2Desc') },
+        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item3Title'), description: t('publicRoadmap.shipped130Item3Desc') },
+      ],
+    },
+    {
       version: '1.2.0',
       date: 'May 23, 2026',
       title: t('publicRoadmap.shipped120Title'),
@@ -192,17 +203,6 @@ export default function PublicRoadmap() {
   ];
 
   const upcomingPhases: RoadmapPhase[] = [
-    {
-      version: 'v1.3.0',
-      theme: t('publicRoadmap.phase130Theme'),
-      status: 'in-progress',
-      items: [
-        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.phase130Item0Title'), description: t('publicRoadmap.phase130Item0Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase130Item1Title'), description: t('publicRoadmap.phase130Item1Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase130Item2Title'), description: t('publicRoadmap.phase130Item2Desc') },
-        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.phase130Item3Title'), description: t('publicRoadmap.phase130Item3Desc') },
-      ],
-    },
     {
       version: 'v1.0.1',
       theme: t('publicRoadmap.phase101Theme'),
