@@ -332,6 +332,7 @@ See `MCP_CLIENT_SETUP.md` for client configuration.
 | QA Test Generation | `AITestGenerationService` | Generates test cases from pitches |
 | RAG Q&A | `DocumentQAService` | Vector search + LLM answer |
 | AI Cache | `AICacheController` | Redis-backed response cache |
+| Knowledge Center | `KnowledgeSourceService` + `service/knowledge/source/provider/*` | Pluggable provider SPI; ingested chunks feed Q&A, Wise Architecture, test gen, and risk analysis |
 
 ---
 
@@ -369,6 +370,16 @@ The MCP server is live as of v0.7.0. To add a new tool:
 4. If it is a write tool, ensure `properties.isWriteEnabled()` is checked before dispatching
 5. Add unit tests in `McpToolDispatcherTest` (no Spring context needed)
 6. Update `MCP_CLIENT_SETUP.md` tool reference table
+
+### Add a new Knowledge Center provider
+
+The Knowledge Center exposes a `KnowledgeSourceProvider` SPI in `service/knowledge/source/provider/` so a new ingestion source (Confluence, Notion, Google Drive, etc.) is a single Spring bean:
+
+1. Create `service/knowledge/source/provider/MyProvider.java` implementing `KnowledgeSourceProvider`.
+2. Set `getType() = KnowledgeProviderType.MY_TYPE` — add the enum value if it doesn't exist yet.
+3. Implement `validateConfig(JsonNode)` (throws on bad input) and `ingest(KnowledgeSource, IngestionContext)` returning an `IngestionResult` of `RawChunk`s.
+4. Override `supportsRefresh()` if the source can be re-fetched on a schedule (URL-like sources usually yes; one-shot uploads no).
+5. No other wiring needed — Spring auto-registers it via `KnowledgeSourceRegistry`. Add a `frontend/src/i18n/.../provider.MY_TYPE` label in `en.json` + `fa.json` so the UI renders the provider name.
 
 ### Debug an AI feature
 

@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Knowledge Center: upload docs and add URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis. Scoped Org / Team / Project. Pluggable provider SPI; GitHub / Confluence / Notion / Drive integrations queued as follow-ups.
+
 ### Fixed
 - **Chat Q&A no longer hallucinates cycle/pitch data**: The "Ask about your active cycles" AI chat was returning wrong pitches and confusing cycle display names with database IDs (e.g. a cycle named "Cycle 7" with db id 9 caused the AI to say "there is no Cycle 7"). Four root causes fixed in `QAService`:
   - *Structured entity context*: For entity-scoped questions (e.g. contextType=cycle), the actual pitches, dates, and phase are now loaded from the DB and injected as `=== STRUCTURED DATA (primary source) ===` before vector search results. The LLM no longer guesses at relational facts.

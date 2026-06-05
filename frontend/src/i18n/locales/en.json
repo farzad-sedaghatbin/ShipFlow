@@ -5068,7 +5068,14 @@
     "phase130Item1Title": "MCP write-tools toggle",
     "phase130Item1Desc": "Separately allow connected AI tools to create and update data, with write tools disabled whenever the server is off.",
     "phase130Item2Title": "API key management UI",
-    "phase130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry; the raw key is shown once with a copy button."
+    "phase130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry; the raw key is shown once with a copy button.",
+    "phase140Theme": "Knowledge Center",
+    "phase140Item0Title": "Upload docs and add URLs",
+    "phase140Item0Desc": "Upload PDFs, DOCX, and Markdown files or paste URLs that feed Q&A, AI test generation, Wise Architecture, and risk analysis — one knowledge layer shared across every AI surface.",
+    "phase140Item1Title": "Org / Team / Project scope",
+    "phase140Item1Desc": "Every knowledge source is scoped to an organization, team, or project so AI answers stay grounded in the right context, with citation chips linking back to the source.",
+    "phase140Item2Title": "Pluggable provider SPI",
+    "phase140Item2Desc": "File upload and URL providers ship today; GitHub, Confluence, Notion, and Drive integrations are queued as follow-ups via a single Spring-bean provider interface."
   },
   "releaseNotes": {
     "title": "Release Notes",

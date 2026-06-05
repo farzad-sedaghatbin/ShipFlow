@@ -40,6 +40,9 @@ import {
   Upload,
   FileSpreadsheet,
   FolderInput,
+  BookOpen,
+  Link2,
+  Building2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -191,6 +194,16 @@ export default function PublicRoadmap() {
   ];
 
   const upcomingPhases: RoadmapPhase[] = [
+    {
+      version: 'v1.4.0',
+      theme: t('publicRoadmap.phase140Theme'),
+      status: 'in-progress',
+      items: [
+        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.phase140Item0Title'), description: t('publicRoadmap.phase140Item0Desc') },
+        { icon: <Building2 className="h-5 w-5" />, title: t('publicRoadmap.phase140Item1Title'), description: t('publicRoadmap.phase140Item1Desc') },
+        { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.phase140Item2Title'), description: t('publicRoadmap.phase140Item2Desc') },
+      ],
+    },
     {
       version: 'v1.3.0',
       theme: t('publicRoadmap.phase130Theme'),
