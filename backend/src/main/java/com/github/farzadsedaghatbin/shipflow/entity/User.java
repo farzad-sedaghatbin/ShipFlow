@@ -46,6 +46,20 @@ public class User {
   @Column
   private LocalDateTime deletedAt;
 
+  // --- SSO fields (V2026_06_05_0002) ---
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "identity_provider_id")
+  private IdentityProvider identityProvider;
+
+  @Column(name = "external_user_id", length = 500)
+  private String externalUserId;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "provisioned_via", length = 50)
+  @Builder.Default
+  private ProvisionedVia provisionedVia = ProvisionedVia.LOCAL;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
