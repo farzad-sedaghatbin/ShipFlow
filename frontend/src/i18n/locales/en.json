@@ -3728,7 +3728,18 @@
     "updatedBy": "by {{user}}",
     "capacityDesc": "Configure team capacity defaults for planning",
     "defaultHoursPerDayNote": "Default hours per day used for capacity calculations across the organization",
-    "defaultWorkingDaysPerWeekNote": "Default working days per week used for capacity calculations"
+    "defaultWorkingDaysPerWeekNote": "Default working days per week used for capacity calculations",
+    "importData": "Import Data",
+    "importDataDesc": "Import tasks, pitches, and epics from Jira, Linear, Asana, or CSV files.",
+    "goToImport": "Open Import Wizard",
+    "sectionGeneral": "General",
+    "sectionWorkManagement": "Work Management",
+    "sectionAppearance": "Appearance",
+    "sectionQualityRisk": "Quality & Risk",
+    "sectionNotifications": "Notifications",
+    "sectionFeatures": "Features",
+    "sectionEnterprise": "Enterprise",
+    "sectionData": "Data"
   },
   "userManagement": {
     "title": "User Management",

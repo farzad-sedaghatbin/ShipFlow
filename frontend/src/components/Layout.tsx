@@ -40,7 +40,6 @@ import {
   ArrowDownToLine,
   Search,
   Workflow,
-  Upload,
   KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -401,13 +400,6 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
               onClick={onItemClick}
             />
           )}
-
-          {/* Import Data */}
-          <NavItem
-            item={{ textKey: 'nav.importData', icon: Upload, path: '/import', tourId: 'import-nav' }}
-            isActive={currentPath === '/import'}
-            onClick={onItemClick}
-          />
 
           {/* Meetings */}
           {meetingsItems.map((item) => (
