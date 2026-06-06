@@ -1,6 +1,8 @@
 {
   "common": {
     "loading": "Loading...",
+    "showMore": "Show more",
+    "showLess": "Show less",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
