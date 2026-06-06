@@ -72,12 +72,12 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 | Session | Task | Status |
 |---------|------|--------|
-| S32 | SSO backend — Spring Security SAML2 + OIDC, IdentityProvider entity, Flyway migration | 🔲 todo |
-| S33 | SSO frontend — identity provider config UI in Org Settings, SSO enforcement toggle, login page SSO button | 🔲 todo |
-| S34 | SCIM 2.0 user provisioning — backend endpoint + frontend toggle | 🔲 todo |
-| S35 | Roadmap interactivity — drag-to-move/resize Gantt bars, date range validation, progress indicators | 🔲 todo |
-| S36 | UX polish — inline pitch title editing, retrospective templates (Went Well/Improve/Action Items), i18n interpolation sweep | 🔲 todo |
-| S37 | Navigation hardening — deep-link routing for all sidebar routes, keyboard shortcut cheat sheet overlay | 🔲 todo |
+| S32 | SSO backend — Spring Security SAML2 + OIDC, IdentityProvider entity, Flyway migration | ✅ done |
+| S33 | SSO frontend — identity provider config UI in Org Settings, SSO enforcement toggle, login page SSO button | ✅ done |
+| S34 | SCIM 2.0 user provisioning — backend endpoint + frontend toggle | ✅ done |
+| S35 | Roadmap interactivity — drag-to-move/resize Gantt bars, date range validation, progress indicators | ✅ done |
+| S36 | UX polish — inline pitch title editing, retrospective templates (Went Well/Improve/Action Items), i18n interpolation sweep | ✅ done |
+| S37 | Navigation hardening — deep-link routing for all sidebar routes, keyboard shortcut cheat sheet overlay | ✅ done |
 
 ### Future milestones overview
 

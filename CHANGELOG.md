@@ -4,19 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added
-- **SSO Frontend (S33)**: Full identity-provider management UI for admins under Organization Settings → SSO tab. Supports OIDC and SAML 2.0 providers via a form dialog with provider-type-conditional fields (client ID/secret/discovery URL for OIDC; entity ID/SSO URL/certificate for SAML 2.0). Enabled/Disabled toggle and Enforce SSO toggle (with a destructive warning). Edit/Delete actions via Radix DropdownMenu. Admin CRUD routes backed by `ssoService.ts`.
-- **SSO Login buttons**: The Login page now queries `GET /api/sso/providers` on mount; if any enabled identity providers exist a "or sign in with" divider and one button per provider are shown. Clicking initiates the SSO flow via `GET /api/sso/initiate/{idpId}` and redirects the browser to the IdP.
-- **SSO Callback page** (`/sso-callback`): Public route that processes the JWT from `?token=` query param returned by the backend after a successful IdP redirect, stores it in AuthContext, and navigates to the intended deep-link (`?redirect=`) or `/dashboard`.
-- **S37a — Deep-link routing review**: Confirmed all detail routes (`/pitches/:id`, `/backlog/:taskId`, `/cycles/:cycleId`, etc.) are flat top-level registrations that work as direct deep links. ProjectContext bootstraps from localStorage and re-hydrates from the API; pages that require a project use a `<ProjectRequiredDialog>` guard rather than redirect, preserving the URL. No routing changes required; review comment added to `App.tsx`.
+### Added — v1.4.0 "Enterprise Auth & UX Depth" (S32–S37)
 
-### Added (v1.4.0 S34 — SCIM 2.0 User Provisioning)
-- **SCIM 2.0 backend**: Full RFC 7643/7644 implementation at `/scim/v2/Users` — `GET` (paginated list), `GET /{id}`, `POST` (create), `PUT` (replace), `PATCH` (deactivate/reactivate via `op=replace active=`), `DELETE` (soft-delete). Bearer-token auth with SHA-256 hashed token storage — raw token shown once at generation.
-- **SCIM audit log**: Every provisioning event (USER_CREATED, USER_UPDATED, USER_DEACTIVATED, USER_REACTIVATED, USER_DELETED) written to `scim_audit_log` table.
-- **`POST /api/admin/settings/scim/generate-token`**: ADMIN-only endpoint that generates a cryptographically random 32-byte bearer token, stores its SHA-256 hash, and returns the raw value once.
-- **SCIM Settings tab** in Organization Settings: enable/disable SCIM toggle, "Generate Token" button with a one-time display dialog (copy button + "save now" warning), SCIM 2.0 base URL display.
-- **`ProvisionedVia` enum**: LOCAL, SAML2, OIDC, SCIM — records how each user account was provisioned.
-- **Flyway migration `V2026_06_06_0001`**: Adds `external_user_id` + `provisioned_via` to `users`, adds `scim_enabled` + `scim_bearer_token` + `scim_token_hash` to `organization_settings`, creates `scim_audit_log` table.
+#### SSO / Enterprise Auth (S32 + S33)
+- **SSO Backend — SAML2 + OIDC (S32)**: New `identity_providers` table (Flyway `V2026_06_05_0001`) and SSO fields on `users` (Flyway `V2026_06_05_0002`). `SsoService` handles OIDC initiate/callback (Redis PKCE state, 5-min TTL, find-or-create user) and SAML 2.0 initiate/callback (XXE-safe DOM parsing of `<saml:NameID>`). `IdentityProviderController` exposes public `/api/sso/*` for the login page and admin `/api/admin/sso/providers` CRUD. `ProviderType` (SAML2 / OIDC) and `ProvisionedVia` (LOCAL / SAML2 / OIDC / SCIM) enums. SecurityConfig permits `/api/sso/**`.
+- **SSO Frontend — Admin UI + Login flow (S33)**: Identity-provider management tab in Organization Settings → SSO (admin-only). Provider-type-conditional form (OIDC: client ID / secret / discovery URL; SAML 2.0: entity ID / SSO URL / certificate). Enable/Disable and Enforce SSO toggles (Enforce SSO shows a destructive warning). Login page shows "Continue with [Provider]" buttons when enabled providers exist. New public `/sso-callback` route processes the `?token=` JWT returned after IdP redirect. 26 i18n keys (`sso.*`, `ssoCallback.*`) in en + fa.
+
+#### SCIM 2.0 User Provisioning (S34)
+- **SCIM 2.0 backend**: Full RFC 7643/7644 implementation at `/scim/v2/Users` — list, get, create, replace, patch (deactivate/reactivate), delete. Bearer-token auth with SHA-256 hashed storage; raw token shown once at generation. Every provisioning event written to `scim_audit_log`. Flyway `V2026_06_06_0001` adds SCIM columns to `organization_settings` and creates the audit table.
+- **SCIM Settings tab** in Organization Settings: enable/disable toggle, "Generate Token" dialog (copy button + one-time warning), SCIM base URL display for IdP configuration.
+
+#### Roadmap Interactivity (S35)
+- **Drag-to-move and drag-to-resize Gantt bars**: Grab a bar body to shift start/end together, or drag either edge handle to resize. Dates snap to day boundaries; out-of-range moves are blocked with a toast. Changes persist on mouse-up.
+- **Progress indicators**: Each bar shows a darker fill proportional to completion — from `progress` field if present, otherwise estimated from status (COMPLETED=100%, IN_PROGRESS=50%, PLANNED=20%, DRAFT=0%).
+
+#### UX Polish (S36)
+- **Inline pitch title editing**: Click the pitch title (or the hover pencil icon) in Pitch Detail to edit in place. Enter/blur saves via API with a loading spinner; Escape cancels without saving.
+- **Retrospective templates**: "Use Template" button in the Retro Board header offers three presets — *Went Well / Improve / Action Items*, *Start / Stop / Continue*, and *4Ls: Liked / Learned / Lacked / Longed For*. Applying to a non-empty board shows a confirmation dialog first.
+- **i18n sweep**: 13 hardcoded English strings in `TestCaseFormPage` and `TaskDetailPage` replaced with `t()` calls; keys added to both en + fa.
+
+#### Navigation Hardening (S37)
+- **Keyboard shortcut cheat sheet**: Press `?` anywhere to open a slide-in overlay listing shortcuts grouped by Navigation, Actions, and General. The global listener skips `<input>`, `<textarea>`, and `contentEditable` targets.
+- **Deep-link routing**: All detail routes (`/pitches/:id`, `/backlog/:taskId`, `/cycles/:cycleId`, etc.) verified to work as fresh-load deep links. `ProjectContext` re-hydrates from the API when localStorage is empty; pages requiring a project show a guard dialog instead of silently redirecting.
 
 ## [1.3.0] - 2026-06-05
 
