@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — v1.4.0 "Enterprise Auth & UX Depth" (S32–S37)
+
+#### SSO / Enterprise Auth (S32 + S33)
+- **SSO Backend — SAML2 + OIDC (S32)**: New `identity_providers` table (Flyway `V2026_06_05_0001`) and SSO fields on `users` (Flyway `V2026_06_05_0002`). `SsoService` handles OIDC initiate/callback (Redis PKCE state, 5-min TTL, find-or-create user) and SAML 2.0 initiate/callback (XXE-safe DOM parsing of `<saml:NameID>`). `IdentityProviderController` exposes public `/api/sso/*` for the login page and admin `/api/admin/sso/providers` CRUD. `ProviderType` (SAML2 / OIDC) and `ProvisionedVia` (LOCAL / SAML2 / OIDC / SCIM) enums. SecurityConfig permits `/api/sso/**`.
+- **SSO Frontend — Admin UI + Login flow (S33)**: Identity-provider management tab in Organization Settings → SSO (admin-only). Provider-type-conditional form (OIDC: client ID / secret / discovery URL; SAML 2.0: entity ID / SSO URL / certificate). Enable/Disable and Enforce SSO toggles (Enforce SSO shows a destructive warning). Login page shows "Continue with [Provider]" buttons when enabled providers exist. New public `/sso-callback` route processes the `?token=` JWT returned after IdP redirect. 26 i18n keys (`sso.*`, `ssoCallback.*`) in en + fa.
+
+#### SCIM 2.0 User Provisioning (S34)
+- **SCIM 2.0 backend**: Full RFC 7643/7644 implementation at `/scim/v2/Users` — list, get, create, replace, patch (deactivate/reactivate), delete. Bearer-token auth with SHA-256 hashed storage; raw token shown once at generation. Every provisioning event written to `scim_audit_log`. Flyway `V2026_06_06_0001` adds SCIM columns to `organization_settings` and creates the audit table.
+- **SCIM Settings tab** in Organization Settings: enable/disable toggle, "Generate Token" dialog (copy button + one-time warning), SCIM base URL display for IdP configuration.
+
+#### Roadmap Interactivity (S35)
+- **Drag-to-move and drag-to-resize Gantt bars**: Grab a bar body to shift start/end together, or drag either edge handle to resize. Dates snap to day boundaries; out-of-range moves are blocked with a toast. Changes persist on mouse-up.
+- **Progress indicators**: Each bar shows a darker fill proportional to completion — from `progress` field if present, otherwise estimated from status (COMPLETED=100%, IN_PROGRESS=50%, PLANNED=20%, DRAFT=0%).
+
+#### UX Polish (S36)
+- **Inline pitch title editing**: Click the pitch title (or the hover pencil icon) in Pitch Detail to edit in place. Enter/blur saves via API with a loading spinner; Escape cancels without saving.
+- **Retrospective templates**: "Use Template" button in the Retro Board header offers three presets — *Went Well / Improve / Action Items*, *Start / Stop / Continue*, and *4Ls: Liked / Learned / Lacked / Longed For*. Applying to a non-empty board shows a confirmation dialog first.
+- **i18n sweep**: 13 hardcoded English strings in `TestCaseFormPage` and `TaskDetailPage` replaced with `t()` calls; keys added to both en + fa.
+
+#### Navigation Hardening (S37)
+- **Keyboard shortcut cheat sheet**: Press `?` anywhere to open a slide-in overlay listing shortcuts grouped by Navigation, Actions, and General. The global listener skips `<input>`, `<textarea>`, and `contentEditable` targets.
+- **Deep-link routing**: All detail routes (`/pitches/:id`, `/backlog/:taskId`, `/cycles/:cycleId`, etc.) verified to work as fresh-load deep links. `ProjectContext` re-hydrates from the API when localStorage is empty; pages requiring a project show a guard dialog instead of silently redirecting.
+
 ## [1.3.0] - 2026-06-05
 
 ### Added

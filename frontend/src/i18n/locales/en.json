@@ -107,7 +107,9 @@
     "saving": "Saving...",
     "noResults": "No results found",
     "new": "New",
-    "noData": "No data available"
+    "noData": "No data available",
+    "anonymous": "Anonymous",
+    "votesByAuthor": "{{votes}} votes by {{author}}"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -1420,7 +1422,11 @@
     "invalidCredentials": "Invalid username or password",
     "loginSuccess": "Welcome back! Login successful.",
     "shapeUpProjects": "Shape Up Your Projects",
-    "tagline": "Track cycles, manage pitches, and visualize progress with hill charts"
+    "tagline": "Track cycles, manage pitches, and visualize progress with hill charts",
+    "orSignInWith": "or sign in with",
+    "ssoButton": "Continue with {{name}}",
+    "ssoLoading": "Redirecting…",
+    "ssoError": "Failed to initiate SSO login. Please try again."
   },
   "people": {
     "title": "People Management",
@@ -4511,7 +4517,8 @@
       "notes": "Notes (optional)",
       "notesPlaceholder": "What did you work on?",
       "confirm": "Stop & Log Time"
-    }
+    },
+    "loadingTask": "Loading task..."
   },
   "bettingTablePage": {
     "title": "Betting Table",
@@ -5270,7 +5277,20 @@
     "testCaseUpdated": "Test case updated successfully",
     "saveFailed": "Failed to save test case",
     "pitchLoadFailed": "Failed to load pitches",
-    "scopeLoadFailed": "Failed to load scopes"
+    "scopeLoadFailed": "Failed to load scopes",
+    "noSpecificScope": "No specific scope",
+    "noScopesFound": "No scopes found",
+    "typeToSearchScopes": "Type to search scopes",
+    "scopesAvailable": "{{count}} scopes available for selected pitch",
+    "refineSearch": "Showing first {{shown}} of {{total}} results. Refine your search.",
+    "noRelatedTask": "No related task",
+    "noTasksFound": "No tasks found",
+    "typeToSearchTasks": "Type to search tasks",
+    "relatedTask": "Related Task (optional)",
+    "selectType": "Select type",
+    "selectPriority": "Select priority",
+    "selectStatus": "Select status",
+    "minCharsForSearch": "Type at least 3 characters to search"
   },
   "testRun": {
     "loadFailed": "Failed to load test run",
@@ -7639,5 +7659,94 @@
       "keep": "Keep Timer",
       "discard": "Discard Timer"
     }
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "pressToOpen": "Press ? to open this panel",
+    "navigation": "Navigation",
+    "actions": "Actions",
+    "view": "View",
+    "general": "General",
+    "navDashboard": "Go to Dashboard",
+    "navProjects": "Go to Projects",
+    "navRoadmap": "Go to Roadmap",
+    "navBacklog": "Go to Backlog",
+    "navCycles": "Go to Cycles",
+    "navPitches": "Go to Pitches",
+    "navMeetings": "Go to Meetings",
+    "navReports": "Go to Reports",
+    "navHealth": "Go to Health Overview",
+    "createNew": "Create New Cycle",
+    "logWork": "Log Work",
+    "openSearch": "Open Search (Cmd+K / Ctrl+K)",
+    "closedialog": "Close Dialog / Cancel",
+    "showShortcuts": "Show Keyboard Shortcuts",
+    "view1": "Board View",
+    "view2": "List View",
+    "view3": "Gantt / Timeline View"
+  },
+  "retroBoardTemplates": {
+    "useTemplate": "Use Template",
+    "templateWentWell": "Went Well / Improve / Action Items",
+    "templateStartStopContinue": "Start / Stop / Continue",
+    "template4Ls": "4Ls: Liked / Learned / Lacked / Longed For",
+    "templateConfirmReplace": "Replace existing board columns?",
+    "templateConfirmReplaceDesc": "The board already has items. Applying a template will clear all existing items and replace the column structure. This action cannot be undone.",
+    "templateApplied": "Template applied successfully",
+    "templateConfirmYes": "Apply Template",
+    "templateConfirmNo": "Keep Existing"
+  },
+  "sso": {
+    "tabLabel": "SSO",
+    "title": "Single Sign-On (SSO)",
+    "subtitle": "Configure identity providers to allow SSO login for your organization",
+    "addProvider": "Add Provider",
+    "editProvider": "Edit Provider",
+    "providerName": "Provider Name",
+    "providerType": "Provider Type",
+    "oidc": "OpenID Connect (OIDC)",
+    "saml2": "SAML 2.0",
+    "clientId": "Client ID",
+    "clientSecret": "Client Secret",
+    "clientSecretPlaceholder": "Leave blank to keep existing secret",
+    "metadataUrl": "Metadata / Discovery URL",
+    "entityId": "Entity ID",
+    "ssoUrl": "SSO URL",
+    "certificate": "X.509 Certificate",
+    "enabled": "Enabled",
+    "enforceSso": "Enforce SSO",
+    "enforceSsoWarning": "When Enforce SSO is active, users without an SSO account will be unable to log in with a password.",
+    "enforceSsoActive": "Enforce SSO: ON",
+    "noProviders": "No identity providers configured yet",
+    "deleteConfirmTitle": "Delete Identity Provider",
+    "deleteConfirm": "Are you sure you want to delete the provider \"{{name}}\"? This cannot be undone.",
+    "saveSuccess": "Identity provider saved",
+    "saveFailed": "Failed to save identity provider",
+    "deleteSuccess": "Identity provider deleted",
+    "deleteFailed": "Failed to delete identity provider",
+    "statusEnabled": "Enabled",
+    "statusDisabled": "Disabled"
+  },
+  "ssoCallback": {
+    "processing": "Completing sign-in…",
+    "noToken": "No authentication token received. Please try signing in again.",
+    "processingError": "An error occurred while completing sign-in. Please try again.",
+    "backToLogin": "Back to login"
+  },
+  "scim": {
+    "title": "SCIM Provisioning",
+    "enabled": "SCIM 2.0 Enabled",
+    "enabledDesc": "Allow identity providers to automatically provision and deprovision user accounts via the SCIM 2.0 protocol.",
+    "generateToken": "Generate Bearer Token",
+    "generating": "Generating...",
+    "generateTokenFailed": "Failed to generate SCIM token.",
+    "tokenWarning": "Save this token now — it will not be shown again after you close this dialog.",
+    "copyToken": "Bearer Token",
+    "tokenCopied": "Token copied to clipboard.",
+    "copyFailed": "Failed to copy token.",
+    "tokenSaved": "I have saved the token",
+    "tokenDialogTitle": "SCIM Bearer Token",
+    "noTokenGenerated": "No token has been generated yet. Generate a token to enable SCIM provisioning from your identity provider.",
+    "endpointLabel": "SCIM 2.0 Base URL"
   }
 }

@@ -83,7 +83,7 @@ ShipFlow targets teams that:
 
 ### 3.2 ShipFlow vs Jira
 
-**Jira wins**: market leader, deep integrations ecosystem (thousands of plugins), enterprise SSO/SAML, advanced dashboards, Confluence integration.
+**Jira wins**: market leader, deep integrations ecosystem (thousands of plugins), enterprise SSO/SAML (ShipFlow adds SSO admin UI + OIDC/SAML2 in v1.4.0), advanced dashboards, Confluence integration.
 
 **ShipFlow wins**:
 - Zero configuration overhead — Shape Up workflow is first-class, not a custom template
@@ -164,7 +164,7 @@ ShipFlow's self-hosted model gives unlimited users at infrastructure cost only.
 Be honest with evaluators:
 
 - **You don't practice Shape Up** — ShipFlow is optimised for it. A general Kanban team may be happier with Linear or Shortcut.
-- **You need enterprise SSO/SAML today** — not yet implemented (planned).
+- **You need a fully operational SSO IdP integration** — the admin UI and login flow are built (v1.4.0); backend SAML2/OIDC Spring Security integration is in progress (S32). SCIM 2.0 auto-provisioning is now live (v1.4.0).
 - **You need a mobile app** — ShipFlow is web-first; mobile is responsive but not a native app.
 - **You need thousands of plugins** — Jira's plugin ecosystem is unmatched.
 - **You need non-technical stakeholder tools** (timesheets, resource planning) — Asana/Monday win here. ShipFlow now has interactive Gantt-style timeline bars for initiatives and epics, but not full resource planning.

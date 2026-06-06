@@ -177,6 +177,17 @@ public class OrganizationSettings {
   @Column(name = "jira_cloud_name")
   private String jiraCloudName;
 
+  // SCIM 2.0 provisioning settings (V2026_06_06_0001)
+  @Column(name = "scim_enabled", nullable = false)
+  @Builder.Default
+  private boolean scimEnabled = false;
+
+  @Column(name = "scim_bearer_token", length = 500)
+  private String scimBearerToken;
+
+  @Column(name = "scim_token_hash", length = 500)
+  private String scimTokenHash;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();
