@@ -3635,7 +3635,18 @@
     "website": "وب‌سایت",
     "weekly": "هفتگی",
     "weights": "وزن‌های ریسک",
-    "weightsChangeNote": "تغییرات وزن بر نحوه محاسبه امتیازات ریسک تأثیر می‌گذارد. وزن‌های بالاتر آن فاکتور را تأثیرگذارتر می‌کنند."
+    "weightsChangeNote": "تغییرات وزن بر نحوه محاسبه امتیازات ریسک تأثیر می‌گذارد. وزن‌های بالاتر آن فاکتور را تأثیرگذارتر می‌کنند.",
+    "importData": "ورود داده",
+    "importDataDesc": "وارد کردن وظایف، پیچ‌ها و حماسه‌ها از Jira، Linear، Asana یا فایل‌های CSV",
+    "goToImport": "باز کردن ویزارد ورود",
+    "sectionGeneral": "عمومی",
+    "sectionWorkManagement": "مدیریت کار",
+    "sectionAppearance": "ظاهر",
+    "sectionQualityRisk": "کیفیت و ریسک",
+    "sectionNotifications": "اعلان‌ها",
+    "sectionFeatures": "ویژگی‌ها",
+    "sectionEnterprise": "سازمانی",
+    "sectionData": "داده"
   },
   "people": {
     "addPerson": "افزودن فرد",
