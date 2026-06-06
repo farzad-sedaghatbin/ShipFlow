@@ -388,7 +388,10 @@ public class RiskAnalysisService {
 
       Cycle cycle = pitch.getCycle();
       LocalDate today = LocalDate.now();
-      long daysRemaining = ChronoUnit.DAYS.between(today, cycle.getEndDate());
+      long daysRemaining =
+          (cycle != null && cycle.getEndDate() != null)
+              ? ChronoUnit.DAYS.between(today, cycle.getEndDate())
+              : 0L;
 
       // Build context for AI - include all Shape Up methodology fields
       StringBuilder pitchDetails = new StringBuilder();
@@ -439,7 +442,8 @@ public class RiskAnalysisService {
           Current Recommendations:
           %s
           """, pitch.getTitle(), pitch.getStatus(),
-          pitch.getTeam() != null ? pitch.getTeam().getName() : "No team assigned", cycle.getName(),
+          pitch.getTeam() != null ? pitch.getTeam().getName() : "No team assigned",
+          cycle != null ? cycle.getName() : "No cycle assigned",
           daysRemaining, pitchDetails.toString(), totalHours, appetiteHours,
           riskAnalysis.getRiskScore() > 0 ? (totalHours / appetiteHours * 100) : 0,
           riskAnalysis.getRiskScore(), riskAnalysis.getRiskLevel(), riskAnalysis.getConfidenceScore(),
