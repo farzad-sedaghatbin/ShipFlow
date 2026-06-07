@@ -64,7 +64,10 @@ export const NotesList: React.FC<NotesListProps> = ({
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  const CONTENT_CLAMP_THRESHOLD = 120; // chars — below this, never show toggle
+  const CONTENT_CLAMP_THRESHOLD = 120; // chars
+  const needsToggle = (content: string) =>
+    content.length > CONTENT_CLAMP_THRESHOLD ||
+    (content.match(/\n/g) || []).length >= 3; // 3+ newlines overflows line-clamp-3
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; note: NoteDTO | null }>({
@@ -301,7 +304,7 @@ export const NotesList: React.FC<NotesListProps> = ({
                     <p className={`text-sm text-muted-foreground mb-1 whitespace-pre-wrap ${!expandedNoteIds.has(note.id) ? 'line-clamp-3' : ''}`}>
                       {note.content}
                     </p>
-                    {note.content && note.content.length > CONTENT_CLAMP_THRESHOLD && (
+                    {note.content && needsToggle(note.content) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleNoteExpand(note.id); }}
                         className="text-xs text-primary hover:underline mb-2 focus:outline-none"

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Square, X, Timer as TimerIcon, Clock, MinusCircle, Maximize2, Pause, Play } from 'lucide-react';
+import { Square, X, Timer as TimerIcon, Clock, MinusCircle, Maximize2, Pause, Play, AlertTriangle } from 'lucide-react';
+import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
 import timerService, { WorkLogTimer } from '../services/timerService';
 import { workLogService } from '../services/workLogService';
@@ -29,6 +30,9 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
   const [confirmDialog, setConfirmDialog] = useState<'stop' | 'cancel' | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [workLogNote, setWorkLogNote] = useState('');
+  const [customHours, setCustomHours] = useState('');
+
+  const LONG_RUNNING_THRESHOLD_SECS = 8 * 3600; // warn after 8 h
 
   // Drift-free elapsed: store server snapshot + wall-clock reference
   const baseElapsedRef = useRef<number>(0);
@@ -82,6 +86,9 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
 
   const handleOpenStopDialog = () => {
     setWorkLogNote(activeTimer?.note || '');
+    // Pre-fill with computed hours so user can correct if timer ran too long
+    const computed = Math.round((displayedElapsed / 3600) * 4) / 4;
+    setCustomHours(computed.toFixed(2));
     setConfirmDialog('stop');
   };
 
@@ -92,8 +99,11 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
       setLoading(true);
       setError(null);
 
-      // Calculate hours (rounded to nearest 0.25)
-      const hours = Math.round((displayedElapsed / 3600) * 4) / 4;
+      // Use user-edited hours if valid, otherwise fall back to timer-computed
+      const parsed = parseFloat(customHours);
+      const hours = !isNaN(parsed) && parsed > 0
+        ? Math.round(parsed * 4) / 4  // snap to nearest 0.25
+        : Math.round((displayedElapsed / 3600) * 4) / 4;
 
       // Create work log with the custom note
       await workLogService.createMy({
@@ -209,6 +219,16 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
         </CardHeader>
         {!isMinimized && (
         <CardContent className="space-y-4">
+          {/* Long-running warning */}
+          {displayedElapsed > LONG_RUNNING_THRESHOLD_SECS && (
+            <Alert variant="destructive" className="py-2">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                {t('timerWidget.longRunningWarning')}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Timer Display */}
           <div className={`text-center py-4 bg-muted rounded-lg${isPaused ? ' opacity-70' : ''}`}>
             <div className="text-4xl font-bold text-primary tabular-nums">
@@ -305,13 +325,30 @@ const TimerWidget: React.FC<TimerWidgetProps> = ({ onTimerStopped }) => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <p className="font-medium">
-                {t('timerWidget.stopDialog.timeToLog')}: <strong className="text-primary">{formatHours(displayedElapsed)} {t('timerWidget.hours')}</strong>
-                <span className="text-sm text-muted-foreground ml-1">({t('timerWidget.stopDialog.rounded')})</span>
+              <p className="text-sm text-muted-foreground">
+                {t('timerWidget.stopDialog.for')}: <strong>{activeTimer?.taskTitle || activeTimer?.pitchTitle}</strong>
               </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t('timerWidget.stopDialog.for')}: {activeTimer?.taskTitle || activeTimer?.pitchTitle}
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {t('timerWidget.stopDialog.timerRan')}: {formatTime(displayedElapsed)}
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hours-input">{t('timerWidget.stopDialog.hoursToLog')}</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="hours-input"
+                  type="number"
+                  min="0.25"
+                  max="24"
+                  step="0.25"
+                  value={customHours}
+                  onChange={(e) => setCustomHours(e.target.value)}
+                  className="w-28"
+                />
+                <span className="text-sm text-muted-foreground">{t('timerWidget.hours')}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{t('timerWidget.stopDialog.hoursHint')}</p>
             </div>
 
             <div className="space-y-2">

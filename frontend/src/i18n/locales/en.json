@@ -7723,7 +7723,10 @@
       "notes": "Notes (optional)",
       "notesPlaceholder": "Add notes about what you worked on...",
       "cancel": "Cancel",
-      "confirm": "Stop & Log Time"
+      "confirm": "Stop & Log Time",
+      "timerRan": "Timer ran for",
+      "hoursToLog": "Hours to log",
+      "hoursHint": "Adjust if the timer ran longer than you actually worked"
     },
     "cancelDialog": {
       "title": "Cancel Timer",
@@ -7731,7 +7734,8 @@
       "discardMessage": "of tracked time will be discarded.",
       "keep": "Keep Timer",
       "discard": "Discard Timer"
-    }
+    },
+    "longRunningWarning": "Timer has been running for over 8 hours. You can adjust the hours below before logging."
   },
   "shortcuts": {
     "title": "Keyboard Shortcuts",
