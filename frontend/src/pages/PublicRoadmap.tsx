@@ -41,6 +41,7 @@ import {
   FileSpreadsheet,
   FolderInput,
   Key,
+  Wand2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -83,6 +84,16 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.5.0',
+      date: 'June 7, 2026',
+      title: t('publicRoadmap.shipped150Title'),
+      highlights: [
+        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.shipped150Item0Title'), description: t('publicRoadmap.shipped150Item0Desc') },
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.shipped150Item1Title'), description: t('publicRoadmap.shipped150Item1Desc') },
+        { icon: <TrendingUp className="h-5 w-5" />, title: t('publicRoadmap.shipped150Item2Title'), description: t('publicRoadmap.shipped150Item2Desc') },
+      ],
+    },
     {
       version: '1.4.0',
       date: 'June 7, 2026',
@@ -216,13 +227,13 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.5.0',
-      theme: t('publicRoadmap.phase150Theme'),
-      status: 'in-progress',
+      version: 'v1.6.0',
+      theme: t('publicRoadmap.phase160Theme'),
+      status: 'planned',
       items: [
-        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase150Item0Title'), description: t('publicRoadmap.phase150Item0Desc') },
-        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase150Item1Title'), description: t('publicRoadmap.phase150Item1Desc') },
-        { icon: <TrendingUp className="h-5 w-5" />, title: t('publicRoadmap.phase150Item2Title'), description: t('publicRoadmap.phase150Item2Desc') },
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase160Item0Title'), description: t('publicRoadmap.phase160Item0Desc') },
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.phase160Item1Title'), description: t('publicRoadmap.phase160Item1Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase160Item2Title'), description: t('publicRoadmap.phase160Item2Desc') },
       ],
     },
   ];

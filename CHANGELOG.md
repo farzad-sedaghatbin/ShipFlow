@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-06-07
+
 ### Added — v1.5.0 "AI Copilot v2" (S38–S40)
 
 #### AI Pitch Writer (S38)
