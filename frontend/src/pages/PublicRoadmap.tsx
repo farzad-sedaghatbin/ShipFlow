@@ -84,6 +84,18 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.4.0',
+      date: 'June 7, 2026',
+      title: t('publicRoadmap.shipped140Title'),
+      highlights: [
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item0Title'), description: t('publicRoadmap.shipped140Item0Desc') },
+        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item1Title'), description: t('publicRoadmap.shipped140Item1Desc') },
+        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item2Title'), description: t('publicRoadmap.shipped140Item2Desc') },
+        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item3Title'), description: t('publicRoadmap.shipped140Item3Desc') },
+        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item4Title'), description: t('publicRoadmap.shipped140Item4Desc') },
+      ],
+    },
+    {
       version: '1.3.0',
       date: 'June 5, 2026',
       title: t('publicRoadmap.shipped130Title'),
@@ -204,14 +216,13 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.4.0',
-      theme: t('publicRoadmap.phase140Theme'),
+      version: 'v1.5.0',
+      theme: t('publicRoadmap.phase150Theme'),
       status: 'in-progress',
       items: [
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase140Item0Title'), description: t('publicRoadmap.phase140Item0Desc') },
-        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase140Item1Title'), description: t('publicRoadmap.phase140Item1Desc') },
-        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.phase140Item2Title'), description: t('publicRoadmap.phase140Item2Desc') },
-        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.phase140Item3Title'), description: t('publicRoadmap.phase140Item3Desc') },
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase150Item0Title'), description: t('publicRoadmap.phase150Item0Desc') },
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase150Item1Title'), description: t('publicRoadmap.phase150Item1Desc') },
+        { icon: <TrendingUp className="h-5 w-5" />, title: t('publicRoadmap.phase150Item2Title'), description: t('publicRoadmap.phase150Item2Desc') },
       ],
     },
   ];

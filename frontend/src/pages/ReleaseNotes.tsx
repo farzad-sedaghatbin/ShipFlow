@@ -73,9 +73,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.4.0',
-    date: 'In Development',
+    date: 'June 7, 2026',
     title: 'Enterprise Auth & UX Depth',
-    upcoming: true,
     highlights: [
       {
         icon: <Shield className="h-5 w-5" />,
