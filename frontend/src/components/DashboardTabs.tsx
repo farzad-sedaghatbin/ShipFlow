@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LayoutGrid, Brain, Activity } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { DashboardWidget } from '../types/dashboard';
 import { Cycle, Pitch } from '../types';
 import {
@@ -100,24 +101,27 @@ export function DashboardTabs({
 
     return (
       <div className="space-y-4">
-        {/* AI Risk Advisory - show compact cards for multiple cycles */}
+        {/* AI Risk Advisory */}
         {isWidgetVisible('AI_RISK_ADVISORY') && activeCycles.length > 0 && (
           <MotionContainer delay={0.1}>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-2">
                 {t('dashboard.aiRiskAnalysis')}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
-                {activeCycles.slice(0, 3).map((cycle) => (
-                  <AiRiskAdvisoryWidget
-                    key={cycle.id}
-                    cycleId={cycle.id}
-                    cycleName={cycle.name}
-                    compact
-                  />
-                ))}
-              </div>
-              {/* Full risk overview for first cycle */}
+              {/* Compact cards for additional cycles only — firstCycle shown in full below */}
+              {activeCycles.length > 1 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+                  {activeCycles.slice(1, 4).map((cycle) => (
+                    <AiRiskAdvisoryWidget
+                      key={cycle.id}
+                      cycleId={cycle.id}
+                      cycleName={cycle.name}
+                      compact
+                    />
+                  ))}
+                </div>
+              )}
+              {/* Full risk overview for primary cycle */}
               <AiRiskAdvisoryWidget
                 cycleId={firstCycle.id}
                 cycleName={firstCycle.name}
@@ -201,10 +205,19 @@ export function DashboardTabs({
           <LayoutGrid className="w-4 h-4" />
           <span className="hidden sm:inline">{t('dashboard.tabs.overview')}</span>
         </TabsTrigger>
-        <TabsTrigger value="ai-insights" className="gap-2" disabled={isKanbanProject}>
-          <Brain className="w-4 h-4" />
-          <span className="hidden sm:inline">{t('dashboard.tabs.aiInsights')}</span>
-        </TabsTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <TabsTrigger value="ai-insights" className="gap-2" disabled={isKanbanProject}>
+                <Brain className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('dashboard.tabs.aiInsights')}</span>
+              </TabsTrigger>
+            </span>
+          </TooltipTrigger>
+          {isKanbanProject && (
+            <TooltipContent>{t('dashboard.tabs.aiInsightsKanbanDisabled')}</TooltipContent>
+          )}
+        </Tooltip>
         <TabsTrigger value="activity" className="gap-2">
           <Activity className="w-4 h-4" />
           <span className="hidden sm:inline">{t('dashboard.tabs.activity')}</span>

@@ -401,8 +401,36 @@
       "aiInsights": "AI Insights",
       "activity": "Activity",
       "noAiInsights": "AI insights are available for Shape Up projects with active cycles.",
-      "noActivityWidgets": "No activity widgets are currently visible. Enable them in widget settings."
+      "noActivityWidgets": "No activity widgets are currently visible. Enable them in widget settings.",
+      "aiInsightsKanbanDisabled": "AI Insights are not available for Kanban projects"
     }
+  },
+  "riskAdvisor": {
+    "title": "Cycle Risk Advisor",
+    "cycleRiskTitle": "{{name}} Risk",
+    "aiAnalyzing": "AI analyzing...",
+    "aiPowered": "AI-powered analysis",
+    "ruleBased": "Rule-based analysis",
+    "aiTooltip": "AI-powered risk advisor",
+    "refreshAnalysis": "Refresh analysis",
+    "pitchCount": "{{count}} pitches",
+    "pitchCount_one": "{{count}} pitch",
+    "overallScore": "Overall Score",
+    "riskDistribution": "Risk Distribution",
+    "pitchesByRisk": "Pitches by Risk",
+    "commonRiskFactors": "Common Risk Factors",
+    "insights": "Insights",
+    "noInsights": "No insights available",
+    "recommendations": "Recommendations",
+    "noRecommendations": "No recommendations available",
+    "avgProgress": "Avg Progress",
+    "appetiteUsed": "Appetite Used",
+    "maxRisk": "Max Risk",
+    "minRisk": "Min Risk",
+    "levelLow": "Low",
+    "levelMedium": "Medium",
+    "levelHigh": "High",
+    "levelCritical": "Critical"
   },
   "priority": {
     "label": "Priority",

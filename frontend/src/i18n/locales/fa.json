@@ -1538,8 +1538,36 @@
       "aiInsights": "بینش‌های هوش مصنوعی",
       "activity": "فعالیت",
       "noAiInsights": "بینش‌های هوش مصنوعی برای پروژه‌های Shape Up با سیکل‌های فعال در دسترس است.",
-      "noActivityWidgets": "هیچ ویجت فعالیتی در حال حاضر قابل مشاهده نیست. آن‌ها را در تنظیمات ویجت فعال کنید."
+      "noActivityWidgets": "هیچ ویجت فعالیتی در حال حاضر قابل مشاهده نیست. آن‌ها را در تنظیمات ویجت فعال کنید.",
+      "aiInsightsKanbanDisabled": "بینش‌های هوش مصنوعی برای پروژه‌های کانبان در دسترس نیست"
     }
+  },
+  "riskAdvisor": {
+    "title": "مشاور ریسک سیکل",
+    "cycleRiskTitle": "ریسک {{name}}",
+    "aiAnalyzing": "هوش مصنوعی در حال تحلیل...",
+    "aiPowered": "تحلیل مبتنی بر هوش مصنوعی",
+    "ruleBased": "تحلیل مبتنی بر قوانین",
+    "aiTooltip": "مشاور ریسک هوشمند",
+    "refreshAnalysis": "به‌روزرسانی تحلیل",
+    "pitchCount": "{{count}} پیچ",
+    "pitchCount_one": "{{count}} پیچ",
+    "overallScore": "امتیاز کلی",
+    "riskDistribution": "توزیع ریسک",
+    "pitchesByRisk": "پیچ‌ها بر اساس ریسک",
+    "commonRiskFactors": "عوامل ریسک مشترک",
+    "insights": "بینش‌ها",
+    "noInsights": "بینشی موجود نیست",
+    "recommendations": "توصیه‌ها",
+    "noRecommendations": "توصیه‌ای موجود نیست",
+    "avgProgress": "میانگین پیشرفت",
+    "appetiteUsed": "اشتها مصرف‌شده",
+    "maxRisk": "بیشترین ریسک",
+    "minRisk": "کمترین ریسک",
+    "levelLow": "پایین",
+    "levelMedium": "متوسط",
+    "levelHigh": "بالا",
+    "levelCritical": "بحرانی"
   },
   "dashboardCustomizer": {
     "addWidget": "افزودن ویجت",
