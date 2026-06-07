@@ -21,6 +21,7 @@ import {
   RecentPitchesWidget,
 } from './widgets';
 import MotionContainer from './MotionContainer';
+import { DashboardInsightsPanel } from './DashboardInsightsPanel';
 
 // Activity tab widget types for filtering
 const ACTIVITY_WIDGETS = ['RECENT_ACTIVITY', 'OVERDUE_TASKS', 'BLOCKED_TASKS', 'UPCOMING_DEADLINES', 'MY_TASKS', 'TEAM_WORKLOAD'];
@@ -62,7 +63,13 @@ export function DashboardTabs({
     if (isKanbanProject) return null;
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="space-y-3">
+        {projectId && (
+          <MotionContainer delay={0}>
+            <DashboardInsightsPanel projectId={projectId} />
+          </MotionContainer>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {isWidgetVisible('ACTIVE_CYCLES') && (
           <MotionContainer delay={0.1}>
             <ActiveCyclesWidget cycles={activeCycles} />
@@ -86,6 +93,7 @@ export function DashboardTabs({
             <RecentPitchesWidget pitches={recentPitches} />
           </MotionContainer>
         )}
+        </div>
       </div>
     );
   };

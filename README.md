@@ -40,7 +40,8 @@ docker compose up -d
 |---|---|
 | **Triple project modes** | Shape Up (pitches, betting, hill charts, circuit breaker), Kanban, and Scrum (story points, burndown, velocity) — per project, switchable any time |
 | **MCP server** | Claude Code, Cursor, and any MCP client can call `list_projects`, `get_work_context`, `create_task`, and 18 other tools — no browser tab switching |
-| **Pluggable AI stack** | Swap between Ollama (local), OpenAI, Anthropic Claude, or RunPod via one env var. RAG Q&A, risk scoring, test generation, and technical solutions all work with every provider |
+| **Pluggable AI stack** | Swap between Ollama (local), OpenAI, Anthropic Claude, or RunPod via one env var. RAG Q&A, risk scoring, test generation, AI Pitch Writer, Retro Summarizer, and technical solutions all work with every provider |
+| **AI Copilot v2** | **AI Pitch Writer** turns a one-sentence problem into a full Shape Up pitch draft. **Retrospective Summarizer** generates structured cycle retros (wins, blockers, team health). **Proactive Dashboard Insights** surfaces at-risk cycles, scope creep, and velocity trends automatically |
 | **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
 | **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
