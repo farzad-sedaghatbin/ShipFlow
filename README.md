@@ -192,6 +192,7 @@ docker compose up -d
   - Grouped results by entity type with score-based ranking
   - Debounced 300ms search with loading, empty, and minimum-chars feedback
   - Requires specific project context (disabled when "All Projects" selected)
+- **AI Pitch Writer** *(v1.5.0)*: Click "Write with AI" on the Pitch Board → type a problem in plain language → get a full Shape Up pitch draft (title, problem statement, solution, appetite, rabbit holes, no-gos, risks) in one step. Pre-fills the New Pitch form for human review before saving.
 - **AI-Powered Q&A (RAG)**: Conversational assistant over your project knowledge base
   - Ask questions like "What pitches are at risk in Cycle 5?" or "What are the rabbit holes for the mobile checkout pitch?"
   - **Multi-turn memory**: Conversation context persists across follow-up questions — the AI remembers what you asked

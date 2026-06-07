@@ -53,6 +53,7 @@ import {
   Upload,
   FileSpreadsheet,
   FolderInput,
+  Wand2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -71,6 +72,29 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.5.0',
+    date: 'In Development',
+    title: 'AI Copilot v2',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'AI Pitch Writer',
+        description: 'Type a problem in plain language and get a full Shape Up pitch draft — title, problem statement, solution, appetite, rabbit holes, and no-gos — in one click. Pre-fills the pitch form for human review.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Retrospective Summarizer',
+        description: 'AI-generated retro summary after each cycle close. Highlights patterns, recurring blockers, and team health signals across all board entries.',
+      },
+      {
+        icon: <TrendingUp className="h-5 w-5" />,
+        title: 'Proactive Dashboard Insights',
+        description: 'The dashboard surfaces AI-driven alerts: overdue pitches, at-risk cycles, scope creep warnings, and velocity trend sparklines — computed in the background and cached.',
+      },
+    ],
+  },
   {
     version: '1.4.0',
     date: 'June 7, 2026',

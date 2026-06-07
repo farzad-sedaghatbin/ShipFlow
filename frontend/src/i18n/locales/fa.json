@@ -6842,5 +6842,33 @@
     "tokenDialogTitle": "توکن Bearer برای SCIM",
     "noTokenGenerated": "هنوز هیچ توکنی ایجاد نشده است. برای فعال‌سازی تأمین SCIM از ارائه‌دهنده هویت، یک توکن ایجاد کنید.",
     "endpointLabel": "آدرس پایه SCIM 2.0"
+  },
+  "aiPitchWriter": {
+    "button": "نوشتن با هوش مصنوعی",
+    "modalTitle": "نویسنده پیچ هوش مصنوعی",
+    "modalSubtitle": "مشکل خود را به زبان ساده توضیح دهید — هوش مصنوعی یک پیچ کامل Shape Up پیش‌نویس می‌کند.",
+    "problemLabel": "چه مشکلی باید حل شود؟",
+    "problemPlaceholder": "مثال: تیم ما نمی‌تواند تشخیص دهد کدام وظایف کار آن‌ها را مسدود کرده‌اند تا زمانی که دیر نشده...",
+    "appetiteLabel": "اشتها",
+    "appetite14": "۲ هفته (دسته کوچک)",
+    "appetite28": "۴ هفته (دسته بزرگ)",
+    "appetiteAny": "هوش مصنوعی تصمیم بگیرد",
+    "generateButton": "تولید پیچ",
+    "generating": "هوش مصنوعی در حال پیش‌نویس پیچ شما است...",
+    "generatingNote": "معمولاً ۱۰ تا ۲۰ ثانیه طول می‌کشد",
+    "resultTitle": "پیش‌نویس هوش مصنوعی شما",
+    "useThisDraft": "استفاده از این پیش‌نویس",
+    "tryAgain": "تلاش مجدد",
+    "errorTitle": "تولید ناموفق بود",
+    "errorRetry": "تلاش دوباره",
+    "fieldTitle": "عنوان",
+    "fieldProblem": "بیانیه مشکل",
+    "fieldSolution": "راه‌حل",
+    "fieldAppetite": "اشتها",
+    "fieldRabbitHoles": "سوراخ‌های خرگوش",
+    "fieldNoGos": "موارد خارج از محدوده",
+    "fieldRisks": "ریسک‌ها",
+    "days": "روز",
+    "unavailable": "هوش مصنوعی در این نمونه پیکربندی نشده است"
   }
 }

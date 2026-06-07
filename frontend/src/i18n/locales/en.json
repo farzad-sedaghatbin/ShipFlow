@@ -7807,5 +7807,33 @@
     "tokenDialogTitle": "SCIM Bearer Token",
     "noTokenGenerated": "No token has been generated yet. Generate a token to enable SCIM provisioning from your identity provider.",
     "endpointLabel": "SCIM 2.0 Base URL"
+  },
+  "aiPitchWriter": {
+    "button": "Write with AI",
+    "modalTitle": "AI Pitch Writer",
+    "modalSubtitle": "Describe your problem in plain language — AI will draft a full Shape Up pitch.",
+    "problemLabel": "What problem needs solving?",
+    "problemPlaceholder": "e.g. Our team can't tell which tasks are blocking their work until it's too late...",
+    "appetiteLabel": "Appetite",
+    "appetite14": "2 weeks (Small Batch)",
+    "appetite28": "4 weeks (Big Batch)",
+    "appetiteAny": "Let AI decide",
+    "generateButton": "Generate Pitch",
+    "generating": "AI is drafting your pitch...",
+    "generatingNote": "This usually takes 10–20 seconds",
+    "resultTitle": "Your AI Draft",
+    "useThisDraft": "Use This Draft",
+    "tryAgain": "Try Again",
+    "errorTitle": "Generation failed",
+    "errorRetry": "Retry",
+    "fieldTitle": "Title",
+    "fieldProblem": "Problem Statement",
+    "fieldSolution": "Solution",
+    "fieldAppetite": "Appetite",
+    "fieldRabbitHoles": "Rabbit Holes",
+    "fieldNoGos": "No-Gos",
+    "fieldRisks": "Risks",
+    "days": "days",
+    "unavailable": "AI is not configured on this instance"
   }
 }
