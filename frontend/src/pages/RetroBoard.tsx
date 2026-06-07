@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
 import { ActOnRetroItemsDialog } from '../components/ActOnRetroItemsDialog';
+import { RetroSummaryPanel } from '../components/RetroSummaryPanel';
 
 import { useAuth } from '../contexts/AuthContext';
 import { Retrospective, RetroItem, RetroColumnType, RetroStatus } from '../types';
@@ -630,6 +631,14 @@ export default function RetroBoard() {
             </div>
           ))}
         </div>
+
+        {/* AI Retrospective Summary */}
+        {retro && (
+          <RetroSummaryPanel
+            cycleId={retro.cycleId}
+            retroStatus={retro.status}
+          />
+        )}
 
         {/* Merge Dialog */}
         <Dialog

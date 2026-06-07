@@ -139,6 +139,7 @@ public class RedisConfig {
         perCacheConfig.put("persons", defaultConfig.entryTtl(Duration.ofMinutes(10)));
         perCacheConfig.put("users", defaultConfig.entryTtl(Duration.ofMinutes(5)));
         perCacheConfig.put("roadmap", defaultConfig.entryTtl(Duration.ofMinutes(2)));
+        perCacheConfig.put("dashboardInsights", defaultConfig.entryTtl(Duration.ofMinutes(60)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

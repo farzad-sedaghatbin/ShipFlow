@@ -7835,5 +7835,33 @@
     "fieldRisks": "Risks",
     "days": "days",
     "unavailable": "AI is not configured on this instance"
+  },
+  "retroSummary": {
+    "title": "AI Retrospective Summary",
+    "summarizeButton": "Summarize with AI",
+    "regenerateButton": "Regenerate Summary",
+    "generating": "Generating summary...",
+    "noData": "Complete the retrospective board first — add entries to get an AI summary.",
+    "aiGenerated": "AI Generated",
+    "templateGenerated": "Template",
+    "generatedAt": "Generated",
+    "wentWell": "Key Wins",
+    "didNotGoWell": "Main Blockers",
+    "tryNext": "Try Next",
+    "actions": "Action Items"
+  },
+  "dashboardInsights": {
+    "title": "AI Insights",
+    "subtitle": "Proactive alerts for your active cycles",
+    "refresh": "Refresh",
+    "noAlerts": "No alerts — everything looks on track",
+    "aiSummary": "AI Summary",
+    "updatedAt": "Updated",
+    "loading": "Loading insights...",
+    "overduePitches": "Overdue Pitches",
+    "atRiskCycle": "Cycle at Risk",
+    "scopeCreep": "Scope Creep Detected",
+    "velocityTrend": "Velocity Trend",
+    "viewDetails": "View"
   }
 }

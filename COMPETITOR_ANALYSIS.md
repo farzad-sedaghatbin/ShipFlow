@@ -42,6 +42,8 @@ ShipFlow targets teams that:
 | **AI risk scoring per pitch** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI cycle narrative summaries** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI pitch writer (Shape Up draft from one sentence)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI retrospective summarizer (patterns, blockers, team health)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Proactive dashboard insights (overdue, at-risk, scope creep, velocity)** | ✅ | Partial³ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | **GitHub integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | **Pluggable VCS providers** | ✅ | ❌ | Partial | ❌ | ❌ | ❌ | ❌ |
@@ -60,6 +62,7 @@ ShipFlow targets teams that:
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
+³ Linear has a "Triage" view for overdue issues but no proactive AI-computed insight panel with scope-creep detection or velocity trend analysis.
 
 ---
 
