@@ -1,8 +1,9 @@
+import { useRef } from 'react';
 import { FileText, Wrench, Info } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TaskCategory, Task } from '../types';
-import TimerWidget from '../components/TimerWidget';
+import TimerWidget, { TimerWidgetHandle } from '../components/TimerWidget';
 import KanbanBoard from '../components/KanbanBoard';
 import { BacklogSkeleton } from '../components/Skeletons';
 import { useBacklogPage } from '../hooks/useBacklogPage';
@@ -22,6 +23,16 @@ import { useTranslation } from 'react-i18next';
 export default function BacklogPage() {
   const { t } = useTranslation();
   const bp = useBacklogPage();
+  const timerWidgetRef = useRef<TimerWidgetHandle>(null);
+
+  const handleStartTimerOrFocus = (task: Task) => {
+    if (bp.activeTimerTaskId === task.id) {
+      // Timer already running for this task — scroll to and expand the widget
+      timerWidgetRef.current?.focusAndExpand();
+    } else {
+      bp.handleStartTimer(task);
+    }
+  };
 
   if (bp.loading || bp.isSwitchingProject) {
     return <BacklogSkeleton />;
@@ -35,7 +46,7 @@ export default function BacklogPage() {
     onEditTask: bp.handleOpenDialog,
     onDeleteTask: (taskId: number) => bp.setDeleteDialog({ open: true, taskId }),
     onAddSubtask: bp.handleAddSubTask,
-    onStartTimer: bp.handleStartTimer,
+    onStartTimer: handleStartTimerOrFocus,
     loading: bp.tasksLoading,
     // Fix: wire column visibility controls
     visibleColumns: bp.visibleColumns,
@@ -64,7 +75,7 @@ export default function BacklogPage() {
     onEditTask: bp.handleOpenDialog,
     onDeleteTask: (taskId: number) => bp.setDeleteDialog({ open: true, taskId }),
     onAddSubTask: bp.handleAddSubTask,
-    onStartTimer: bp.handleStartTimer,
+    onStartTimer: handleStartTimerOrFocus,
     onQuickStatusChange: bp.handleQuickStatusChange,
     onQuickPriorityChange: bp.handleQuickPriorityChange,
     onOpenDialog: () => bp.handleOpenDialog(),
@@ -73,7 +84,7 @@ export default function BacklogPage() {
 
   return (
     <div className="space-y-6" data-tour="backlog-board">
-      <TimerWidget onTimerStopped={bp.handleTimerStopped} />
+      <TimerWidget ref={timerWidgetRef} onTimerStopped={bp.handleTimerStopped} />
 
       <BacklogHeader
         categoryDescription={bp.categoryDescription}
