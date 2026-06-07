@@ -134,8 +134,8 @@ const TimerWidget = forwardRef<TimerWidgetHandle, TimerWidgetProps>(({ onTimerSt
 
   const handleOpenStopDialog = () => {
     setWorkLogNote(activeTimer?.note || '');
-    // Pre-fill with computed hours so user can correct if timer ran too long
-    const computed = Math.round((displayedElapsed / 3600) * 4) / 4;
+    // Pre-fill with computed hours (minimum 0.25 = 15 min)
+    const computed = Math.max(0.25, Math.round((displayedElapsed / 3600) * 4) / 4);
     setCustomHours(computed.toFixed(2));
     setConfirmDialog('stop');
   };
@@ -147,11 +147,11 @@ const TimerWidget = forwardRef<TimerWidgetHandle, TimerWidgetProps>(({ onTimerSt
       setLoading(true);
       setError(null);
 
-      // Use user-edited hours if valid, otherwise fall back to timer-computed
+      // Use user-edited hours, snapped to nearest 0.25, minimum 0.25
       const parsed = parseFloat(customHours);
-      const hours = !isNaN(parsed) && parsed > 0
-        ? Math.round(parsed * 4) / 4  // snap to nearest 0.25
-        : Math.round((displayedElapsed / 3600) * 4) / 4;
+      const hours = Math.max(0.25, Math.round((isNaN(parsed) || parsed <= 0
+        ? displayedElapsed / 3600
+        : parsed) * 4) / 4);
 
       // Create work log with the custom note
       await workLogService.createMy({
