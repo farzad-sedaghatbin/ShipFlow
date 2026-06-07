@@ -5,12 +5,12 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.4.0 — "Enterprise Auth & UX Depth"
+## Current Milestone: v1.6.0 — "MCP Ecosystem"
 
-**Current version**: v1.3.0 (released 2026-06-05)
+**Current version**: v1.5.0 (released 2026-06-07)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Next: Enterprise Auth & UX Depth (v1.4.0) — SSO, SCIM, interactive roadmap timeline, UX polish.
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. Next: MCP Ecosystem (v1.6.0) — agentic write tools, plugin SDK, Notion/Confluence clients.
 
 ### v1.3.0 session map
 
@@ -79,11 +79,30 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | S36 | UX polish — inline pitch title editing, retrospective templates (Went Well/Improve/Action Items), i18n interpolation sweep | ✅ done |
 | S37 | Navigation hardening — deep-link routing for all sidebar routes, keyboard shortcut cheat sheet overlay | ✅ done |
 
+**v1.4.0 released: 2026-06-07** ✅
+
+### v1.5.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S38 | AI Pitch Writer — LLM-powered Shape Up pitch draft from one-sentence problem description, pre-fills pitch form | ✅ done |
+| S39 | Retrospective Summarizer — AI-generated cycle retro summary, template fallback, RetroSummaryPanel below board | ✅ done |
+| S40 | Proactive Dashboard Insights — DashboardInsightsPanel (overdue pitches, at-risk cycles, scope creep, velocity), Redis cache | ✅ done |
+
+**v1.5.0 released: 2026-06-07** ✅
+
+### v1.6.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S41 | Agentic MCP write tools — create/update tasks and pitches via MCP tool calls from AI editors | 🔜 next |
+| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | 🔜 next |
+| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | 🔜 next |
+
 ### Future milestones overview
 
 | Version | Theme | Sessions |
 |---------|-------|----------|
-| v1.5.0 | AI Copilot v2 — AI pitch writer, retro summarizer, proactive dashboard insights | S38–S40 |
 | v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients | S41–S43 |
 | v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S44–S46 |
 | v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S47–S49 |

@@ -74,9 +74,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.5.0',
-    date: 'In Development',
+    date: 'June 7, 2026',
     title: 'AI Copilot v2',
-    upcoming: true,
     highlights: [
       {
         icon: <Wand2 className="h-5 w-5" />,

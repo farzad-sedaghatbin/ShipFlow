@@ -5153,7 +5153,21 @@
     "phase150Item1Title": "Retrospective Summarizer",
     "phase150Item1Desc": "AI-generated retro summary after each cycle close — highlights patterns, recurring blockers, and team health signals.",
     "phase150Item2Title": "Proactive Dashboard Insights",
-    "phase150Item2Desc": "The dashboard surfaces AI-driven alerts: overdue pitches, at-risk cycles, scope creep, and team velocity trends."
+    "phase150Item2Desc": "The dashboard surfaces AI-driven alerts: overdue pitches, at-risk cycles, scope creep, and team velocity trends.",
+    "shipped150Title": "AI Copilot v2",
+    "shipped150Item0Title": "AI Pitch Writer",
+    "shipped150Item0Desc": "Type a problem in plain language and get a full Shape Up pitch — title, solution, appetite, rabbit holes, and no-gos — in one click.",
+    "shipped150Item1Title": "Retrospective Summarizer",
+    "shipped150Item1Desc": "AI-generated retro summary after cycle close. Highlights wins, blockers, action items, and team health signal.",
+    "shipped150Item2Title": "Proactive Dashboard Insights",
+    "shipped150Item2Desc": "Dashboard detects overdue pitches, at-risk cycles, scope creep, and velocity trends automatically.",
+    "phase160Theme": "MCP Ecosystem",
+    "phase160Item0Title": "Agentic Write Tools",
+    "phase160Item0Desc": "AI coding assistants can create tasks, update pitches, and move scopes via MCP tool calls from any editor.",
+    "phase160Item1Title": "Plugin SDK",
+    "phase160Item1Desc": "First-party plugin SDK and Maven archetype for third-party integrations.",
+    "phase160Item2Title": "Notion / Confluence Clients",
+    "phase160Item2Desc": "Read design docs and meeting notes from Notion or Confluence directly in ShipFlow AI features."
   },
   "releaseNotes": {
     "title": "Release Notes",
