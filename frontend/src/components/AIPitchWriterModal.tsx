@@ -28,6 +28,7 @@ interface AIPitchWriterModalProps {
   onClose: () => void;
   onAccept: (draft: PitchWriterResponse) => void;
   projectContext?: string;
+  projectId?: number;
 }
 
 type ModalState = 'input' | 'loading' | 'result' | 'error';
@@ -39,6 +40,7 @@ export default function AIPitchWriterModal({
   onClose,
   onAccept,
   projectContext,
+  projectId,
 }: AIPitchWriterModalProps) {
   const { t } = useTranslation();
 
@@ -71,6 +73,7 @@ export default function AIPitchWriterModal({
         problemDescription: problemDescription.trim(),
         appetiteHint: appetiteValue,
         projectContext: projectContext,
+        projectId: projectId,
       });
 
       setResult(response);

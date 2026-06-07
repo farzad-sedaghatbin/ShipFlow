@@ -4,6 +4,7 @@ export interface PitchWriterRequest {
   problemDescription: string;
   appetiteHint?: number;
   projectContext?: string;
+  projectId?: number;
 }
 
 export interface PitchWriterResponse {

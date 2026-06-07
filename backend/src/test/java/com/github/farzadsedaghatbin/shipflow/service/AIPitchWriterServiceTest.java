@@ -47,7 +47,7 @@ class AIPitchWriterServiceTest {
 
   @BeforeEach
   void setUp() {
-    service = new AIPitchWriterService(chatLanguageModel, new ObjectMapper());
+    service = new AIPitchWriterService(chatLanguageModel, new ObjectMapper(), null);
   }
 
   // ── isAvailable ──────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ class AIPitchWriterServiceTest {
     @DisplayName("returns false when ChatLanguageModel is null (not configured)")
     void returnsFalse_whenModelAbsent() {
       AIPitchWriterService serviceWithoutModel =
-          new AIPitchWriterService(null, new ObjectMapper());
+          new AIPitchWriterService(null, new ObjectMapper(), null);
       assertThat(serviceWithoutModel.isAvailable()).isFalse();
     }
   }
@@ -210,7 +210,7 @@ class AIPitchWriterServiceTest {
     @DisplayName("throws IllegalStateException when ChatLanguageModel is null")
     void throwsWhenModelIsNull() {
       AIPitchWriterService serviceWithoutModel =
-          new AIPitchWriterService(null, new ObjectMapper());
+          new AIPitchWriterService(null, new ObjectMapper(), null);
 
       assertThatThrownBy(
               () ->

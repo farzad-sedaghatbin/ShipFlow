@@ -34,8 +34,8 @@ class DashboardInsightsServiceTest {
 
   @BeforeEach
   void setUp() {
-    serviceWithLlm = new DashboardInsightsService(cycleRepository, pitchRepository, chatLanguageModel);
-    serviceWithoutLlm = new DashboardInsightsService(cycleRepository, pitchRepository, null);
+    serviceWithLlm = new DashboardInsightsService(cycleRepository, pitchRepository, chatLanguageModel, null);
+    serviceWithoutLlm = new DashboardInsightsService(cycleRepository, pitchRepository, null, null);
   }
 
   // ── Helper builders ──────────────────────────────────────────────────────
