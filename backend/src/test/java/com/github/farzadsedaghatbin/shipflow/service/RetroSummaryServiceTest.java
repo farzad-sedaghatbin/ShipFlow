@@ -93,7 +93,8 @@ class RetroSummaryServiceTest {
         userRepository,
         capacityConfigService,
         retroRepository,
-        retroItemRepository);
+        retroItemRepository,
+        null /* projectSnapshotService — not needed for retro summary tests */);
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────

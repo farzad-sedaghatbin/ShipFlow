@@ -6911,5 +6911,18 @@
     "scopeCreep": "افزایش محدوده تشخیص داده شد",
     "velocityTrend": "روند سرعت",
     "viewDetails": "مشاهده"
+  },
+  "projectSnapshot": {
+    "title": "حافظه پروژه",
+    "updatedAgo": "به‌روزرسانی {{time}}",
+    "refresh": "به‌روزرسانی اسنپشات",
+    "velocity": "سرعت",
+    "velocityDetail": "{{cycles}} چرخه · میانگین {{avg}} پیشنهاد/چرخه · {{completion}}٪ تکمیل · اشتها معمول {{appetite}} روز",
+    "activeCycle": "چرخه فعال",
+    "pitches": "پیشنهاد",
+    "done": "انجام‌شده",
+    "daysLeft": "روز مانده",
+    "patterns": "مراقب باشید",
+    "riskPosture": "وضعیت ریسک"
   }
 }

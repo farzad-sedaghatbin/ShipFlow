@@ -871,6 +871,7 @@ export default function PitchBoard() {
         onClose={() => setAiWriterOpen(false)}
         onAccept={handleAIAccept}
         projectContext={currentProject?.name}
+        projectId={currentProject?.id}
       />
 
       {/* Create Pitch Dialog */}

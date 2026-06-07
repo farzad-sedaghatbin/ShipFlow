@@ -39,6 +39,7 @@ public class CycleNarrativeService {
   private final CapacityConfigService capacityConfigService;
   private final RetroRepository retroRepository;
   private final RetroItemRepository retroItemRepository;
+  private final ProjectSnapshotService projectSnapshotService;
 
   @Autowired
   public CycleNarrativeService(
@@ -52,7 +53,8 @@ public class CycleNarrativeService {
       UserRepository userRepository,
       CapacityConfigService capacityConfigService,
       RetroRepository retroRepository,
-      RetroItemRepository retroItemRepository) {
+      RetroItemRepository retroItemRepository,
+      @org.springframework.lang.Nullable ProjectSnapshotService projectSnapshotService) {
     this.cycleRepository = cycleRepository;
     this.pitchRepository = pitchRepository;
     this.workLogRepository = workLogRepository;
@@ -64,6 +66,7 @@ public class CycleNarrativeService {
     this.capacityConfigService = capacityConfigService;
     this.retroRepository = retroRepository;
     this.retroItemRepository = retroItemRepository;
+    this.projectSnapshotService = projectSnapshotService;
   }
 
   /**
@@ -722,6 +725,22 @@ public class CycleNarrativeService {
 
   private String generateRetroSummaryWithAI(Cycle cycle, Map<RetroColumnType, List<RetroItem>> grouped) {
     StringBuilder prompt = new StringBuilder();
+
+    // Prepend project snapshot for richer LLM context
+    if (projectSnapshotService != null && cycle.getProject() != null) {
+      try {
+        String snapshotBlock = projectSnapshotService.buildPromptBlock(cycle.getProject().getId());
+        if (!snapshotBlock.isBlank()) {
+          prompt.append(snapshotBlock).append("\n");
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Snapshot injection skipped for retro summary (cycleId={}): {}",
+            cycle.getId(),
+            e.getMessage());
+      }
+    }
+
     prompt.append("You are analyzing a team's retrospective board for a Shape Up cycle.\n\n");
     prompt.append("Cycle: ").append(cycle.getName()).append("\n");
     prompt.append("Date: ").append(LocalDateTime.now().toLocalDate()).append("\n\n");

@@ -47,15 +47,18 @@ public class DashboardInsightsService {
   private final CycleRepository cycleRepository;
   private final PitchRepository pitchRepository;
   private final ChatLanguageModel chatLanguageModel;
+  private final ProjectSnapshotService projectSnapshotService;
 
   @Autowired
   public DashboardInsightsService(
       CycleRepository cycleRepository,
       PitchRepository pitchRepository,
-      @Autowired(required = false) ChatLanguageModel chatLanguageModel) {
+      @Autowired(required = false) ChatLanguageModel chatLanguageModel,
+      @org.springframework.lang.Nullable ProjectSnapshotService projectSnapshotService) {
     this.cycleRepository = cycleRepository;
     this.pitchRepository = pitchRepository;
     this.chatLanguageModel = chatLanguageModel;
+    this.projectSnapshotService = projectSnapshotService;
   }
 
   /**
@@ -223,10 +226,27 @@ public class DashboardInsightsService {
             insights.stream()
                 .map(i -> i.getSeverity() + " – " + i.getTitle() + ": " + i.getDetail())
                 .collect(Collectors.joining("; "));
-        String prompt =
-            "Briefly summarize these project alerts in 1-2 sentences for a project manager: "
-                + insightText;
-        aiSummary = chatLanguageModel.generate(prompt);
+
+        // Prepend project snapshot for richer LLM context
+        StringBuilder promptBuilder = new StringBuilder();
+        if (projectSnapshotService != null) {
+          try {
+            String snapshotBlock = projectSnapshotService.buildPromptBlock(projectId);
+            if (!snapshotBlock.isBlank()) {
+              promptBuilder.append(snapshotBlock).append("\n");
+            }
+          } catch (Exception snapshotEx) {
+            log.warn(
+                "Snapshot injection skipped for dashboard insights (projectId={}): {}",
+                projectId,
+                snapshotEx.getMessage());
+          }
+        }
+        promptBuilder.append(
+            "Briefly summarize these project alerts in 1-2 sentences for a project manager: ");
+        promptBuilder.append(insightText);
+
+        aiSummary = chatLanguageModel.generate(promptBuilder.toString());
         log.debug("AI summary generated for project {}", projectId);
       } catch (Exception e) {
         log.warn("AI summary generation failed for project {}: {}", projectId, e.getMessage());

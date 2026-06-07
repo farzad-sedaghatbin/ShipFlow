@@ -7,6 +7,7 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.lang.Nullable;
 
 /**
  * Service that uses an LLM to generate a fully structured Shape Up pitch draft from a problem
@@ -18,12 +19,16 @@ public class AIPitchWriterService {
 
   private final ChatLanguageModel chatLanguageModel;
   private final ObjectMapper objectMapper;
+  private final ProjectSnapshotService projectSnapshotService;
 
   @Autowired
   public AIPitchWriterService(
-      @Autowired(required = false) ChatLanguageModel chatLanguageModel, ObjectMapper objectMapper) {
+      @Autowired(required = false) ChatLanguageModel chatLanguageModel,
+      ObjectMapper objectMapper,
+      @Nullable ProjectSnapshotService projectSnapshotService) {
     this.chatLanguageModel = chatLanguageModel;
     this.objectMapper = objectMapper;
+    this.projectSnapshotService = projectSnapshotService;
   }
 
   /** Returns {@code true} when a {@link ChatLanguageModel} bean is configured and available. */
@@ -70,6 +75,22 @@ public class AIPitchWriterService {
 
   private String buildPrompt(PitchWriterRequestDTO request) {
     StringBuilder sb = new StringBuilder();
+
+    // Prepend project snapshot when a projectId is supplied
+    if (request.getProjectId() != null && projectSnapshotService != null) {
+      try {
+        String snapshotBlock = projectSnapshotService.buildPromptBlock(request.getProjectId());
+        if (!snapshotBlock.isBlank()) {
+          sb.append(snapshotBlock).append("\n");
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Snapshot injection skipped for pitch writer (projectId={}): {}",
+            request.getProjectId(),
+            e.getMessage());
+      }
+    }
+
     sb.append(
         "You are ShipFlow's AI Pitch Writer, an expert in the Shape Up methodology by Basecamp.\n\n");
     sb.append("The user wants to write a Shape Up pitch for a software feature.\n\n");

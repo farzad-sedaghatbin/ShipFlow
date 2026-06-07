@@ -7877,5 +7877,18 @@
     "scopeCreep": "Scope Creep Detected",
     "velocityTrend": "Velocity Trend",
     "viewDetails": "View"
+  },
+  "projectSnapshot": {
+    "title": "Project Memory",
+    "updatedAgo": "Updated {{time}}",
+    "refresh": "Refresh snapshot",
+    "velocity": "Velocity",
+    "velocityDetail": "{{cycles}} cycles · avg {{avg}} pitches/cycle · {{completion}}% completion · typical {{appetite}}-day appetite",
+    "activeCycle": "Active cycle",
+    "pitches": "pitches",
+    "done": "done",
+    "daysLeft": "days left",
+    "patterns": "Watch out for",
+    "riskPosture": "Risk posture"
   }
 }

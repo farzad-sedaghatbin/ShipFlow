@@ -21,4 +21,11 @@ public class PitchWriterRequestDTO {
 
   /** Optional project context, e.g. "B2B SaaS, 5-person team". */
   private String projectContext;
+
+  /**
+   * Optional project ID. When provided, the AI Pitch Writer prepends a pre-computed project
+   * snapshot block to the prompt to give the LLM richer context about team velocity, active cycle,
+   * and roadmap themes.
+   */
+  private Long projectId;
 }
