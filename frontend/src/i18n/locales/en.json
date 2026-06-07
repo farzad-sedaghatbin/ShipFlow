@@ -7735,7 +7735,8 @@
       "keep": "Keep Timer",
       "discard": "Discard Timer"
     },
-    "longRunningWarning": "Timer has been running for over 8 hours. You can adjust the hours below before logging."
+    "longRunningWarning": "Timer has been running for over 8 hours. You can adjust the hours below before logging.",
+    "autoStopped": "Timer has been running for 8 hours. It has been automatically stopped and 8 hours logged."
   },
   "shortcuts": {
     "title": "Keyboard Shortcuts",
