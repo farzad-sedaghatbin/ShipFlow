@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.4.0] - 2026-06-07
 
 ### Added — v1.4.0 "Enterprise Auth & UX Depth" (S32–S37)
 

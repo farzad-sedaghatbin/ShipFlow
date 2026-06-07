@@ -57,6 +57,14 @@ export const NotesList: React.FC<NotesListProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(true);
+  const [expandedNoteIds, setExpandedNoteIds] = useState<Set<number>>(new Set());
+  const toggleNoteExpand = (id: number) =>
+    setExpandedNoteIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  const CONTENT_CLAMP_THRESHOLD = 120; // chars — below this, never show toggle
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<NoteDTO | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; note: NoteDTO | null }>({
@@ -290,9 +298,17 @@ export const NotesList: React.FC<NotesListProps> = ({
                         </TooltipProvider>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2 line-clamp-3 whitespace-pre-wrap">
+                    <p className={`text-sm text-muted-foreground mb-1 whitespace-pre-wrap ${!expandedNoteIds.has(note.id) ? 'line-clamp-3' : ''}`}>
                       {note.content}
                     </p>
+                    {note.content && note.content.length > CONTENT_CLAMP_THRESHOLD && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleNoteExpand(note.id); }}
+                        className="text-xs text-primary hover:underline mb-2 focus:outline-none"
+                      >
+                        {expandedNoteIds.has(note.id) ? t('common.showLess') : t('common.showMore')}
+                      </button>
+                    )}
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
                         {note.authorName && `By ${note.authorName} • `}
