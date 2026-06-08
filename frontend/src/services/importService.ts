@@ -1,5 +1,5 @@
 import api from './api';
-import { ImportJobDTO, JiraConnectionStatus, JiraProject, LinearConnectionStatus, LinearTeam } from '../types';
+import { ImportJobDTO, JiraConnectionStatus, JiraProject, LinearConnectionStatus, LinearTeam, ZephyrImportReportDTO } from '../types';
 
 export const importService = {
   importCsv: async (file: File, projectName: string, format: string): Promise<ImportJobDTO> => {
@@ -75,13 +75,24 @@ export const importService = {
   },
 
   // ── Zephyr / XLSX import ─────────────────────────────────────────────────
-  importFromZephyr: async (file: File, pitchId?: string): Promise<ImportJobDTO> => {
+  importFromZephyr: async (file: File): Promise<ZephyrImportReportDTO> => {
     const formData = new FormData();
     formData.append('file', file);
-    if (pitchId) formData.append('pitchId', pitchId);
     const res = await api.post('/import/zephyr', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return res.data;
+  },
+
+  linkImportedTestCases: async (
+    importJobId: number,
+    pitchId?: number,
+    taskId?: number
+  ): Promise<{ linked: number; pitchId: number | null; taskId: number | null }> => {
+    const body: { pitchId?: number; taskId?: number } = {};
+    if (pitchId !== undefined) body.pitchId = pitchId;
+    if (taskId !== undefined) body.taskId = taskId;
+    const res = await api.patch(`/import/${importJobId}/link-test-cases`, body);
     return res.data;
   },
 };

@@ -1,6 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.ImportJobDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.imports.LinkImportedTestCasesRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.imports.ZephyrImportReportDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.CsvImportService;
@@ -9,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -110,12 +113,13 @@ public class ImportController {
 
   /**
    * Upload and process a Zephyr Scale XLSX export, importing all rows as TestCase entities.
+   * Returns a per-row report so callers can see which rows succeeded or failed.
    * Allowed for ADMIN, MANAGER, and QA roles.
    */
   @PostMapping(value = "/zephyr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'QA')")
   @Operation(summary = "Import test cases from a Zephyr Scale XLSX export")
-  public ResponseEntity<ImportJobDTO> importZephyr(
+  public ResponseEntity<ZephyrImportReportDTO> importZephyr(
       @RequestParam("file") MultipartFile file,
       @RequestParam(value = "pitchId", required = false) Long pitchId,
       @AuthenticationPrincipal UserDetails userDetails) {
@@ -137,7 +141,24 @@ public class ImportController {
         originalName,
         pitchId);
 
-    ImportJobDTO result = zephyrImportService.importZephyr(file, pitchId, userDetails);
+    ZephyrImportReportDTO result = zephyrImportService.importZephyr(file, pitchId, userDetails);
+    return ResponseEntity.ok(result);
+  }
+
+  /**
+   * Bulk-link all test cases from a Zephyr import to a pitch and/or task.
+   * Allowed for ADMIN, MANAGER, and QA roles.
+   */
+  @PatchMapping("/{importJobId}/link-test-cases")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'QA')")
+  @Operation(summary = "Bulk-link all test cases from a Zephyr import to a pitch and/or task")
+  public ResponseEntity<Map<String, Object>> linkImportedTestCases(
+      @PathVariable Long importJobId,
+      @RequestBody LinkImportedTestCasesRequest request,
+      @AuthenticationPrincipal UserDetails userDetails) {
+
+    Map<String, Object> result =
+        zephyrImportService.linkImportedTestCases(importJobId, request, userDetails);
     return ResponseEntity.ok(result);
   }
 

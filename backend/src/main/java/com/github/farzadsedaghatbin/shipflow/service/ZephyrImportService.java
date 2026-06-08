@@ -1,8 +1,11 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
-import com.github.farzadsedaghatbin.shipflow.dto.ImportJobDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.imports.LinkImportedTestCasesRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.imports.ZephyrImportReportDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.imports.ZephyrRowResultDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.ImportJob;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.TestCase;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ImportJobStatus;
@@ -12,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TestCaseStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TestCaseType;
 import com.github.farzadsedaghatbin.shipflow.repository.ImportJobRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TestCaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -19,6 +23,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -67,6 +72,7 @@ public class ZephyrImportService {
   private final TestCaseRepository testCaseRepository;
   private final UserRepository userRepository;
   private final PitchRepository pitchRepository;
+  private final TaskRepository taskRepository;
 
   // -------------------------------------------------------------------------
   // Public API
@@ -78,10 +84,11 @@ public class ZephyrImportService {
    * @param file the uploaded XLSX file
    * @param pitchId optional pitch to link every imported test case to
    * @param userDetails the authenticated caller
-   * @return a populated {@link ImportJobDTO} describing the outcome
+   * @return a populated {@link ZephyrImportReportDTO} with per-row results
    */
   @Transactional
-  public ImportJobDTO importZephyr(MultipartFile file, Long pitchId, UserDetails userDetails) {
+  public ZephyrImportReportDTO importZephyr(
+      MultipartFile file, Long pitchId, UserDetails userDetails) {
 
     User currentUser =
         userRepository
@@ -100,6 +107,8 @@ public class ZephyrImportService {
             .createdAt(LocalDateTime.now())
             .build();
     job = importJobRepository.save(job);
+
+    List<ZephyrRowResultDTO> rowResults = new ArrayList<>();
 
     try {
       job.setStatus(ImportJobStatus.PARSING);
@@ -130,6 +139,9 @@ public class ZephyrImportService {
           }
 
           int humanRowNum = rowIdx + 1; // 1-based + header
+          String key = cellString(row, 0);
+          String name = cellString(row, 1);
+
           try {
             TestCase testCase = parseRow(row, pitch, currentUser);
             if (testCase == null) {
@@ -137,13 +149,30 @@ public class ZephyrImportService {
               totalDataRows--;
               continue;
             }
-            testCaseRepository.save(testCase);
+            testCase.setImportJob(job);
+            TestCase saved = testCaseRepository.save(testCase);
             imported++;
+            rowResults.add(
+                ZephyrRowResultDTO.builder()
+                    .rowNumber(humanRowNum)
+                    .zephyrKey(key)
+                    .title(name)
+                    .success(true)
+                    .testCaseId(saved.getId())
+                    .build());
           } catch (Exception e) {
             failed++;
             String msg = "Row " + humanRowNum + ": " + e.getMessage();
             errorLog.append(msg).append("\n");
             log.debug("Zephyr import {}", msg, e);
+            rowResults.add(
+                ZephyrRowResultDTO.builder()
+                    .rowNumber(humanRowNum)
+                    .zephyrKey(key)
+                    .title(name)
+                    .success(false)
+                    .error(e.getMessage())
+                    .build());
           }
         }
       }
@@ -154,7 +183,8 @@ public class ZephyrImportService {
       if (errorLog.length() > 0) {
         job.setErrorLog(errorLog.toString());
       }
-      job.setStatus(imported == 0 && totalDataRows > 0 ? ImportJobStatus.FAILED : ImportJobStatus.COMPLETED);
+      job.setStatus(
+          imported == 0 && totalDataRows > 0 ? ImportJobStatus.FAILED : ImportJobStatus.COMPLETED);
       job.setCompletedAt(LocalDateTime.now());
 
     } catch (IOException e) {
@@ -169,7 +199,59 @@ public class ZephyrImportService {
       job.setErrorLog("Job-level failure: " + e.getMessage());
     }
 
-    return toDTO(importJobRepository.save(job));
+    ImportJob saved = importJobRepository.save(job);
+    return toReportDTO(saved, rowResults);
+  }
+
+  /**
+   * Bulk-link all {@link TestCase} entities created by a previous Zephyr import to a pitch and/or
+   * task. Both {@code pitchId} and {@code taskId} are optional; providing neither is a no-op.
+   *
+   * @param importJobId the import job whose test cases should be linked
+   * @param request contains the optional pitchId and taskId
+   * @param userDetails the authenticated caller (for audit / access checks upstream)
+   * @return a summary map with keys {@code linked}, {@code pitchId}, {@code taskId}
+   */
+  @Transactional
+  public Map<String, Object> linkImportedTestCases(
+      Long importJobId, LinkImportedTestCasesRequest request, UserDetails userDetails) {
+
+    // Verify the import job exists
+    importJobRepository
+        .findById(importJobId)
+        .orElseThrow(
+            () -> new EntityNotFoundException("Import job not found: " + importJobId));
+
+    List<TestCase> testCases = testCaseRepository.findByImportJobId(importJobId);
+
+    Pitch pitch =
+        request.getPitchId() != null
+            ? pitchRepository
+                .findById(request.getPitchId())
+                .orElseThrow(
+                    () ->
+                        new EntityNotFoundException("Pitch not found: " + request.getPitchId()))
+            : null;
+
+    Task task =
+        request.getTaskId() != null
+            ? taskRepository
+                .findById(request.getTaskId())
+                .orElseThrow(
+                    () -> new EntityNotFoundException("Task not found: " + request.getTaskId()))
+            : null;
+
+    testCases.forEach(
+        tc -> {
+          if (pitch != null) tc.setPitch(pitch);
+          if (task != null) tc.setTask(task);
+        });
+    testCaseRepository.saveAll(testCases);
+
+    return Map.of(
+        "linked", testCases.size(),
+        "pitchId", request.getPitchId() != null ? request.getPitchId() : "",
+        "taskId", request.getTaskId() != null ? request.getTaskId() : "");
   }
 
   // -------------------------------------------------------------------------
@@ -349,27 +431,22 @@ public class ZephyrImportService {
     if (pitchId == null) return null;
     return pitchRepository
         .findById(pitchId)
-        .orElseThrow(
-            () -> new EntityNotFoundException("Pitch not found: " + pitchId));
+        .orElseThrow(() -> new EntityNotFoundException("Pitch not found: " + pitchId));
   }
 
   // -------------------------------------------------------------------------
   // DTO conversion
   // -------------------------------------------------------------------------
 
-  private ImportJobDTO toDTO(ImportJob job) {
-    return ImportJobDTO.builder()
-        .id(job.getId())
+  private ZephyrImportReportDTO toReportDTO(ImportJob job, List<ZephyrRowResultDTO> rows) {
+    return ZephyrImportReportDTO.builder()
+        .importJobId(job.getId())
         .fileName(job.getFileName())
-        .sourceFormat(job.getSourceFormat() != null ? job.getSourceFormat().name() : null)
         .status(job.getStatus() != null ? job.getStatus().name() : null)
         .totalRows(job.getTotalRows())
         .importedRows(job.getImportedRows())
         .failedRows(job.getFailedRows())
-        .errorLog(job.getErrorLog())
-        .projectId(job.getProject() != null ? job.getProject().getId() : null)
-        .projectName(job.getProject() != null ? job.getProject().getName() : null)
-        .createdAt(job.getCreatedAt())
+        .rows(rows)
         .completedAt(job.getCompletedAt())
         .build();
   }

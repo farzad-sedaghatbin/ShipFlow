@@ -7709,7 +7709,22 @@
     "zephyrImporting": "Importing...",
     "zephyrImportAnother": "Import Another File",
     "zephyrDropzoneHint": "Drop your .xlsx file here or click to browse",
-    "zephyrWrongFormat": "Only .xlsx files are accepted"
+    "zephyrWrongFormat": "Only .xlsx files are accepted",
+    "zephyr.reportTitle": "Import Report",
+    "zephyr.rowNum": "Row",
+    "zephyr.key": "Key",
+    "zephyr.testCaseTitle": "Test Case",
+    "zephyr.rowStatus": "Status",
+    "zephyr.rowSuccess": "Imported",
+    "zephyr.showFailuresOnly": "Failures only",
+    "zephyr.showAll": "Show all",
+    "zephyr.linkSection": "Link imported test cases to…",
+    "zephyr.selectPitch": "Select pitch (optional)",
+    "zephyr.taskIdLabel": "Task ID (optional)",
+    "zephyr.linkButton": "Link {{count}} test cases",
+    "zephyr.linkSuccess": "Linked {{count}} test cases successfully",
+    "zephyr.linkError": "Linking failed",
+    "zephyr.linking": "Linking…"
   },
   "timerWidget": {
     "activeTimer": "Active Timer",

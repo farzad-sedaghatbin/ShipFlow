@@ -96,6 +96,12 @@ public class TestCase {
   @JoinColumn(name = "task_id")
   private Task task;
 
+  /** The import job that created this test case (nullable for manually created cases). */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "import_job_id")
+  private ImportJob importJob;
+
   /** Type of test case. */
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)

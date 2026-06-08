@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-06-08T12:48:06.112Z",
+  "timestamp": "2026-06-08T14:33:18.923Z",
   "stats": {
-    "totalEnKeys": 7210,
-    "totalFaKeys": 6288,
-    "totalUsedKeys": 4678,
+    "totalEnKeys": 7225,
+    "totalFaKeys": 6303,
+    "totalUsedKeys": 4691,
     "filesScanned": 424
   },
   "issues": {
@@ -3502,6 +3502,8 @@
     "importPage.step3",
     "importPage.importing",
     "importPage.detectedFormat",
+    "importPage.zephyrPitchIdLabel",
+    "importPage.zephyrPitchIdPlaceholder",
     "timerWidget.stopDialog.timeToLog",
     "timerWidget.stopDialog.rounded",
     "shortcuts.view",

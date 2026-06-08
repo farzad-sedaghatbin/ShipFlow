@@ -88,6 +88,9 @@ public interface TestCaseRepository extends JpaRepository<TestCase, Long> {
 
   boolean existsByTestCaseKey(String testCaseKey);
 
+  @Query("SELECT tc FROM TestCase tc WHERE tc.importJob.id = :importJobId AND tc.deletedAt IS NULL")
+  List<TestCase> findByImportJobId(@Param("importJobId") Long importJobId);
+
   // Multi-filter query
   @Query("SELECT tc FROM TestCase tc WHERE tc.deletedAt IS NULL " + "AND (:cycleId IS NULL OR tc.cycle.id = :cycleId) "
       + "AND (:pitchId IS NULL OR tc.pitch.id = :pitchId) " + "AND (:statuses IS NULL OR tc.status IN :statuses) "
