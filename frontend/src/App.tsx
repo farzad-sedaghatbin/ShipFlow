@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -150,6 +150,18 @@ function PageLoader() {
   );
 }
 
+/** Redirect /tasks/:taskId → /backlog/:taskId (legacy notification actionUrls) */
+function TaskToBacklogRedirect() {
+  const { taskId } = useParams<{ taskId: string }>();
+  return <Navigate to={`/backlog/${taskId}`} replace />;
+}
+
+/** Redirect /bugs/:bugId → /qa/bug-reports/:bugId (legacy notification actionUrls) */
+function BugToBugReportRedirect() {
+  const { bugId } = useParams<{ bugId: string }>();
+  return <Navigate to={`/qa/bug-reports/${bugId}`} replace />;
+}
+
 function App() {
   const { showToast } = useToast();
   const { i18n } = useTranslation();
@@ -248,6 +260,8 @@ function App() {
                         element={<Navigate to="/backlog?category=DEBT_IMPROVEMENT" replace />}
                       />
                       <Route path="tasks" element={<Navigate to="/backlog" replace />} />
+                      <Route path="tasks/:taskId" element={<TaskToBacklogRedirect />} />
+                      <Route path="bugs/:bugId" element={<BugToBugReportRedirect />} />
 
                       {/* Time Tracking */}
                       <Route path="time/logs" element={<WorkLogsPage />} />
