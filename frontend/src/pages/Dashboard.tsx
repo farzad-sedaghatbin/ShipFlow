@@ -214,7 +214,7 @@ export default function Dashboard() {
       </MotionContainer>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4 items-stretch">
         {!isKanbanProject && (
         <AnimatedCard
           delay={0.1}

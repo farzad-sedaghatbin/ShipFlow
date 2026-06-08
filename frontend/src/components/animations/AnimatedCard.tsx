@@ -84,6 +84,7 @@ export function AnimatedCard({
   
   return (
     <motion.div
+      className="h-full"
       variants={selectedAnimations[animation]}
       initial="hidden"
       animate="visible"
@@ -95,7 +96,7 @@ export function AnimatedCard({
       }}
       style={{ cursor: hoverEffect ? 'pointer' : 'default' }}
     >
-      <Card className={cn(className)} {...props}>
+      <Card className={cn('h-full', className)} {...props}>
         {children}
       </Card>
     </motion.div>

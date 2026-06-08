@@ -7485,7 +7485,9 @@
     "shortcut": "Search",
     "minChars": "Type at least 2 characters",
     "bugNotFound": "Bug report not found",
-    "backToBugs": "Back to Bug Reports"
+    "backToBugs": "Back to Bug Reports",
+    "openNewTab": "Open in new tab",
+    "openNewTabHint": "open in new tab"
   },
   "markdownEditor": {
     "write": "Write",
@@ -7853,7 +7855,8 @@
     "fieldNoGos": "No-Gos",
     "fieldRisks": "Risks",
     "days": "days",
-    "unavailable": "AI is not configured on this instance"
+    "unavailable": "AI is not configured on this instance",
+    "writeWithAI": "Write with AI"
   },
   "retroSummary": {
     "title": "AI Retrospective Summary",
