@@ -6672,7 +6672,17 @@
     "jiraImporting": "در حال دریافت از جیرا…",
     "jiraConnectedToast": "اتصال به جیرا با موفقیت انجام شد",
     "jiraErrorToast": "خطا در اتصال به جیرا: {{error}}",
-    "jiraDisconnectedToast": "اتصال جیرا قطع شد"
+    "jiraDisconnectedToast": "اتصال جیرا قطع شد",
+    "zephyrTitle": "Zephyr / XLSX",
+    "zephyrHeading": "وارد کردن از Zephyr Scale",
+    "zephyrDescription": "یک فایل XLSX صادر شده از Zephyr Scale یا هر ابزار مدیریت آزمون سازگار را آپلود کنید.",
+    "zephyrPitchIdLabel": "پیوند به شناسه پیچ (اختیاری)",
+    "zephyrPitchIdPlaceholder": "مثلاً ۴۲",
+    "zephyrImportButton": "وارد کردن موارد آزمون",
+    "zephyrImporting": "در حال وارد کردن...",
+    "zephyrImportAnother": "وارد کردن فایل دیگر",
+    "zephyrDropzoneHint": "فایل .xlsx خود را اینجا رها کنید یا برای انتخاب کلیک کنید",
+    "zephyrWrongFormat": "فقط فایل‌های .xlsx پذیرفته می‌شوند"
   },
   "timerWidget": {
     "activeTimer": "تایمر فعال",

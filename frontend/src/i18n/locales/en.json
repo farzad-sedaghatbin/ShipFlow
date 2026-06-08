@@ -7699,7 +7699,17 @@
     "jiraImporting": "Fetching issues from Jira…",
     "jiraConnectedToast": "Jira connected successfully",
     "jiraErrorToast": "Jira connection failed: {{error}}",
-    "jiraDisconnectedToast": "Jira disconnected"
+    "jiraDisconnectedToast": "Jira disconnected",
+    "zephyrTitle": "Zephyr / XLSX",
+    "zephyrHeading": "Import from Zephyr Scale",
+    "zephyrDescription": "Upload an XLSX file exported from Zephyr Scale or any compatible test management tool.",
+    "zephyrPitchIdLabel": "Link to Pitch ID (optional)",
+    "zephyrPitchIdPlaceholder": "e.g. 42",
+    "zephyrImportButton": "Import Test Cases",
+    "zephyrImporting": "Importing...",
+    "zephyrImportAnother": "Import Another File",
+    "zephyrDropzoneHint": "Drop your .xlsx file here or click to browse",
+    "zephyrWrongFormat": "Only .xlsx files are accepted"
   },
   "timerWidget": {
     "activeTimer": "Active Timer",

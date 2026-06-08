@@ -73,4 +73,15 @@ export const importService = {
     const res = await api.post('/import/jira', { projectKey, projectName, projectType });
     return res.data;
   },
+
+  // ── Zephyr / XLSX import ─────────────────────────────────────────────────
+  importFromZephyr: async (file: File, pitchId?: string): Promise<ImportJobDTO> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (pitchId) formData.append('pitchId', pitchId);
+    const res = await api.post('/import/zephyr', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
 };

@@ -10,6 +10,7 @@ import {
   ChevronUp,
   Unplug,
   Plug,
+  FileSpreadsheet,
 } from 'lucide-react';
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible';
 import * as SelectPrimitive from '@radix-ui/react-select';
@@ -19,7 +20,7 @@ import { ImportJobDTO, JiraConnectionStatus, JiraProject, LinearConnectionStatus
 import { useToast } from '../contexts';
 
 type Step = 1 | 2 | 3;
-type TabSource = 'csv' | 'linear' | 'jira';
+type TabSource = 'csv' | 'linear' | 'jira' | 'zephyr';
 
 const FORMAT_OPTIONS = [
   { value: 'auto', labelKey: 'importPage.formatAuto' },
@@ -830,6 +831,167 @@ function JiraTab() {
   );
 }
 
+// ── Zephyr Tab ────────────────────────────────────────────────────────────────
+function ZephyrTab() {
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [fileError, setFileError] = useState('');
+  const [pitchId, setPitchId] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportJobDTO | null>(null);
+
+  function validateAndSetFile(f: File) {
+    if (!f.name.endsWith('.xlsx')) {
+      setFileError(t('importPage.zephyrWrongFormat'));
+      setFile(null);
+    } else {
+      setFileError('');
+      setFile(f);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) validateAndSetFile(dropped);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(true);
+  }
+
+  function handleDragLeave() {
+    setDragActive(false);
+  }
+
+  function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (selected) validateAndSetFile(selected);
+  }
+
+  async function handleImport() {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const job = await importService.importFromZephyr(file, pitchId.trim() || undefined);
+      setImportResult(job);
+    } catch {
+      showToast(t('importPage.importError'), 'error');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function handleReset() {
+    setFile(null);
+    setFileError('');
+    setPitchId('');
+    setImportResult(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  if (importResult) {
+    return (
+      <ImportResultCard
+        result={importResult}
+        onReset={handleReset}
+        resetLabel={t('importPage.zephyrImportAnother')}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Heading */}
+      <div>
+        <h2 className="text-base font-semibold text-foreground">{t('importPage.zephyrHeading')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('importPage.zephyrDescription')}</p>
+      </div>
+
+      {/* Drop Zone */}
+      <div>
+        <input
+          type="file"
+          accept=".xlsx"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleFileInputChange}
+        />
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={cn(
+            'flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 transition-colors',
+            dragActive
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/60 hover:bg-accent/40'
+          )}
+        >
+          <FileSpreadsheet
+            className={cn(
+              'h-10 w-10 transition-colors',
+              dragActive ? 'text-primary' : 'text-muted-foreground'
+            )}
+          />
+          {file ? (
+            <p className="text-sm font-medium text-foreground">
+              {t('importPage.selectedFile', { name: file.name })}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t('importPage.zephyrDropzoneHint')}
+            </p>
+          )}
+        </div>
+        {fileError && <p className="mt-1 text-xs text-destructive">{fileError}</p>}
+      </div>
+
+      {/* Pitch ID (optional) */}
+      <div className="space-y-1">
+        <label htmlFor="zephyrPitchId" className="block text-sm font-medium text-foreground">
+          {t('importPage.zephyrPitchIdLabel')}
+        </label>
+        <input
+          id="zephyrPitchId"
+          type="number"
+          min={1}
+          value={pitchId}
+          onChange={(e) => setPitchId(e.target.value)}
+          placeholder={t('importPage.zephyrPitchIdPlaceholder')}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
+      {/* Import button */}
+      <button
+        type="button"
+        onClick={handleImport}
+        disabled={!file || importing}
+        className={cn(
+          'flex w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors',
+          !file || importing
+            ? 'cursor-not-allowed bg-muted text-muted-foreground'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+        )}
+      >
+        {importing && <Loader2 className="h-4 w-4 animate-spin" />}
+        {importing ? t('importPage.zephyrImporting') : t('importPage.zephyrImportButton')}
+      </button>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ImportPage() {
   const { t } = useTranslation();
@@ -841,6 +1003,7 @@ export default function ImportPage() {
     const tab = params.get('tab');
     if (tab === 'linear') return 'linear';
     if (tab === 'jira') return 'jira';
+    if (tab === 'zephyr') return 'zephyr';
     return 'csv';
   });
 
@@ -970,22 +1133,24 @@ export default function ImportPage() {
       <div className="mb-8 flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
         {(
           [
-            { id: 'csv' as const, labelKey: 'importPage.tabCsv' },
-            { id: 'linear' as const, labelKey: 'importPage.tabLinear' },
-            { id: 'jira' as const, labelKey: 'importPage.tabJira' },
+            { id: 'csv' as const, labelKey: 'importPage.tabCsv', icon: null },
+            { id: 'linear' as const, labelKey: 'importPage.tabLinear', icon: null },
+            { id: 'jira' as const, labelKey: 'importPage.tabJira', icon: null },
+            { id: 'zephyr' as const, labelKey: 'importPage.zephyrTitle', icon: FileSpreadsheet },
           ] as const
-        ).map(({ id, labelKey }) => (
+        ).map(({ id, labelKey, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
             className={cn(
-              'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+              'flex flex-1 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               activeTab === id
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
+            {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
             {t(labelKey)}
           </button>
         ))}
@@ -1208,6 +1373,9 @@ export default function ImportPage() {
 
       {/* ── Jira tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'jira' && <JiraTab />}
+
+      {/* ── Zephyr tab ───────────────────────────────────────────────────── */}
+      {activeTab === 'zephyr' && <ZephyrTab />}
     </div>
   );
 }
