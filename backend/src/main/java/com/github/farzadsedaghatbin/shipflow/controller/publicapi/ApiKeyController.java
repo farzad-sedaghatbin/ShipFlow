@@ -12,6 +12,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -53,6 +54,21 @@ public class ApiKeyController {
       @PathVariable Long keyId) {
     User user = resolveUser(principal);
     apiKeyService.revokeKey(keyId, user.getId());
+    return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/admin")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "List all API keys across all users – admin only")
+  public ResponseEntity<List<ApiKeyDTO>> listAllKeys() {
+    return ResponseEntity.ok(apiKeyService.listAllKeys());
+  }
+
+  @DeleteMapping("/admin/{keyId}")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Revoke any API key – admin only")
+  public ResponseEntity<Void> adminRevokeKey(@PathVariable Long keyId) {
+    apiKeyService.adminRevokeKey(keyId);
     return ResponseEntity.noContent().build();
   }
 

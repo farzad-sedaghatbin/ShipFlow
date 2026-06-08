@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { formatLocalizedDateTime } from '../utils/dateLocalization';
 import { Send, MessageSquare, Pencil, Trash2, Loader2, MoreHorizontal, AtSign } from 'lucide-react';
 import { Button } from './ui/button';
@@ -275,42 +278,107 @@ const Comments: React.FC<CommentsProps> = ({
     }
   }, [mentionUserCache]);
 
-  // Render comment content with highlighted and clickable mentions
-  const renderCommentContent = (content: string) => {
-    // Match both @"Full Name" and @SingleWord formats.
-    // Unquoted names may contain letters/numbers with dots/underscores only between segments (no trailing punctuation).
+  // Split a plain-text fragment into nodes, replacing @mentions with MentionLink popovers.
+  // Match both @"Full Name" and @SingleWord formats. Unquoted names may contain
+  // letters/numbers with dots/underscores only between segments (no trailing punctuation).
+  const splitMentionsInText = useCallback((text: string, keyPrefix: string): React.ReactNode[] => {
     const mentionRegex = /@"([^"]+)"|@([\p{L}\p{N}]+(?:[._][\p{L}\p{N}]+)*)/gu;
-    const result: React.ReactNode[] = [];
+    const out: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
-
-    while ((match = mentionRegex.exec(content)) !== null) {
-      // Add text before the match
+    while ((match = mentionRegex.exec(text)) !== null) {
       if (match.index > lastIndex) {
-        result.push(<span key={`text-${lastIndex}`}>{content.substring(lastIndex, match.index)}</span>);
+        out.push(text.substring(lastIndex, match.index));
       }
-      // Add the highlighted mention (group 1 for quoted, group 2 for unquoted)
       const name = match[1] || match[2];
-      const cachedUser = mentionUserCache.get(name);
-      
-      // Create clickable mention with profile popover
-      result.push(
-        <MentionLink 
-          key={`mention-${match.index}`}
+      out.push(
+        <MentionLink
+          key={`${keyPrefix}-mention-${match.index}`}
           name={name}
-          cachedUser={cachedUser}
+          cachedUser={mentionUserCache.get(name)}
           onFetchUser={fetchMentionUser}
         />
       );
       lastIndex = match.index + match[0].length;
     }
-    
-    // Add remaining text after last match
-    if (lastIndex < content.length) {
-      result.push(<span key={`text-${lastIndex}`}>{content.substring(lastIndex)}</span>);
+    if (lastIndex < text.length) {
+      out.push(text.substring(lastIndex));
     }
-    
-    return result.length > 0 ? result : content;
+    return out.length > 0 ? out : [text];
+  }, [mentionUserCache, fetchMentionUser]);
+
+  // Walk children produced by react-markdown and replace string nodes with
+  // mention-highlighted fragments. Element children pass through untouched, so
+  // mentions inside code spans/blocks are preserved as-is.
+  const processChildren = useCallback((children: React.ReactNode, keyPrefix: string): React.ReactNode => {
+    return React.Children.map(children, (child, i) => {
+      if (typeof child === 'string') {
+        return splitMentionsInText(child, `${keyPrefix}-${i}`);
+      }
+      return child;
+    });
+  }, [splitMentionsInText]);
+
+  // Render comment content as markdown with @mention popovers preserved.
+  const renderCommentContent = (content: string, commentId: number) => {
+    const keyPrefix = `c${commentId}`;
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSanitize]}
+        components={{
+          p: ({ children }) => (
+            <p className="mb-2 last:mb-0">{processChildren(children, `${keyPrefix}-p`)}</p>
+          ),
+          li: ({ children }) => (
+            <li className="ml-2">{processChildren(children, `${keyPrefix}-li`)}</li>
+          ),
+          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-2">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 mb-2">{children}</ol>,
+          strong: ({ children }) => (
+            <strong className="font-semibold">{processChildren(children, `${keyPrefix}-b`)}</strong>
+          ),
+          em: ({ children }) => (
+            <em className="italic">{processChildren(children, `${keyPrefix}-i`)}</em>
+          ),
+          h1: ({ children }) => <h1 className="text-lg font-bold mb-1 mt-2">{processChildren(children, `${keyPrefix}-h1`)}</h1>,
+          h2: ({ children }) => <h2 className="text-base font-semibold mb-1 mt-2">{processChildren(children, `${keyPrefix}-h2`)}</h2>,
+          h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-2">{processChildren(children, `${keyPrefix}-h3`)}</h3>,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-muted-foreground/30 pl-3 italic text-muted-foreground my-2">
+              {children}
+            </blockquote>
+          ),
+          code: ({ className, children, ...props }) => {
+            const isBlock = /language-/.test(className || '');
+            return isBlock ? (
+              <code className="block bg-muted p-2 rounded text-xs font-mono overflow-x-auto my-2" {...props}>
+                {children}
+              </code>
+            ) : (
+              <code className="bg-muted px-1 py-0.5 rounded text-xs font-mono" {...props}>
+                {children}
+              </code>
+            );
+          },
+          a: ({ children, href, ...props }) => (
+            <a className="text-primary hover:underline" href={href} target="_blank" rel="noopener noreferrer" {...props}>
+              {children}
+            </a>
+          ),
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-2">
+              <table className="border-collapse border border-border w-full text-xs">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => <th className="border border-border px-2 py-1 bg-muted font-semibold text-left">{children}</th>,
+          td: ({ children }) => <td className="border border-border px-2 py-1">{processChildren(children, `${keyPrefix}-td`)}</td>,
+          hr: () => <hr className="my-2 border-border" />,
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -584,8 +652,8 @@ const Comments: React.FC<CommentsProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="text-sm whitespace-pre-wrap">
-                        {renderCommentContent(comment.content)}
+                      <div className="text-sm markdown-content break-words">
+                        {renderCommentContent(comment.content, comment.id)}
                       </div>
                     )}
 

@@ -30,6 +30,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -142,6 +143,16 @@ public class GlobalExceptionHandler {
     error.put("message", ex.getMessage());
     error.put("status", HttpStatus.BAD_REQUEST.value());
     return ResponseEntity.badRequest().body(error);
+  }
+
+  /**
+   * SSE/async connections time out when the client idles or disconnects. This is
+   * normal — swallow it silently so the generic RuntimeException handler doesn't
+   * try to write a HashMap body onto an already-committed text/event-stream response.
+   */
+  @ExceptionHandler(AsyncRequestTimeoutException.class)
+  public void handleAsyncRequestTimeout(AsyncRequestTimeoutException ex) {
+    log.debug("Async/SSE request timed out (normal client disconnect): {}", ex.getMessage());
   }
 
   /**

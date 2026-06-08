@@ -3,11 +3,15 @@ package com.github.farzadsedaghatbin.shipflow.service.mcp.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ApiKeyScope;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.BugReportMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.IdentityMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TestCaseMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorklogMcpTools;
@@ -76,7 +80,11 @@ public class McpToolDispatcher {
   private final CommentMcpTools commentTools;
   private final WiseArchitectureMcpTools wiseArchitectureTools;
   private final WorkContextMcpTools workContextTools;
+  private final TaskContextMcpTools taskContextTools;
   private final WorklogMcpTools worklogTools;
+  private final IdentityMcpTools identityTools;
+  private final TestCaseMcpTools testCaseTools;
+  private final BugReportMcpTools bugReportTools;
 
   /**
    * Names of all write tools, derived once from {@link #writeTools()} at construction time.
@@ -242,11 +250,12 @@ public class McpToolDispatcher {
       case CycleMcpTools.TOOL_GET_CYCLE -> cycleTools.getCycle(args);
 
       // Task tools
-      case TaskMcpTools.TOOL_GET_TASKS -> taskTools.getTasks(args);
+      case TaskMcpTools.TOOL_GET_TASKS -> taskTools.getTasks(args, auth);
       case TaskMcpTools.TOOL_GET_TASK -> taskTools.getTask(args);
-      case TaskMcpTools.TOOL_GET_BLOCKERS -> taskTools.getBlockers(args);
+      case TaskMcpTools.TOOL_GET_BLOCKERS -> taskTools.getBlockers(args, auth);
       case TaskMcpTools.TOOL_CREATE_TASK -> taskTools.createTask(args);
       case TaskMcpTools.TOOL_UPDATE_TASK_STATUS -> taskTools.updateTaskStatus(args);
+      case TaskMcpTools.TOOL_UPDATE_TASK_ASSIGNEE -> taskTools.updateTaskAssignee(args, auth);
 
       // Pitch tools
       case PitchMcpTools.TOOL_GET_PITCHES -> pitchTools.getPitches(args);
@@ -268,6 +277,21 @@ public class McpToolDispatcher {
 
       // Work context graph tool
       case WorkContextMcpTools.TOOL_GET_WORK_CONTEXT -> workContextTools.getWorkContext(args);
+      case TaskContextMcpTools.TOOL_GET_TASK_CONTEXT -> taskContextTools.getTaskContext(args);
+
+      // Identity
+      case IdentityMcpTools.TOOL_WHOAMI -> identityTools.whoami(auth);
+
+      // QA: test cases + runs
+      case TestCaseMcpTools.TOOL_GET_TEST_CASES -> testCaseTools.getTestCases(args);
+      case TestCaseMcpTools.TOOL_GET_TEST_CASE -> testCaseTools.getTestCase(args);
+      case TestCaseMcpTools.TOOL_GET_TEST_RUNS -> testCaseTools.getTestRuns(args);
+      case TestCaseMcpTools.TOOL_RECORD_TEST_RUN -> testCaseTools.recordTestRun(args, auth);
+
+      // Bug reports
+      case BugReportMcpTools.TOOL_GET_BUG_REPORTS -> bugReportTools.getBugReports(args);
+      case BugReportMcpTools.TOOL_GET_BUG_REPORT -> bugReportTools.getBugReport(args);
+      case BugReportMcpTools.TOOL_UPDATE_BUG_STATUS -> bugReportTools.updateBugStatus(args, auth);
 
       default -> throw new McpToolException("Unknown tool: " + name);
     };
@@ -289,7 +313,14 @@ public class McpToolDispatcher {
         PitchMcpTools.getBettingCandidatesDefinition(),
         WiseArchitectureMcpTools.listAnalysesDefinition(),
         WiseArchitectureMcpTools.getFilesDefinition(),
-        WorkContextMcpTools.getWorkContextDefinition());
+        WorkContextMcpTools.getWorkContextDefinition(),
+        TaskContextMcpTools.getTaskContextDefinition(),
+        IdentityMcpTools.whoamiDefinition(),
+        TestCaseMcpTools.getTestCasesDefinition(),
+        TestCaseMcpTools.getTestCaseDefinition(),
+        TestCaseMcpTools.getTestRunsDefinition(),
+        BugReportMcpTools.getBugReportsDefinition(),
+        BugReportMcpTools.getBugReportDefinition());
   }
 
   /**
@@ -302,11 +333,14 @@ public class McpToolDispatcher {
     return List.of(
         TaskMcpTools.createTaskDefinition(),
         TaskMcpTools.updateTaskStatusDefinition(),
+        TaskMcpTools.updateTaskAssigneeDefinition(),
         PitchMcpTools.createPitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
         CommentMcpTools.addCommentDefinition(),
         WiseArchitectureMcpTools.analyzeDefinition(),
-        WorklogMcpTools.logWorkDefinition());
+        WorklogMcpTools.logWorkDefinition(),
+        TestCaseMcpTools.recordTestRunDefinition(),
+        BugReportMcpTools.updateBugStatusDefinition());
   }
 
   /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */

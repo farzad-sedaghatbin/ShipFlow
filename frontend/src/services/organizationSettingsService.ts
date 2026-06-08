@@ -36,4 +36,9 @@ export const organizationSettingsService = {
    * Send a test email to the currently logged-in admin
    */
   sendTestEmail: () => api.post<{ message?: string; error?: string }>('/admin/settings/test-email'),
+
+  /**
+   * Generate (or regenerate) the SCIM 2.0 bearer token. Returns it once — store immediately.
+   */
+  generateScimToken: () => api.post<{ token: string }>('/admin/settings/scim/generate-token'),
 };

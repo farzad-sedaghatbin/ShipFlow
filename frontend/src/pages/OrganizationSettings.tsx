@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Settings,
   Save,
@@ -7,6 +8,7 @@ import {
   Loader2,
   ShieldAlert,
   Calendar,
+  CalendarClock,
   AlertTriangle,
   Tags,
   Globe,
@@ -14,14 +16,18 @@ import {
   Palette,
   Bug,
   Mail,
+  Shield,
+  Users,
+  Upload,
+  Scale,
 } from 'lucide-react';
+import { cn } from '../lib/utils';
 import { useToast } from '../contexts';
 import { organizationSettingsService } from '../services/organizationSettingsService';
 import { OrganizationSettings, RiskThresholds, ColorSettings } from '../types/organizationSettings';
 import { usePermission } from '../hooks/usePermission';
 import { Button } from '../components/ui/button';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   GeneralSettingsTab,
@@ -34,6 +40,8 @@ import {
   MeetingsSettingsTab,
   FeaturesSettingsTab,
   EmailSettingsTab,
+  SsoSettingsTab,
+  ScimSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -46,9 +54,93 @@ const DEFAULT_COLORS: ColorSettings = {
 
 interface FormData extends Partial<OrganizationSettings> {}
 
+type SectionId =
+  | 'general'
+  | 'cycles'
+  | 'categories'
+  | 'meetings'
+  | 'colors'
+  | 'bugs'
+  | 'risk'
+  | 'weights'
+  | 'email'
+  | 'features'
+  | 'sso'
+  | 'scim'
+  | 'import';
+
+interface SidebarItem {
+  id: SectionId;
+  labelKey: string;
+  icon: React.ElementType;
+}
+
+interface SidebarGroup {
+  headerKey: string;
+  items: SidebarItem[];
+}
+
+const SIDEBAR_GROUPS: SidebarGroup[] = [
+  {
+    headerKey: 'organizationSettings.sectionGeneral',
+    items: [
+      { id: 'general', labelKey: 'organizationSettings.general', icon: Globe },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionWorkManagement',
+    items: [
+      { id: 'cycles', labelKey: 'organizationSettings.cycles', icon: Calendar },
+      { id: 'categories', labelKey: 'organizationSettings.categories', icon: Tags },
+      { id: 'meetings', labelKey: 'organizationSettings.meetingTypes', icon: CalendarClock },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionAppearance',
+    items: [
+      { id: 'colors', labelKey: 'organizationSettings.colors', icon: Palette },
+      { id: 'bugs', labelKey: 'organizationSettings.bugs', icon: Bug },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionQualityRisk',
+    items: [
+      { id: 'risk', labelKey: 'organizationSettings.risk', icon: AlertTriangle },
+      { id: 'weights', labelKey: 'organizationSettings.weights', icon: Scale },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionNotifications',
+    items: [
+      { id: 'email', labelKey: 'emailSettings.title', icon: Mail },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionFeatures',
+    items: [
+      { id: 'features', labelKey: 'organizationSettings.features', icon: Sparkles },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionEnterprise',
+    items: [
+      { id: 'sso', labelKey: 'sso.tabLabel', icon: Shield },
+      { id: 'scim', labelKey: 'scim.title', icon: Users },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionData',
+    items: [
+      { id: 'import', labelKey: 'organizationSettings.importData', icon: Upload },
+    ],
+  },
+];
+
 export default function OrganizationSettingsPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<OrganizationSettings | null>(null);
@@ -56,6 +148,14 @@ export default function OrganizationSettingsPage() {
   const { hasPermission } = usePermission();
   const [canManageSettings, setCanManageSettings] = useState<boolean | null>(null);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+
+  const initialSection = (searchParams.get('tab') as SectionId | null) ?? 'general';
+  const [activeSection, setActiveSection] = useState<SectionId>(initialSection);
+
+  const handleSectionChange = (section: SectionId) => {
+    setActiveSection(section);
+    setSearchParams({ tab: section }, { replace: true });
+  };
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -177,6 +277,50 @@ export default function OrganizationSettingsPage() {
     );
   }
 
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'general':
+        return <GeneralSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'cycles':
+        return <CycleSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'categories':
+        return <CategoriesSettingsTab formData={formData} />;
+      case 'meetings':
+        return <MeetingsSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'colors':
+        return <ColorsSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'bugs':
+        return <BugSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'risk':
+        return <RiskSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'weights':
+        return <WeightsSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'email':
+        return <EmailSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'features':
+        return <FeaturesSettingsTab formData={formData} setFormData={setFormData} settings={settings} />;
+      case 'sso':
+        return <SsoSettingsTab />;
+      case 'scim':
+        return <ScimSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'import':
+        return (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold">{t('organizationSettings.importData')}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{t('organizationSettings.importDataDesc')}</p>
+            </div>
+            <Button variant="outline" className="gap-2" onClick={() => navigate('/import')}>
+              <Upload className="h-4 w-4" />
+              {t('organizationSettings.goToImport')}
+            </Button>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -211,60 +355,61 @@ export default function OrganizationSettingsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="flex flex-wrap">
-          <TabsTrigger value="general"><Globe className="h-4 w-4 mr-1" />{t('organizationSettings.general')}</TabsTrigger>
-          <TabsTrigger value="cycles"><Calendar className="h-4 w-4 mr-1" />{t('organizationSettings.cycles')}</TabsTrigger>
-          <TabsTrigger value="risk"><AlertTriangle className="h-4 w-4 mr-1" />{t('organizationSettings.risk')}</TabsTrigger>
-          <TabsTrigger value="weights">{t('organizationSettings.weights')}</TabsTrigger>
-          <TabsTrigger value="colors"><Palette className="h-4 w-4 mr-1" />{t('organizationSettings.colors')}</TabsTrigger>
-          <TabsTrigger value="bugs"><Bug className="h-4 w-4 mr-1" />{t('organizationSettings.bugs')}</TabsTrigger>
-          <TabsTrigger value="categories"><Tags className="h-4 w-4 mr-1" />{t('organizationSettings.categories')}</TabsTrigger>
-          <TabsTrigger value="meetings"><Calendar className="h-4 w-4 mr-1" />{t('organizationSettings.meetingTypes')}</TabsTrigger>
-          <TabsTrigger value="features"><Sparkles className="h-4 w-4 mr-1" />{t('organizationSettings.features')}</TabsTrigger>
-          <TabsTrigger value="email"><Mail className="h-4 w-4 mr-1" />{t('emailSettings.title')}</TabsTrigger>
-        </TabsList>
+      {/* Mobile section selector */}
+      <div className="md:hidden">
+        <select
+          value={activeSection}
+          onChange={(e) => handleSectionChange(e.target.value as SectionId)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          {SIDEBAR_GROUPS.map((group) =>
+            group.items.map((item) => (
+              <option key={item.id} value={item.id}>
+                {t(item.labelKey)}
+              </option>
+            ))
+          )}
+        </select>
+      </div>
 
-        <TabsContent value="general" className="space-y-4">
-          <GeneralSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
+      {/* Two-column layout */}
+      <div className="flex gap-6 items-start">
+        {/* Left sidebar nav */}
+        <nav className="hidden md:block w-52 shrink-0 space-y-1">
+          {SIDEBAR_GROUPS.map((group) => (
+            <div key={group.headerKey}>
+              <p className="px-3 py-2 mt-4 first:mt-0 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t(group.headerKey)}
+              </p>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeSection === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleSectionChange(item.id)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+                      isActive
+                        ? 'bg-accent text-accent-foreground font-medium'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    )}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{t(item.labelKey)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
 
-        <TabsContent value="cycles" className="space-y-4">
-          <CycleSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
-
-        <TabsContent value="risk" className="space-y-4">
-          <RiskSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
-
-        <TabsContent value="weights" className="space-y-4">
-          <WeightsSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
-
-        <TabsContent value="colors" className="space-y-4">
-          <ColorsSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
-
-        <TabsContent value="bugs" className="space-y-4">
-          <BugSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
-
-        <TabsContent value="categories" className="space-y-4">
-          <CategoriesSettingsTab formData={formData} />
-        </TabsContent>
-
-        <TabsContent value="meetings" className="space-y-4">
-          <MeetingsSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
-
-        <TabsContent value="features" className="space-y-4">
-          <FeaturesSettingsTab formData={formData} setFormData={setFormData} settings={settings} />
-        </TabsContent>
-
-        <TabsContent value="email" className="space-y-4">
-          <EmailSettingsTab formData={formData} setFormData={setFormData} />
-        </TabsContent>
-      </Tabs>
+        {/* Right content panel */}
+        <div className="flex-1 min-w-0 rounded-lg border bg-card p-6">
+          {renderContent()}
+        </div>
+      </div>
 
       <ConfirmDialog
         open={resetConfirmOpen}
