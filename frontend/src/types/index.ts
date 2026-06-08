@@ -1800,6 +1800,26 @@ export interface ImportJobDTO {
   completedAt: string | null;
 }
 
+export interface ZephyrRowResult {
+  rowNumber: number;
+  zephyrKey: string;
+  title: string;
+  success: boolean;
+  testCaseId: number | null;
+  error: string | null;
+}
+
+export interface ZephyrImportReportDTO {
+  importJobId: number;
+  fileName: string;
+  status: 'COMPLETED' | 'FAILED';
+  totalRows: number;
+  importedRows: number;
+  failedRows: number;
+  rows: ZephyrRowResult[];
+  completedAt: string | null;
+}
+
 export interface LinearConnectionStatus {
   connected: boolean;
   configured: boolean;
