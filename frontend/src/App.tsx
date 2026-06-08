@@ -14,6 +14,7 @@ import { isRTLLanguage } from './i18n';
 // Public pages
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
+const SsoCallbackPage = lazy(() => import('./pages/SsoCallbackPage'));
 const ReleaseNotes = lazy(() => import('./pages/ReleaseNotes'));
 const CompetitorsComparison = lazy(() => import('./pages/CompetitorsComparison'));
 const PublicRoadmap = lazy(() => import('./pages/PublicRoadmap'));
@@ -82,6 +83,7 @@ const SlackIntegration = lazy(() => import('./pages/SlackIntegration'));
 const GitHubIntegration = lazy(() => import('./pages/integrations/GitHubIntegration'));
 const TeamsIntegration = lazy(() => import('./pages/integrations/TeamsIntegration'));
 const McpIntegration = lazy(() => import('./pages/integrations/McpIntegration'));
+const ApiKeysPage = lazy(() => import('./pages/integrations/ApiKeysPage'));
 const InboundWebhooksIntegration = lazy(
   () => import('./pages/integrations/InboundWebhooksIntegration')
 );
@@ -187,6 +189,8 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/login" element={<Login />} />
+        {/* SSO callback — processes token from IdP redirect, no auth required */}
+        <Route path="/sso-callback" element={<SsoCallbackPage />} />
         <Route
           path="/*"
           element={
@@ -269,6 +273,7 @@ function App() {
                       <Route path="integrations/github" element={<GitHubIntegration />} />
                       <Route path="integrations/teams" element={<TeamsIntegration />} />
                       <Route path="integrations/mcp" element={<McpIntegration />} />
+                      <Route path="integrations/api-keys" element={<ApiKeysPage />} />
                       <Route
                         path="integrations/inbound-webhooks"
                         element={<InboundWebhooksIntegration />}
@@ -347,6 +352,16 @@ function App() {
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                      {/*
+                       * S37a deep-link routing review (2026-06-06):
+                       * All detail routes (/pitches/:id, /backlog/:taskId, /cycles/:cycleId, etc.)
+                       * are registered as flat top-level paths — they do NOT depend on a parent
+                       * route loader. ProjectContext is bootstrap-loaded from localStorage on mount
+                       * and re-hydrated from the API, so a fresh deep-link load finds the stored
+                       * project within the first render. Pages that require a project (RoadmapPage,
+                       * BacklogPage) guard with <ProjectRequiredDialog> rather than redirecting,
+                       * keeping the URL stable. No routing changes required.
+                       */}
                     </Routes>
                   </Layout>
                 </TourProvider>

@@ -76,6 +76,9 @@ public class OrganizationSettingsDTO {
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;
 
+  // SCIM 2.0 provisioning settings
+  private Boolean scimEnabled;
+
   /**
    * Configurable risk detection thresholds for automated health assessment. These
    * values control how the system calculates pitch health status.

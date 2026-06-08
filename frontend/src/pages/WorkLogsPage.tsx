@@ -115,8 +115,10 @@ export default function WorkLogsPage() {
   const [filterPersonId, setFilterPersonId] = useState<string>('all');
   const [filterPitchId, setFilterPitchId] = useState<string>('all');
   const [filterTaskId, setFilterTaskId] = useState<string>('all');
+  const [filterDateFrom, setFilterDateFrom] = useState<string>('');
+  const [filterDateTo, setFilterDateTo] = useState<string>('');
 
-  // Filtered work logs
+  // Filtered work logs — client-side person/pitch/task; date is server-side
   const filteredWorkLogs = useMemo(() => {
     return workLogs.filter(wl => {
       if (filterPersonId !== 'all' && wl.personId !== parseInt(filterPersonId, 10)) return false;
@@ -139,6 +141,8 @@ export default function WorkLogsPage() {
     setFilterPersonId('all');
     setFilterPitchId('all');
     setFilterTaskId('all');
+    setFilterDateFrom('');
+    setFilterDateTo('');
   }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
@@ -159,7 +163,7 @@ export default function WorkLogsPage() {
     }
   }, [selectedCycle, currentProject?.id]);
 
-  // Reload work logs when page, cycle, tab, or project changes
+  // Reload work logs when page, cycle, tab, project, or date filter changes
   useEffect(() => {
     if (selectedCycle) {
       if (selectedCycle === 'all') {
@@ -168,7 +172,7 @@ export default function WorkLogsPage() {
         loadWorkLogs(parseInt(selectedCycle, 10));
       }
     }
-  }, [page, selectedCycle, activeTab, currentProject?.id]);
+  }, [page, selectedCycle, activeTab, currentProject?.id, filterDateFrom, filterDateTo]);
 
   // Reload summary stats when cycle, tab, or project changes (no page dependency)
   useEffect(() => {
@@ -215,6 +219,12 @@ export default function WorkLogsPage() {
   };
 
   const loadWorkLogs = async (cycleIdOrAll: number | string) => {
+    // Only send date params when both ends are set (avoids half-open range confusion)
+    const from = filterDateFrom || undefined;
+    const to = filterDateTo || undefined;
+    const dateFrom = from && to ? from : undefined;
+    const dateTo = from && to ? to : undefined;
+
     try {
       let logs: WorkLog[] = [];
       let serverTotalPages = 0;
@@ -223,12 +233,12 @@ export default function WorkLogsPage() {
         // Load all work logs across all cycles, filtered by project on the server if one is selected
         const projectId = !isAllProjectsSelected && currentProject ? currentProject.id : undefined;
         if (activeTab === 'my') {
-          const response = await workLogService.getMy(page, PAGE_SIZE, projectId);
+          const response = await workLogService.getMy(page, PAGE_SIZE, projectId, dateFrom, dateTo);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
         } else {
-          const response = await workLogService.getAll(page, PAGE_SIZE, projectId);
+          const response = await workLogService.getAll(page, PAGE_SIZE, projectId, dateFrom, dateTo);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
@@ -237,12 +247,12 @@ export default function WorkLogsPage() {
         // Load work logs for specific cycle (already scoped to a project's cycle)
         const cycleId = cycleIdOrAll as number;
         if (activeTab === 'my') {
-          const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE);
+          const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE, dateFrom, dateTo);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
         } else {
-          const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE);
+          const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE, dateFrom, dateTo);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
@@ -687,6 +697,24 @@ export default function WorkLogsPage() {
               {/* Filters */}
               <div className="flex flex-wrap gap-3 items-end">
                 <div className="space-y-1">
+                  <Label className="text-xs">{t('workLogsPage.filterFrom', 'From')}</Label>
+                  <LocalizedDateInput
+                    id="my-filter-from"
+                    value={filterDateFrom}
+                    onChange={(v) => { setFilterDateFrom(v); setPage(0); }}
+                    className="w-[150px] h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t('workLogsPage.filterTo', 'To')}</Label>
+                  <LocalizedDateInput
+                    id="my-filter-to"
+                    value={filterDateTo}
+                    onChange={(v) => { setFilterDateTo(v); setPage(0); }}
+                    className="w-[150px] h-9"
+                  />
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs">{t('workLogsPage.filterByPitch', 'Pitch')}</Label>
                   <Select value={filterPitchId} onValueChange={setFilterPitchId}>
                     <SelectTrigger className="w-[180px] h-9">
@@ -714,11 +742,11 @@ export default function WorkLogsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all') && (
+                {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all' || filterDateFrom || filterDateTo) && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); }}
+                    onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); setFilterDateFrom(''); setFilterDateTo(''); setPage(0); }}
                   >
                     {t('workLogsPage.clearFilters', 'Clear Filters')}
                   </Button>
@@ -896,6 +924,24 @@ export default function WorkLogsPage() {
             {/* Filters */}
             <div className="flex flex-wrap gap-3 items-end">
               <div className="space-y-1">
+                <Label className="text-xs">{t('workLogsPage.filterFrom', 'From')}</Label>
+                <LocalizedDateInput
+                  id="team-filter-from"
+                  value={filterDateFrom}
+                  onChange={(v) => { setFilterDateFrom(v); setPage(0); }}
+                  className="w-[150px] h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">{t('workLogsPage.filterTo', 'To')}</Label>
+                <LocalizedDateInput
+                  id="team-filter-to"
+                  value={filterDateTo}
+                  onChange={(v) => { setFilterDateTo(v); setPage(0); }}
+                  className="w-[150px] h-9"
+                />
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs">{t('workLogsPage.filterByPerson', 'Person')}</Label>
                 <Select value={filterPersonId} onValueChange={setFilterPersonId}>
                   <SelectTrigger className="w-[180px] h-9">
@@ -937,11 +983,11 @@ export default function WorkLogsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all') && (
+              {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all' || filterDateFrom || filterDateTo) && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); }}
+                  onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); setFilterDateFrom(''); setFilterDateTo(''); setPage(0); }}
                 >
                   {t('workLogsPage.clearFilters', 'Clear Filters')}
                 </Button>

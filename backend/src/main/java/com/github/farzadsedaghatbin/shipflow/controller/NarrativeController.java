@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.NarrativeType;
 import com.github.farzadsedaghatbin.shipflow.service.CycleNarrativeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -70,5 +71,24 @@ public class NarrativeController {
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=cycle_summary_" + cycleId + ".md")
         .contentType(MediaType.parseMediaType("text/markdown"))
         .body(markdown);
+  }
+
+  @PostMapping("/cycle/{cycleId}/retrospective/summarize")
+  @PreAuthorize("@permissionService.hasPermission('REPORT', 'CREATE')")
+  @Operation(summary = "Generate AI retrospective summary",
+      description = "Generates (or regenerates) an AI summary of the retro board entries for a cycle")
+  public ResponseEntity<CycleNarrativeDTO> generateRetroSummary(@PathVariable Long cycleId) {
+    return ResponseEntity.ok(narrativeService.generateRetroSummary(cycleId));
+  }
+
+  @GetMapping("/cycle/{cycleId}/retrospective/summary")
+  @PreAuthorize("@permissionService.hasPermission('REPORT', 'READ')")
+  @Operation(summary = "Get existing retrospective summary",
+      description = "Returns the stored retro summary if one has been generated, or 204 No Content if none")
+  public ResponseEntity<CycleNarrativeDTO> getRetroSummary(@PathVariable Long cycleId) {
+    Optional<CycleNarrativeDTO> summary = narrativeService.getRetroSummary(cycleId);
+    return summary
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.noContent().build());
   }
 }
