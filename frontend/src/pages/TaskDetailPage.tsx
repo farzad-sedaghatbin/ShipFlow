@@ -34,6 +34,7 @@ import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskAttachments from '../components/TaskAttachments';
 import TaskDependencies from '../components/TaskDependencies';
 import Comments from '../components/Comments';
+import TaskWorkLogsSection from '../components/TaskWorkLogsSection';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { ActivityTimeline } from '../components/ActivityTimeline';
 import { getUserFriendlyError } from '../utils/errorMessages';
@@ -310,7 +311,7 @@ export default function TaskDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading task...</div>
+        <div className="text-muted-foreground">{t('taskDetailPage.loadingTask')}</div>
       </div>
     );
   }
@@ -342,7 +343,12 @@ export default function TaskDetailPage() {
                 {task.parentTaskId && (
                   <span className="text-muted-foreground">└─</span>
                 )}
-                <CardTitle className="text-2xl">{task.title}</CardTitle>
+                <div>
+                  <p className="text-sm font-mono text-muted-foreground mb-0.5">
+                    {task.projectKey ? `${task.projectKey}-${task.id}` : `#${task.id}`}
+                  </p>
+                  <CardTitle className="text-2xl">{task.title}</CardTitle>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={statusOptions.find(s => s.value === task.status)?.variant}>
@@ -542,10 +548,13 @@ export default function TaskDetailPage() {
       />
 
       {/* Comments */}
-      <Comments 
-        entityType="task" 
+      <Comments
+        entityType="task"
         entityId={task.id}
       />
+
+      {/* Work Logs */}
+      <TaskWorkLogsSection taskId={task.id} />
 
       {/* Activity Timeline */}
       <ActivityTimeline

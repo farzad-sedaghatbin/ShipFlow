@@ -62,10 +62,15 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final RetroItemRepository retroItemRepository;
   private final SavedViewRepository savedViewRepository;
   private final ImportJobRepository importJobRepository;
+  private final OrganizationSettingsRepository organizationSettingsRepository;
+  private final IdentityProviderRepository identityProviderRepository;
 
   @Override
   @Transactional
   public void run(String... args) {
+    // Always ensure a safe OrganizationSettings row exists (idempotent).
+    seedOrganizationSettingsIfAbsent();
+
     // Always seed the Scrum demo project independently so it appears even when
     // the rest of the sample data was already seeded by an older version.
     seedScrumDemoProjectIfAbsent();
@@ -929,6 +934,27 @@ public class SampleDataInitializer implements CommandLineRunner {
   }
 
   /**
+   * Ensures that at least one OrganizationSettings row exists with safe MCP defaults. Called
+   * unconditionally so that deployments upgraded from older versions (which had no such row) get
+   * the row without needing a full re-seed.
+   */
+  private void seedOrganizationSettingsIfAbsent() {
+    if (organizationSettingsRepository.findFirstByOrderByIdAsc().isPresent()) {
+      log.info("OrganizationSettings already exists — skipping seed");
+      return;
+    }
+    OrganizationSettings settings =
+        OrganizationSettings.builder()
+            .organizationName("ShipFlow Demo")
+            .mcpServerEnabled(false)
+            .mcpServerWriteEnabled(false)
+            .updatedBy("system")
+            .build();
+    organizationSettingsRepository.save(settings);
+    log.info("OrganizationSettings seeded with safe MCP defaults (server=off, write=off)");
+  }
+
+  /**
    * Wrapper called unconditionally at startup so the Scrum demo project is added to deployments
    * that were already seeded by an older version (before v1.1.0).
    */
@@ -1753,5 +1779,34 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build());
 
     log.info("Import jobs sample data created: 5 demo entries (Jira CSV x2, Linear CSV, Linear API, Jira API failed)");
+    createSsoSampleData();
+  }
+
+  private void createSsoSampleData() {
+    if (identityProviderRepository.count() > 0) return;
+
+    identityProviderRepository.save(
+        IdentityProvider.builder()
+            .name("Demo Okta (OIDC)")
+            .providerType(ProviderType.OIDC)
+            .clientId("0oa1demo00000000000")
+            .clientSecret("demo-secret-not-real")
+            .metadataUrl("https://demo.okta.com/.well-known/openid-configuration")
+            .isEnabled(false)
+            .enforceSso(false)
+            .build());
+
+    identityProviderRepository.save(
+        IdentityProvider.builder()
+            .name("Demo Azure AD (SAML 2.0)")
+            .providerType(ProviderType.SAML2)
+            .entityId("https://sts.windows.net/demo-tenant-id/")
+            .ssoUrl("https://login.microsoftonline.com/demo-tenant-id/saml2")
+            .metadataUrl("https://login.microsoftonline.com/demo-tenant-id/federationmetadata/2007-06/federationmetadata.xml")
+            .isEnabled(false)
+            .enforceSso(false)
+            .build());
+
+    log.info("SSO sample data created: 2 demo identity providers (Okta OIDC, Azure AD SAML2) — both disabled by default");
   }
 }

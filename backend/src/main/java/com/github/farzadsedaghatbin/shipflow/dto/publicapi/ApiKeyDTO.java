@@ -21,6 +21,8 @@ public class ApiKeyDTO {
   private LocalDateTime createdAt;
   private LocalDateTime revokedAt;
 
+  private String createdByUsername;
+
   /**
    * The raw API key value – only populated on creation response.
    * Never stored in the database.

@@ -43,6 +43,8 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
 import LoadingButton from '../components/LoadingButton';
 import { useBreakpointHelpers } from '../hooks/useBreakpoint';
+import AIPitchWriterModal from '../components/AIPitchWriterModal';
+import type { PitchWriterResponse } from '../services/aiPitchWriterService';
 
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -138,6 +140,7 @@ export default function PitchBoard() {
   const [extractedDocumentName, setExtractedDocumentName] = useState<string>('');
   const [extractedDocumentId, setExtractedDocumentId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('basic');
+  const [aiWriterOpen, setAiWriterOpen] = useState(false);
   const [activeDragPitch, setActiveDragPitch] = useState<Pitch | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -450,6 +453,22 @@ export default function PitchBoard() {
     setPendingDocuments(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Pre-fill the create dialog from an AI-generated draft
+  const handleAIAccept = (draft: PitchWriterResponse) => {
+    setNewPitch(prev => ({
+      ...prev,
+      title: draft.title,
+      problemStatement: draft.problemStatement,
+      solution: draft.solution,
+      appetiteDays: draft.appetiteDays,
+      rabbitHoles: draft.rabbitHoles,
+      noGos: draft.noGos,
+      risks: draft.risks,
+    }));
+    setCreateDialog(true);
+    setActiveTab('basic');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -661,6 +680,14 @@ export default function PitchBoard() {
               </PopoverContent>
             </Popover>
             <Button
+              variant="outline"
+              onClick={() => setAiWriterOpen(true)}
+              size="sm"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              {t('aiPitchWriter.button')}
+            </Button>
+            <Button
               onClick={() => setCreateDialog(true)}
               disabled={!selectedCycle || selectedCycle === 'all'}
               data-tour="new-pitch-btn"
@@ -837,6 +864,15 @@ export default function PitchBoard() {
           )}
         </>
       )}
+
+      {/* AI Pitch Writer Modal */}
+      <AIPitchWriterModal
+        open={aiWriterOpen}
+        onClose={() => setAiWriterOpen(false)}
+        onAccept={handleAIAccept}
+        projectContext={currentProject?.name}
+        projectId={currentProject?.id}
+      />
 
       {/* Create Pitch Dialog */}
       <Dialog open={createDialog} onOpenChange={(open) => !open && handleCloseDialog()}>

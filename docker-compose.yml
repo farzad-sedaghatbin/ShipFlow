@@ -65,6 +65,8 @@ services:
       APP_AI_RUNPOD_MODEL: ${APP_AI_RUNPOD_MODEL:-mistral:instruct}
       APP_AI_RUNPOD_TIMEOUT: ${APP_AI_RUNPOD_TIMEOUT:-180}
       APP_AI_RUNPOD_POLL_INTERVAL: ${APP_AI_RUNPOD_POLL_INTERVAL:-2}
+      # File uploads — persisted via the uploads_data named volume
+      UPLOAD_DIR: /app/uploads
       # Redis Configuration
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
@@ -85,6 +87,8 @@ services:
       MCP_FIGMA_ENABLED: ${MCP_FIGMA_ENABLED:-false}
       MCP_FIGMA_SERVER_URL: ${MCP_FIGMA_SERVER_URL:-}
       MCP_FIGMA_TIMEOUT: ${MCP_FIGMA_TIMEOUT:-120}
+    volumes:
+      - uploads_data:/app/uploads
     ports:
       - "8080:8080"
     depends_on:
@@ -181,6 +185,7 @@ volumes:
   postgres_data:
   qdrant_data:
   redis_data:
+  uploads_data:
   # chromadb_data:  # Uncomment if using ChromaDB
 
 networks:
