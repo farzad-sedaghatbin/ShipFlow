@@ -9,6 +9,7 @@ import {
   Search,
   Loader2,
   ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -50,6 +51,8 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
   const [results, setResults] = useState<GlobalSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether Ctrl / Cmd is held so we can open-in-new-tab on select
+  const modifierRef = useRef(false);
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -57,7 +60,21 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
       setQuery('');
       setResults([]);
       setLoading(false);
+      modifierRef.current = false;
     }
+  }, [open]);
+
+  // Track Ctrl / Cmd key so handleSelect can open in new tab
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => { if (e.ctrlKey || e.metaKey) modifierRef.current = true; };
+    const onKeyUp   = (e: KeyboardEvent) => { if (!e.ctrlKey && !e.metaKey) modifierRef.current = false; };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   }, [open]);
 
   // Debounced search
@@ -90,9 +107,18 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
     };
   }, [query, doSearch]);
 
+  const openInNewTab = useCallback((route: string) => {
+    window.open(window.location.origin + route, '_blank', 'noopener,noreferrer');
+  }, []);
+
   const handleSelect = (result: GlobalSearchResult) => {
-    onOpenChange(false);
-    navigate(result.route);
+    if (modifierRef.current) {
+      openInNewTab(result.route);
+      // keep dialog open so the user can keep selecting
+    } else {
+      onOpenChange(false);
+      navigate(result.route);
+    }
   };
 
   // Group results by entity type, preserving order
@@ -174,7 +200,7 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
                     key={`${item.entityType}-${item.entityId}`}
                     value={`${item.entityType}-${item.entityId}-${item.title}`}
                     onSelect={() => handleSelect(item)}
-                    className="flex items-center gap-3 cursor-pointer"
+                    className="group flex items-center gap-3 cursor-pointer"
                   >
                     <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <div className="flex flex-col min-w-0 flex-1">
@@ -193,13 +219,32 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
                           {item.subtitle.split(' · ')[0]}
                         </span>
                       )}
-                    <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                    {/* New-tab button — always clickable, stops propagation so it doesn't also navigate in the same tab */}
+                    <button
+                      type="button"
+                      title={t('globalSearch.openNewTab', 'Open in new tab')}
+                      aria-label={t('globalSearch.openNewTab', 'Open in new tab')}
+                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shrink-0 rounded p-0.5 hover:text-primary"
+                      onClick={(e) => { e.stopPropagation(); openInNewTab(item.route); }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                    <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/50 group-hover:hidden" />
                   </CommandItem>
                 ))}
               </CommandGroup>
             </div>
           );
         })}
+        {/* Keyboard hint — only visible when there are results */}
+        {grouped.length > 0 && (
+          <div className="border-t px-3 py-2 flex items-center justify-end gap-1 text-xs text-muted-foreground">
+            <kbd className="rounded border bg-muted px-1 font-mono">⌘</kbd>
+            <span>+</span>
+            <kbd className="rounded border bg-muted px-1 font-mono">↵</kbd>
+            <span>{t('globalSearch.openNewTabHint', 'open in new tab')}</span>
+          </div>
+        )}
       </CommandList>
     </CommandDialog>
   );
