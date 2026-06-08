@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-06-07T07:37:12.570Z",
+  "timestamp": "2026-06-08T14:33:18.923Z",
   "stats": {
-    "totalEnKeys": 7091,
-    "totalFaKeys": 6169,
-    "totalUsedKeys": 4578,
-    "filesScanned": 417
+    "totalEnKeys": 7225,
+    "totalFaKeys": 6303,
+    "totalUsedKeys": 4691,
+    "filesScanned": 424
   },
   "issues": {
     "missingInFa": [
@@ -968,6 +968,7 @@
       "cycles.shaping"
     ],
     "missingInBoth": [
+      "common.unknownError",
       "shows loading skeleton while fetching",
       "should render dialog with action type selection",
       "roadmap.releasePitches",
@@ -1115,6 +1116,7 @@
     "dashboard.cycleProgress",
     "dashboard.teamVelocity",
     "dashboard.healthScore",
+    "riskAdvisor.pitchCount_one",
     "priority.label",
     "projects.createProject",
     "projects.viewProject",
@@ -2950,6 +2952,13 @@
     "publicRoadmap.phase140Item2Desc",
     "publicRoadmap.phase140Item3Title",
     "publicRoadmap.phase140Item3Desc",
+    "publicRoadmap.phase150Theme",
+    "publicRoadmap.phase150Item0Title",
+    "publicRoadmap.phase150Item0Desc",
+    "publicRoadmap.phase150Item1Title",
+    "publicRoadmap.phase150Item1Desc",
+    "publicRoadmap.phase150Item2Title",
+    "publicRoadmap.phase150Item2Desc",
     "dashboardManager.setDefault",
     "dashboardManager.clone",
     "dashboardManager.created",
@@ -3493,6 +3502,10 @@
     "importPage.step3",
     "importPage.importing",
     "importPage.detectedFormat",
+    "importPage.zephyrPitchIdLabel",
+    "importPage.zephyrPitchIdPlaceholder",
+    "timerWidget.stopDialog.timeToLog",
+    "timerWidget.stopDialog.rounded",
     "shortcuts.view",
     "shortcuts.navDashboard",
     "shortcuts.navProjects",
@@ -3510,6 +3523,16 @@
     "shortcuts.showShortcuts",
     "shortcuts.view1",
     "shortcuts.view2",
-    "shortcuts.view3"
+    "shortcuts.view3",
+    "aiPitchWriter.unavailable",
+    "retroSummary.wentWell",
+    "retroSummary.didNotGoWell",
+    "retroSummary.tryNext",
+    "retroSummary.actions",
+    "dashboardInsights.loading",
+    "dashboardInsights.overduePitches",
+    "dashboardInsights.atRiskCycle",
+    "dashboardInsights.scopeCreep",
+    "dashboardInsights.velocityTrend"
   ]
 }

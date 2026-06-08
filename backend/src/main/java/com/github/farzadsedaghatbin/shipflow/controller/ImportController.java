@@ -1,13 +1,17 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.ImportJobDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.imports.LinkImportedTestCasesRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.imports.ZephyrImportReportDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.CsvImportService;
+import com.github.farzadsedaghatbin.shipflow.service.ZephyrImportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,17 +26,18 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * REST controller for competitor migration CSV import (v1.2.0).
- * Accepts Jira, Linear, Asana, and generic CSV exports.
+ * REST controller for competitor migration import (v1.2.0+).
+ * Accepts Jira, Linear, Asana, and generic CSV exports, and Zephyr Scale XLSX test-case exports.
  */
 @RestController
 @RequestMapping("/api/import")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "Import", description = "Competitor migration CSV import APIs")
+@Tag(name = "Import", description = "Competitor migration import APIs")
 public class ImportController {
 
   private final CsvImportService csvImportService;
+  private final ZephyrImportService zephyrImportService;
   private final UserRepository userRepository;
 
   /**
@@ -104,6 +109,57 @@ public class ImportController {
       @AuthenticationPrincipal UserDetails userDetails) {
     User currentUser = resolveUser(userDetails);
     return ResponseEntity.ok(csvImportService.listJobs(currentUser));
+  }
+
+  /**
+   * Upload and process a Zephyr Scale XLSX export, importing all rows as TestCase entities.
+   * Returns a per-row report so callers can see which rows succeeded or failed.
+   * Allowed for ADMIN, MANAGER, and QA roles.
+   */
+  @PostMapping(value = "/zephyr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'QA')")
+  @Operation(summary = "Import test cases from a Zephyr Scale XLSX export")
+  public ResponseEntity<ZephyrImportReportDTO> importZephyr(
+      @RequestParam("file") MultipartFile file,
+      @RequestParam(value = "pitchId", required = false) Long pitchId,
+      @AuthenticationPrincipal UserDetails userDetails) {
+
+    if (file == null || file.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File must not be empty");
+    }
+    String originalName = file.getOriginalFilename();
+    if (originalName == null
+        || (!originalName.toLowerCase().endsWith(".xlsx")
+            && !originalName.toLowerCase().endsWith(".xls"))) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Only .xlsx or .xls files are accepted");
+    }
+
+    log.info(
+        "Zephyr XLSX import started by user={} file={} pitchId={}",
+        userDetails.getUsername(),
+        originalName,
+        pitchId);
+
+    ZephyrImportReportDTO result = zephyrImportService.importZephyr(file, pitchId, userDetails);
+    return ResponseEntity.ok(result);
+  }
+
+  /**
+   * Bulk-link all test cases from a Zephyr import to a pitch and/or task.
+   * Allowed for ADMIN, MANAGER, and QA roles.
+   */
+  @PatchMapping("/{importJobId}/link-test-cases")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'QA')")
+  @Operation(summary = "Bulk-link all test cases from a Zephyr import to a pitch and/or task")
+  public ResponseEntity<Map<String, Object>> linkImportedTestCases(
+      @PathVariable Long importJobId,
+      @RequestBody LinkImportedTestCasesRequest request,
+      @AuthenticationPrincipal UserDetails userDetails) {
+
+    Map<String, Object> result =
+        zephyrImportService.linkImportedTestCases(importJobId, request, userDetails);
+    return ResponseEntity.ok(result);
   }
 
   // -------------------------------------------------------------------------
