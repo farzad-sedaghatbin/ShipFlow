@@ -1,8 +1,10 @@
 # Build stage for frontend
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
+# Copy both manifests explicitly — package-lock.json must be committed to git
+COPY frontend/package.json frontend/package-lock.json* ./
+# Use npm ci when lockfile exists (reproducible CI), fall back to npm install if absent
+RUN [ -f package-lock.json ] && npm ci --no-audit || npm install --no-audit
 COPY frontend/ ./
 RUN npm run build
 
