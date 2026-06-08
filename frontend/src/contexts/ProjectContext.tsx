@@ -15,8 +15,21 @@ interface ProjectContextType {
   isSwitchingProject: boolean;
   /** Returns true if current project uses Kanban methodology */
   isKanbanProject: boolean;
-  /** Returns true if current project uses Shape Up methodology */
+  /**
+   * Returns true if current project uses Shape Up methodology, OR if no specific
+   * project is selected ("All Projects"). This legacy-compatible behavior keeps
+   * Shape Up views (CycleList, BettingTable) functional when no project is active.
+   * Callers that need strict Shape Up detection should use `isStrictlyShapeUp` instead.
+   */
   isShapeUpProject: boolean;
+  /**
+   * Returns true only when a specific project is selected AND its type is SHAPE_UP.
+   * Use this when you need to distinguish a real Shape Up project from the
+   * "All Projects" null state (where `isShapeUpProject` returns true for compat).
+   */
+  isStrictlyShapeUp: boolean;
+  /** Returns true if current project uses Scrum methodology */
+  isScrumProject: boolean;
   /** Returns the project type of the current project, or null if all projects selected */
   currentProjectType: ProjectType | null;
   selectProject: (project: Project | null) => void;
@@ -118,13 +131,29 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [currentProject]
   );
   
-  const isKanbanProject = useMemo(() => 
-    currentProject?.projectType === 'KANBAN', 
+  const isKanbanProject = useMemo(() =>
+    currentProject?.projectType === 'KANBAN',
     [currentProject]
   );
-  
-  const isShapeUpProject = useMemo(() => 
-    currentProject?.projectType === 'SHAPE_UP' || currentProject === null, 
+
+  // null = "All Projects" selected: default to Shape Up behavior for legacy views
+  // (CycleList, BettingTable) that rely on this flag being true when no specific
+  // project is active. Callers that need strict "is this project Shape Up" should
+  // also check isAllProjectsSelected.
+  const isShapeUpProject = useMemo(() =>
+    currentProject === null || currentProject?.projectType === 'SHAPE_UP',
+    [currentProject]
+  );
+
+  const isScrumProject = useMemo(() =>
+    currentProject?.projectType === 'SCRUM',
+    [currentProject]
+  );
+
+  // Strict Shape Up check — true only when a real project with type SHAPE_UP is active.
+  // Unlike isShapeUpProject, this returns false when "All Projects" (null) is selected.
+  const isStrictlyShapeUp = useMemo(() =>
+    currentProject?.projectType === 'SHAPE_UP',
     [currentProject]
   );
 
@@ -139,6 +168,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         isSwitchingProject,
         isKanbanProject,
         isShapeUpProject,
+        isStrictlyShapeUp,
+        isScrumProject,
         currentProjectType,
         selectProject,
         selectAllProjects,

@@ -52,6 +52,9 @@ export interface OrganizationSettings {
   // Figma Integration (for Wise Architecture)
   hasFigmaAccessToken: boolean;
 
+  // SCIM 2.0 provisioning
+  scimEnabled?: boolean;
+
   updatedAt: string;
   updatedBy: string;
 }

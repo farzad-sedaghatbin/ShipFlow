@@ -43,7 +43,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../com
 
 export default function CycleList() {
   const { t, i18n } = useTranslation();
-  const { currentProject, isAllProjectsSelected } = useProject();
+  const { currentProject, isAllProjectsSelected, isScrumProject } = useProject();
   const { showSuccess, showError } = useToast();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,15 +149,15 @@ export default function CycleList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('cycles.title')}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{isScrumProject ? t('cycles.sprints') : t('cycles.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {filteredCycles.length} {filteredCycles.length !== 1 ? t('cycles.cyclesFound_plural') : t('cycles.cyclesFound')} 
+            {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {filteredCycles.length} {isScrumProject ? (filteredCycles.length !== 1 ? t('cycles.sprintsFound_plural') : t('cycles.sprintsFound')) : (filteredCycles.length !== 1 ? t('cycles.cyclesFound_plural') : t('cycles.cyclesFound'))}
           </p>
         </div>
         <Button asChild data-tour="new-cycle-btn">
           <Link to="/cycles/new">
             <Plus className="h-4 w-4 mr-2" />
-            {t('cycles.newCycle')}
+            {isScrumProject ? t('cycles.newSprint') : t('cycles.newCycle')}
           </Link>
         </Button>
       </div>
@@ -199,15 +199,15 @@ export default function CycleList() {
         </CardContent>
       </Card>
 
-      {/* Active Cycles */}
+      {/* Active Cycles / Active Sprints */}
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">{t('cycles.activeCycles')}</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{isScrumProject ? t('cycles.activeSprints') : t('cycles.activeCycles')}</h2>
         {activeCycles.length === 0 ? (
           <Card>
             <EmptyState
               illustration={<EmptyCyclesIllustration />}
-              title={t('cycles.noActiveCycles')}
-              description={t('cycles.noActiveCyclesDesc')}
+              title={isScrumProject ? t('cycles.noActiveSprints') : t('cycles.noActiveCycles')}
+              description={isScrumProject ? t('cycles.noActiveSprintsDesc') : t('cycles.noActiveCyclesDesc')}
               action={{
                 label: t('cycles.createFirstCycle'),
                 onClick: () => window.location.href = '/cycles/new',
@@ -229,6 +229,11 @@ export default function CycleList() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground truncate">{cycle.name}</h3>
+                      {isScrumProject && cycle.sprintGoal && (
+                        <p className="text-xs text-muted-foreground italic mt-1 line-clamp-2">
+                          {t('sprintPlanning.sprintGoal')}: {cycle.sprintGoal}
+                        </p>
+                      )}
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
@@ -236,16 +241,22 @@ export default function CycleList() {
                         </span>
                       </div>
                     </div>
-                    <Badge variant="outline" className={getPhaseClasses(cycle.phase)}>
-                      {t(`cycles.phaseValues.${cycle.phase}`)}
-                    </Badge>
+                    {isScrumProject ? (
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                        {t('cycles.activeSprint')}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className={getPhaseClasses(cycle.phase)}>
+                        {t(`cycles.phaseValues.${cycle.phase}`)}
+                      </Badge>
+                    )}
                   </div>
 
                   {/* Stats */}
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {t('cycles.pitches')}</span>
+                      <span><strong className="text-foreground">{isScrumProject ? (cycle.taskCount ?? 0) : (cycle.pitchCount || 0)}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />
@@ -262,22 +273,23 @@ export default function CycleList() {
                       <div className="flex gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8"
                               onClick={() => handleToggleActive(cycle)}
+                              aria-label={t('cycles.pauseCycle')}
                             >
-                              <Pause className="h-4 w-4" />
+                              <Pause className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('cycles.pauseCycle')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild aria-label={t('cycles.editCycleTooltip')}>
                               <Link to={`/cycles/${cycle.id}/edit`}>
-                                <Pencil className="h-4 w-4" />
+                                <Pencil className="h-4 w-4" aria-hidden="true" />
                               </Link>
                             </Button>
                           </TooltipTrigger>
@@ -285,13 +297,14 @@ export default function CycleList() {
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
                               onClick={() => setDeleteDialog({ open: true, cycle })}
+                              aria-label={t('cycles.deleteCycleTooltip')}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('cycles.deleteCycleTooltip')}</TooltipContent>
@@ -306,9 +319,9 @@ export default function CycleList() {
         )}
       </section>
 
-      {/* Past Cycles */}
+      {/* Past Cycles / Past Sprints */}
       <section>
-        <h2 className="text-lg font-semibold text-foreground mb-4">{t('cycles.pastCycles')}</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">{isScrumProject ? t('cycles.pastSprints') : t('cycles.pastCycles')}</h2>
         {inactiveCycles.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
@@ -327,6 +340,11 @@ export default function CycleList() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground truncate">{cycle.name}</h3>
+                      {isScrumProject && cycle.sprintGoal && (
+                        <p className="text-xs text-muted-foreground italic mt-1 line-clamp-2">
+                          {t('sprintPlanning.sprintGoal')}: {cycle.sprintGoal}
+                        </p>
+                      )}
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>
@@ -335,7 +353,7 @@ export default function CycleList() {
                       </div>
                     </div>
                     <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      {t('cycles.inactive')}
+                      {isScrumProject ? t('cycles.completed') : t('cycles.inactive')}
                     </Badge>
                   </div>
 
@@ -343,7 +361,7 @@ export default function CycleList() {
                   <div className="flex gap-4 mb-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <FileText className="h-3.5 w-3.5" />
-                      <span><strong className="text-foreground">{cycle.pitchCount || 0}</strong> {t('cycles.pitches')}</span>
+                      <span><strong className="text-foreground">{isScrumProject ? (cycle.taskCount ?? 0) : (cycle.pitchCount || 0)}</strong> {isScrumProject ? t('cycles.stories') : t('cycles.pitches')}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5" />
@@ -360,29 +378,31 @@ export default function CycleList() {
                       <div className="flex gap-1">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8"
                               onClick={() => handleToggleActive(cycle)}
+                              aria-label={t('cycles.reactivateCycle')}
                             >
-                              <Play className="h-4 w-4" />
+                              <Play className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('cycles.reactivateCycle')}</TooltipContent>
                         </Tooltip>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-8 w-8 text-destructive hover:text-destructive"
                               onClick={() => setDeleteDialog({ open: true, cycle })}
+                              aria-label={t('cycles.deleteCycleTooltip')}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>Delete cycle</TooltipContent>
+                          <TooltipContent>{t('cycles.deleteCycleTooltip')}</TooltipContent>
                         </Tooltip>
                       </div>
                     </TooltipProvider>

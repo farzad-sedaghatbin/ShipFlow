@@ -11,6 +11,8 @@ export interface WorkLogTimer {
   startTime: string;
   note?: string;
   elapsedSeconds: number;
+  status: 'RUNNING' | 'PAUSED';
+  pausedAt?: string;
 }
 
 export interface StartTimerRequest {
@@ -43,7 +45,17 @@ const timerService = {
 
   async cancelTimer(): Promise<void> {
     await api.delete('/timers/cancel');
-  }
+  },
+
+  async pauseTimer(): Promise<WorkLogTimer> {
+    const response = await api.post('/timers/pause');
+    return response.data;
+  },
+
+  async resumeTimer(): Promise<WorkLogTimer> {
+    const response = await api.post('/timers/resume');
+    return response.data;
+  },
 };
 
 export default timerService;

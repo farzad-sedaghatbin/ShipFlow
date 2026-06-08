@@ -31,15 +31,16 @@ class TeamRepositoryTest {
     teamRepository.deleteAll();
     cycleRepository.deleteAll();
 
+    testTeam = Team.builder().name("Test Team").build();
+    testTeam = teamRepository.save(testTeam);
+
     testCycle = Cycle.builder().name("Test Cycle").startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(6))
         .phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
+    testCycle = cycleRepository.save(testCycle);
 
-    testTeam = Team.builder().name("Test Team").build();
-
-    // Assign team to cycle via the explicit join table
+    // Assign team to cycle via the explicit join table (team must be persisted first)
     testCycle.getTeams().add(testTeam);
     testCycle = cycleRepository.save(testCycle);
-    testTeam = testCycle.getTeams().get(0);
   }
 
   @Test

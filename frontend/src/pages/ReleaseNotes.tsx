@@ -45,6 +45,15 @@ import {
   Network,
   Pencil,
   GripHorizontal,
+  ClipboardList,
+  Keyboard,
+  Workflow,
+  TrendingDown,
+  Gauge,
+  Upload,
+  FileSpreadsheet,
+  FolderInput,
+  Wand2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -64,34 +73,209 @@ interface Release {
 
 const releases: Release[] = [
   {
-    version: '1.0.1',
-    date: 'May 2026',
-    title: 'UX Polish & Roadmap Interactivity',
-    upcoming: true,
+    version: '1.5.0',
+    date: 'June 7, 2026',
+    title: 'AI Copilot v2',
     highlights: [
       {
-        icon: <Pencil className="h-5 w-5" />,
-        title: 'Inline Pitch Title Editing',
-        description:
-          'Edit pitch names directly from the detail header or the epic\'s pitch list. Click to edit, Enter or blur to save, Escape to cancel.',
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'AI Pitch Writer',
+        description: 'Type a problem in plain language and get a full Shape Up pitch draft — title, problem statement, solution, appetite, rabbit holes, and no-gos — in one click. Pre-fills the pitch form for human review.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Retrospective Summarizer',
+        description: 'AI-generated retro summary after each cycle close. Highlights patterns, recurring blockers, and team health signals across all board entries.',
+      },
+      {
+        icon: <TrendingUp className="h-5 w-5" />,
+        title: 'Proactive Dashboard Insights',
+        description: 'The dashboard surfaces AI-driven alerts: overdue pitches, at-risk cycles, scope creep warnings, and velocity trend sparklines — computed in the background and cached.',
+      },
+    ],
+  },
+  {
+    version: '1.4.0',
+    date: 'June 7, 2026',
+    title: 'Enterprise Auth & UX Depth',
+    highlights: [
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'SSO / SAML 2.0 & OIDC',
+        description: 'Sign in via Okta, Keycloak, Auth0, or Azure AD. SAML 2.0 and OIDC both supported. Just-in-time user provisioning and SSO enforcement mode for enterprise instances.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'SCIM 2.0 User Provisioning',
+        description: 'Automatically create and deactivate users when they join or leave your identity provider group — no manual user management.',
       },
       {
         icon: <GripHorizontal className="h-5 w-5" />,
         title: 'Interactive Roadmap Timeline',
+        description: 'Drag to move or resize epic and initiative bars on the roadmap. Progress indicators shown on bars. One-click "Set dates" for undated items.',
+      },
+      {
+        icon: <Pencil className="h-5 w-5" />,
+        title: 'Inline Pitch Title Editing',
+        description: 'Edit pitch names directly from the detail header or the epic\'s pitch list. Click to edit, Enter or blur to save, Escape to cancel.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Retrospective Templates',
+        description: 'Structured retrospective format with Went Well, Improve, and Action Items columns. Rich-text entries, required before cycle close.',
+      },
+      {
+        icon: <Keyboard className="h-5 w-5" />,
+        title: 'Keyboard Shortcut Cheat Sheet',
+        description: 'Press ? anywhere to see all keyboard shortcuts. Navigation, quick actions, and search — all documented in a single overlay.',
+      },
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: 'June 5, 2026',
+    title: 'MCP Server Admin & API Keys',
+    highlights: [
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'MCP Server Runtime Toggle',
         description:
-          'Drag-to-move and drag-to-resize timeline bars to adjust epic and initiative dates. Progress percentages and status indicators shown on bars. One-click "Set dates" for items without a timeline.',
+          'Enable or disable the built-in MCP server from Integrations → MCP — a DB-backed toggle that overrides the environment default and takes effect immediately, no restart required.',
       },
       {
         icon: <Shield className="h-5 w-5" />,
-        title: 'Backend Date Validation',
+        title: 'MCP Write-Tools Toggle',
         description:
-          'Epic and initiative date endpoints now validate that start date ≤ end date, returning 400 on invalid ranges. @DateTimeFormat annotations ensure explicit ISO date parsing.',
+          'Separately allow connected AI tools to create and update data, with write tools disabled whenever the server is off.',
+      },
+      {
+        icon: <Key className="h-5 w-5" />,
+        title: 'API Key Management UI',
+        description:
+          'Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry. The raw key is shown once with a copy button and a copy-it-now warning.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Admin API Key Oversight',
+        description:
+          'Admins see all API keys across the organization — who created each one and when — and can revoke any key directly from the MCP Integration → API Keys tab.',
+      },
+    ],
+  },
+  {
+    version: '1.2.1',
+    date: 'June 3, 2026',
+    title: 'MCP Expansion, Bug Fixes & QA Improvements',
+    highlights: [
+      {
+        icon: <Network className="h-5 w-5" />,
+        title: 'MCP Context Aggregator & 12 New Tools',
+        description:
+          'New get_task_context tool returns everything a coding agent needs in one call — task, pitch (Shape Up fields + Figma URL), cycle, siblings, and hints. Plus: whoami, get_test_cases/runs, record_test_run, get/update_bug_reports, update_task_assignee, and get_tasks filters (assigneeId, pitchId, mine).',
+      },
+      {
+        icon: <Wrench className="h-5 w-5" />,
+        title: 'Date Range Filter on Work Logs',
+        description:
+          'From / To date pickers now appear on both the My Logs and Team Logs tabs. The filter runs server-side so it works correctly across paginated pages.',
       },
       {
         icon: <Bug className="h-5 w-5" />,
-        title: 'Release Form Navigation Fix',
+        title: 'Pitch Notes & Wireframe Links Fixed',
         description:
-          'After creating or editing a release, the form now correctly navigates to the release detail page instead of a broken route.',
+          'Creating a note on a pitch in IDEA/DRAFT/SHAPED status no longer crashes with a 500 (null cycle NPE). Saving wireframe links or Shape Up fields on a PENDING/ACTIVE pitch no longer gets blocked by a spurious appetite validation 400.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'MEMBER Access Fixed for Bug & Test-Case Writes',
+        description:
+          'QATestManagementController PreAuthorize annotations referenced roles that no longer exist — MEMBER users received 403 on all bug and test-case create/update. Updated to the current MEMBER/MANAGER/ADMIN role model.',
+      },
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: 'May 23, 2026',
+    title: 'Competitor Migration Tooling — Import from Jira, Linear & Asana',
+    highlights: [
+      {
+        icon: <Upload className="h-5 w-5" />,
+        title: 'CSV Import — Jira, Linear, Asana & Generic',
+        description:
+          'Upload a CSV export from Jira, Linear, or Asana and ShipFlow auto-detects the format from column headers. Tasks, epics, and sprints are mapped into a new Kanban project. A 3-step stepper guides you through upload → processing → results.',
+      },
+      {
+        icon: <FileSpreadsheet className="h-5 w-5" />,
+        title: 'Per-Row Error Log',
+        description:
+          'Failed rows are captured individually with their error reason — the rest of the import still completes. A detailed error log is shown on the results screen so you can fix and re-import only the broken rows.',
+      },
+      {
+        icon: <FolderInput className="h-5 w-5" />,
+        title: 'Import History',
+        description:
+          'View all past imports with file name, source format, row counts (imported / failed), and status. REST API: POST /api/import/csv, GET /api/import, GET /api/import/{id}.',
+      },
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: 'Always Imports into Kanban',
+        description:
+          'Imported projects start as Kanban so teams can onboard immediately. Switch to Shape Up or Scrum at your own pace — no forced methodology change on day one.',
+      },
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'Linear API Import — OAuth2 + GraphQL',
+        description:
+          'Connect ShipFlow to Linear via OAuth2 and import issues, cycles, and projects directly — no CSV export required. Linear Cycles → ShipFlow Cycles, Projects → Epics, Issues → Tasks with priority and state preserved. Target project type is Kanban or Scrum.',
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Jira API Import — Atlassian OAuth 2.0 + REST',
+        description:
+          'Connect ShipFlow to Jira Cloud via Atlassian OAuth 2.0 (3-legged) and import issues, sprints, and epics directly. Jira Epics → ShipFlow Epics, Sprints → Cycles, Issues → Tasks. Atlassian Document Format descriptions extracted to plain text. Cloud workspace auto-detected.',
+      },
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: 'May 19, 2026',
+    title: 'Scrum Mode — Sprints, Story Points & Velocity',
+    highlights: [
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: 'Scrum as Third Project Type',
+        description:
+          'Alongside Shape Up and Kanban, projects can now adopt Scrum. Cycles become Sprints, complete with sprint goals, story-point estimates, and time-boxed planning.',
+      },
+      {
+        icon: <Target className="h-5 w-5" />,
+        title: 'Story Points on Tasks',
+        description:
+          'Estimate tasks in story points and see them on backlog rows, Kanban cards, and sprint planning lists. Totals automatically roll up per backlog and per sprint.',
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Sprint Planning Page',
+        description:
+          'A dedicated two-column workspace that pulls the product backlog on the left and the active sprint on the right. Move work between columns with one click; story-point totals update live.',
+      },
+      {
+        icon: <TrendingDown className="h-5 w-5" />,
+        title: 'Burndown Chart',
+        description:
+          'Real-time sprint burndown comparing remaining story points against the ideal trajectory. Spot scope creep or progress lulls the moment they happen.',
+      },
+      {
+        icon: <Gauge className="h-5 w-5" />,
+        title: 'Velocity Chart',
+        description:
+          'Track planned vs completed story points across the last several sprints. Use the historical trend to commit better in your next sprint planning meeting.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Sprint Goal on Cycles',
+        description:
+          'Capture the goal statement for each sprint when creating or editing a cycle. The goal is surfaced on the sprint planning header and on the cycle list cards.',
       },
     ],
   },

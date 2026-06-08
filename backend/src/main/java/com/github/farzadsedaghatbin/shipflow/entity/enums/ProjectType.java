@@ -15,5 +15,12 @@ public enum ProjectType {
    * Kanban methodology - continuous flow with visual board. Features: Kanban
    * Board, Continuous Backlog, No cycles
    */
-  KANBAN
+  KANBAN,
+
+  /**
+   * Scrum methodology - time-boxed sprints with story points, sprint planning,
+   * burndown charts, and velocity tracking. Features: Sprints (≈ Cycles), Story
+   * Points, Sprint Planning, Burndown Chart, Velocity Chart
+   */
+  SCRUM
 }

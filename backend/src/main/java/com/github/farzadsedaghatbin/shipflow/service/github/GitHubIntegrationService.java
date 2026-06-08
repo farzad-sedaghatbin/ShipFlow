@@ -316,6 +316,68 @@ public class GitHubIntegrationService implements VCSProvider {
   }
 
   /**
+   * Directly close a single task by ID — used when the task ID is parsed from a branch name.
+   */
+  @Transactional
+  public void closeTaskByIdFromMergedPR(Long taskId, Integer prNumber, LocalDateTime mergedAt) {
+    LocalDateTime completedAt = mergedAt != null ? mergedAt : LocalDateTime.now();
+    taskRepository.findById(taskId).ifPresent(task -> {
+      if (task.getStatus() != TaskStatus.DONE) {
+        task.setStatus(TaskStatus.DONE);
+        task.setCompletedAt(completedAt);
+        taskRepository.save(task);
+        log.info("Auto-closed task #{} from branch name of merged PR #{}", taskId, prNumber);
+      }
+    });
+  }
+
+  /**
+   * Public entry-point for the inbound webhook handler — closes tasks referenced in a merged PR
+   * without requiring the repository to be registered in ShipFlow's GitHub integration.
+   */
+  @Transactional
+  public void autoCloseTasksFromMergedPR(String title, String description, Integer prNumber,
+      LocalDateTime mergedAt) {
+    String text = (title != null ? title : "") + " " + (description != null ? description : "");
+    LocalDateTime completedAt = mergedAt != null ? mergedAt : LocalDateTime.now();
+
+    Matcher closesJiraMatcher = CLOSES_JIRA_PATTERN.matcher(text);
+    while (closesJiraMatcher.find()) {
+      try {
+        Long taskId = Long.parseLong(closesJiraMatcher.group(2));
+        String matchStr = closesJiraMatcher.group(0);
+        taskRepository.findById(taskId).ifPresent(task -> {
+          if (task.getStatus() != TaskStatus.DONE) {
+            task.setStatus(TaskStatus.DONE);
+            task.setCompletedAt(completedAt);
+            taskRepository.save(task);
+            log.info("Auto-closed task {} due to merged PR #{} (inbound webhook)", matchStr, prNumber);
+          }
+        });
+      } catch (NumberFormatException e) {
+        log.debug("Not a valid task ID in closes pattern: {}", closesJiraMatcher.group(0));
+      }
+    }
+
+    Matcher closesMatcher = CLOSES_PATTERN.matcher(text);
+    while (closesMatcher.find()) {
+      try {
+        Long taskId = Long.parseLong(closesMatcher.group(1));
+        taskRepository.findById(taskId).ifPresent(task -> {
+          if (task.getStatus() != TaskStatus.DONE) {
+            task.setStatus(TaskStatus.DONE);
+            task.setCompletedAt(completedAt);
+            taskRepository.save(task);
+            log.info("Auto-closed task #{} due to merged PR #{} (inbound webhook)", taskId, prNumber);
+          }
+        });
+      } catch (NumberFormatException e) {
+        log.warn("Invalid task ID in closes statement: {}", closesMatcher.group(1));
+      }
+    }
+  }
+
+  /**
    * Auto-close tasks when PR is merged if "closes #123" or "closes PROJ-42"
    * keywords are used
    */

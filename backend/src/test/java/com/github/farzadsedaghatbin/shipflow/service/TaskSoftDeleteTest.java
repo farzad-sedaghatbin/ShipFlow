@@ -23,7 +23,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -140,7 +142,7 @@ class TaskSoftDeleteTest {
     when(taskRepository.findByIdNotDeleted(1L)).thenReturn(Optional.empty());
 
     // When & Then
-    assertThatThrownBy(() -> taskService.getTaskById(1L)).isInstanceOf(IllegalArgumentException.class)
+    assertThatThrownBy(() -> taskService.getTaskById(1L)).isInstanceOf(ResourceNotFoundException.class)
         .hasMessage("Task not found with id: 1");
   }
 
@@ -156,5 +158,36 @@ class TaskSoftDeleteTest {
     // Then
     assertThat(result).isEmpty();
     verify(taskRepository).findByCycleIdOrderByPriority(1L);
+  }
+
+  @Test
+  @DisplayName("getTasksByProjectId should use not-deleted query — soft-deleted tasks must not appear in Kanban")
+  void getTasksByProjectId_ShouldUseNotDeletedQuery() {
+    when(taskRepository.findByProjectIdNotDeleted(1L)).thenReturn(List.of());
+
+    var result = taskService.getTasksByProjectId(1L);
+
+    assertThat(result).isEmpty();
+    verify(taskRepository).findByProjectIdNotDeleted(1L);
+    verify(taskRepository, never()).findByProjectId(1L);
+  }
+
+  @Test
+  @DisplayName("getTaskStatisticsByProjectId should use not-deleted query — deleted tasks must not inflate counts")
+  void getTaskStatisticsByProjectId_ShouldUseNotDeletedQuery() {
+    Task activeTask = Task.builder().id(2L).title("Active").status(TaskStatus.DONE)
+        .category(TaskCategory.PITCH_SCOPE).build();
+    Task deletedTask = Task.builder().id(3L).title("Deleted").status(TaskStatus.TODO)
+        .category(TaskCategory.PITCH_SCOPE).deletedAt(LocalDateTime.now()).build();
+
+    // Only the active task is returned by the not-deleted query
+    when(taskRepository.findByProjectIdNotDeleted(1L)).thenReturn(List.of(activeTask));
+
+    var stats = taskService.getTaskStatisticsByProjectId(1L);
+
+    assertThat(stats.getTotalTasks()).isEqualTo(1);
+    assertThat(stats.getDoneTasks()).isEqualTo(1);
+    verify(taskRepository).findByProjectIdNotDeleted(1L);
+    verify(taskRepository, never()).findByProjectId(1L);
   }
 }

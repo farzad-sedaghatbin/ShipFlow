@@ -11,6 +11,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -26,6 +27,7 @@ public class TaskDependencyController {
   private final TaskDependencyService taskDependencyService;
 
   @PostMapping
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Add a task dependency", description = "Create a dependency between the specified task and another task. Validates against circular dependencies.")
   public ResponseEntity<TaskDependencyDTO> addDependency(@PathVariable Long taskId,
       @Valid @RequestBody CreateTaskDependencyRequest request) {
@@ -34,6 +36,7 @@ public class TaskDependencyController {
   }
 
   @GetMapping
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get all dependencies for a task", description = "Returns both blocking and blocked-by dependencies for the specified task")
   public ResponseEntity<Map<String, List<TaskDependencyDTO>>> getDependencies(@PathVariable Long taskId) {
     Map<String, List<TaskDependencyDTO>> dependencies = taskDependencyService.getDependenciesForTask(taskId);
@@ -41,6 +44,7 @@ public class TaskDependencyController {
   }
 
   @GetMapping("/blocking")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get tasks this task is blocking", description = "Returns all tasks that are blocked by this task")
   public ResponseEntity<List<TaskDependencyDTO>> getBlockingDependencies(@PathVariable Long taskId) {
     List<TaskDependencyDTO> dependencies = taskDependencyService.getBlockingDependencies(taskId);
@@ -48,6 +52,7 @@ public class TaskDependencyController {
   }
 
   @GetMapping("/blocked-by")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get tasks blocking this task", description = "Returns all tasks that are blocking this task (blockers)")
   public ResponseEntity<List<TaskDependencyDTO>> getBlockedByDependencies(@PathVariable Long taskId) {
     List<TaskDependencyDTO> dependencies = taskDependencyService.getBlockedByDependencies(taskId);
@@ -55,6 +60,7 @@ public class TaskDependencyController {
   }
 
   @DeleteMapping("/{dependencyId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Remove a task dependency", description = "Delete a specific dependency relationship between tasks")
   public ResponseEntity<Void> removeDependency(@PathVariable Long taskId, @PathVariable Long dependencyId) {
     taskDependencyService.removeDependency(dependencyId);

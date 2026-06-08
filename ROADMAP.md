@@ -1,28 +1,41 @@
 # ShipFlow Roadmap
 
-The live, always-up-to-date roadmap is published at **[https://shipflow.dev/roadmap](https://shipflow.dev/roadmap)**.
-It shows what has recently shipped, what is actively being built in the current cycle, and what is planned for future releases.
-The page is public — no login required — so anyone evaluating ShipFlow or following the project can track progress in real time.
+The live roadmap is at **https://shipflow.dev/public-roadmap** (no login required).
 
-## Current milestone: v0.8.0 — Core Product + Hardening
+## Recently Shipped
 
-| # | Feature | Status |
-|---|---------|--------|
-| S01 | Public roadmap page (`/roadmap`) | ✅ Shipped |
-| S02 | Demo seed data refresh | ✅ Shipped |
-| S03 | Version alignment + CORS fix | 🔄 In progress |
-| S04 | Spring Boot 3.2 → 3.4 upgrade | ⏳ Planned |
-| S05 | Rate limiting (Bucket4j) + CSP headers | ⏳ Planned |
-| S06 | Docker / GHCR CI + React.lazy splitting | ⏳ Planned |
-| S07–S08 | File attachments on tasks | ⏳ Planned |
-| S09–S10 | Bulk task operations | ⏳ Planned |
-| S11 | @mention → notification | ⏳ Planned |
-| S12 | CSV export for backlog | ⏳ Planned |
-| S13 | Interactive onboarding tour | ⏳ Planned |
+| Version | Theme | Date |
+|---------|-------|------|
+| v1.3.0 | MCP Server Admin & API Keys | June 5, 2026 |
+| v1.2.1 | MCP Expansion, Bug Fixes & QA Improvements | June 3, 2026 |
+| v1.2.0 | Competitor Migration Tooling (Jira, Linear, Asana) | May 23, 2026 |
+| v1.1.0 | Scrum Mode — Sprints, Story Points & Velocity | May 19, 2026 |
+| v1.0.0 | Public release — MCP server, audit trail, RBAC, E2E tests | April 2026 |
 
-## Beyond v0.8.0
+## Active Milestone
 
-- **v0.9.0** — Saved views, SSE real-time notifications, email notifications, MCP write tools
-- **v1.0.0** — Playwright E2E suite, component decomposition, VitePress docs site, open-source release
+### v1.4.0 — Enterprise Auth & UX Depth
 
-For the full session-by-session plan see [`CLAUDE.md`](./CLAUDE.md).
+| Session | Task | Status |
+|---------|------|--------|
+| S32 | SSO backend (SAML2 + OIDC + IdentityProvider entity) | 🔲 |
+| S33 | SSO frontend (admin config UI + login SSO button) | 🔲 |
+| S34 | SCIM 2.0 user provisioning | 🔲 |
+| S35 | Interactive Roadmap Timeline (drag Gantt bars) | 🔲 |
+| S36 | UX polish (inline pitch editing, retro templates, i18n sweep) | 🔲 |
+| S37 | Navigation hardening (deep-link routing + keyboard shortcuts) | 🔲 |
+
+## Planned
+
+| Version | Theme |
+|---------|-------|
+| v1.5.0 | AI Copilot v2 — AI pitch writer, retro summarizer, proactive insights |
+| v1.6.0 | MCP Ecosystem — agentic tools, plugin SDK, Notion/Confluence clients |
+| v1.7.0 | Workflow Automations — if/then rules, 20 Shape Up templates |
+| v1.8.0 | Custom Fields & Advanced RBAC — custom fields, project-level permissions |
+| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana |
+| v1.10.0 | Mobile PWA — offline, responsive audit, Web Push, biometric auth |
+| v1.11.0 | Plugin Marketplace — registry, CLI scaffolder, GitLab + Azure DevOps |
+| v1.12.0 | Collaborative Editing — real-time CRDT co-editing for pitches & retros |
+
+For the full session-by-session plan see [CLAUDE.md](./CLAUDE.md).

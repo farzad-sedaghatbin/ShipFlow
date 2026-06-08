@@ -1,0 +1,6 @@
+id,title,description,status,priority,assignee
+1,Set up CI pipeline,Configure GitHub Actions for automated tests,IN_PROGRESS,HIGH,alice
+2,Design login page,Create wireframes for the login screen,TODO,MEDIUM,bob
+3,Fix authentication bug,Users are unable to log in with special characters in password,DONE,URGENT,charlie
+4,Add dark mode support,Implement theme switching for all components,BACKLOG,LOW,
+5,Write API documentation,Document all REST endpoints with examples,TODO,MEDIUM,alice

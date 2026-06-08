@@ -87,7 +87,7 @@ class TaskHistoryIntegrationTest {
   void getTaskHistory_NewTask_ReturnsHistory() throws Exception {
     mockMvc.perform(get("/api/tasks/{id}/history", testTask.getId()).contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk()).andExpect(jsonPath("$.content").isArray())
-        .andExpect(jsonPath("$.pageable").exists()).andExpect(jsonPath("$.totalElements").isNumber());
+        .andExpect(jsonPath("$.page").exists()).andExpect(jsonPath("$.page.totalElements").isNumber());
   }
 
   @Test
@@ -95,8 +95,8 @@ class TaskHistoryIntegrationTest {
   void getTaskHistory_WithPagination_ReturnsPaginatedResults() throws Exception {
     mockMvc.perform(get("/api/tasks/{id}/history", testTask.getId()).param("page", "0").param("size", "10")
         .contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
-        .andExpect(jsonPath("$.pageable.pageNumber").value(0))
-        .andExpect(jsonPath("$.pageable.pageSize").value(10));
+        .andExpect(jsonPath("$.page.number").value(0))
+        .andExpect(jsonPath("$.page.size").value(10));
   }
 
   @Test
@@ -119,13 +119,13 @@ class TaskHistoryIntegrationTest {
   void getTaskHistory_NonExistentTask_ReturnsEmptyPage() throws Exception {
     mockMvc.perform(get("/api/tasks/{id}/history", 99999L).contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk()).andExpect(jsonPath("$.content").isArray())
-        .andExpect(jsonPath("$.totalElements").value(0));
+        .andExpect(jsonPath("$.page.totalElements").value(0));
   }
 
   @Test
   @DisplayName("GET /api/tasks/{id}/history - Default pagination should use size 20")
   void getTaskHistory_DefaultPagination_UsesDefaultSize() throws Exception {
     mockMvc.perform(get("/api/tasks/{id}/history", testTask.getId()).contentType(MediaType.APPLICATION_JSON))
-        .andExpect(status().isOk()).andExpect(jsonPath("$.pageable.pageSize").value(20));
+        .andExpect(status().isOk()).andExpect(jsonPath("$.page.size").value(20));
   }
 }

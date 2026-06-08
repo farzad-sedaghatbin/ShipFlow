@@ -5,6 +5,7 @@ import '../styles/tour.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ConfirmDialog } from '../components/ui/confirm-dialog';
+import { useProject } from './ProjectContext';
 
 interface TourStep extends DriveStep {
   route?: string;
@@ -31,6 +32,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { isScrumProject } = useProject();
 
   // Track if navigation was triggered by the tour driver
   const isNavigatingRef = useRef(false);
@@ -41,7 +43,10 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
   const navTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Tour steps definition
-  const getTourSteps = useCallback((): TourStep[] => [
+  // The Sprint Planning step is only included when the active project is SCRUM.
+  // Non-SCRUM projects redirect away from /sprint-planning, which would break the tour.
+  const getTourSteps = useCallback((): TourStep[] => {
+    const allSteps: TourStep[] = [
     {
       element: '[data-tour="sidebar"]',
       popover: {
@@ -233,6 +238,46 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       route: '/time/logs',
     },
     {
+      element: '[data-tour="import-nav"]',
+      popover: {
+        title: t('tour.importNav.title'),
+        description: t('tour.importNav.description'),
+        side: 'right',
+        align: 'start',
+      },
+      route: '/import',
+    },
+    {
+      element: '[data-tour="backlog-board"]',
+      popover: {
+        title: t('tour.backlogBoard.title'),
+        description: t('tour.backlogBoard.description'),
+        side: 'top',
+        align: 'center',
+      },
+      route: '/backlog',
+    },
+    {
+      element: '[data-tour="reports-overview"]',
+      popover: {
+        title: t('tour.reportsOverview.title'),
+        description: t('tour.reportsOverview.description'),
+        side: 'top',
+        align: 'center',
+      },
+      route: '/reports',
+    },
+    {
+      element: '[data-tour="sprint-planning-board"]',
+      popover: {
+        title: t('tour.sprintPlanning.title'),
+        description: t('tour.sprintPlanning.description'),
+        side: 'top',
+        align: 'center',
+      },
+      route: '/sprint-planning',
+    },
+    {
       element: '[data-tour="project-selector"]',
       popover: {
         title: '🎯 Project Selector',
@@ -252,7 +297,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       },
       route: '/health',
     },
-  ], []);
+  ];
+
+    // The Sprint Planning step navigates to /sprint-planning, which immediately redirects
+    // non-SCRUM projects to /backlog, breaking the tour. Only include the step when the
+    // active project is SCRUM.
+    return allSteps.filter(
+      (step) => step.route !== '/sprint-planning' || isScrumProject,
+    );
+  }, [isScrumProject]);
 
   const stopTour = useCallback(() => {
     if (navTimeoutRef.current) { clearTimeout(navTimeoutRef.current); navTimeoutRef.current = null; }

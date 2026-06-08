@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.dto.AssignTaskCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
@@ -7,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.UpdateStoryPointsRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
@@ -132,6 +134,13 @@ public class TaskController {
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
     Pageable pageable = PageRequest.of(page, size);
     return ResponseEntity.ok(auditService.getTaskHistory(id, pageable));
+  }
+
+  @GetMapping("/cycle/{cycleId}/all")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Get all tasks by cycle ID (unpaginated)", description = "Returns all tasks for a sprint without pagination — used by Sprint Planning board")
+  public ResponseEntity<List<TaskDTO>> getAllTasksByCycleId(@PathVariable Long cycleId) {
+    return ResponseEntity.ok(taskService.getTasksByCycleId(cycleId));
   }
 
   @GetMapping("/cycle/{cycleId}")
@@ -266,6 +275,14 @@ public class TaskController {
         assigneeIds, category, exclude, pageable));
   }
 
+  @GetMapping("/project/{projectId}/backlog-tasks")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Get product backlog tasks for a project",
+      description = "Returns top-level tasks not yet assigned to any sprint (cycle IS NULL). Scrum mode only.")
+  public ResponseEntity<List<TaskDTO>> getProductBacklogTasks(@PathVariable Long projectId) {
+    return ResponseEntity.ok(taskService.getProductBacklogTasks(projectId));
+  }
+
   @GetMapping("/project/{projectId}/statistics")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
   @Operation(summary = "Get task statistics for a project")
@@ -303,6 +320,31 @@ public class TaskController {
       @RequestBody Map<String, String> statusUpdate) {
     TaskStatus status = TaskStatus.valueOf(statusUpdate.get("status"));
     return ResponseEntity.ok(taskService.updateTaskStatus(id, status));
+  }
+
+  @PatchMapping("/{id}/story-points")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(
+      summary = "Update story points for a task",
+      description =
+          "Lightweight PATCH that only changes the storyPoints field. Pass null to clear the"
+              + " estimate. Using a dedicated endpoint prevents accidental data loss from"
+              + " full-update callers that do not include all task fields.")
+  public ResponseEntity<TaskDTO> updateStoryPoints(
+      @PathVariable Long id, @Valid @RequestBody UpdateStoryPointsRequest request) {
+    return ResponseEntity.ok(taskService.updateStoryPoints(id, request.getStoryPoints()));
+  }
+
+  @PatchMapping("/{taskId}/cycle")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(
+      summary = "Assign task to a cycle (sprint)",
+      description =
+          "Lightweight PATCH that only changes the cycleId. Pass null cycleId to move the task"
+              + " to the product backlog. All other task fields are untouched.")
+  public ResponseEntity<TaskDTO> assignTaskToCycle(
+      @PathVariable Long taskId, @Valid @RequestBody AssignTaskCycleRequest request) {
+    return ResponseEntity.ok(taskService.assignTaskToCycle(taskId, request.getCycleId()));
   }
 
   @PatchMapping("/{id}/priority")

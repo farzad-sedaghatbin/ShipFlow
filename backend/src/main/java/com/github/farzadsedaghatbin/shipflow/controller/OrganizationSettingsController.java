@@ -44,6 +44,13 @@ public class OrganizationSettingsController {
     return ResponseEntity.ok(settingsService.getSettings());
   }
 
+  @GetMapping("/settings/meeting-types")
+  @Operation(summary = "Get meeting type configurations (accessible to all authenticated users)")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<java.util.List<com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO.MeetingTypeConfig>> getMeetingTypes() {
+    return ResponseEntity.ok(settingsService.getSettings().getMeetingTypes());
+  }
+
   @PutMapping("/settings")
   @Operation(summary = "Update organization settings")
   @PreAuthorize("hasRole('ADMIN')")
@@ -116,5 +123,19 @@ public class OrganizationSettingsController {
     emailService.sendTaskAssigned(email, recipientName, "Test Task — ShipFlow Email Working", "/dashboard");
     log.info("Test email sent to {} by admin {}", email, userDetails.getUsername());
     return ResponseEntity.ok(Map.of("message", "Test email sent to " + email));
+  }
+
+  /**
+   * Generate (or regenerate) the SCIM 2.0 bearer token. Returns the raw token once — it cannot be
+   * recovered after this response is sent.
+   */
+  @PostMapping("/settings/scim/generate-token")
+  @Operation(summary = "Generate SCIM bearer token (shown once)")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Map<String, String>> generateScimToken(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    log.info("SCIM token generation requested by {}", userDetails.getUsername());
+    String rawToken = settingsService.generateScimToken(userDetails.getUsername());
+    return ResponseEntity.ok(Map.of("token", rawToken));
   }
 }

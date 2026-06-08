@@ -12,7 +12,7 @@ This file is the **single source of truth** for the interactive onboarding tour.
 
 | File | Responsibility |
 |------|---------------|
-| `frontend/src/contexts/TourContext.tsx` | All 21 tour steps, driver.js config, navigation, skip-confirm |
+| `frontend/src/contexts/TourContext.tsx` | All 25 tour steps, driver.js config, navigation, skip-confirm |
 | `frontend/src/components/WelcomeTourDialog.tsx` | Auto-shown welcome modal for first-time users |
 | `frontend/src/styles/tour.css` | Custom dark-theme styling for driver.js popovers — imported from `TourContext.tsx` |
 | `frontend/src/components/Layout.tsx` | Renders `<WelcomeTourDialog>`, exposes "Start Tour" / "Restart Tour" buttons in sidebar + topbar |
@@ -53,27 +53,31 @@ Each step has a `data-tour` attribute on its target element. The table below is 
 
 | # | Step Title | `data-tour` selector | Selector file | Route |
 |---|-----------|---------------------|---------------|-------|
-| 1 | Welcome to ShipFlow! | `sidebar` | `Layout.tsx:277` | `/` |
-| 2 | Projects | `projects-menu` | `Layout.tsx:98` (navItem `tourId`) | `/` |
+| 1 | Welcome to ShipFlow! | `sidebar` | `Layout.tsx:279` | `/` |
+| 2 | Projects | `projects-menu` | `Layout.tsx:100` (navItem `tourId`) | `/` |
 | 3 | Create Your First Project | `new-project-btn` | `Projects.tsx` | `/projects` |
 | 4 | Project Created! | `project-card` | `Projects.tsx` (first card, `index === 0`) | `/projects` |
-| 5 | Cycles | `cycles-menu` | `Layout.tsx:99` (navItem `tourId`) | `/projects` |
+| 5 | Cycles | `cycles-menu` | `Layout.tsx:101` (navItem `tourId`) | `/projects` |
 | 6 | Create a Cycle | `new-cycle-btn` | `CycleList.tsx:157` | `/cycles` |
 | 7 | Your Cycle | `cycle-card` | `CycleList.tsx:225` (first card, `index === 0`) | `/cycles` |
-| 8 | Pitch Board | `pitches-menu` | `Layout.tsx:110` (navItem `tourId`) | `/cycles` |
+| 8 | Pitch Board | `pitches-menu` | `Layout.tsx:112` (navItem `tourId`) | `/cycles` |
 | 9 | Create a Pitch | `new-pitch-btn` | `PitchBoard.tsx:608` | `/pitches` |
 | 10 | Kanban Board | `pitch-board` | `PitchBoard.tsx:661` / `665` | `/pitches` |
-| 11 | Betting Table (nav) | `betting-menu` | `Layout.tsx:111` (navItem `tourId`) | `/pitches` |
+| 11 | Betting Table (nav) | `betting-menu` | `Layout.tsx:113` (navItem `tourId`) | `/pitches` |
 | 12 | Plan Your Cycle | `betting-table` | `BettingTable.tsx:475` | `/betting` |
-| 13 | Health Overview (nav) | `health-menu` | `Layout.tsx:112` (navItem `tourId`) | `/betting` |
+| 13 | Health Overview (nav) | `health-menu` | `Layout.tsx:114` (navItem `tourId`) | `/betting` |
 | 14 | Hill Chart | `hill-chart-section` | `HealthOverview.tsx:115` | `/health` |
-| 15 | Retrospectives | `retros-menu` | `Layout.tsx:113` (navItem `tourId`) | `/retros` |
-| 16 | Reports | `reports-menu` | `Layout.tsx:115` (navItem `tourId`) | `/reports` |
-| 17 | Meetings | `meetings-menu` | `Layout.tsx:145` (navItem `tourId`) | `/meetings` |
-| 18 | Backlog | `backlog-menu` | `Layout.tsx:352` | `/backlog` |
-| 19 | Work Logs | `worklogs-menu` | `Layout.tsx:357` | `/time/logs` |
-| 20 | Project Selector | `project-selector` | `Layout.tsx:522` | `/health` |
-| 21 | You're All Set! | `user-menu` | `Layout.tsx:624` | `/health` |
+| 15 | Retrospectives | `retros-menu` | `Layout.tsx:115` (navItem `tourId`) | `/retros` |
+| 16 | Reports | `reports-menu` | `Layout.tsx:117` (navItem `tourId`) | `/reports` |
+| 17 | Meetings | `meetings-menu` | `Layout.tsx:147` (navItem `tourId`) | `/meetings` |
+| 18 | Backlog | `backlog-menu` | `Layout.tsx:354` | `/backlog` |
+| 19 | Work Logs | `worklogs-menu` | `Layout.tsx:367` | `/time/logs` |
+| 20 | Migrate from Jira, Linear, or Asana | `import-nav` | `Layout.tsx` (Import Data nav item `tourId`) | `/import` |
+| 21 | Task Backlog | `backlog-board` | `BacklogPage.tsx` (outer container div) | `/backlog` |
+| 22 | Reports & Analytics | `reports-overview` | `Reports.tsx` (outer container div) | `/reports` |
+| 23 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` — **Conditional: only included in the tour when the active project has `projectType === 'SCRUM'`**. `getTourSteps()` in `TourContext.tsx` filters this step out for non-SCRUM projects (which would otherwise be redirected to `/backlog`, breaking the tour). |
+| 24 | Project Selector | `project-selector` | `Layout.tsx:537` | `/health` |
+| 25 | You're All Set! | `user-menu` | `Layout.tsx:639` | `/health` |
 
 ### How `navItem` tourIds work
 
@@ -175,7 +179,7 @@ localStorage.clear(); location.reload();
 - [ ] Clicking the ✕ close button shows the skip confirmation dialog
 - [ ] Confirming skip marks tour as complete (`shipflow_tour_completed = "true"`)
 - [ ] Cancelling skip resumes the tour on the current step
-- [ ] Tour completes on step 21 and sets `shipflow_tour_completed = "true"`
+- [ ] Tour completes on the final step and sets `shipflow_tour_completed = "true"`
 - [ ] After completion, sidebar button shows "Restart Tour"
 - [ ] Clicking "Restart Tour" starts from step 1 again
 
@@ -220,4 +224,4 @@ The `/help` page has a nav item with `tourId: 'help-menu'` (available in Layout.
 
 ---
 
-*Last updated: 2026-03-31 — reflects TourContext.tsx v21-step implementation (S13)*
+*Last updated: 2026-05-23 — steps 20–22 added: Import navigation, Backlog board, and Reports overview anchors. Step count is now 25 (26 when SCRUM Sprint Planning is included). See also: `aria.*` i18n keys added for icon-only button accessibility.*

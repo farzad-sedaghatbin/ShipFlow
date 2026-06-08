@@ -66,6 +66,18 @@ public class WorkLogService {
     return workLogRepository.findByProjectId(projectId, pageable).map(this::toDTO);
   }
 
+  public Page<WorkLogDTO> getAllWorkLogsByDateRange(LocalDate from, LocalDate to, Pageable pageable) {
+    return workLogRepository.findByDateBetween(from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getAllWorkLogsByProjectIdAndDateRange(Long projectId, LocalDate from, LocalDate to, Pageable pageable) {
+    return workLogRepository.findByProjectIdAndDateBetween(projectId, from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getWorkLogsByCycleIdAndDateRange(Long cycleId, LocalDate from, LocalDate to, Pageable pageable) {
+    return workLogRepository.findByCycleIdAndDateBetween(cycleId, from, to, pageable).map(this::toDTO);
+  }
+
   public WorkLogDTO getWorkLogById(Long id) {
     WorkLog workLog = workLogRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
@@ -112,9 +124,28 @@ public class WorkLogService {
   }
 
   public WorkLogDTO updateWorkLog(Long id, CreateWorkLogRequest request) {
+    if ((request.getPitchId() == null && request.getTaskId() == null)
+        || (request.getPitchId() != null && request.getTaskId() != null)) {
+      throw new IllegalArgumentException(messageService.getMessage("error.worklog.pitch.or.task.required"));
+    }
+
     WorkLog workLog = workLogRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));
 
+    Pitch previousPitch = workLog.getPitch();
+
+    Pitch pitch = null;
+    Task task = null;
+    if (request.getPitchId() != null) {
+      pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
+          () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+    } else {
+      task = taskRepository.findById(request.getTaskId())
+          .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + request.getTaskId()));
+    }
+
+    workLog.setPitch(pitch);
+    workLog.setTask(task);
     workLog.setDate(request.getDate());
     workLog.setHoursSpent(request.getHoursSpent());
     workLog.setNote(request.getNote());
@@ -126,7 +157,8 @@ public class WorkLogService {
       eventPublisher.publishEvent(new KnowledgeEventListener.WorkLogKnowledgeEvent(saved.getId()));
     }
 
-    // Invalidate risk analysis cache since hours changed
+    // Invalidate both the previous and new pitch caches when the association changes
+    invalidateCacheForPitch(previousPitch);
     invalidateCacheForPitch(saved.getPitch());
 
     return toDTO(saved);
@@ -191,6 +223,21 @@ public class WorkLogService {
   public Page<WorkLogDTO> getMyWorkLogsByDate(LocalDate date, Pageable pageable) {
     Person person = getCurrentUserPerson();
     return workLogRepository.findByPersonIdAndDate(person.getId(), date, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getMyWorkLogsByDateRange(LocalDate from, LocalDate to, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return workLogRepository.findByPersonIdAndDateBetween(person.getId(), from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getMyWorkLogsByProjectIdAndDateRange(Long projectId, LocalDate from, LocalDate to, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return workLogRepository.findByPersonIdAndProjectIdAndDateBetween(person.getId(), projectId, from, to, pageable).map(this::toDTO);
+  }
+
+  public Page<WorkLogDTO> getMyWorkLogsByCycleAndDateRange(Long cycleId, LocalDate from, LocalDate to, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return workLogRepository.findByPersonIdAndCycleIdAndDateBetween(person.getId(), cycleId, from, to, pageable).map(this::toDTO);
   }
 
   /** Create a work log for the current user (for themselves) */

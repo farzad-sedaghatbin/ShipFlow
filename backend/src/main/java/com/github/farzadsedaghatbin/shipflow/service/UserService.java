@@ -14,9 +14,11 @@ import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingR
 import com.github.farzadsedaghatbin.shipflow.repository.PasswordResetTokenRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TeamAssignmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +45,7 @@ public class UserService {
   private final PersonRepository personRepository;
   private final ProjectRepository projectRepository;
   private final UserProjectRepository userProjectRepository;
+  private final TeamAssignmentRepository teamAssignmentRepository;
   private final NotificationUserMappingRepository notificationUserMappingRepository;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final PasswordEncoder passwordEncoder;
@@ -164,6 +167,37 @@ public class UserService {
             .projectName(up.getProject().getName()).projectKey(up.getProject().getProjectKey())
             .projectRole(up.getProjectRole()).build())
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Returns the set of project IDs the given user is assigned to.
+   * Used by the RAG security filter to scope document retrieval.
+   */
+  @Transactional(readOnly = true)
+  public Set<Long> getProjectIdsForUser(Long userId) {
+    return userProjectRepository.findByUserId(userId).stream()
+        .map(up -> up.getProject().getId())
+        .collect(Collectors.toSet());
+  }
+
+  /**
+   * Returns the set of team IDs the given user belongs to (via their linked Person).
+   * Only active team assignments are considered.
+   * Used by the RAG security filter to scope document retrieval.
+   */
+  @Transactional(readOnly = true)
+  public Set<Long> getTeamIdsForUser(Long userId) {
+    return userRepository.findById(userId)
+        .map(user -> {
+          Person person = user.getPerson();
+          if (person == null) {
+            return Collections.<Long>emptySet();
+          }
+          return teamAssignmentRepository.findByPersonIdAndIsActiveTrue(person.getId()).stream()
+              .map(ta -> ta.getTeam().getId())
+              .collect(Collectors.<Long>toSet());
+        })
+        .orElse(Collections.emptySet());
   }
 
   @Transactional

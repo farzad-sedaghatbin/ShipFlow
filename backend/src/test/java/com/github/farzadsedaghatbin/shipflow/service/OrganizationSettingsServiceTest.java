@@ -47,7 +47,10 @@ class OrganizationSettingsServiceTest {
   @BeforeEach
   void setUp() {
     // Use real ObjectMapper for these tests
-    settingsService = new OrganizationSettingsService(settingsRepository, new ObjectMapper());
+    settingsService = new OrganizationSettingsService(
+        settingsRepository,
+        new ObjectMapper(),
+        new com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties());
 
     testSettings = OrganizationSettings.builder().id(1L).organizationName("Test Org").defaultCycleLengthWeeks(6)
         .defaultCooldownWeeks(2).riskThresholdsJson("{\"lowMax\":30,\"mediumMax\":60,\"highMax\":85}")

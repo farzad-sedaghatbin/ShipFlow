@@ -41,6 +41,9 @@ export interface McpOrganizationSettings {
   hasFigmaAccessToken: boolean;
   // GitHub settings
   hasGithubAccessToken: boolean;
+  // Built-in MCP server runtime toggle (effective values: DB override else env default)
+  mcpServerEnabled: boolean;
+  mcpServerWriteEnabled: boolean;
 }
 
 /**
@@ -63,6 +66,25 @@ export interface McpTestResult {
 }
 
 /**
+ * Effective runtime state of the built-in ShipFlow MCP server.
+ * These are a subset of OrganizationSettingsDTO. The values are the effective
+ * settings (DB override if set, otherwise the environment-variable default).
+ */
+export interface McpServerSettings {
+  mcpServerEnabled: boolean;
+  mcpServerWriteEnabled: boolean;
+}
+
+/**
+ * Partial update for the MCP server runtime toggle. Omitted fields are left
+ * unchanged by the backend (null is ignored).
+ */
+export interface McpServerToggleInput {
+  mcpServerEnabled?: boolean;
+  mcpServerWriteEnabled?: boolean;
+}
+
+/**
  * Get MCP server status (system-wide configuration from environment)
  */
 export async function getMcpStatus(): Promise<McpStatus> {
@@ -79,6 +101,8 @@ export async function getMcpSettings(): Promise<McpOrganizationSettings> {
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
+    mcpServerEnabled: Boolean(data.mcpServerEnabled),
+    mcpServerWriteEnabled: Boolean(data.mcpServerWriteEnabled),
   };
 }
 
@@ -91,6 +115,33 @@ export async function updateMcpSettings(request: UpdateMcpSettingsRequest): Prom
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
+    mcpServerEnabled: Boolean(data.mcpServerEnabled),
+    mcpServerWriteEnabled: Boolean(data.mcpServerWriteEnabled),
+  };
+}
+
+/**
+ * Read the built-in MCP server runtime toggle from organization settings.
+ */
+export async function getMcpServerSettings(): Promise<McpServerSettings> {
+  const response = await mcpApi.get('/settings');
+  return {
+    mcpServerEnabled: Boolean(response.data?.mcpServerEnabled),
+    mcpServerWriteEnabled: Boolean(response.data?.mcpServerWriteEnabled),
+  };
+}
+
+/**
+ * Update the built-in MCP server runtime toggle (partial update — only the
+ * provided fields are changed). Takes effect immediately, no restart required.
+ */
+export async function updateMcpServerToggle(
+  input: McpServerToggleInput
+): Promise<McpServerSettings> {
+  const response = await mcpApi.put('/settings', input);
+  return {
+    mcpServerEnabled: Boolean(response.data?.mcpServerEnabled),
+    mcpServerWriteEnabled: Boolean(response.data?.mcpServerWriteEnabled),
   };
 }
 
@@ -98,4 +149,6 @@ export default {
   getMcpStatus,
   getMcpSettings,
   updateMcpSettings,
+  getMcpServerSettings,
+  updateMcpServerToggle,
 };

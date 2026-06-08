@@ -51,6 +51,9 @@ class TaskHierarchyServiceTest {
   @Mock
   private MessageService messageService;
 
+  @Mock
+  private ProjectService projectService;
+
   @InjectMocks
   private TaskService taskService;
 
@@ -65,6 +68,8 @@ class TaskHierarchyServiceTest {
       String key = i.getArgument(0);
       if (key.contains("parent.different.cycle"))
         return "Parent task must belong to the same cycle";
+      if (key.contains("parent.different.project"))
+        return "Parent task must belong to the same project";
       if (key.contains("circular.reference"))
         return "circular reference";
       return key;
@@ -73,6 +78,8 @@ class TaskHierarchyServiceTest {
       String key = i.getArgument(0);
       if (key.contains("parent.different.cycle"))
         return "Parent task must belong to the same cycle";
+      if (key.contains("parent.different.project"))
+        return "Parent task must belong to the same project";
       if (key.contains("circular.reference"))
         return "circular reference";
       return key;
@@ -131,8 +138,9 @@ class TaskHierarchyServiceTest {
 
   @Test
   void shouldFailToCreateTaskWithParentFromDifferentCycle() {
-    // Given
-    Cycle differentCycle = Cycle.builder().id(2L).name("Sprint 2").build();
+    // Given — parent task is in a cycle that belongs to a DIFFERENT project
+    Project otherProject = Project.builder().id(99L).name("Other Project").projectKey("OTH").build();
+    Cycle differentCycle = Cycle.builder().id(2L).name("Sprint 2").project(otherProject).build();
 
     Task parentFromDifferentCycle = Task.builder().id(1L).title("Parent Task").cycle(differentCycle).build();
 
@@ -140,9 +148,11 @@ class TaskHierarchyServiceTest {
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentFromDifferentCycle));
 
-    // When / Then
+    // When / Then — createTask validates at project level; the message key is now
+    // error.task.parent.different.project. MessageService returns the key itself when the
+    // key is not found in the properties, so we assert on the resolved message text.
     assertThatThrownBy(() -> taskService.createTask(createRequest)).isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parent task must belong to the same cycle");
+        .hasMessageContaining("same project");
   }
 
   @Test

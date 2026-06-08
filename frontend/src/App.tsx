@@ -14,6 +14,7 @@ import { isRTLLanguage } from './i18n';
 // Public pages
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
+const SsoCallbackPage = lazy(() => import('./pages/SsoCallbackPage'));
 const ReleaseNotes = lazy(() => import('./pages/ReleaseNotes'));
 const CompetitorsComparison = lazy(() => import('./pages/CompetitorsComparison'));
 const PublicRoadmap = lazy(() => import('./pages/PublicRoadmap'));
@@ -48,6 +49,9 @@ const PitchComparisonView = lazy(() => import('./pages/PitchComparisonView'));
 const BacklogPage = lazy(() => import('./pages/BacklogPage'));
 const TaskDetailPage = lazy(() => import('./pages/TaskDetailPage'));
 
+// Scrum
+const SprintPlanningPage = lazy(() => import('./pages/SprintPlanningPage'));
+
 // Retros & Health
 const RetroList = lazy(() => import('./pages/RetroList'));
 const RetroBoard = lazy(() => import('./pages/RetroBoard'));
@@ -79,6 +83,7 @@ const SlackIntegration = lazy(() => import('./pages/SlackIntegration'));
 const GitHubIntegration = lazy(() => import('./pages/integrations/GitHubIntegration'));
 const TeamsIntegration = lazy(() => import('./pages/integrations/TeamsIntegration'));
 const McpIntegration = lazy(() => import('./pages/integrations/McpIntegration'));
+const ApiKeysPage = lazy(() => import('./pages/integrations/ApiKeysPage'));
 const InboundWebhooksIntegration = lazy(
   () => import('./pages/integrations/InboundWebhooksIntegration')
 );
@@ -110,6 +115,9 @@ const ReleaseListPage = lazy(() => import('./pages/ReleaseListPage'));
 const ReleaseDetailPage = lazy(() => import('./pages/ReleaseDetailPage'));
 const ReleaseFormPage = lazy(() => import('./pages/ReleaseFormPage'));
 
+// Import
+const ImportPage = lazy(() => import('./pages/ImportPage'));
+
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
 const GettingStartedGuide = lazy(() => import('./pages/guides/GettingStartedGuide'));
@@ -129,6 +137,9 @@ const WebhooksGuide = lazy(() => import('./pages/guides/WebhooksGuide'));
 const PublicApiGuide = lazy(() => import('./pages/guides/PublicApiGuide'));
 const McpServerGuide = lazy(() => import('./pages/guides/McpServerGuide'));
 const IdeaToRoadmapGuide = lazy(() => import('./pages/guides/IdeaToRoadmapGuide'));
+const ImportGuide = lazy(() => import('./pages/guides/ImportGuide'));
+const ScrumModeGuide = lazy(() => import('./pages/guides/ScrumModeGuide'));
+const MigrationGuide = lazy(() => import('./pages/guides/MigrationGuide'));
 
 // ── Suspense fallback ─────────────────────────────────────────────────────────
 function PageLoader() {
@@ -178,6 +189,8 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/login" element={<Login />} />
+        {/* SSO callback — processes token from IdP redirect, no auth required */}
+        <Route path="/sso-callback" element={<SsoCallbackPage />} />
         <Route
           path="/*"
           element={
@@ -219,6 +232,9 @@ function App() {
                         element={<Navigate to="/reports" replace />}
                       />
 
+                      {/* Scrum */}
+                      <Route path="sprint-planning" element={<SprintPlanningPage />} />
+
                       {/* Backlog */}
                       <Route path="backlog" element={<BacklogPage />} />
                       <Route path="backlog/:taskId" element={<TaskDetailPage />} />
@@ -257,6 +273,7 @@ function App() {
                       <Route path="integrations/github" element={<GitHubIntegration />} />
                       <Route path="integrations/teams" element={<TeamsIntegration />} />
                       <Route path="integrations/mcp" element={<McpIntegration />} />
+                      <Route path="integrations/api-keys" element={<ApiKeysPage />} />
                       <Route
                         path="integrations/inbound-webhooks"
                         element={<InboundWebhooksIntegration />}
@@ -304,6 +321,9 @@ function App() {
                       <Route path="releases-management/:id" element={<ReleaseDetailPage />} />
                       <Route path="releases-management/:id/edit" element={<ReleaseFormPage />} />
 
+                      {/* Import */}
+                      <Route path="import" element={<ImportPage />} />
+
                       {/* Help & Guides */}
                       <Route path="help" element={<HelpGuides />} />
                       <Route path="help/getting-started" element={<GettingStartedGuide />} />
@@ -326,9 +346,22 @@ function App() {
                       <Route path="help/public-api" element={<PublicApiGuide />} />
                       <Route path="help/mcp-server" element={<McpServerGuide />} />
                       <Route path="help/idea-to-roadmap" element={<IdeaToRoadmapGuide />} />
+                      <Route path="help/import" element={<ImportGuide />} />
+                      <Route path="help/scrum-mode" element={<ScrumModeGuide />} />
+                      <Route path="help/migration" element={<MigrationGuide />} />
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                      {/*
+                       * S37a deep-link routing review (2026-06-06):
+                       * All detail routes (/pitches/:id, /backlog/:taskId, /cycles/:cycleId, etc.)
+                       * are registered as flat top-level paths — they do NOT depend on a parent
+                       * route loader. ProjectContext is bootstrap-loaded from localStorage on mount
+                       * and re-hydrated from the API, so a fresh deep-link load finds the stored
+                       * project within the first render. Pages that require a project (RoadmapPage,
+                       * BacklogPage) guard with <ProjectRequiredDialog> rather than redirecting,
+                       * keeping the URL stable. No routing changes required.
+                       */}
                     </Routes>
                   </Layout>
                 </TourProvider>

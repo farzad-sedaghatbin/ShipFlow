@@ -16,7 +16,9 @@ import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.TaskDependency;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
@@ -29,6 +31,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
@@ -71,10 +74,13 @@ public class TaskService {
   private final HillChartPointRepository hillChartPointRepository;
   private final TaskAttachmentRepository attachmentRepository;
   private final TeamRepository teamRepository;
+  private final ProjectRepository projectRepository;
   private final DashboardNotificationService notificationService;
   private final MessageService messageService;
   private final ApplicationEventPublisher eventPublisher;
   private final PermissionService permissionService;
+  private final ProjectService projectService;
+  private final ScopeProgressService scopeProgressService;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -86,7 +92,7 @@ public class TaskService {
 
   public TaskDTO getTaskById(Long id) {
     Task task = taskRepository.findByIdNotDeleted(id)
-        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
     TaskDTO dto = toDTO(task);
     // Attachments are only loaded for the single-task detail view to avoid N+1 on list endpoints
     dto.setAttachments(attachmentRepository.findByTaskIdOrderByCreatedAtDesc(id).stream()
@@ -142,7 +148,21 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByProjectId(Long projectId) {
-    return taskRepository.findByProjectId(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+    return taskRepository.findByProjectIdNotDeleted(projectId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /**
+   * Returns all top-level tasks in the product backlog for a project — tasks not yet assigned to
+   * any sprint (cycle IS NULL). Used exclusively in Scrum mode sprint planning.
+   */
+  public List<TaskDTO> getProductBacklogTasks(Long projectId) {
+    Project project = projectRepository.findById(projectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+    if (project.getProjectType() != ProjectType.SCRUM) {
+      throw new BadRequestException(messageService.getMessage("error.task.backlog.scrum.only"));
+    }
+    return taskRepository.findProductBacklogTasks(projectId, ProjectType.SCRUM)
+        .stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   public Page<TaskDTO> getTasksByProjectIdPaged(Long projectId, Pageable pageable) {
@@ -154,7 +174,7 @@ public class TaskService {
   }
 
   public TaskStatisticsDTO getTaskStatisticsByProjectId(Long projectId) {
-    List<Task> tasks = taskRepository.findByProjectId(projectId);
+    List<Task> tasks = taskRepository.findByProjectIdNotDeleted(projectId);
 
     long totalTasks = tasks.size();
     long backlogTasks = tasks.stream().filter(t -> t.getStatus() == TaskStatus.BACKLOG).count();
@@ -174,8 +194,25 @@ public class TaskService {
   }
 
   public TaskDTO createTask(CreateTaskRequest request) {
-    Cycle cycle = cycleRepository.findById(request.getCycleId())
-        .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
+    // Resolve cycle and project. For SCRUM product-backlog tasks cycleId may be null; in that
+    // case projectId is required so we can set the direct project reference.
+    Cycle cycle = null;
+    Project taskProject = null;
+
+    if (request.getCycleId() != null) {
+      cycle = cycleRepository.findById(request.getCycleId())
+          .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
+      taskProject = cycle.getProject();
+    } else if (request.getProjectId() != null) {
+      // Product backlog task (SCRUM only — validated by the repository query at read time)
+      taskProject = projectRepository.findById(request.getProjectId())
+          .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + request.getProjectId()));
+      if (taskProject.getProjectType() != ProjectType.SCRUM) {
+        throw new BadRequestException(messageService.getMessage("error.task.backlog.scrum.only"));
+      }
+    } else {
+      throw new BadRequestException("Either cycleId or projectId must be provided");
+    }
 
     // Validate parent task if provided
     Task parentTask = null;
@@ -183,17 +220,23 @@ public class TaskService {
       parentTask = taskRepository.findById(request.getParentTaskId()).orElseThrow(
           () -> new IllegalArgumentException("Parent task not found with id: " + request.getParentTaskId()));
 
-      // Ensure parent task belongs to the same cycle
-      if (!parentTask.getCycle().getId().equals(request.getCycleId())) {
-        throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
+      // Ensure parent task belongs to the same project (handles product-backlog tasks where
+      // cycle may be null — falls back to the direct project reference on either task)
+      Long parentProjectId = resolveProjectId(parentTask);
+      Long requestedProjectId = taskProject != null ? taskProject.getId() : null;
+      if (parentProjectId != null && requestedProjectId != null
+          && !parentProjectId.equals(requestedProjectId)) {
+        throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.project"));
       }
     }
 
     Task task = Task.builder().title(request.getTitle()).description(request.getDescription()).cycle(cycle)
+        .project(taskProject) // always populate direct reference for backlog queries
         .parentTask(parentTask).status(request.getStatus() != null ? request.getStatus() : TaskStatus.BACKLOG)
         .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
         .category(request.getCategory() != null ? request.getCategory() : TaskCategory.PITCH_SCOPE)
         .estimateHours(request.getEstimateHours()).actualHours(request.getActualHours())
+        .storyPoints(request.getStoryPoints())
         .dueDate(request.getDueDate()).tags(request.getTags()).build();
 
     Person assignee = null;
@@ -243,7 +286,7 @@ public class TaskService {
     Task saved = taskRepository.save(task);
 
     // Auto-create hill chart scope for root tasks with pitch (Scope-Task Bridge)
-    if (shouldCreateScopeAutomatically(request, saved)) {
+    if (shouldCreateScopeAutomatically(saved)) {
       createLinkedScope(saved, request.getInitialHillPosition());
     }
 
@@ -261,27 +304,30 @@ public class TaskService {
   }
 
   /**
-   * Check if a scope should be auto-created for this task.
-   * Scope is created when:
-   * - createScopeAutomatically flag is true (or null, default true)
+   * Check if a scope should be auto-created for this task (Scope-Task Bridge).
+   * The decision is owned entirely by the backend, derived from the task's own
+   * state — clients cannot suppress it. Scope is created when:
    * - Task has a pitch association
    * - Task has no parent (is a root task)
-   * - Task doesn't already have an explicit scope
+   * - Task isn't already linked to an explicit scope
    */
-  private boolean shouldCreateScopeAutomatically(CreateTaskRequest request, Task task) {
-    boolean createFlag = request.getCreateScopeAutomatically() == null || request.getCreateScopeAutomatically();
+  private boolean shouldCreateScopeAutomatically(Task task) {
     boolean hasPitch = task.getPitch() != null;
     boolean isRootTask = task.getParentTask() == null;
-    boolean noExistingScope = request.getScopeId() == null;
+    boolean noExistingScope = task.getScope() == null;
 
-    return createFlag && hasPitch && isRootTask && noExistingScope;
+    return hasPitch && isRootTask && noExistingScope;
   }
 
   /**
    * Create a hill chart scope linked to the given task.
    */
   private void createLinkedScope(Task task, Integer initialPosition) {
-    int position = initialPosition != null ? initialPosition : 0;
+    // Derive the starting position from the task's status when not explicitly set,
+    // so a task created as IN_PROGRESS/DONE lands at the right spot on the hill
+    // instead of being pinned at 0.
+    int position = initialPosition != null ? initialPosition
+        : scopeProgressService.calculatePositionFromTask(task);
 
     HillChartPoint scope = HillChartPoint.builder()
         .pitch(task.getPitch())
@@ -307,13 +353,16 @@ public class TaskService {
     TaskPriority oldPriority = task.getPriority();
 
     // Handle cycle changes first — so parent-task validation uses the correct cycle
-    if (request.getCycleId() != null && !request.getCycleId().equals(task.getCycle().getId())) {
+    if (request.getCycleId() != null
+        && (task.getCycle() == null || !request.getCycleId().equals(task.getCycle().getId()))) {
       Cycle newCycle = cycleRepository.findById(request.getCycleId())
           .orElseThrow(() -> new IllegalArgumentException(
               "Cycle not found with id: " + request.getCycleId()));
       task.setCycle(newCycle);
+      task.setProject(newCycle.getProject());
       // Clear parent task if it now belongs to a different cycle
       if (task.getParentTask() != null
+          && task.getParentTask().getCycle() != null
           && !task.getParentTask().getCycle().getId().equals(request.getCycleId())) {
         task.setParentTask(null);
       }
@@ -331,9 +380,15 @@ public class TaskService {
           throw new IllegalArgumentException(messageService.getMessage("error.task.circular.reference"));
         }
 
-        // Ensure parent task belongs to the same cycle
-        if (!parentTask.getCycle().getId().equals(task.getCycle().getId())) {
-          throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.cycle"));
+        // Ensure parent task belongs to the same project. Fail closed: if either project
+        // reference is missing, the relationship cannot be safely validated and must be rejected.
+        Long taskProjectId = resolveProjectId(task);
+        Long parentProjectId = resolveProjectId(parentTask);
+        if (taskProjectId == null || parentProjectId == null) {
+          throw new IllegalArgumentException("Cannot validate parent task: project reference missing");
+        }
+        if (!taskProjectId.equals(parentProjectId)) {
+          throw new IllegalArgumentException(messageService.getMessage("error.task.parent.different.project"));
         }
 
         task.setParentTask(parentTask);
@@ -366,6 +421,11 @@ public class TaskService {
 
     task.setEstimateHours(request.getEstimateHours());
     task.setActualHours(request.getActualHours());
+    // Written unconditionally: null means "clear the estimate". This PUT endpoint is a full
+    // replacement, and its sole UI caller (BacklogTaskDialog) always includes the field.
+    // Partial-update callers (status-only, priority-only, sprint-planning moves) use their own
+    // dedicated PATCH endpoints which do not touch storyPoints.
+    task.setStoryPoints(request.getStoryPoints());
     task.setDueDate(request.getDueDate());
     task.setTags(request.getTags());
 
@@ -460,8 +520,105 @@ public class TaskService {
     return !oldAssignee.getId().equals(newAssignee.getId());
   }
 
+  /**
+   * Assigns a task to a cycle (sprint) or moves it to the product backlog. Only the cycleId is
+   * changed — all other task fields are left untouched, preventing accidental data loss from
+   * partial-update callers such as SprintPlanningPage.
+   *
+   * <p>This endpoint is methodology-aware:
+   * <ul>
+   *   <li><b>SCRUM</b>: moving to a sprint or to the product backlog (cycleId=null).
+   *   <li><b>SHAPE_UP</b>: re-assigning a task between cycles (cycleId must not be null).
+   *   <li><b>KANBAN</b>: typically has a single cycle; re-assignment is allowed but rarely used.
+   * </ul>
+   * Moving to the backlog (cycleId=null) is restricted to SCRUM projects only.
+   *
+   * @param taskId the ID of the task to reassign
+   * @param cycleId the target cycle ID, or null to move the task to the product backlog
+   * @return the updated task DTO
+   */
+  public TaskDTO assignTaskToCycle(Long taskId, Long cycleId) {
+    Task task =
+        taskRepository
+            .findByIdNotDeleted(taskId)
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Task not found with id: " + taskId));
+
+    // Enforce project-scope authorization on the task's current project.
+    // Fail closed: if the project cannot be determined, reject the request rather than silently
+    // skipping authorization. This mirrors the "project reference missing" pattern in updateTask.
+    Long taskProjectId = resolveProjectId(task);
+    if (taskProjectId == null) {
+      throw new BadRequestException("Cannot reassign task: project reference missing on task " + taskId);
+    }
+    projectService.requireProjectAccess(taskProjectId);
+
+    if (cycleId == null) {
+      // Moving to product backlog (cycle = null) is only valid for SCRUM projects.
+      // For SHAPE_UP and KANBAN projects, tasks must always belong to a cycle.
+      Project taskProject = task.getProject() != null ? task.getProject()
+          : (task.getCycle() != null ? task.getCycle().getProject() : null);
+      if (taskProject == null || taskProject.getProjectType() != ProjectType.SCRUM) {
+        throw new BadRequestException(messageService.getMessage("error.task.backlog.scrum.only"));
+      }
+      // Preserve project reference before clearing cycle (for legacy data that may not have it)
+      if (task.getProject() == null && task.getCycle() != null) {
+        task.setProject(task.getCycle().getProject());
+      }
+      task.setCycle(null);
+    } else {
+      Cycle cycle =
+          cycleRepository
+              .findById(cycleId)
+              .orElseThrow(
+                  () -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
+      // Verify the target cycle belongs to an accessible project
+      if (cycle.getProject() != null) {
+        projectService.requireProjectAccess(cycle.getProject().getId());
+      }
+      // Verify the task and the target cycle belong to the SAME project
+      Long cycleProjectId = cycle.getProject() != null ? cycle.getProject().getId() : null;
+      if (taskProjectId != null && cycleProjectId != null && !taskProjectId.equals(cycleProjectId)) {
+        throw new BadRequestException(messageService.getMessage("error.task.cross.project.move"));
+      }
+      task.setCycle(cycle);
+      task.setProject(cycle.getProject());
+      // Clear parent reference if parent is in a different cycle — prevents cross-sprint hierarchy
+      if (task.getParentTask() != null) {
+        Long parentCycleId = task.getParentTask().getCycle() != null ? task.getParentTask().getCycle().getId() : null;
+        if (!cycleId.equals(parentCycleId)) {
+          task.setParentTask(null);
+        }
+      }
+    }
+
+    return toDTO(taskRepository.save(task));
+  }
+
   public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
     return updateTaskStatus(id, status, null);
+  }
+
+  /**
+   * Assign (or unassign) a task without touching any other field.
+   *
+   * @param taskId   the task to update
+   * @param personId the person to assign to, or {@code null} to clear the assignee
+   * @return the updated task
+   */
+  public TaskDTO updateTaskAssignee(Long taskId, Long personId) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+
+    if (personId == null) {
+      task.setAssignee(null);
+    } else {
+      Person assignee = personRepository.findById(personId)
+          .orElseThrow(() -> new IllegalArgumentException("Person not found with id: " + personId));
+      task.setAssignee(assignee);
+    }
+
+    return toDTO(taskRepository.save(task));
   }
 
   public TaskDTO updateTaskStatus(Long id, TaskStatus status, String comment) {
@@ -516,6 +673,25 @@ public class TaskService {
     task.setPriority(priority);
     Task saved = taskRepository.save(task);
     return toDTO(saved);
+  }
+
+  /**
+   * Dedicated endpoint for updating story points only. Accepts {@code null} to explicitly clear
+   * the estimate. Using a targeted PATCH instead of the full updateTask path prevents accidental
+   * data loss: callers (e.g. SprintPlanningPage inline SP editor) do not need to send the full
+   * task payload.
+   */
+  public TaskDTO updateStoryPoints(Long id, Integer storyPoints) {
+    Task task = taskRepository.findByIdNotDeleted(id)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
+    // Enforce project-scope access — consistent with assignTaskToCycle and other PATCH endpoints
+    Long projectId = resolveProjectId(task);
+    if (projectId == null) {
+      throw new BadRequestException("Cannot update story points: project reference missing on task " + id);
+    }
+    projectService.requireProjectAccess(projectId);
+    task.setStoryPoints(storyPoints);
+    return toDTO(taskRepository.save(task));
   }
 
   // ========== Bulk operations ==========
@@ -872,12 +1048,13 @@ public class TaskService {
   // ========== Category-based methods ==========
 
   public Page<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category, Pageable pageable) {
-    return taskRepository.findByCycleIdAndCategory(cycleId, category, pageable).map(this::toDTO);
+    return taskRepository.findByCycleIdAndCategoryNotDeleted(cycleId, category, pageable).map(this::toDTO);
   }
 
   public List<TaskDTO> getTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {
-    return taskRepository.findByCycleIdAndCategory(cycleId, category).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+    return taskRepository.findByCycleIdNotDeleted(cycleId).stream()
+        .filter(t -> category.equals(t.getCategory()))
+        .map(this::toDTO).collect(Collectors.toList());
   }
 
   public int countTasksByCycleIdAndCategory(Long cycleId, TaskCategory category) {
@@ -953,10 +1130,12 @@ public class TaskService {
         ? task.getChildren().stream().map(child -> TaskDTO.builder().id(child.getId()).title(child.getTitle())
             .description(child.getDescription()).status(child.getStatus()).priority(child.getPriority())
             .category(child.getCategory()).estimateHours(child.getEstimateHours())
-            .actualHours(child.getActualHours()).cycleId(child.getCycle().getId())
+            .actualHours(child.getActualHours()).storyPoints(child.getStoryPoints())
+            .cycleId(child.getCycle() != null ? child.getCycle().getId() : null)
             .assigneeId(child.getAssignee() != null ? child.getAssignee().getId() : null)
             .assigneeName(child.getAssignee() != null ? child.getAssignee().getName() : null)
-            .parentTaskId(child.getParentTask().getId()).parentTaskTitle(child.getParentTask().getTitle())
+            .parentTaskId(child.getParentTask() != null ? child.getParentTask().getId() : null)
+            .parentTaskTitle(child.getParentTask() != null ? child.getParentTask().getTitle() : null)
             .dueDate(child.getDueDate()).createdAt(child.getCreatedAt()).updatedAt(child.getUpdatedAt())
             .build()).collect(Collectors.toList())
         : new ArrayList<>();
@@ -965,10 +1144,12 @@ public class TaskService {
         .status(task.getStatus()).priority(task.getPriority()).category(task.getCategory())
         .sortOrder(task.getSortOrder())
         .estimateHours(task.getEstimateHours()).actualHours(task.getActualHours())
-        .cycleId(task.getCycle().getId()).cycleName(task.getCycle().getName())
-        .projectId(task.getCycle().getProject() != null ? task.getCycle().getProject().getId() : null)
-        .projectName(task.getCycle().getProject() != null ? task.getCycle().getProject().getName() : null)
-        .projectKey(task.getCycle().getProject() != null ? task.getCycle().getProject().getProjectKey() : null)
+        .storyPoints(task.getStoryPoints())
+        .cycleId(task.getCycle() != null ? task.getCycle().getId() : null)
+        .cycleName(task.getCycle() != null ? task.getCycle().getName() : null)
+        .projectId(resolveProjectId(task))
+        .projectName(resolveProjectName(task))
+        .projectKey(resolveProjectKey(task))
         .pitchId(task.getPitch() != null ? task.getPitch().getId() : null)
         .pitchTitle(task.getPitch() != null ? task.getPitch().getTitle() : null)
         .scopeId(task.getScope() != null ? task.getScope().getId() : null)
@@ -1070,6 +1251,31 @@ public class TaskService {
 
     taskRepository.saveAll(toSave);
     log.info("Reordered {} tasks", toSave.size());
+  }
+
+  /**
+   * Resolves the project ID for a task. Prefers the cycle's project (always authoritative when a
+   * cycle is set) and falls back to the direct project reference for product-backlog tasks.
+   */
+  private Long resolveProjectId(Task task) {
+    if (task.getCycle() != null && task.getCycle().getProject() != null) {
+      return task.getCycle().getProject().getId();
+    }
+    return task.getProject() != null ? task.getProject().getId() : null;
+  }
+
+  private String resolveProjectName(Task task) {
+    if (task.getCycle() != null && task.getCycle().getProject() != null) {
+      return task.getCycle().getProject().getName();
+    }
+    return task.getProject() != null ? task.getProject().getName() : null;
+  }
+
+  private String resolveProjectKey(Task task) {
+    if (task.getCycle() != null && task.getCycle().getProject() != null) {
+      return task.getCycle().getProject().getProjectKey();
+    }
+    return task.getProject() != null ? task.getProject().getProjectKey() : null;
   }
 
   /**

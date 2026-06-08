@@ -219,7 +219,7 @@ export default function Reports() {
   }
 
   return (
-    <div>
+    <div data-tour="reports-overview">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <h1 className="text-2xl font-bold">{t('reportsPage.title')}</h1>
         <div className="flex flex-col sm:flex-row gap-4 flex-wrap">

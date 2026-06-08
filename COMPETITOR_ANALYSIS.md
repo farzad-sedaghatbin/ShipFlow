@@ -1,6 +1,6 @@
 # ShipFlow — Competitive Analysis
 
-_Last updated: 2026-04-05 (v0.8.0)_
+_Last updated: 2026-05-22 (v1.2.0 in progress — CSV import + Linear + Jira OAuth import shipped)_
 
 This document positions ShipFlow against the tools teams most commonly evaluate before adopting it.
 It is written factually to help evaluators make an informed decision.
@@ -24,7 +24,8 @@ ShipFlow targets teams that:
 |---------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | **Shape Up methodology** | ✅ Full | ❌ | ❌ | ❌ | ❌ | Partial¹ | Partial² |
 | **Kanban mode** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| **Dual mode (Shape Up + Kanban per project)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Scrum mode (sprints, story points, burndown, velocity)** | ✅ (v1.1.0) | ✅ | ✅ | Partial | Partial | ❌ | ✅ |
+| **Triple mode (Shape Up + Kanban + Scrum per project)** | ✅ (v1.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **6-week cycles with betting table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Hill charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Circuit breaker (appetite enforcement)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -40,6 +41,9 @@ ShipFlow targets teams that:
 | **Pluggable vector store (Qdrant/Chroma/Memory)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI risk scoring per pitch** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI cycle narrative summaries** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI pitch writer (Shape Up draft from one sentence)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **AI retrospective summarizer (patterns, blockers, team health)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Proactive dashboard insights (overdue, at-risk, scope creep, velocity)** | ✅ | Partial³ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | **GitHub integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
 | **Pluggable VCS providers** | ✅ | ❌ | Partial | ❌ | ❌ | ❌ | ❌ |
@@ -52,9 +56,13 @@ ShipFlow targets teams that:
 | **Self-hosted** | ✅ | ❌ | ✅ (Data Center) | ❌ | ❌ | ❌ | ❌ |
 | **Open source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Free (self-hosted)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **CSV import from Jira / Linear / Asana** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Direct Linear API import (OAuth2)** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Direct Jira Cloud API import (OAuth2)** | ✅ (v1.2.0) | ❌ | ❌ | N/A | ❌ | ❌ | ❌ |
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
+³ Linear has a "Triage" view for overdue issues but no proactive AI-computed insight panel with scope-creep detection or velocity trend analysis.
 
 ---
 
@@ -72,14 +80,14 @@ ShipFlow targets teams that:
 - RTL support (Persian, Arabic)
 - No per-seat cost when self-hosted
 
-**Who should use Linear**: Teams that don't practice Shape Up and want the fastest Kanban/sprint tool on the market.
+**Who should use Linear**: Teams that want the fastest Kanban tool on the market and don't need self-hosting or AI-editor integration. ShipFlow v1.1.0 now matches Linear's Scrum feature set — sprints, story points, burndown, and velocity — while also supporting Shape Up and self-hosting.
 **Who should use ShipFlow**: Teams that practice Shape Up, want AI-native workflows, or need self-hosted data ownership.
 
 ---
 
 ### 3.2 ShipFlow vs Jira
 
-**Jira wins**: market leader, deep integrations ecosystem (thousands of plugins), enterprise SSO/SAML, advanced dashboards, Confluence integration.
+**Jira wins**: market leader, deep integrations ecosystem (thousands of plugins), enterprise SSO/SAML (ShipFlow adds SSO admin UI + OIDC/SAML2 in v1.4.0), advanced dashboards, Confluence integration.
 
 **ShipFlow wins**:
 - Zero configuration overhead — Shape Up workflow is first-class, not a custom template
@@ -160,7 +168,7 @@ ShipFlow's self-hosted model gives unlimited users at infrastructure cost only.
 Be honest with evaluators:
 
 - **You don't practice Shape Up** — ShipFlow is optimised for it. A general Kanban team may be happier with Linear or Shortcut.
-- **You need enterprise SSO/SAML today** — not yet implemented (planned).
+- **You need a fully operational SSO IdP integration** — the admin UI and login flow are built (v1.4.0); backend SAML2/OIDC Spring Security integration is in progress (S32). SCIM 2.0 auto-provisioning is now live (v1.4.0).
 - **You need a mobile app** — ShipFlow is web-first; mobile is responsive but not a native app.
 - **You need thousands of plugins** — Jira's plugin ecosystem is unmatched.
 - **You need non-technical stakeholder tools** (timesheets, resource planning) — Asana/Monday win here. ShipFlow now has interactive Gantt-style timeline bars for initiatives and epics, but not full resource planning.

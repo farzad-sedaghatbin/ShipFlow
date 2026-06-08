@@ -127,6 +127,7 @@ class WorkLogServiceTest {
   @Test
   void updateWorkLog_WhenExists_ShouldUpdateWorkLog() {
     when(workLogRepository.findById(1L)).thenReturn(Optional.of(testWorkLog));
+    when(pitchRepository.findById(1L)).thenReturn(Optional.of(testPitch));
     when(workLogRepository.save(any(WorkLog.class))).thenReturn(testWorkLog);
 
     testRequest.setHoursSpent(BigDecimal.valueOf(6.0));

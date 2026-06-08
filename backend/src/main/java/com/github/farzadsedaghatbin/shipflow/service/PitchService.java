@@ -523,6 +523,15 @@ public class PitchService {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
+    // Validate status transitions: only enforce field requirements when the status is
+    // actually changing. Editing Shape Up fields (wireframe links, solution, etc.) on a
+    // PENDING/ACTIVE pitch must not be blocked by the appetite/cycleId gate, since those
+    // constraints were already satisfied when the pitch reached that status.
+    PitchStatus currentStatus = pitch.getStatus();
+    if (request.getStatus() != currentStatus) {
+      validatePitchForStatus(request, request.getStatus());
+    }
+
     pitch.setTitle(request.getTitle());
     pitch.setDescription(request.getDescription());
     pitch.setAppetiteDays(request.getAppetiteDays());

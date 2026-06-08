@@ -10,6 +10,7 @@ import lombok.*;
 public class TeamDTO {
   private Long id;
   private String name;
+  private Boolean isArchived;
   private List<TeamAssignmentDTO> assignments;
 
   // Capacity Configuration Overrides (null = inherit from organization)

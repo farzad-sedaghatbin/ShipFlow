@@ -11,8 +11,9 @@ pitches, tasks, and more — directly from your editor.
 
 ShipFlow's MCP server is **opt-in**. The instance owner must enable it.
 
-- **Self-hosted**: set `MCP_SERVER_ENABLED=true` when starting the backend (see below)
-- **shipflow.dev**: check the Admin panel → Integrations → MCP Server
+- **From the UI (recommended, no restart)**: an admin opens **Integrations → MCP → "MCP Server" tab** and toggles **Enable MCP server** on. This DB-backed setting overrides the environment default and takes effect immediately.
+- **Self-hosted via environment**: set `MCP_SERVER_ENABLED=true` when starting the backend (see below)
+- **shipflow.dev**: check Integrations → MCP → "MCP Server" tab
 
 If you are the instance owner, see [Enabling the MCP Server](#enabling-the-mcp-server) below.
 
@@ -21,9 +22,9 @@ If you are the instance owner, see [Enabling the MCP Server](#enabling-the-mcp-s
 All MCP clients authenticate with a ShipFlow API key.
 
 1. Log in to ShipFlow
-2. Go to **Settings → API Keys**
-3. Click **Create Key**, give it a name like `claude-code-local`
-4. Copy the key — you will not see it again
+2. Go to **Integrations → MCP → "API Keys" tab**
+3. Click **Create Key**, give it a name like `claude-code-local`, pick scopes (READ / WRITE / ADMIN) and an optional expiry
+4. Copy the `sf_…` key — you will not see it again
 
 > Treat API keys like passwords. Do not commit them to git.
 
@@ -171,34 +172,45 @@ Content-Type: application/json   (for /mcp/messages)
 
 Once connected, your AI assistant has access to these tools:
 
-### Read Tools (v0.7.0 — available now)
+### Read Tools
 
 | Tool | What it returns |
 |------|----------------|
+| `whoami` | Identity of the authenticated MCP caller — username, role, userId, **personId** (use this for `assigneeId` filters), fullName, email |
 | `list_projects` | All accessible projects (id, name, key, type, activeCycleCount) |
 | `get_project` | Single project details |
 | `get_cycles` | Cycles for a project with phase and dates |
 | `get_cycle` | Cycle detail including scope list |
-| `get_tasks` | Tasks for a cycle or project — **cycleId or projectId required** |
+| `get_tasks` | Tasks filtered by **any combination** of `cycleId`, `projectId`, `pitchId`, `assigneeId`, or `mine: true`. At least one scope required. |
 | `get_task` | Full task detail including blocked-by relationships |
-| `get_blockers` | Tasks that are currently blocked within a cycle or project |
+| `get_blockers` | Tasks that are currently blocked within a cycle, project, pitch, or for a given assignee/mine |
+| `get_test_cases` | Test cases (acceptance criteria) linked to a task, pitch, or cycle — preconditions, steps, expectedResult |
+| `get_test_case` | Single test case by ID |
+| `get_test_runs` | Execution history of a test case — status, notes, actualResult, linked bug |
+| `get_bug_reports` | Bug reports linked to a task, pitch, or cycle — severity, status, repro steps |
+| `get_bug_report` | Single bug report by ID |
 | `get_pitches` | Pitches for a project (filterable by status) |
 | `get_pitch_detail` | Full pitch: problem, solution, risks, no-gos, **Figma wireframe URLs** |
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
 | `wise_architecture_list_analyses` | Past Wise Architecture analyses for the current user (filterable by pitchId) |
 | `wise_architecture_get_files` | Retrieve generated Markdown implementation guides for a past analysis |
-| `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId` or `cycleId`) |
+| `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId`, `cycleId`, or `taskId` — `taskId` resolves to the task's parent pitch or cycle) |
+| `get_task_context` | **Task-rooted aggregator for coding agents** — given a single `taskId`, returns the task (with dependency graph and subtasks), its parent pitch (Shape Up fields + `wireframeLinks`), parent cycle, sibling tasks under the same pitch, and a server-generated `hints` array (Figma URL guidance, blocked-by detail, thin-context warnings). Use this instead of stitching `get_task` + `get_pitch_detail` + `get_tasks` when the goal is "implement this task". |
 
-### Write Tools (v0.9.0 — requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
+### Write Tools (v0.9.0 S18 — 7 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
-| `create_task` | Create a task in a cycle (cycleId, title required; optional: description, assigneeUsername, priority) |
+| `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **parentTaskId** for subtasks, assigneeUsername, priority) |
 | `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
+| `update_task_assignee` | Reassign an existing task — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true` |
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
 | `add_comment` | Add a comment to a TASK or BUG_REPORT (entityType, entityId, content required) |
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
+| `create_scope` | Create a Hill Chart scope for a pitch (pitchId, title required; optional: description, progress) |
+| `record_test_run` | Record the result of executing a test case — status (PASSED/FAILED/BLOCKED/SKIPPED/PENDING/RUNNING), notes, actualResult, buildVersion, environment |
+| `update_bug_status` | Update a bug report's status (OPEN, IN_PROGRESS, RESOLVED, VERIFIED, CLOSED, REOPENED, WONT_FIX, DUPLICATE) and optional resolution text |
 
 ### Wise Architecture Tools (v0.9.0)
 
@@ -248,6 +260,113 @@ get_work_context(pitchId: 42)
 get_work_context(cycleId: 5)
 # → { cycle, pitches: [...], tasks: [...], taskStatusCounts: { TODO: 3, IN_PROGRESS: 2, ... },
 #     blockers: [...], hillChartScopes: [...], retrospectives: [...] }
+
+# From a task — get_work_context resolves the task's parent pitch/cycle
+get_work_context(taskId: 8)
+```
+
+**Task context workflow (for coding agents):**
+
+When an agent is asked to implement a specific task, `get_task_context` is the canonical single
+call. It carries everything `get_task` + `get_pitch_detail` + `get_tasks` would, plus a `hints`
+array that tells the agent how to use the payload.
+
+```
+get_task_context(taskId: 8)
+# → {
+#     task:    { id, title, description, status, blockingTasks: [...], blockedByTasks: [...],
+#                children: [...], pitchId, ... },
+#     pitch:   { problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, ... },
+#     cycle:   { id, name, projectName, ... },
+#     siblings:            [ ...other tasks under the same pitch ],
+#     siblingTotalCount:   7,
+#     siblingsTruncated:   false,
+#     siblingStatusCounts: { TODO: 3, IN_PROGRESS: 2, DONE: 2 },
+#     hints: [
+#       "pitch.wireframeLinks is present — fetch the design via a Figma MCP before implementing.",
+#       "task is BLOCKED by 2 task(s) — resolve dependencies before starting; see task.blockedByTasks for IDs."
+#     ]
+#   }
+
+# Cap siblings for very large pitches (default 50, max 200)
+get_task_context(taskId: 8, siblingLimit: 20)
+
+# Skip siblings if the agent only needs the task + pitch
+get_task_context(taskId: 8, includeSiblings: false)
+```
+
+> **Figma boundary**: `pitch.wireframeLinks` is a URL, not the design. ShipFlow's MCP hands the
+> pointer to the agent — turning that URL into design context still requires a Figma-capable tool
+> (Figma MCP, browser extension, etc.) alongside ShipFlow's MCP. The `hints` array surfaces this
+> explicitly whenever `wireframeLinks` is populated.
+
+**"My work" workflow:**
+
+```
+# One-shot — no whoami needed
+get_tasks(mine: true, cycleId: 5)
+# → tasks assigned to the authenticated caller in cycle 5
+
+# Combined filters compose
+get_tasks(mine: true, pitchId: 10)         # my tasks under pitch 10
+get_tasks(assigneeId: 42, projectId: 1)    # someone else's tasks in a project
+
+# Explicit identity lookup (when the agent needs to display "I'm working as ...")
+whoami()
+# → { userId, username, email, role, personId, fullName }
+
+# Claim an unassigned task — no separate whoami call needed
+update_task_assignee(taskId: 8, mine: true)
+
+# Reassign to a specific teammate
+update_task_assignee(taskId: 8, assigneeUsername: "alice")
+
+# Release a task you can't take
+update_task_assignee(taskId: 8, unassign: true)
+```
+
+**QA / verification workflow:**
+
+```
+# Step 1 — read the acceptance criteria attached to the task
+get_test_cases(taskId: 8)
+# → [{ id, title, preconditions, steps, expectedResult, priority, status, ... }]
+
+# Step 2 — implement against those criteria, then record the outcome
+record_test_run(
+  testCaseId: 1,
+  status: "PASSED",
+  notes: "Verified click event reaches analytics endpoint",
+  buildVersion: "1.2.0-rc1",
+  environment: "staging"
+)
+
+# Step 3 — check past runs (e.g. before re-running a flaky test)
+get_test_runs(testCaseId: 1)
+```
+
+**Bug triage workflow:**
+
+```
+# Read all bugs on a task before implementing a fix
+get_bug_reports(taskId: 8)
+# → [{ bugKey, title, severity, status, stepsToReproduce, expectedBehavior, actualBehavior, ... }]
+
+# After fixing, update status (the resolvedAt timestamp is stamped automatically for RESOLVED/VERIFIED/CLOSED)
+update_bug_status(bugReportId: 1, status: "RESOLVED", resolution: "Fixed in commit abc123")
+```
+
+**Subtask workflow:**
+
+```
+# Create a parent task...
+create_task(cycleId: 5, title: "Implement click tracking", pitchId: 10)
+# → { id: 8, ... }
+
+# ...then add subtasks underneath
+create_task(cycleId: 5, parentTaskId: 8, title: "Wire frontend dispatcher")
+create_task(cycleId: 5, parentTaskId: 8, title: "Add backend ingestion endpoint")
+# Subtasks appear in get_task_context(taskId: 8).task.children
 ```
 
 > **Planned tools** (future releases): `search_all`, `get_initiative`, `get_betting_table`.
@@ -294,12 +413,20 @@ curl http://localhost:8080/mcp/health
 > This section is for **instance owners / self-hosters** who want to turn the MCP server on.
 > If you are a developer connecting to an already-running instance, skip this section.
 
-The MCP server is disabled by default. To enable it, set the following environment variable
-before starting the backend:
+The MCP server is disabled by default.
+
+**The quickest way to enable it is from the UI** — no restart, no env editing: an admin opens
+**Integrations → MCP → "MCP Server" tab** and flips **Enable MCP server** on (and optionally
+**Enable write tools**). This DB-backed runtime toggle overrides the environment default below.
+
+For headless / infrastructure-as-code deployments, set the following environment variable before
+starting the backend instead:
 
 ```bash
 MCP_SERVER_ENABLED=true
 ```
+
+> If no admin has touched the UI toggle, this environment value is used as the default.
 
 ### Docker Compose (production / self-hosted)
 

@@ -20,16 +20,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
  * MCP tool that returns the full relationship graph for a pitch or cycle in a single call.
  *
- * <p>Analogous to Atlassian's Teamwork Graph: given one entry point (pitch or cycle), the tool
- * traverses all connected entities — cycle metadata, pitch details, tasks with status breakdown,
- * blockers, hill-chart scopes, and retrospective summaries — so an AI agent has complete context
- * without multiple round trips.
+ * <p>Analogous to Atlassian's Teamwork Graph: given one entry point (pitch, cycle, or task), the
+ * tool traverses all connected entities — cycle metadata, pitch details, tasks with status
+ * breakdown, blockers, hill-chart scopes, and retrospective summaries — so an AI agent has complete
+ * context without multiple round trips. When invoked with {@code taskId}, the tool resolves to the
+ * task's parent pitch (if linked) or its cycle. For a task-rooted shape with hints, prefer the
+ * sibling {@code get_task_context} tool.
  *
  * <p>Typical workflow:
  * <ol>
@@ -41,7 +42,6 @@ import org.springframework.stereotype.Component;
  * </ol>
  */
 @Component
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class WorkContextMcpTools {
 
@@ -63,7 +63,12 @@ public class WorkContextMcpTools {
                 + "hill-chart scope positions (0=start, 50=top of hill, 100=shipped), "
                 + "and retrospective summaries. "
                 + "Use this instead of calling get_cycle + get_pitch_detail + get_tasks + get_blockers separately. "
-                + "Provide either pitchId (graph scoped to that pitch) or cycleId (graph for the whole cycle).",
+                + "Provide pitchId (scoped to that pitch), cycleId (whole cycle), or taskId "
+                + "(graph resolved from the task's parent pitch or cycle — useful when an agent "
+                + "starts from a task and needs the surrounding context). "
+                + "For a task-rooted shape with hints (Figma URL guidance, blocked-by detail, "
+                + "siblings), prefer get_task_context — it is the canonical aggregator for the "
+                + "'I need to implement this task' use case.",
         "inputSchema",
             Map.of(
                 "type", "object",
@@ -80,7 +85,14 @@ public class WorkContextMcpTools {
                             "type", "integer",
                             "description",
                                 "ID of a cycle — returns context for all pitches and tasks in "
-                                    + "the cycle. pitchId takes precedence if both are provided.")),
+                                    + "the cycle."),
+                        "taskId",
+                        Map.of(
+                            "type", "integer",
+                            "description",
+                                "ID of a task — resolves to the task's parent pitch (if linked) "
+                                    + "or parent cycle, and returns context for that scope. "
+                                    + "Precedence: pitchId > cycleId > taskId.")),
                 "required", List.of()));
   }
 
@@ -89,16 +101,30 @@ public class WorkContextMcpTools {
   public McpWorkContextDTO getWorkContext(Map<String, Object> args) {
     Object pitchIdArg = args.get("pitchId");
     Object cycleIdArg = args.get("cycleId");
+    Object taskIdArg = args.get("taskId");
 
-    if (pitchIdArg == null && cycleIdArg == null) {
+    if (pitchIdArg == null && cycleIdArg == null && taskIdArg == null) {
       throw new IllegalArgumentException(
-          "Either 'pitchId' or 'cycleId' must be provided.");
+          "One of 'pitchId', 'cycleId', or 'taskId' must be provided.");
     }
 
     if (pitchIdArg != null) {
       return buildContextForPitch(toLong(pitchIdArg, "pitchId"));
     }
-    return buildContextForCycle(toLong(cycleIdArg, "cycleId"));
+    if (cycleIdArg != null) {
+      return buildContextForCycle(toLong(cycleIdArg, "cycleId"));
+    }
+
+    // taskId path: resolve to the task's pitch (preferred) or cycle (fallback).
+    TaskDTO task = taskService.getTaskById(toLong(taskIdArg, "taskId"));
+    if (task.getPitchId() != null) {
+      return buildContextForPitch(task.getPitchId());
+    }
+    if (task.getCycleId() != null) {
+      return buildContextForCycle(task.getCycleId());
+    }
+    throw new IllegalArgumentException(
+        "Task " + task.getId() + " is not linked to a pitch or cycle; cannot build work context.");
   }
 
   // ── Graph builders ────────────────────────────────────────────────────────

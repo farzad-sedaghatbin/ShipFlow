@@ -1,11 +1,26 @@
 # <img src="frontend/public/icon.png" alt="ShipFlow Logo" width="32" height="32" style="vertical-align: middle;"> ShipFlow
 
-A modern project management application implementing the [Shape Up](https://basecamp.com/shapeup) methodology by Basecamp.
+**Open-source project management built for the [Shape Up](https://basecamp.com/shapeup) methodology** — with full Kanban and Scrum support, pluggable AI, and an MCP server so your AI coding assistant can query your board directly.
 
-🌐 **Live Demo**: [shipflow.dev](https://shipflow.dev) &nbsp;|&nbsp; 📖 **Docs**: [farzad-sedaghatbin.github.io/ShipFlow](https://farzad-sedaghatbin.github.io/ShipFlow/)
+🌐 **Live Demo**: [shipflow.dev](https://shipflow.dev) &nbsp;|&nbsp; 📖 **Docs**: [farzad-sedaghatbin.github.io/ShipFlow](https://farzad-sedaghatbin.github.io/ShipFlow/) &nbsp;|&nbsp; ⭐ **Star us on GitHub**
 
+---
 
-## 📸 Screenshots & Demo
+## 🚀 Run in 30 seconds
+
+```bash
+git clone https://github.com/farzad-sedaghatbin/ShipFlow.git && cd ShipFlow
+docker compose up -d
+```
+
+> Open **http://localhost:8080** — React app is bundled into the backend image. Login: `admin` / `admin123`
+>
+> Seed data loads automatically — two demo projects (Shape Up + Kanban), five users, full task history, AI-ready.
+> Set `AI_PROVIDER=openai` and `APP_AI_OPENAI_API_KEY=sk-…` in a `.env` file to enable AI features.
+
+---
+
+## 📸 Screenshots
 
 <img src="screenshots/demo.webp" alt="ShipFlow Demo" width="100%" />
 
@@ -17,14 +32,47 @@ A modern project management application implementing the [Shape Up](https://base
 |------------|--------------|-------------|
 | ![Hill Chart](screenshots/hill-chart.png) | ![Task Backlog](screenshots/backlog.png) | ![Bug Reports](screenshots/qa-bug-reports.png) |
 
-## ✨ Features
+---
 
-- **Dual Project Modes**: Flexible support for different project methodologies
+## ✨ Feature Highlights
+
+| | |
+|---|---|
+| **Triple project modes** | Shape Up (pitches, betting, hill charts, circuit breaker), Kanban, and Scrum (story points, burndown, velocity) — per project, switchable any time |
+| **MCP server** | Claude Code, Cursor, and any MCP client can call `list_projects`, `get_work_context`, `create_task`, and 18 other tools — no browser tab switching |
+| **Pluggable AI stack** | Swap between Ollama (local), OpenAI, Anthropic Claude, or RunPod via one env var. RAG Q&A, risk scoring, test generation, AI Pitch Writer, Retro Summarizer, and technical solutions all work with every provider |
+| **AI Copilot v2** | **AI Pitch Writer** turns a one-sentence problem into a full Shape Up pitch draft. **Retrospective Summarizer** generates structured cycle retros (wins, blockers, team health). **Proactive Dashboard Insights** surfaces at-risk cycles, scope creep, and velocity trends automatically |
+| **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
+| **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
+| **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
+| **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
+| **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
+| **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
+| **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
+
+---
+
+## Demo Credentials
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin123` | Admin — full access |
+| `sara` | `demo123` | Manager — Mobile Banking App |
+| `ali` | `demo123` | Developer |
+| `mina` | `demo123` | Developer |
+| `viewer` | `demo123` | Read-only |
+
+---
+
+## ✨ Full Feature Reference
+
+- **Triple Project Modes**: Flexible support for different project methodologies
   - **Shape Up Mode**: 6-week cycle methodology with pitches, betting, hill charts
   - **Kanban Mode**: Continuous flow with board-first visualization
-  - Automatic UI adaptation based on project type (cycles hidden for Kanban)
+  - **Scrum Mode** (v1.1.0): Sprint planning with story points, burndown charts, and team velocity tracking
+  - Automatic UI adaptation based on project type (cycles hidden for Kanban; sprint goal/story points surfaced for Scrum)
   - Default "Continuous Flow" cycle created automatically for Kanban projects
-  - Pitch and scope fields hidden in Kanban projects (Shape Up concepts)
+  - Pitch and scope fields hidden in Kanban/Scrum projects (Shape Up concepts)
 - **Cycles**: 6-week development cycles with betting table (Shape Up projects)
   - **Auto-Calculated Cycle Dates**: End dates automatically calculated from organization settings
     - Default 6-week cycles aligned with Shape Up methodology
@@ -145,6 +193,7 @@ A modern project management application implementing the [Shape Up](https://base
   - Grouped results by entity type with score-based ranking
   - Debounced 300ms search with loading, empty, and minimum-chars feedback
   - Requires specific project context (disabled when "All Projects" selected)
+- **AI Pitch Writer** *(v1.5.0)*: Click "Write with AI" on the Pitch Board → type a problem in plain language → get a full Shape Up pitch draft (title, problem statement, solution, appetite, rabbit holes, no-gos, risks) in one step. Pre-fills the New Pitch form for human review before saving.
 - **AI-Powered Q&A (RAG)**: Conversational assistant over your project knowledge base
   - Ask questions like "What pitches are at risk in Cycle 5?" or "What are the rabbit holes for the mobile checkout pitch?"
   - **Multi-turn memory**: Conversation context persists across follow-up questions — the AI remembers what you asked
@@ -174,6 +223,12 @@ A modern project management application implementing the [Shape Up](https://base
   - Supported forms: Epic, Initiative, Bug Report, Pitch, Task
   - Rendered views: Epic Detail, Initiative Detail, Bug View, Task Detail, Pitch Detail (description + Shape Up fields)
   - Uses GFM (GitHub Flavored Markdown) with headings, lists, code blocks, tables, links, and more
+- **Competitor Migration Tooling (v1.2.0)**: Import your existing projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow
+  - Auto-detects source format from CSV column headers (no manual format selection required)
+  - Maps rows to Tasks, Epics, and Cycles inside a new Kanban project; teams migrate to Shape Up or Scrum at their own pace
+  - 3-step stepper UI: drag-and-drop upload → importing progress → results summary with per-row error log
+  - Import history page — review past imports, row counts, and errors
+  - REST API: `POST /api/import/csv`, `GET /api/import`, `GET /api/import/{id}`
 - **Smart Project Selection**: Mandatory project selection dialog for project-scoped pages
   - Modal popup replaces the subtle empty-state card when "All Projects" is selected
   - Shows project list with avatar, name, and project key for one-click selection
@@ -320,9 +375,15 @@ A modern project management application implementing the [Shape Up](https://base
   - **Roadmap Context Integration**: Uses Epic/Initiative relationships for extensibility recommendations
   - **Context Availability Warnings**: Transparent feedback when context sources are missing
   - Configurable via Organization Settings with per-org Figma token storage
+- **SSO / Enterprise Auth (v1.4.0)**: Single Sign-On support via SAML 2.0 and OIDC
+  - Admin UI under Organization Settings → SSO tab: add/edit/delete identity providers (Okta, Azure AD, Keycloak, Auth0, etc.)
+  - Provider-type-conditional config form (OIDC: client ID / secret / discovery URL; SAML 2.0: entity ID / SSO URL / certificate)
+  - Enforce SSO toggle: blocks password login when enabled (with destructive warning in the UI)
+  - Login page auto-discovers enabled providers and shows "Continue with …" buttons
+  - `/sso-callback` public route processes JWT from IdP redirect and logs the user in
 - **MCP Server (AI Editor Integration)**: Use ShipFlow data directly from your AI coding assistant — no context switching
   - Works with **Claude Code**, **Cursor**, **Claude Desktop**, **GitHub Copilot**, and any MCP-compatible client
-  - **Opt-in** — disabled by default, enable with `MCP_SERVER_ENABLED=true` (self-hosters stay in control)
+  - **Opt-in** — disabled by default; enable with `MCP_SERVER_ENABLED=true` **or** flip the runtime toggle in the UI (Integrations → MCP → "MCP Server" tab, no restart). Manage API keys from the "API Keys" tab.
   - **13 read tools**: `list_projects`, `get_project`, `get_cycles`, `get_cycle`, `get_tasks`, `get_task`, `get_blockers`, `get_pitches`, `get_pitch_detail`, `get_betting_candidates`, `wise_architecture_list_analyses`, `wise_architecture_get_files`, `get_work_context`
   - **6 write tools**: `create_task`, `update_task_status`, `create_pitch`, `update_pitch_status`, `add_comment`, `wise_architecture_analyze` (requires `MCP_SERVER_WRITE_ENABLED=true`)
   - **`get_work_context`** — one call returns cycle + pitches + tasks + blockers + hill-chart scopes + retros (the full relationship graph, no chaining needed)
@@ -437,20 +498,12 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 
 ## 🔀 How ShipFlow Compares
 
-| Feature | ShipFlow | Linear | Jira | Shortcut |
-|---|---|---|---|---|
-| Shape Up native workflow | ✅ Full | ❌ | ❌ | Partial |
-| Pitch prioritization (DnD) | ✅ Epic/Initiative/Pitch | ❌ | ❌ | ❌ |
-| Release version on pitch cards | ✅ | ✅ | ✅ | ✅ |
-| AI pitch extraction | ✅ | ❌ | ❌ | ❌ |
-
-ShipFlow is the **only project management tool** built specifically for the [Shape Up](https://basecamp.com/shapeup) methodology:
-
 | Feature | ShipFlow | Linear | Asana | Monday.com | Jira | Basecamp |
 |---------|----------|--------|-------|------------|------|----------|
 | **Native Shape Up** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
 | **Kanban Mode** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
-| **Dual Mode (Shape Up + Kanban)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Scrum Mode** (story points, burndown, velocity) | ✅ | ✅ | Partial | Partial | ✅ | ❌ |
+| **Triple Mode (Shape Up + Kanban + Scrum)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **6-Week Cycles** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Hill Charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | **Betting Table** | ✅ | ❌ | ❌ | ❌ | ❌ | Partial |
@@ -568,24 +621,9 @@ Press `?` to view all keyboard shortcuts:
 - `Shift+N` - New Cycle
 - `Shift+W` - Log Work
 
-## 🚀 Quick Start
+## 🚀 Local Development
 
-### Docker (fastest — production-ready)
-
-```bash
-# Pull the latest image from GitHub Container Registry
-docker pull ghcr.io/farzad-sedaghatbin/shipflow:latest
-
-# Or pin to a specific version
-docker pull ghcr.io/farzad-sedaghatbin/shipflow:0.9.0
-
-# Run with docker compose (PostgreSQL + Redis + ShipFlow)
-docker compose up -d
-```
-
-### Local Development
-
-### Demo Credentials (seed data loaded automatically)
+### Demo Credentials
 
 | Username | Password | Role | Description |
 |----------|----------|------|-------------|

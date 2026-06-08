@@ -145,7 +145,7 @@ export function RecentActivityFeed({
           id: `cycle-${cycle.id}`,
           type: 'cycle_update',
           title: `${cycle.name}`,
-          description: `${cycle.phase} phase • ${cycle.pitchCount || 0} pitches`,
+          description: `${cycle.phase} phase • ${cycle.pitchCount || 0} ${cycle.projectType === 'SCRUM' ? 'stories' : 'pitches'}`,
           timestamp: cycle.startDate,
           icon: <RefreshCw className="w-4 h-4" />,
           color: 'secondary',

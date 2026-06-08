@@ -125,6 +125,14 @@ public class OrganizationSettings {
   @Builder.Default
   private Boolean enableWiseArchitecture = false;
 
+  // MCP Server runtime toggle. NULL = fall back to the environment-variable default
+  // (mcp.server.enabled / mcp.server.write-enabled). Set by an admin from the UI.
+  @Column(name = "mcp_server_enabled")
+  private Boolean mcpServerEnabled;
+
+  @Column(name = "mcp_server_write_enabled")
+  private Boolean mcpServerWriteEnabled;
+
   // Figma MCP Configuration
   @Column(name = "figma_access_token", columnDefinition = "TEXT")
   private String figmaAccessToken;
@@ -145,6 +153,40 @@ public class OrganizationSettings {
   @Column(name = "default_github_branch")
   @Builder.Default
   private String defaultGithubBranch = "main";
+
+  // Linear OAuth Configuration (v1.2.0 S29)
+  @Column(name = "linear_access_token", columnDefinition = "TEXT")
+  private String linearAccessToken;
+
+  @Column(name = "linear_team_id")
+  private String linearTeamId;
+
+  @Column(name = "linear_team_name")
+  private String linearTeamName;
+
+  // Jira OAuth Configuration (v1.2.0 S30)
+  @Column(name = "jira_access_token", columnDefinition = "TEXT")
+  private String jiraAccessToken;
+
+  @Column(name = "jira_refresh_token", columnDefinition = "TEXT")
+  private String jiraRefreshToken;
+
+  @Column(name = "jira_cloud_id")
+  private String jiraCloudId;
+
+  @Column(name = "jira_cloud_name")
+  private String jiraCloudName;
+
+  // SCIM 2.0 provisioning settings (V2026_06_06_0001)
+  @Column(name = "scim_enabled", nullable = false)
+  @Builder.Default
+  private boolean scimEnabled = false;
+
+  @Column(name = "scim_bearer_token", length = 500)
+  private String scimBearerToken;
+
+  @Column(name = "scim_token_hash", length = 500)
+  private String scimTokenHash;
 
   @PrePersist
   protected void onCreate() {

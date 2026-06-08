@@ -50,7 +50,7 @@ export const taskService = {
         },
       });
     }
-    return api.get<Task[]>(`/tasks/cycle/${cycleId}`);
+    return api.get<Task[]>(`/tasks/cycle/${cycleId}/all`);
   },
   getByCycleIdAndCategory: (cycleId: number, category: TaskCategory, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>(`/tasks/cycle/${cycleId}/category/${category}`, {
@@ -79,6 +79,7 @@ export const taskService = {
   getByPersonId: (personId: number) => api.get<Task[]>(`/tasks/person/${personId}`),
   getByPitchId: (pitchId: number) => api.get<Task[]>(`/tasks/pitch/${pitchId}`),
   getByProjectId: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}`),
+  getProductBacklogTasks: (projectId: number) => api.get<Task[]>(`/tasks/project/${projectId}/backlog-tasks`),
   getByProjectIdPaged: (projectId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
     return api.get<Page<Task>>(`/tasks/project/${projectId}/paged`, {
       params: {
@@ -174,8 +175,10 @@ export const taskService = {
   update: (id: number, data: CreateTaskRequest) => api.put<Task>(`/tasks/${id}`, data),
   updateStatus: (id: number, status: TaskStatus) => 
     api.patch<Task>(`/tasks/${id}/status`, { status }),
-  updatePriority: (id: number, priority: TaskPriority) => 
+  updatePriority: (id: number, priority: TaskPriority) =>
     api.patch<Task>(`/tasks/${id}/priority`, { priority }),
+  updateStoryPoints: (id: number, storyPoints: number | null) =>
+    api.patch<Task>(`/tasks/${id}/story-points`, { storyPoints }),
   delete: (id: number) => api.delete(`/tasks/${id}`),
   
   // Sub-task hierarchy
@@ -203,6 +206,10 @@ export const taskService = {
         size: size ?? 20,
       },
     }),
+
+  // Assign task to a cycle (sprint) or remove from cycle (null = product backlog)
+  assignCycle: (taskId: number, cycleId: number | null) =>
+    api.patch<Task>(`/tasks/${taskId}/cycle`, { cycleId }),
 
   // Bulk operations
   bulkUpdate: (request: BulkTaskUpdateRequest) =>

@@ -127,7 +127,7 @@ export default function PitchDetail() {
         pitchService.getById(pitchId),
         meetingService.getByPitchId(pitchId),
         documentService.getDocumentsForPitch(pitchId),
-        organizationSettingsService.getSettings(),
+        organizationSettingsService.getMeetingTypes().catch(() => ({ data: [] })),
         taskService.getByPitchId(pitchId).catch(() => ({ data: [] })),
       ]);
       const pitchData = pitchRes.data;
@@ -135,7 +135,7 @@ export default function PitchDetail() {
       setMeetings(meetingsRes.data);
       setDocuments(docsRes.data);
       setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
-      setMeetingTypeConfigs(orgSettingsRes.data.meetingTypes || []);
+      setMeetingTypeConfigs(Array.isArray(orgSettingsRes.data) ? orgSettingsRes.data : []);
 
       // Sync Shape Up fields
       setShapeUpFields({
@@ -583,7 +583,12 @@ export default function PitchDetail() {
           title={t('pitchDetailPage.notes')}
         />
 
-        <PitchTasksSection tasks={tasks} />
+        <PitchTasksSection
+          tasks={tasks}
+          pitchId={pitch.id}
+          cycleId={pitch.cycleId}
+          onTaskCreated={(task) => setTasks(prev => [task, ...prev])}
+        />
 
         {/* Work Logs and Meetings - Two columns on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

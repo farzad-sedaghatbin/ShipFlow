@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Plus, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { formatLocalizedDate } from '../../utils/dateLocalization';
 import { LocalizedDateInput } from '../LocalizedDateInput';
-import { Meeting, CreateMeetingRequest, MeetingType } from '../../types';
+import { Meeting, CreateMeetingRequest, MeetingType, MeetingChecklistItem } from '../../types';
 import { MeetingTypeConfig } from '../../types/organizationSettings';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -31,6 +31,7 @@ import {
   CollapsibleTrigger,
 } from '../ui/collapsible';
 import { cn } from '../../lib/utils';
+import { getChecklistBadgeState } from '../../utils/meetingChecklist';
 
 interface PitchMeetingsSectionProps {
   meetings: Meeting[];
@@ -86,6 +87,15 @@ export function PitchMeetingsSection({
   const { t } = useTranslation();
   const meetingDocUploadRef = useRef<HTMLInputElement>(null);
 
+  const renderChecklistBadge = (label: string, items?: MeetingChecklistItem[]) => {
+    const { variant, completed, total } = getChecklistBadgeState(items);
+    return (
+      <Badge variant={variant} className={cn(variant === 'outline' && 'text-muted-foreground')}>
+        {label}{total > 0 && ` ${completed}/${total}`}
+      </Badge>
+    );
+  };
+
   return (
     <>
       <Card>
@@ -119,18 +129,8 @@ export function PitchMeetingsSection({
                       </span>
                     </div>
                     <div className="flex gap-2 mb-2">
-                      <Badge
-                        variant={m.dorReady ? 'success' : 'outline'}
-                        className={cn(!m.dorReady && 'text-muted-foreground')}
-                      >
-                        DOR
-                      </Badge>
-                      <Badge
-                        variant={m.dodReady ? 'success' : 'outline'}
-                        className={cn(!m.dodReady && 'text-muted-foreground')}
-                      >
-                        DOD
-                      </Badge>
+                      {renderChecklistBadge('DOR', m.dorItems)}
+                      {renderChecklistBadge('DOD', m.dodItems)}
                     </div>
                     {m.notes && (
                       <p className="text-sm text-muted-foreground">{m.notes}</p>
@@ -340,7 +340,7 @@ export function PitchMeetingsSection({
         </DialogContent>
       </Dialog>
 
-      {/* View Meeting Dialog (Read-only, shows only completed items) */}
+      {/* View Meeting Dialog (Read-only, shows all items; completed ones are struck through) */}
       {viewMeeting && (
         <Dialog open={viewMeetingDialog} onOpenChange={onSetViewMeetingDialog}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -367,16 +367,16 @@ export function PitchMeetingsSection({
                 </div>
               )}
 
-              {/* DOR Items (only completed) */}
+              {/* DOR Items */}
               {viewMeeting.dorItems && viewMeeting.dorItems.length > 0 && (
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.dor')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dorItems.map((item, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        <Checkbox checked disabled className="mt-0.5" />
+                      <div key={index} className={`flex items-start gap-2 text-sm ${item.isCompleted ? 'opacity-50' : ''}`}>
+                        <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}
@@ -387,16 +387,16 @@ export function PitchMeetingsSection({
                 </div>
               )}
 
-              {/* DOD Items (only completed) */}
+              {/* DOD Items */}
               {viewMeeting.dodItems && viewMeeting.dodItems.length > 0 && (
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.dod')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dodItems.map((item, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        <Checkbox checked disabled className="mt-0.5" />
+                      <div key={index} className={`flex items-start gap-2 text-sm ${item.isCompleted ? 'opacity-50' : ''}`}>
+                        <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? 'line-through text-muted-foreground' : ''}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}

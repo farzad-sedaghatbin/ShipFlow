@@ -16,6 +16,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
@@ -40,6 +41,7 @@ public class CycleService {
   private final CycleRepository cycleRepository;
   private final ProjectRepository projectRepository;
   private final PitchRepository pitchRepository;
+  private final TaskRepository taskRepository;
   private final RetroRepository retroRepository;
   private final UserRepository userRepository;
   private final TeamRepository teamRepository;
@@ -126,7 +128,7 @@ public class CycleService {
 
     Cycle cycle = Cycle.builder().project(project).name(request.getName()).startDate(request.getStartDate())
         .endDate(endDate).phase(request.getPhase() != null ? request.getPhase() : CyclePhase.SHAPING_BUILDING)
-        .isActive(true).build();
+        .isActive(true).sprintGoal(request.getSprintGoal()).build();
 
     Cycle saved = cycleRepository.save(cycle);
     // Ingest into knowledge base for QA
@@ -164,6 +166,12 @@ public class CycleService {
     cycle.setStartDate(request.getStartDate());
     cycle.setEndDate(endDate);
     cycle.setPhase(request.getPhase());
+    // Null means 'not provided by this caller' — guards non-Scrum UIs that omit sprintGoal.
+    // Blank (empty or whitespace-only) explicitly clears the goal to NULL; any non-blank value updates it.
+    if (request.getSprintGoal() != null) {
+      cycle.setSprintGoal(request.getSprintGoal().isBlank() ? null : request.getSprintGoal());
+    }
+    // velocityActual is computed by VelocityService from completed story points; not settable via request
 
     Cycle saved = cycleRepository.save(cycle);
 
@@ -264,15 +272,16 @@ public class CycleService {
     CycleDTO.CycleDTOBuilder builder = CycleDTO.builder().id(cycle.getId()).name(cycle.getName())
         .startDate(cycle.getStartDate()).endDate(cycle.getEndDate()).phase(cycle.getPhase())
         .isActive(cycle.getIsActive()).pitchCount((int) pitchRepository.countByCycleIdNotDeleted(cycle.getId()))
-        .teamCount((int) (cycle.getPitches() != null
-            ? cycle.getPitches().stream().map(p -> p.getTeam()).filter(t -> t != null).distinct().count()
-            : 0));
+        .taskCount(taskRepository.countByCycleId(cycle.getId()))
+        .teamCount(cycle.getTeams() != null ? cycle.getTeams().size() : 0);
 
     if (cycle.getProject() != null) {
       builder.projectId(cycle.getProject().getId()).projectName(cycle.getProject().getName())
           .projectKey(cycle.getProject().getProjectKey())
           .projectType(cycle.getProject().getProjectType());
     }
+
+    builder.sprintGoal(cycle.getSprintGoal());
 
     return builder.build();
   }
@@ -352,7 +361,7 @@ public class CycleService {
 
   // ── Cycle–Team assignment ────────────────────────────────────────────────
 
-  @CacheEvict(value = "teams", allEntries = true)
+  @CacheEvict(value = {"teams", "cycles"}, allEntries = true)
   public void assignTeamToCycle(Long cycleId, Long teamId) {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found: " + cycleId));
@@ -364,7 +373,7 @@ public class CycleService {
     }
   }
 
-  @CacheEvict(value = "teams", allEntries = true)
+  @CacheEvict(value = {"teams", "cycles"}, allEntries = true)
   public void removeTeamFromCycle(Long cycleId, Long teamId) {
     Cycle cycle = cycleRepository.findById(cycleId)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found: " + cycleId));

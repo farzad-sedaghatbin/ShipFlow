@@ -83,7 +83,7 @@ public class RoadmapTimelineDTO {
     private String status;
     private LocalDate startDate; // Cycle start date
     private LocalDate endDate;   // Cycle end date
-    private Double progressPercentage;
+    private Double progress;
     private Long epicId;
     private Long targetReleaseId;
   }

@@ -58,8 +58,9 @@ export interface ReorderRequest {
  * Project methodology type.
  * SHAPE_UP: 6-week cycles with betting, pitches, and cooldown
  * KANBAN: Continuous flow with visual board, no cycles
+ * SCRUM: Sprint-based development with backlog, story points, burndown, and velocity
  */
-export type ProjectType = 'SHAPE_UP' | 'KANBAN';
+export type ProjectType = 'SHAPE_UP' | 'KANBAN' | 'SCRUM';
 
 /**
  * Role a user can have within a specific project.
@@ -133,8 +134,13 @@ export interface Cycle {
   phase: CyclePhase;
   isActive: boolean;
   pitchCount?: number;
+  /** For Scrum sprints: total number of tasks (stories) in this sprint */
+  taskCount?: number;
   teamCount?: number;
   projectType?: ProjectType;
+  /** Scrum: the goal statement for this sprint */
+  sprintGoal?: string | null;
+  // velocityActual removed — computed dynamically via VelocityService; see VelocityPoint
 }
 
 export interface CreateCycleRequest {
@@ -143,6 +149,8 @@ export interface CreateCycleRequest {
   startDate: string;
   endDate?: string;  // Optional - auto-calculated from OrganizationSettings if not provided
   phase?: CyclePhase;
+  /** Scrum: the goal statement for this sprint */
+  sprintGoal?: string | null;
 }
 
 export interface Team {
@@ -863,6 +871,9 @@ export interface Task {
 
   // File attachments
   attachments?: TaskAttachment[];
+
+  // Scrum: story point estimate for this task
+  storyPoints?: number | null;
 }
 
 export interface TaskAttachment {
@@ -893,9 +904,26 @@ export interface CreateTaskRequest {
   dueDate?: string;
   tags?: string;
   
-  // Scope-Task Bridge fields
-  createScopeAutomatically?: boolean; // When true and pitchId set (no parentTaskId), auto-creates a scope (default: true)
-  initialHillPosition?: number; // Initial position on hill chart (0-100), only used when createScopeAutomatically is true
+  // Scope-Task Bridge: scope auto-creation is decided entirely backend-side
+  // (root task + pitch + no existing scope). Clients cannot toggle it.
+  initialHillPosition?: number; // Initial hill chart position (0-100) applied to the auto-created scope
+
+  // Scrum: story point estimate
+  storyPoints?: number | null;
+}
+
+// Scrum Chart DTOs
+export interface BurndownPoint {
+  date: string;
+  remainingPoints: number;
+  idealPoints: number;
+}
+
+export interface VelocityPoint {
+  cycleId: number;
+  cycleName: string;
+  plannedPoints: number;
+  completedPoints: number;
 }
 
 // Task Dependency Types
@@ -1756,3 +1784,45 @@ export interface GlobalSearchResult {
 
 export * from './betting-analytics';
 export * from './circuit-breaker';
+
+export interface ImportJobDTO {
+  id: number;
+  fileName: string;
+  sourceFormat: 'JIRA_CSV' | 'LINEAR_CSV' | 'ASANA_CSV' | 'GENERIC_CSV';
+  status: 'PENDING' | 'PARSING' | 'IMPORTING' | 'COMPLETED' | 'FAILED';
+  totalRows: number;
+  importedRows: number;
+  failedRows: number;
+  errorLog: string | null;
+  projectId: number | null;
+  projectName: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface LinearConnectionStatus {
+  connected: boolean;
+  configured: boolean;
+  teamId: string | null;
+  teamName: string | null;
+}
+
+export interface LinearTeam {
+  id: string;
+  name: string;
+  key: string;
+}
+
+export interface JiraConnectionStatus {
+  connected: boolean;
+  configured: boolean;
+  cloudId: string | null;
+  cloudName: string | null;
+}
+
+export interface JiraProject {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+}

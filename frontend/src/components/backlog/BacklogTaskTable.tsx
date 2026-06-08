@@ -168,8 +168,11 @@ function SortableTaskRow({
             )}
             <Link
               to={`/backlog/${task.id}`}
-              className="hover:underline cursor-pointer text-primary"
+              className="hover:underline cursor-pointer text-primary flex items-center gap-1.5"
             >
+              <span className="text-muted-foreground font-mono text-xs font-normal shrink-0">
+                {task.projectKey ? `${task.projectKey}-${task.id}` : `#${task.id}`}
+              </span>
               {task.title}
             </Link>
             {task.isBlocked && task.blockedByCount && task.blockedByCount > 0 && (
@@ -300,6 +303,16 @@ function SortableTaskRow({
         </DropdownMenu>
       </TableCell>
 
+      <TableCell className="text-center">
+        {task.storyPoints != null ? (
+          <Badge variant="outline" className="text-xs font-mono">
+            {task.storyPoints}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </TableCell>
+
       <TableCell>
         {task.assigneeName ? (
           <div className="flex items-center gap-2">
@@ -385,8 +398,9 @@ function SortableTaskRow({
                   variant="ghost"
                   size="icon"
                   onClick={() => onViewTask(task)}
+                  aria-label={t('aria.viewTask')}
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.viewDetails')}</TooltipContent>
@@ -399,8 +413,9 @@ function SortableTaskRow({
                   variant="ghost"
                   size="icon"
                   onClick={() => onEditTask(task)}
+                  aria-label={t('aria.editTask')}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.edit')}</TooltipContent>
@@ -413,8 +428,9 @@ function SortableTaskRow({
                   variant="ghost"
                   size="icon"
                   onClick={() => onDeleteTask(task.id)}
+                  aria-label={t('aria.deleteTask')}
                 >
-                  <Trash2 className="h-4 w-4 text-destructive" />
+                  <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('backlogPage.delete')}</TooltipContent>
@@ -684,6 +700,7 @@ export function BacklogTaskTable({
                       {sortBy === 'priority' && (sortOrder === 'asc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />)}
                     </Button>
                   </TableHead>
+                  <TableHead className="w-12 text-center">{t('backlogPage.storyPointsAbbr')}</TableHead>
                   <TableHead>{t('backlogPage.assignee')}</TableHead>
                   <TableHead>
                     <Button
@@ -760,8 +777,9 @@ export function BacklogTaskTable({
                 size="icon"
                 onClick={() => onChangePage(page - 1)}
                 disabled={page === 0}
+                aria-label={t('aria.previousPage')}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               </Button>
               <span className="text-sm px-2">
                 Page {page + 1} of {totalPages}
@@ -771,8 +789,9 @@ export function BacklogTaskTable({
                 size="icon"
                 onClick={() => onChangePage(page + 1)}
                 disabled={page >= totalPages - 1}
+                aria-label={t('aria.nextPage')}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </div>

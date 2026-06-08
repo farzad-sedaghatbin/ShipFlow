@@ -163,11 +163,10 @@ class AICacheControllerIntegrationTest {
   }
 
   @Test
-  @DisplayName("Unauthorized access should be rejected")
+  @DisplayName("Non-admin access should be rejected with 403")
   @WithMockUser(username = "user", roles = {})
   void unauthorizedAccess_ShouldBeHandled() throws Exception {
-    // This test verifies the endpoint is accessible with default roles
-    // In a real scenario, you might test role-based access control
-    mockMvc.perform(get("/api/cache/stats")).andExpect(status().isOk());
+    // AI cache management requires ADMIN role — non-admin users must receive 403
+    mockMvc.perform(get("/api/cache/stats")).andExpect(status().isForbidden());
   }
 }

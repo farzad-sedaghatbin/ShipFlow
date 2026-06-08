@@ -12,6 +12,7 @@ import {
   Command,
   RefreshCw,
   Shield,
+  Users,
   Activity,
   FileText,
   Layout,
@@ -31,13 +32,16 @@ import {
   Smartphone,
   Rss,
   Network,
-  Key,
-  BarChart3,
-  ArrowDownToLine,
-  Calendar,
   Pencil,
   GripHorizontal,
-  Bug,
+  TrendingDown,
+  Gauge,
+  Target,
+  Upload,
+  FileSpreadsheet,
+  FolderInput,
+  Key,
+  Wand2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -80,6 +84,65 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.5.0',
+      date: 'June 7, 2026',
+      title: t('publicRoadmap.shipped150Title'),
+      highlights: [
+        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.shipped150Item0Title'), description: t('publicRoadmap.shipped150Item0Desc') },
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.shipped150Item1Title'), description: t('publicRoadmap.shipped150Item1Desc') },
+        { icon: <TrendingUp className="h-5 w-5" />, title: t('publicRoadmap.shipped150Item2Title'), description: t('publicRoadmap.shipped150Item2Desc') },
+      ],
+    },
+    {
+      version: '1.4.0',
+      date: 'June 7, 2026',
+      title: t('publicRoadmap.shipped140Title'),
+      highlights: [
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item0Title'), description: t('publicRoadmap.shipped140Item0Desc') },
+        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item1Title'), description: t('publicRoadmap.shipped140Item1Desc') },
+        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item2Title'), description: t('publicRoadmap.shipped140Item2Desc') },
+        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item3Title'), description: t('publicRoadmap.shipped140Item3Desc') },
+        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.shipped140Item4Title'), description: t('publicRoadmap.shipped140Item4Desc') },
+      ],
+    },
+    {
+      version: '1.3.0',
+      date: 'June 5, 2026',
+      title: t('publicRoadmap.shipped130Title'),
+      highlights: [
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item0Title'), description: t('publicRoadmap.shipped130Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item1Title'), description: t('publicRoadmap.shipped130Item1Desc') },
+        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item2Title'), description: t('publicRoadmap.shipped130Item2Desc') },
+        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.shipped130Item3Title'), description: t('publicRoadmap.shipped130Item3Desc') },
+      ],
+    },
+    {
+      version: '1.2.0',
+      date: 'May 23, 2026',
+      title: t('publicRoadmap.shipped120Title'),
+      highlights: [
+        { icon: <Upload className="h-5 w-5" />, title: t('publicRoadmap.shipped120Item0Title'), description: t('publicRoadmap.shipped120Item0Desc') },
+        { icon: <FileSpreadsheet className="h-5 w-5" />, title: t('publicRoadmap.shipped120Item1Title'), description: t('publicRoadmap.shipped120Item1Desc') },
+        { icon: <FolderInput className="h-5 w-5" />, title: t('publicRoadmap.shipped120Item2Title'), description: t('publicRoadmap.shipped120Item2Desc') },
+        { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.shipped120Item3Title'), description: t('publicRoadmap.shipped120Item3Desc') },
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.shipped120Item4Title'), description: t('publicRoadmap.shipped120Item4Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.shipped120Item5Title'), description: t('publicRoadmap.shipped120Item5Desc') },
+      ],
+    },
+    {
+      version: '1.1.0',
+      date: 'May 19, 2026',
+      title: t('publicRoadmap.shipped110Title'),
+      highlights: [
+        { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.shipped110Item0Title'), description: t('publicRoadmap.shipped110Item0Desc') },
+        { icon: <Target className="h-5 w-5" />, title: t('publicRoadmap.shipped110Item1Title'), description: t('publicRoadmap.shipped110Item1Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.shipped110Item2Title'), description: t('publicRoadmap.shipped110Item2Desc') },
+        { icon: <TrendingDown className="h-5 w-5" />, title: t('publicRoadmap.shipped110Item3Title'), description: t('publicRoadmap.shipped110Item3Desc') },
+        { icon: <Gauge className="h-5 w-5" />, title: t('publicRoadmap.shipped110Item4Title'), description: t('publicRoadmap.shipped110Item4Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.shipped110Item5Title'), description: t('publicRoadmap.shipped110Item5Desc') },
+      ],
+    },
     {
       version: '1.0.0',
       date: 'April 21, 2026',
@@ -164,36 +227,13 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.0.1',
-      theme: t('publicRoadmap.phase101Theme'),
-      status: 'in-progress',
-      items: [
-        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.phase101Item0Title'), description: t('publicRoadmap.phase101Item0Desc') },
-        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.phase101Item1Title'), description: t('publicRoadmap.phase101Item1Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase101Item2Title'), description: t('publicRoadmap.phase101Item2Desc') },
-        { icon: <Bug className="h-5 w-5" />, title: t('publicRoadmap.phase101Item3Title'), description: t('publicRoadmap.phase101Item3Desc') },
-      ],
-    },
-    {
-      version: 'v1.1.0',
-      theme: t('publicRoadmap.phase110Theme'),
+      version: 'v1.6.0',
+      theme: t('publicRoadmap.phase160Theme'),
       status: 'planned',
       items: [
-        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.phase110Item0Title'), description: t('publicRoadmap.phase110Item0Desc') },
-        { icon: <Key className="h-5 w-5" />, title: t('publicRoadmap.phase110Item1Title'), description: t('publicRoadmap.phase110Item1Desc') },
-        { icon: <BarChart3 className="h-5 w-5" />, title: t('publicRoadmap.phase110Item2Title'), description: t('publicRoadmap.phase110Item2Desc') },
-        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase110Item3Title'), description: t('publicRoadmap.phase110Item3Desc') },
-      ],
-    },
-    {
-      version: 'v1.2.0',
-      theme: t('publicRoadmap.phase120Theme'),
-      status: 'planned',
-      items: [
-        { icon: <ArrowDownToLine className="h-5 w-5" />, title: t('publicRoadmap.phase120Item0Title'), description: t('publicRoadmap.phase120Item0Desc') },
-        { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.phase120Item1Title'), description: t('publicRoadmap.phase120Item1Desc') },
-        { icon: <Calendar className="h-5 w-5" />, title: t('publicRoadmap.phase120Item2Title'), description: t('publicRoadmap.phase120Item2Desc') },
-        { icon: <GitBranch className="h-5 w-5" />, title: t('publicRoadmap.phase120Item3Title'), description: t('publicRoadmap.phase120Item3Desc') },
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase160Item0Title'), description: t('publicRoadmap.phase160Item0Desc') },
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.phase160Item1Title'), description: t('publicRoadmap.phase160Item1Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase160Item2Title'), description: t('publicRoadmap.phase160Item2Desc') },
       ],
     },
   ];

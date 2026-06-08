@@ -210,15 +210,19 @@ export default function TaskAttachments({ taskId }: Props) {
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <a
-                      href={taskAttachmentService.getDownloadUrl(taskId, a.id)}
-                      download={a.fileName}
-                      onClick={(e) => e.stopPropagation()}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title={t('common.download')}
+                      onClick={() =>
+                        taskAttachmentService
+                          .downloadAttachment(taskId, a.id, a.fileName)
+                          .catch(() => toast.error(t('attachments.downloadError')))
+                      }
                     >
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title={t('common.download')}>
-                        <Download className="h-3.5 w-3.5" />
-                      </Button>
-                    </a>
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
                     {canDelete(a) && (
                       <Button
                         variant="ghost"

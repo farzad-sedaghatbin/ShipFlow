@@ -34,6 +34,7 @@ import { Combobox } from '../components/ui/combobox';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { getChecklistBadgeState } from '../utils/meetingChecklist';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
@@ -596,18 +597,24 @@ export default function MeetingList() {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge
-                          variant={meeting.dorReady ? 'success' : 'outline'}
-                        >
-                          {meeting.dorReady ? t('meetingList.table.yes') : t('meetingList.table.no')}
-                        </Badge>
+                        {(() => {
+                          const { variant, completed, total } = getChecklistBadgeState(meeting.dorItems);
+                          return (
+                            <Badge variant={variant}>
+                              {total > 0 ? `${completed}/${total}` : t('meetingList.table.no')}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge
-                          variant={meeting.dodReady ? 'success' : 'outline'}
-                        >
-                          {meeting.dodReady ? t('meetingList.table.yes') : t('meetingList.table.no')}
-                        </Badge>
+                        {(() => {
+                          const { variant, completed, total } = getChecklistBadgeState(meeting.dodItems);
+                          return (
+                            <Badge variant={variant}>
+                              {total > 0 ? `${completed}/${total}` : t('meetingList.table.no')}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-1">
@@ -1083,16 +1090,16 @@ export default function MeetingList() {
                 </div>
               )}
 
-              {/* DOR Items (only completed) */}
+              {/* DOR Items */}
               {viewMeeting.dorItems && viewMeeting.dorItems.length > 0 && (
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.dor')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dorItems.map((item, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        <Checkbox checked disabled className="mt-0.5" />
+                      <div key={index} className={`flex items-start gap-2 text-sm ${!item.isCompleted ? 'opacity-50' : ''}`}>
+                        <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? '' : 'line-through'}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}
@@ -1103,16 +1110,16 @@ export default function MeetingList() {
                 </div>
               )}
 
-              {/* DOD Items (only completed) */}
+              {/* DOD Items */}
               {viewMeeting.dodItems && viewMeeting.dodItems.length > 0 && (
                 <div className="space-y-2">
                   <Label>{t('meetingList.dialog.dod')}</Label>
                   <div className="space-y-2">
                     {viewMeeting.dodItems.map((item, index) => (
-                      <div key={index} className="flex items-start gap-2 text-sm">
-                        <Checkbox checked disabled className="mt-0.5" />
+                      <div key={index} className={`flex items-start gap-2 text-sm ${!item.isCompleted ? 'opacity-50' : ''}`}>
+                        <Checkbox checked={item.isCompleted} disabled className="mt-0.5" />
                         <div className="flex-1">
-                          <div className="font-medium">{item.name}</div>
+                          <div className={`font-medium ${item.isCompleted ? '' : 'line-through'}`}>{item.name}</div>
                           {item.description && (
                             <div className="text-muted-foreground text-xs mt-1">{item.description}</div>
                           )}

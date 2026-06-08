@@ -67,7 +67,7 @@ describe('taskService', () => {
 
       const result = await taskService.getByCycleId(1);
 
-      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/cycle/1');
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/cycle/1/all');
       expect(result.data).toEqual(mockTasks);
     });
   });

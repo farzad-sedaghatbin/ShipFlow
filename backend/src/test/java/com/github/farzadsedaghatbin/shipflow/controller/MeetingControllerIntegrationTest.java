@@ -190,9 +190,9 @@ class MeetingControllerIntegrationTest {
     mockMvc.perform(get("/api/meetings/paginated").param("page", "0").param("size", "20")
         .param("sortBy", "dateHeld").param("sortOrder", "desc")).andExpect(status().isOk())
         .andExpect(jsonPath("$.content", hasSize(20)))
-        .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(25)))
-        .andExpect(jsonPath("$.totalPages", greaterThanOrEqualTo(2))).andExpect(jsonPath("$.number", is(0)))
-        .andExpect(jsonPath("$.size", is(20)));
+        .andExpect(jsonPath("$.page.totalElements", greaterThanOrEqualTo(25)))
+        .andExpect(jsonPath("$.page.totalPages", greaterThanOrEqualTo(2))).andExpect(jsonPath("$.page.number", is(0)))
+        .andExpect(jsonPath("$.page.size", is(20)));
   }
 
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
@@ -314,7 +314,7 @@ class MeetingControllerIntegrationTest {
 
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
   @Test
-  void getMeetingForView_ShouldReturnOnlyCompletedChecklistItems() throws Exception {
+  void getMeetingForView_ShouldReturnAllChecklistItems() throws Exception {
     // Create test meeting with mixed completed/incomplete items
     testMeeting = Meeting.builder()
         .pitch(testPitch)
@@ -331,18 +331,20 @@ class MeetingControllerIntegrationTest {
     mockMvc.perform(get("/api/meetings/" + testMeeting.getId() + "/view"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id", is(testMeeting.getId().intValue())))
-        .andExpect(jsonPath("$.dorItems", hasSize(1)))
-        .andExpect(jsonPath("$.dodItems", hasSize(1)))
+        .andExpect(jsonPath("$.dorItems", hasSize(2)))
+        .andExpect(jsonPath("$.dodItems", hasSize(2)))
         .andExpect(jsonPath("$.dorItems[0].name", is("Completed DOR")))
         .andExpect(jsonPath("$.dorItems[0].isCompleted", is(true)))
+        .andExpect(jsonPath("$.dorItems[1].name", is("Incomplete DOR")))
+        .andExpect(jsonPath("$.dorItems[1].isCompleted", is(false)))
         .andExpect(jsonPath("$.dodItems[0].name", is("Completed DOD")))
         .andExpect(jsonPath("$.dodItems[0].isCompleted", is(true)));
   }
 
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")
   @Test
-  void getMeetingForView_WhenNoCompletedItems_ShouldReturnEmptyLists() throws Exception {
-    // Create test meeting with only incomplete items
+  void getMeetingForView_WhenNoCompletedItems_ShouldReturnAllItems() throws Exception {
+    // Create test meeting with only incomplete items — all items must still be returned
     testMeeting = Meeting.builder()
         .pitch(testPitch)
         .type("STANDUP")
@@ -356,8 +358,10 @@ class MeetingControllerIntegrationTest {
 
     mockMvc.perform(get("/api/meetings/" + testMeeting.getId() + "/view"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.dorItems", hasSize(0)))
-        .andExpect(jsonPath("$.dodItems", hasSize(0)));
+        .andExpect(jsonPath("$.dorItems", hasSize(1)))
+        .andExpect(jsonPath("$.dodItems", hasSize(1)))
+        .andExpect(jsonPath("$.dorItems[0].isCompleted", is(false)))
+        .andExpect(jsonPath("$.dodItems[0].isCompleted", is(false)));
   }
 
   @WithMockUser(username = "meeting-test-user", roles = "MEMBER")

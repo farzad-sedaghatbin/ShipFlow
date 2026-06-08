@@ -4,11 +4,14 @@ import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
 import com.github.farzadsedaghatbin.shipflow.config.QAConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.*;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.QAInteraction;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.QAFeedbackType;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeItemRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.QAInteractionRepository;
+import com.github.farzadsedaghatbin.shipflow.service.UserService;
 import com.github.farzadsedaghatbin.shipflow.service.qa.*;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -24,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +70,8 @@ public class QAService {
   private final PromptCompressor promptCompressor;
   private final ContentGuardrails contentGuardrails;
   private final CycleRepository cycleRepository;
+  private final PitchRepository pitchRepository;
+  private final UserService userService;
 
   @Autowired
   public QAService(KnowledgeItemRepository knowledgeItemRepository, QAInteractionRepository qaInteractionRepository,
@@ -84,7 +90,9 @@ public class QAService {
       @Autowired(required = false) LLMCacheService llmCacheService,
       @Autowired(required = false) PromptCompressor promptCompressor,
       @Autowired(required = false) ContentGuardrails contentGuardrails, MessageService messageService,
-      @Autowired(required = false) CycleRepository cycleRepository) {
+      @Autowired(required = false) CycleRepository cycleRepository,
+      @Autowired(required = false) PitchRepository pitchRepository,
+      UserService userService) {
     this.knowledgeItemRepository = knowledgeItemRepository;
     this.qaInteractionRepository = qaInteractionRepository;
     this.embeddingModel = embeddingModel;
@@ -106,6 +114,8 @@ public class QAService {
     this.securityFilter = securityFilter;
     this.messageService = messageService;
     this.cycleRepository = cycleRepository;
+    this.pitchRepository = pitchRepository;
+    this.userService = userService;
   }
 
   /**
@@ -160,6 +170,14 @@ public class QAService {
     // cycle")
     if (request.getContextId() == null && request.getContextType() != null) {
       resolveEntityFromQuestion(request);
+    }
+
+    // Sync contextId → cycleId when contextType is "cycle" so the metadata-based
+    // vector filter fires even when the frontend passes only contextId.
+    if ("cycle".equalsIgnoreCase(request.getContextType())
+        && request.getContextId() != null && request.getCycleId() == null) {
+      request.setCycleId(request.getContextId());
+      log.debug("Synced cycleId={} from contextId for cycle context", request.getContextId());
     }
 
     // Evolve conversation context whenever entity resolution just resolved a new
@@ -278,11 +296,15 @@ public class QAService {
       }
 
       // 3. Apply security filtering
-      if (securityFilter != null) {
-        // TODO: Get user's team and project IDs from UserService
-        // For now, skip security filtering
-        // matches = securityFilter.filterByUserAccess(matches, userId, userTeamIds,
-        // userProjectIds);
+      if (securityFilter != null && userId != null) {
+        try {
+          Set<Long> userTeamIds = userService.getTeamIdsForUser(userId);
+          Set<Long> userProjectIds = userService.getProjectIdsForUser(userId);
+          matches = securityFilter.filterByUserAccess(matches, userId, userTeamIds, userProjectIds);
+        } catch (Exception e) {
+          log.warn("Security filtering skipped due to error resolving user context for userId={}: {}",
+              userId, e.getMessage());
+        }
       }
 
       // 4. Filter by context
@@ -309,14 +331,24 @@ public class QAService {
           matches.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0));
 
       // 7. Build context with token management
-      String context;
+      // First, inject structured entity context (ground truth from DB) for entity-
+      // scoped questions. This prevents hallucination on relational queries like
+      // "what pitches are in cycle X" where vector search is insufficient.
+      String structuredContext = buildStructuredEntityContext(request);
+
+      String vectorContext;
       if (contextWindowManager != null) {
         ContextWindowManager.ContextResult contextResult = contextWindowManager.buildManagedContext(matches,
-            request.getQuestion(), 4000);
-        context = contextResult.getContext();
+            request.getQuestion(), structuredContext.isEmpty() ? 4000 : 2000);
+        vectorContext = contextResult.getContext();
       } else {
-        context = buildContext(matches);
+        vectorContext = buildContext(matches);
       }
+
+      String context = structuredContext.isEmpty()
+          ? vectorContext
+          : "=== STRUCTURED DATA (primary source) ===\n" + structuredContext
+              + "\n=== ADDITIONAL CONTEXT (supplementary) ===\n" + vectorContext;
 
       List<QAResponse.SourceCitation> citations = buildCitations(matches);
 
@@ -708,6 +740,75 @@ public class QAService {
     return context.toString();
   }
 
+  /**
+   * Builds a structured factual context by querying the DB directly for entity-
+   * scoped questions. This is the primary ground truth — vector search augments
+   * it, but cannot replace it for relational questions like "what pitches are in
+   * cycle X".
+   *
+   * @return structured context string, or empty string if not applicable
+   */
+  private String buildStructuredEntityContext(AskQuestionRequest request) {
+    if (request.getContextType() == null || request.getContextId() == null) {
+      return "";
+    }
+
+    StringBuilder sb = new StringBuilder();
+
+    try {
+      if ("cycle".equalsIgnoreCase(request.getContextType())) {
+        Long cycleId = request.getContextId();
+
+        // Load the cycle itself
+        if (cycleRepository != null) {
+          cycleRepository.findById(cycleId).ifPresent(cycle -> {
+            sb.append("=== CYCLE: ").append(cycle.getName()).append(" ===\n");
+            if (cycle.getStartDate() != null)
+              sb.append("Start: ").append(cycle.getStartDate()).append("\n");
+            if (cycle.getEndDate() != null)
+              sb.append("End: ").append(cycle.getEndDate()).append("\n");
+            if (cycle.getPhase() != null)
+              sb.append("Phase: ").append(cycle.getPhase()).append("\n");
+          });
+        }
+
+        // Load the actual pitches assigned to this cycle
+        if (pitchRepository != null) {
+          List<Pitch> pitches = pitchRepository.findByCycleIdNotDeleted(cycleId);
+          if (!pitches.isEmpty()) {
+            sb.append("\nPitches in this cycle (").append(pitches.size()).append(" total):\n");
+            for (Pitch p : pitches) {
+              sb.append("\n- Pitch: ").append(p.getTitle());
+              if (p.getStatus() != null)
+                sb.append(" [Status: ").append(p.getStatus()).append("]");
+              if (p.getAppetiteDays() != null)
+                sb.append(" [Appetite: ").append(p.getAppetiteDays()).append(" days]");
+              if (p.getProblemStatement() != null && !p.getProblemStatement().isBlank()) {
+                String problem = p.getProblemStatement().length() > 200
+                    ? p.getProblemStatement().substring(0, 200) + "..."
+                    : p.getProblemStatement();
+                sb.append("\n  Problem: ").append(problem);
+              }
+              if (p.getSolution() != null && !p.getSolution().isBlank()) {
+                String solution = p.getSolution().length() > 200
+                    ? p.getSolution().substring(0, 200) + "..."
+                    : p.getSolution();
+                sb.append("\n  Solution: ").append(solution);
+              }
+            }
+          } else {
+            sb.append("\nNo pitches are currently assigned to this cycle.\n");
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Failed to build structured entity context for contextType={}, contextId={}: {}",
+          request.getContextType(), request.getContextId(), e.getMessage());
+    }
+
+    return sb.toString();
+  }
+
   private List<QAResponse.SourceCitation> buildCitations(List<EmbeddingMatch<TextSegment>> matches) {
     List<QAResponse.SourceCitation> citations = new ArrayList<>();
 
@@ -767,7 +868,7 @@ public class QAService {
 
     prompt.append(
         """
-            You are a helpful assistant for the ShipFlow application, which helps teams manage their work using the Shape Up methodology.
+            You are a helpful assistant for the ShipFlow project management application.
 
             Shape Up key concepts:
             - A "Cycle" is a fixed time period (typically 6 weeks) for building features. Cycles have phases: SHAPING, BETTING, BUILD, COOLDOWN.
@@ -776,21 +877,22 @@ public class QAService {
             - "Appetite" is the maximum time budget for a pitch (e.g., 2 weeks or 6 weeks).
             - "Cooldown" is a period between cycles for fixing bugs, addressing technical debt, and exploring ideas.
 
-            Use the following context to answer the user's question. If the context doesn't contain enough information to fully answer the question, say so and provide what information you can.
+            STRICT GROUNDING RULES — you MUST follow these:
+            1. Answer ONLY from the structured data and context provided below. Do NOT invent, guess, or extrapolate.
+            2. If a cycle, pitch, task, or team is not mentioned in the context, say "I don't have that information in the current context" — never make it up.
+            3. When listing pitches or items in a cycle, list ONLY what appears in the context. Do not say "there are no pitches" unless the context explicitly confirms the cycle is empty.
+            4. Cycle names (e.g. "Cycle 7") are display names chosen by the team — they are NOT database IDs. Never reference or reason about internal IDs.
+            5. If you are uncertain, say so explicitly rather than hedging with invented details.
 
-            Be concise but thorough. If referencing specific sources, mention them naturally in your response.
+            Use the structured data section (if present) as primary ground truth, then the context documents for additional detail.
             """);
 
-    // Add entity context header if available
-    if (contextType != null && (contextName != null || contextId != null)) {
-      prompt.append("\nYou are answering about: ").append(contextType);
-      if (contextName != null) {
-        prompt.append(" '").append(contextName).append("'");
-      }
-      if (contextId != null) {
-        prompt.append(" (ID: ").append(contextId).append(")");
-      }
-      prompt.append(".\n");
+    // Add entity context header if available - use display name only, never internal IDs
+    if (contextType != null && contextName != null) {
+      prompt.append("\nYou are answering questions about: ").append(contextType)
+          .append(" '").append(contextName).append("'.\n");
+    } else if (contextType != null) {
+      prompt.append("\nContext type: ").append(contextType).append(".\n");
     }
 
     // Add conversation history if available
@@ -860,21 +962,33 @@ public class QAService {
   }
 
   /**
-   * Attempt fallback search when vector store fails. This could use a backup
-   * vector store or basic text matching.
+   * Attempt fallback search when vector store fails. Falls back to keyword-based
+   * database search using the question text and optional context hints. This
+   * provides meaningful results even when the embedding store is unavailable.
    */
   private List<EmbeddingMatch<TextSegment>> attemptFallbackSearch(AskQuestionRequest request) {
     try {
-      // TODO: Implement fallback search strategy
-      // Options:
-      // 1. Use Elasticsearch for text-based search
-      // 2. Use a backup vector store
-      // 3. Use cached similar questions
-
-      log.warn("Fallback search not yet implemented, returning empty results");
+      log.info("Attempting keyword-based database fallback search for: {}", request.getQuestion());
+      List<EmbeddingMatch<TextSegment>> databaseMatches = searchDatabaseByKeywords(
+          request.getQuestion(), request.getContextType(), request.getContextId());
+      if (!databaseMatches.isEmpty()) {
+        log.info("Fallback keyword search returned {} matches", databaseMatches.size());
+        return databaseMatches;
+      }
+      // If context-specific search returned nothing, broaden to a context-free search
+      if (request.getContextId() != null || request.getContextType() != null) {
+        log.info("Context-specific fallback returned nothing, broadening to global keyword search");
+        List<EmbeddingMatch<TextSegment>> broadMatches = searchDatabaseByKeywords(
+            request.getQuestion(), null, null);
+        if (!broadMatches.isEmpty()) {
+          log.info("Broad fallback search returned {} matches", broadMatches.size());
+          return broadMatches;
+        }
+      }
+      log.warn("Fallback search found no results");
       return Collections.emptyList();
     } catch (Exception e) {
-      log.error("Fallback search also failed: {}", e.getMessage());
+      log.error("Fallback search failed: {}", e.getMessage());
       return Collections.emptyList();
     }
   }

@@ -8,6 +8,7 @@ import StatusChip from '../StatusChip';
 import { SoftDeleteButton } from '../SoftDeleteButton';
 import { Button } from '../ui/button';
 import { Markdown } from '../ui/markdown';
+import { PermissionGate } from '../../hooks/usePermission';
 import {
   Select,
   SelectContent,
@@ -198,26 +199,28 @@ export function PitchHeader({ pitch, epics, onStatusChange, onHistoryOpen, onTit
           size="sm"
         />
         <StatusChip status={pitch.status} size="medium" />
-        <Select
-          value={pitch.status}
-          onValueChange={(value) => onStatusChange(value as PitchStatus)}
-        >
-          <SelectTrigger className="w-full sm:w-[150px]">
-            <SelectValue placeholder={t('pitchDetailPage.status')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="IDEA">{t('status.idea')}</SelectItem>
-            <SelectItem value="DRAFT">{t('status.draft')}</SelectItem>
-            <SelectItem value="SHAPED">{t('pitches.status.shaped')}</SelectItem>
-            <SelectItem value="PENDING">{t('status.pending')}</SelectItem>
-            <SelectItem value="STARTED">{t('status.started')}</SelectItem>
-            <SelectItem value="IN_PROGRESS">{t('status.inProgress')}</SelectItem>
-            <SelectItem value="TESTING">{t('status.testing')}</SelectItem>
-            <SelectItem value="DONE">{t('status.done')}</SelectItem>
-            <SelectItem value="COOLDOWN">{t('status.cooldown')}</SelectItem>
-            <SelectItem value="CANCELLED">{t('status.cancelled')}</SelectItem>
-          </SelectContent>
-        </Select>
+        <PermissionGate resource="PITCH" permission="APPROVE">
+          <Select
+            value={pitch.status}
+            onValueChange={(value) => onStatusChange(value as PitchStatus)}
+          >
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder={t('pitchDetailPage.status')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="IDEA">{t('status.idea')}</SelectItem>
+              <SelectItem value="DRAFT">{t('status.draft')}</SelectItem>
+              <SelectItem value="SHAPED">{t('pitches.status.shaped')}</SelectItem>
+              <SelectItem value="PENDING">{t('status.pending')}</SelectItem>
+              <SelectItem value="STARTED">{t('status.started')}</SelectItem>
+              <SelectItem value="IN_PROGRESS">{t('status.inProgress')}</SelectItem>
+              <SelectItem value="TESTING">{t('status.testing')}</SelectItem>
+              <SelectItem value="DONE">{t('status.done')}</SelectItem>
+              <SelectItem value="COOLDOWN">{t('status.cooldown')}</SelectItem>
+              <SelectItem value="CANCELLED">{t('status.cancelled')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </PermissionGate>
       </div>
     </div>
   );

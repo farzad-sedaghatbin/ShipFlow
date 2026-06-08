@@ -460,6 +460,11 @@ export default function RoadmapPage() {
     }
     for (const epic of timeline?.orphanEpics ?? []) {
       indices.set(`orphan-${epic.id}`, idx++);
+      if (expandedEpics.has(epic.id)) {
+        for (const pitch of epic.pitches ?? []) {
+          indices.set(`pitch-${pitch.id}`, idx++);
+        }
+      }
     }
     return indices;
   }, [timeline, expandedInitiatives, expandedEpics]);
@@ -759,7 +764,7 @@ export default function RoadmapPage() {
                                 ) : (
                                   <span className="w-3.5 shrink-0" />
                                 )}
-                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
                                 <Link
                                   to={`/epics/${epic.id}`}
                                   className="text-sm hover:underline truncate"
@@ -784,7 +789,6 @@ export default function RoadmapPage() {
                                 timelineStart={timelineStart}
                                 timelineEnd={timelineEnd}
                                 status={epic.status}
-                                color={epic.color}
                                 progress={epic.progress}
                                 onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
                               />
@@ -823,8 +827,15 @@ export default function RoadmapPage() {
 
               {/* Orphan Epics */}
               {timeline?.orphanEpics && timeline.orphanEpics.length > 0 && (
-                <div className="border-t pt-2 mt-2">
-                  <p className="text-xs text-muted-foreground px-2 mb-2">{t('roadmap.unassignedEpics')}</p>
+                <div className="border-t mt-4">
+                  {/* Section header matching initiative group style */}
+                  <div className="flex items-center h-10 bg-muted/30 border-b">
+                    <div className="w-72 shrink-0 flex items-center gap-2 px-2">
+                      <span className="text-sm font-medium text-muted-foreground">{t('roadmap.orphanEpics')}</span>
+                      <Badge variant="outline" className="text-[10px]">{timeline.orphanEpics.length}</Badge>
+                    </div>
+                    <div className="flex-1" />
+                  </div>
                   {timeline.orphanEpics.map((epic) => (
                       <div key={epic.id}>
                         <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`orphan-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
@@ -842,7 +853,7 @@ export default function RoadmapPage() {
                               ) : (
                                 <span className="w-3.5 shrink-0" />
                               )}
-                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: epic.color || getStatusCssColor(epic.status) }} />
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
                               <Link
                                 to={`/epics/${epic.id}`}
                                 className="text-sm hover:underline truncate"
@@ -867,12 +878,37 @@ export default function RoadmapPage() {
                               timelineStart={timelineStart}
                               timelineEnd={timelineEnd}
                               status={epic.status}
-                              color={epic.color}
                               progress={epic.progress}
                               onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
                             />
                           </div>
                         </div>
+
+                        {/* Expanded Pitches */}
+                        {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
+                            <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${(rowIndices.get(`pitch-${pitch.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
+                              <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-10 pr-2">
+                                <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <Link
+                                  to={`/pitches/${pitch.id}`}
+                                  className="text-xs truncate hover:underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {pitch.title}
+                                </Link>
+                              </div>
+                              <div className="flex-1 relative h-9">
+                                <TimelineBar
+                                  startDate={pitch.startDate}
+                                  endDate={pitch.endDate}
+                                  timelineStart={timelineStart}
+                                  timelineEnd={timelineEnd}
+                                  status={pitch.status}
+                                  progress={pitch.progress}
+                                />
+                              </div>
+                            </div>
+                        ))}
                       </div>
                   ))}
                 </div>
@@ -906,6 +942,7 @@ export default function RoadmapPage() {
         <CardContent className="py-3">
           <div className="flex flex-wrap gap-4 text-xs">
             <span className="font-medium">{t('roadmap.legend')}:</span>
+            {/* Lifecycle states */}
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#94a3b8' }} />
               <span>{t('roadmap.draft')}</span>
@@ -915,16 +952,34 @@ export default function RoadmapPage() {
               <span>{t('roadmap.planned')}</span>
             </div>
             <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#60a5fa' }} />
+              <span>{t('roadmap.planning')}</span>
+            </div>
+            <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
               <span>{t('roadmap.inProgress')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#a855f7' }} />
+              <span>{t('roadmap.staging')}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
               <span>{t('roadmap.completed')}</span>
             </div>
             <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+              <span>{t('roadmap.released')}</span>
+            </div>
+            {/* Exception states */}
+            <div className="w-px self-stretch bg-border" />
+            <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }} />
               <span>{t('roadmap.onHold')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+              <span>{t('roadmap.cancelled')}</span>
             </div>
           </div>
         </CardContent>

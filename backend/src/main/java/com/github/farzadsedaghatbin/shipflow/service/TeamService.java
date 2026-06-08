@@ -24,6 +24,11 @@ public class TeamService {
 
   @Cacheable(value = "teams", key = "'all'")
   public List<TeamDTO> getAllTeams() {
+    return teamRepository.findActiveWithAssignments().stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  @Cacheable(value = "teams", key = "'allIncludingArchived'")
+  public List<TeamDTO> getAllTeamsIncludingArchived() {
     return teamRepository.findAllWithAssignments().stream().map(this::toDTO).collect(Collectors.toList());
   }
 
@@ -91,6 +96,22 @@ public class TeamService {
     teamRepository.deleteById(id);
   }
 
+  @CacheEvict(value = "teams", allEntries = true)
+  public void archiveTeam(Long id) {
+    Team team = teamRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Team not found with id: " + id));
+    team.setIsArchived(true);
+    teamRepository.save(team);
+  }
+
+  @CacheEvict(value = "teams", allEntries = true)
+  public void unarchiveTeam(Long id) {
+    Team team = teamRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Team not found with id: " + id));
+    team.setIsArchived(false);
+    teamRepository.save(team);
+  }
+
   private TeamDTO toDTO(Team team) {
     List<TeamAssignmentDTO> assignmentDTOs = team.getAssignments() != null
         ? team.getAssignments().stream().filter(TeamAssignment::getIsActive).map(this::toAssignmentDTO)
@@ -125,6 +146,7 @@ public class TeamService {
         .build();
 
     return TeamDTO.builder().id(team.getId()).name(team.getName())
+        .isArchived(team.getIsArchived())
         .hoursPerDayOverride(team.getHoursPerDayOverride())
         .workingDaysPerWeekOverride(team.getWorkingDaysPerWeekOverride())
         .effectiveHoursPerDay(hoursResolution.value())

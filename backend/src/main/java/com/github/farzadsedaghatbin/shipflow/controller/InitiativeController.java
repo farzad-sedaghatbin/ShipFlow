@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,12 +29,14 @@ public class InitiativeController {
   private final InitiativeService initiativeService;
 
   @GetMapping("/project/{projectId}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get all initiatives for a project")
   public ResponseEntity<List<InitiativeDTO>> getInitiativesByProject(@PathVariable Long projectId) {
     return ResponseEntity.ok(initiativeService.getInitiativesByProjectId(projectId));
   }
 
   @GetMapping("/project/{projectId}/status/{status}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get initiatives by project and status")
   public ResponseEntity<List<InitiativeDTO>> getInitiativesByProjectAndStatus(
       @PathVariable Long projectId,
@@ -42,18 +45,21 @@ public class InitiativeController {
   }
 
   @GetMapping("/project/{projectId}/active")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get active initiatives for a project (PLANNED or IN_PROGRESS)")
   public ResponseEntity<List<InitiativeDTO>> getActiveInitiatives(@PathVariable Long projectId) {
     return ResponseEntity.ok(initiativeService.getActiveInitiatives(projectId));
   }
 
   @GetMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Get initiative by ID")
   public ResponseEntity<InitiativeDTO> getInitiativeById(@PathVariable Long id) {
     return ResponseEntity.ok(initiativeService.getInitiativeById(id));
   }
 
   @PostMapping
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.CREATE)
   @Operation(summary = "Create a new initiative")
   public ResponseEntity<InitiativeDTO> createInitiative(@Valid @RequestBody CreateInitiativeRequest request) {
@@ -61,6 +67,7 @@ public class InitiativeController {
   }
 
   @PutMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.UPDATE)
   @Operation(summary = "Update an initiative")
   public ResponseEntity<InitiativeDTO> updateInitiative(
@@ -70,6 +77,7 @@ public class InitiativeController {
   }
 
   @PatchMapping("/{id}/status")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.UPDATE)
   @Operation(summary = "Update initiative status")
   public ResponseEntity<InitiativeDTO> updateInitiativeStatus(
@@ -79,6 +87,7 @@ public class InitiativeController {
   }
 
   @PatchMapping("/{id}/dates")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.UPDATE)
   @Operation(summary = "Update initiative target dates")
   public ResponseEntity<InitiativeDTO> updateInitiativeDates(
@@ -89,6 +98,7 @@ public class InitiativeController {
   }
 
   @PatchMapping("/reorder")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.UPDATE)
   @Operation(summary = "Reorder initiatives (batch update sort order)")
   public ResponseEntity<Void> reorderInitiatives(@Valid @RequestBody ReorderRequest request) {
@@ -97,6 +107,7 @@ public class InitiativeController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.DELETE)
   @Operation(summary = "Delete an initiative (soft delete)")
   public ResponseEntity<Void> deleteInitiative(@PathVariable Long id) {

@@ -44,7 +44,7 @@ public class DocumentController {
 
   /** Upload a document and extract its text content. */
   @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'UPDATE')")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Upload document", description = "Upload a document (PDF, DOCX, TXT) and extract its text for knowledge base")
   public ResponseEntity<DocumentUploadResponse> uploadDocument(@RequestParam("file") MultipartFile file,
       @RequestParam("entityType") String entityType, @RequestParam("entityId") Long entityId,
@@ -64,7 +64,7 @@ public class DocumentController {
 
   /** Upload a document for a pitch. */
   @PostMapping(value = "/pitch/{pitchId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-  @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'UPDATE')")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Upload document for pitch", description = "Upload a document for a pitch and extract text for Q&A")
   public ResponseEntity<DocumentUploadResponse> uploadDocumentForPitch(@PathVariable Long pitchId,
       @RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) {
@@ -83,6 +83,7 @@ public class DocumentController {
 
   /** Upload a document for a meeting. */
   @PostMapping(value = "/meeting/{meetingId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Upload document for meeting", description = "Upload a document for a meeting (e.g., meeting notes) and extract text for Q&A")
   public ResponseEntity<DocumentUploadResponse> uploadDocumentForMeeting(@PathVariable Long meetingId,
       @RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) {
@@ -101,6 +102,7 @@ public class DocumentController {
 
   /** Upload a document for a cycle. */
   @PostMapping(value = "/cycle/{cycleId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Upload document for cycle", description = "Upload a document for a cycle and extract text for Q&A")
   public ResponseEntity<DocumentUploadResponse> uploadDocumentForCycle(@PathVariable Long cycleId,
       @RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) {
@@ -155,6 +157,7 @@ public class DocumentController {
 
   /** Delete a document. */
   @DeleteMapping("/{id}")
+  @PreAuthorize("@permissionService.hasPermission('AI_FEATURES', 'UPDATE')")
   @Operation(summary = "Delete document", description = "Delete a document")
   public ResponseEntity<Map<String, String>> deleteDocument(@PathVariable Long id) {
     documentService.deleteDocument(id);

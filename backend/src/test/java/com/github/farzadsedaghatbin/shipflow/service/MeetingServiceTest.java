@@ -339,7 +339,7 @@ class MeetingServiceTest {
   }
 
   @Test
-  void getMeetingForView_ShouldReturnOnlyCompletedItems() {
+  void getMeetingForView_ShouldReturnAllItems() {
     // Given - meeting with mixed completed/uncompleted items
     MeetingDTO.MeetingChecklistItem completedDor = MeetingDTO.MeetingChecklistItem.builder()
         .id(1L).name("Completed DOR").isRequired(true).isCompleted(true).build();
@@ -365,18 +365,18 @@ class MeetingServiceTest {
     // When
     MeetingDTO result = meetingService.getMeetingForView(1L);
 
-    // Then
+    // Then - all items returned regardless of completion status
     assertThat(result).isNotNull();
-    assertThat(result.getDorItems()).hasSize(1);
-    assertThat(result.getDodItems()).hasSize(1);
+    assertThat(result.getDorItems()).hasSize(2);
+    assertThat(result.getDodItems()).hasSize(2);
     assertThat(result.getDorItems().get(0).getName()).isEqualTo("Completed DOR");
     assertThat(result.getDorItems().get(0).getIsCompleted()).isTrue();
-    assertThat(result.getDodItems().get(0).getName()).isEqualTo("Completed DOD");
-    assertThat(result.getDodItems().get(0).getIsCompleted()).isTrue();
+    assertThat(result.getDorItems().get(1).getName()).isEqualTo("Incomplete DOR");
+    assertThat(result.getDorItems().get(1).getIsCompleted()).isFalse();
   }
 
   @Test
-  void getMeetingForView_WhenNoCompletedItems_ShouldReturnEmptyLists() {
+  void getMeetingForView_WhenNoCompletedItems_ShouldReturnAllItems() {
     // Given - meeting with only incomplete items
     MeetingDTO.MeetingChecklistItem incompleteDor = MeetingDTO.MeetingChecklistItem.builder()
         .id(1L).name("Incomplete DOR").isCompleted(false).build();
@@ -395,10 +395,12 @@ class MeetingServiceTest {
     // When
     MeetingDTO result = meetingService.getMeetingForView(1L);
 
-    // Then
+    // Then - all items returned even when none are completed
     assertThat(result).isNotNull();
-    assertThat(result.getDorItems()).isEmpty();
-    assertThat(result.getDodItems()).isEmpty();
+    assertThat(result.getDorItems()).hasSize(1);
+    assertThat(result.getDodItems()).hasSize(1);
+    assertThat(result.getDorItems().get(0).getIsCompleted()).isFalse();
+    assertThat(result.getDodItems().get(0).getIsCompleted()).isFalse();
   }
 
   @Test

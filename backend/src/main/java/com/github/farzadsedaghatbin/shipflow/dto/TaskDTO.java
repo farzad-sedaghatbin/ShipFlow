@@ -25,6 +25,7 @@ public class TaskDTO {
   private Integer sortOrder;
   private BigDecimal estimateHours;
   private BigDecimal actualHours;
+  private Integer storyPoints;
 
   private Long cycleId;
   private String cycleName;

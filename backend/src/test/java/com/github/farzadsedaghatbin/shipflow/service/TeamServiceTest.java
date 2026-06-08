@@ -57,7 +57,7 @@ class TeamServiceTest {
 
   @Test
   void getAllTeams_ShouldReturnAllTeams() {
-    when(teamRepository.findAllWithAssignments()).thenReturn(Arrays.asList(testTeam));
+    when(teamRepository.findActiveWithAssignments()).thenReturn(Arrays.asList(testTeam));
 
     List<TeamDTO> result = teamService.getAllTeams();
 

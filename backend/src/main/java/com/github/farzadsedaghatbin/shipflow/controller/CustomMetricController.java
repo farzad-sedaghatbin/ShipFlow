@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,7 @@ public class CustomMetricController {
 
   /** Create a new custom metric */
   @PostMapping
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<CustomMetricDTO> createMetric(@AuthenticationPrincipal UserDetails userDetails,
       @Valid @RequestBody CreateCustomMetricRequest request) {
     Long userId = getUserId(userDetails);
@@ -38,6 +40,7 @@ public class CustomMetricController {
 
   /** Get all custom metrics for the current user */
   @GetMapping
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<List<CustomMetricDTO>> getUserMetrics(@AuthenticationPrincipal UserDetails userDetails) {
     Long userId = getUserId(userDetails);
     log.info("Fetching custom metrics for user: {}", userId);
@@ -47,6 +50,7 @@ public class CustomMetricController {
 
   /** Get a specific metric by ID */
   @GetMapping("/{id}")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<CustomMetricDTO> getMetric(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id) {
     Long userId = getUserId(userDetails);
@@ -57,6 +61,7 @@ public class CustomMetricController {
 
   /** Update an existing custom metric */
   @PutMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<CustomMetricDTO> updateMetric(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id, @Valid @RequestBody UpdateCustomMetricRequest request) {
     Long userId = getUserId(userDetails);
@@ -67,6 +72,7 @@ public class CustomMetricController {
 
   /** Delete a custom metric */
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<Void> deleteMetric(@AuthenticationPrincipal UserDetails userDetails, @PathVariable Long id) {
     Long userId = getUserId(userDetails);
     log.info("Deleting metric {} for user: {}", id, userId);
@@ -76,6 +82,7 @@ public class CustomMetricController {
 
   /** Calculate the current value of a metric */
   @PostMapping("/{id}/calculate")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<MetricValueDTO> calculateMetricValue(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id) {
     Long userId = getUserId(userDetails);
@@ -86,6 +93,7 @@ public class CustomMetricController {
 
   /** Get historical values for a metric */
   @GetMapping("/{id}/history")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<List<MetricValueDTO>> getMetricHistory(@AuthenticationPrincipal UserDetails userDetails,
       @PathVariable Long id, @RequestParam(defaultValue = "30") int limit) {
     Long userId = getUserId(userDetails);
@@ -96,6 +104,7 @@ public class CustomMetricController {
 
   /** Validate a formula without saving */
   @PostMapping("/validate")
+  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Map<String, Object>> validateFormula(@RequestBody Map<String, String> request) {
     String formula = request.get("formula");
     log.info("Validating formula");

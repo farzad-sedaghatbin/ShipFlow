@@ -105,7 +105,8 @@ public class WorkLogTimerControllerIntegrationTest {
         .andExpect(jsonPath("$.pitchId").value(testPitch.getId()))
         .andExpect(jsonPath("$.pitchTitle").value("Test Pitch")).andExpect(jsonPath("$.taskId").doesNotExist())
         .andExpect(jsonPath("$.note").value("Working on feature"))
-        .andExpect(jsonPath("$.elapsedSeconds").isNumber());
+        .andExpect(jsonPath("$.elapsedSeconds").isNumber())
+        .andExpect(jsonPath("$.status").value("RUNNING"));
   }
 
   @Test
@@ -119,7 +120,8 @@ public class WorkLogTimerControllerIntegrationTest {
         .andExpect(jsonPath("$.id").exists()).andExpect(jsonPath("$.personId").value(testPerson.getId()))
         .andExpect(jsonPath("$.taskId").value(testTask.getId()))
         .andExpect(jsonPath("$.taskTitle").value("Test Task")).andExpect(jsonPath("$.pitchId").doesNotExist())
-        .andExpect(jsonPath("$.note").value("Implementing feature"));
+        .andExpect(jsonPath("$.note").value("Implementing feature"))
+        .andExpect(jsonPath("$.status").value("RUNNING"));
   }
 
   @Test
@@ -174,7 +176,8 @@ public class WorkLogTimerControllerIntegrationTest {
     mockMvc.perform(get("/api/timers/active")).andExpect(status().isOk()).andExpect(jsonPath("$.id").exists())
         .andExpect(jsonPath("$.pitchId").value(testPitch.getId()))
         .andExpect(jsonPath("$.note").value("Working on feature"))
-        .andExpect(jsonPath("$.elapsedSeconds").isNumber());
+        .andExpect(jsonPath("$.elapsedSeconds").isNumber())
+        .andExpect(jsonPath("$.status").value("RUNNING"));
   }
 
   @Test
@@ -224,5 +227,61 @@ public class WorkLogTimerControllerIntegrationTest {
 
     mockMvc.perform(post("/api/timers/start").contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(username = "worklog-timer-test-user")
+  void shouldPauseRunningTimer() throws Exception {
+    // Start timer
+    StartTimerRequest request = StartTimerRequest.builder().pitchId(testPitch.getId()).note("Working on feature")
+        .build();
+
+    mockMvc.perform(post("/api/timers/start").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated());
+
+    // Pause timer
+    mockMvc.perform(post("/api/timers/pause")).andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("PAUSED"))
+        .andExpect(jsonPath("$.pausedAt").exists())
+        .andExpect(jsonPath("$.elapsedSeconds").isNumber());
+  }
+
+  @Test
+  @WithMockUser(username = "worklog-timer-test-user")
+  void shouldResumeAPausedTimer() throws Exception {
+    // Start timer
+    StartTimerRequest request = StartTimerRequest.builder().pitchId(testPitch.getId()).note("Working on feature")
+        .build();
+
+    mockMvc.perform(post("/api/timers/start").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isCreated());
+
+    // Pause timer
+    mockMvc.perform(post("/api/timers/pause")).andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("PAUSED"));
+
+    // Resume timer
+    mockMvc.perform(post("/api/timers/resume")).andExpect(status().isOk())
+        .andExpect(jsonPath("$.status").value("RUNNING"))
+        .andExpect(jsonPath("$.pausedAt").doesNotExist())
+        .andExpect(jsonPath("$.elapsedSeconds").isNumber());
+  }
+
+  @Test
+  @WithMockUser(username = "worklog-timer-test-user")
+  void shouldFailPauseWhenNoRunningTimer() throws Exception {
+    mockMvc.perform(post("/api/timers/pause")).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @WithMockUser(username = "worklog-timer-test-user")
+  void shouldFailResumeWhenNoPausedTimer() throws Exception {
+    mockMvc.perform(post("/api/timers/resume")).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void shouldRedirectWhenNotAuthenticated() throws Exception {
+    // Spring Security redirects (302) unauthenticated requests to the login page in this test setup
+    mockMvc.perform(get("/api/timers/active")).andExpect(status().is3xxRedirection());
   }
 }

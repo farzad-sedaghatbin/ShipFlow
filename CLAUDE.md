@@ -5,13 +5,27 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.0.0-rc1 — "Stabilization"
+## Current Milestone: v1.6.0 — "MCP Ecosystem"
 
-**Current version**: v0.9.0 (released 2026-04-14) → targeting v1.0.0
-**Target**: v1.0.0 open-source release
+**Current version**: v1.5.0 (released 2026-06-07)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum (Sprints ≈ Cycles) planned for v1.1; competitor migration tooling planned for v1.2 (requires Scrum mode first).
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. Next: MCP Ecosystem (v1.6.0) — agentic write tools, plugin SDK, Notion/Confluence clients.
+
+### v1.3.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S31 | MCP server admin toggle + API key management UI — DB-backed runtime toggle, write-tools toggle, API key CRUD with scopes/expiry, admin oversight | ✅ done |
+
+### v1.2.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S27 | CSV import backend — `ImportJob` entity, `CsvImportService` (Jira/Linear/Asana/Generic), `ImportController` | ✅ done |
+| S28 | CSV import frontend — stepper UI (Upload → Preview → Done), import history page | ✅ done |
+| S29 | Linear API import — OAuth2 flow, GraphQL fetch of issues/cycles/projects | ✅ done |
+| S30 | Jira API import — Atlassian OAuth 2.0 (3LO), REST API fetch of issues/sprints/epics | ✅ done |
 
 ### v0.8.0 session map (sessions S01–S13)
 
@@ -54,6 +68,49 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban today; Scrum
 
 **v0.9.0 released: 2026-04-14** ✅
 
+### v1.4.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S32 | SSO backend — Spring Security SAML2 + OIDC, IdentityProvider entity, Flyway migration | ✅ done |
+| S33 | SSO frontend — identity provider config UI in Org Settings, SSO enforcement toggle, login page SSO button | ✅ done |
+| S34 | SCIM 2.0 user provisioning — backend endpoint + frontend toggle | ✅ done |
+| S35 | Roadmap interactivity — drag-to-move/resize Gantt bars, date range validation, progress indicators | ✅ done |
+| S36 | UX polish — inline pitch title editing, retrospective templates (Went Well/Improve/Action Items), i18n interpolation sweep | ✅ done |
+| S37 | Navigation hardening — deep-link routing for all sidebar routes, keyboard shortcut cheat sheet overlay | ✅ done |
+
+**v1.4.0 released: 2026-06-07** ✅
+
+### v1.5.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S38 | AI Pitch Writer — LLM-powered Shape Up pitch draft from one-sentence problem description, pre-fills pitch form | ✅ done |
+| S39 | Retrospective Summarizer — AI-generated cycle retro summary, template fallback, RetroSummaryPanel below board | ✅ done |
+| S40 | Proactive Dashboard Insights — DashboardInsightsPanel (overdue pitches, at-risk cycles, scope creep, velocity), Redis cache | ✅ done |
+
+**v1.5.0 released: 2026-06-07** ✅
+
+### v1.6.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S41 | Agentic MCP write tools — create/update tasks and pitches via MCP tool calls from AI editors | 🔜 next |
+| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | 🔜 next |
+| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | 🔜 next |
+
+### Future milestones overview
+
+| Version | Theme | Sessions |
+|---------|-------|----------|
+| v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients | S41–S43 |
+| v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S44–S46 |
+| v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S47–S49 |
+| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S50–S52 |
+| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S53–S55 |
+| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S56–S58 |
+| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S59–S61 |
+
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
 
@@ -66,7 +123,7 @@ Every session must complete ALL of these before creating the PR:
 4. Add highlight card to `frontend/src/pages/ReleaseNotes.tsx`
 5. Update relevant `*_GUIDE.md` or `CLAUDE.md` if a new repeatable pattern was introduced
 6. Add i18n keys to **both** `en.json` AND `fa.json`
-7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage)
+7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage). **The full suite must be at 0 failures** — if your change breaks existing tests (e.g. serialization format change, renamed field), fix those tests in the same commit before pushing.
 8. Update `SampleDataInitializer.java` with demo data for the new feature
 9. **If UI layout changed**: verify onboarding tour step selectors in `frontend/src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
 10. **If in-app help guides reference changed UI**: update the relevant help guide content
@@ -241,6 +298,8 @@ npm run storybook              # component explorer
 
 **Coverage gate**: 80% line coverage enforced by JaCoCo. Tests must pass before any PR is merged.
 
+> **100% pass rule**: The full test suite must be at 0 failures before every commit. If an infrastructure change (e.g. adding `@EnableSpringDataWebSupport`, changing a serialization mode, renaming a field) causes existing tests to fail, fix the tests in the same PR — never leave known failures in the suite. `./mvnw verify` must exit with `BUILD SUCCESS` and `Failures: 0, Errors: 0`.
+
 ---
 
 ## Coding Conventions
@@ -386,8 +445,8 @@ This project is **open source** — every significant feature must be documented
 | 9 | Update `SampleDataInitializer.java` with demo data for the new feature | `src/main/java/.../SampleDataInitializer.java` |
 | 10 | If UI layout changed: update `data-tour` selectors in `TourContext.tsx` AND the Step Inventory table in `TOUR_GUIDE.md` | `TOUR_GUIDE.md` |
 | 11 | If help guides reference changed UI: update guide content | relevant `*_GUIDE.md` |
-| 12 | Tests: ≥ 80% line coverage enforced by JaCoCo; write unit + integration tests | `src/test/` |
-| 13 | Run `./mvnw spotless:apply && ./mvnw verify` and `npm test` | CI must stay green |
+| 12 | Tests: ≥ 80% line coverage; **0 failures in the full suite** — fix any tests broken by your change (serialization, renamed fields, etc.) in the same PR | `src/test/` |
+| 13 | Run `./mvnw spotless:apply && ./mvnw verify` — must exit `BUILD SUCCESS, Failures: 0, Errors: 0` | CI must stay green |
 | 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
 
 > These steps keep the open-source community informed, help self-hosters evaluate upgrades, and ensure Claude Code has accurate context in future sessions.
@@ -401,6 +460,7 @@ Key product/architecture decisions recorded here so future Claude Code sessions 
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-04-05 | Competitor migration tools ship in **v1.2.0**, after Scrum mode (v1.1.0) | 90% of Jira/Linear users work in Sprints. Without Scrum mode, imported sprint history would be dropped or wrongly mapped to Shape Up cycles. Once v1.1 ships, the mapping is clean: Sprint→Sprint, Epic→Pitch, Issue→Task. Migration sequence: CSV import → Linear API → Jira API. Always import into Kanban project by default; teams adopt Shape Up/Scrum at their own pace. |
+| 2026-06-05 | v1.4.0 merges original v1.4 (Enterprise Auth) + v1.5 (UX Depth) into one milestone | SSO and UX polish are both table-stakes before the AI/automation sprint; combining keeps the release train moving without fragmenting small polish fixes into a separate patch version. |
 
 ---
 

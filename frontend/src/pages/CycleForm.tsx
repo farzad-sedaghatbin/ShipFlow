@@ -15,6 +15,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Skeleton } from '../components/ui/skeleton';
 import { usePermission } from '../hooks/usePermission';
@@ -32,7 +33,7 @@ export default function CycleForm() {
   const id = safeParseId(idParam);
   const navigate = useNavigate();
   const isEdit = !!id;
-  const { currentProject } = useProject();
+  const { currentProject, isScrumProject } = useProject();
   const { showSuccess } = useToast();
 
   const [formData, setFormData] = useState<CreateCycleRequest>({
@@ -41,6 +42,7 @@ export default function CycleForm() {
     startDate: '',
     endDate: '',
     phase: 'SHAPING_BUILDING',
+    sprintGoal: '',
   });
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
@@ -129,6 +131,7 @@ export default function CycleForm() {
         startDate: cycle.startDate,
         endDate: cycle.endDate,
         phase: cycle.phase,
+        sprintGoal: cycle.sprintGoal ?? '',
       });
       setStartDate(cycle.startDate);
       setEndDate(cycle.endDate);
@@ -184,6 +187,9 @@ export default function CycleForm() {
       startDate,
       // Only send endDate if not using auto-calculation or if editing
       endDate: useAutoEndDate && !isEdit ? undefined : endDate,
+      // Only include sprintGoal for SCRUM projects — prevents non-SCRUM edits from
+      // inadvertently clearing a sprint goal if the cycle is later migrated to SCRUM.
+      sprintGoal: isScrumProject ? formData.sprintGoal : undefined,
     };
 
     try {
@@ -236,7 +242,7 @@ export default function CycleForm() {
     <div className="flex justify-center">
       <div className="w-full max-w-xl space-y-6">
         <h1 className="text-2xl font-bold text-foreground">
-          {isEdit ? t('cycleForm.editCycle') : t('cycleForm.createNewCycle')}
+          {t(isScrumProject && isEdit ? 'cycleForm.editSprint' : isScrumProject ? 'cycleForm.createNewSprint' : isEdit ? 'cycleForm.editCycle' : 'cycleForm.createNewCycle')}
         </h1>
 
         <Card>
@@ -281,7 +287,7 @@ export default function CycleForm() {
 
             {/* Cycle Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">{t('cycleForm.cycleNameRequired')}</Label>
+              <Label htmlFor="name">{t(isScrumProject ? 'cycleForm.sprintNameRequired' : 'cycleForm.cycleNameRequired')}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -289,7 +295,7 @@ export default function CycleForm() {
                   setFormData({ ...formData, name: e.target.value });
                   setFieldErrors((prev) => ({ ...prev, name: '' }));
                 }}
-                placeholder={t('cycleForm.cycleNamePlaceholder')}
+                placeholder={t(isScrumProject ? 'cycleForm.sprintNamePlaceholder' : 'cycleForm.cycleNamePlaceholder')}
                 className={fieldErrors.name ? 'border-destructive' : ''}
               />
               {fieldErrors.name ? (
@@ -384,6 +390,7 @@ export default function CycleForm() {
             </div>
 
             {/* Phase */}
+            {!isScrumProject && (
             <div className="space-y-2">
               <Label>{t('cycleForm.phase')}</Label>
               <Select
@@ -399,6 +406,21 @@ export default function CycleForm() {
                 </SelectContent>
               </Select>
             </div>
+            )}
+
+            {/* Sprint Goal (Scrum only) */}
+            {isScrumProject && (
+              <div className="space-y-2">
+                <Label htmlFor="sprintGoal">{t('sprintPlanning.sprintGoal')}</Label>
+                <Textarea
+                  id="sprintGoal"
+                  value={formData.sprintGoal ?? ''}
+                  onChange={(e) => setFormData({ ...formData, sprintGoal: e.target.value })}
+                  placeholder={t('sprintPlanning.sprintGoalPlaceholder')}
+                  rows={3}
+                />
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4">

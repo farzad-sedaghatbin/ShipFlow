@@ -16,6 +16,7 @@ import {
   Layers,
   Kanban,
   ListTodo,
+  Workflow,
 } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -78,7 +79,7 @@ export default function Projects() {
     project: null,
   });
   const { showToast } = useToast();
-  const { refreshProjects } = useProject();
+  const { refreshProjects, selectProject } = useProject();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -225,7 +226,7 @@ export default function Projects() {
   };
 
   const handleViewCycles = (project: Project) => {
-    // For Kanban projects, navigate to backlog instead of cycles
+    selectProject(project);
     if (project.projectType === 'KANBAN') {
       navigate(`/backlog`);
     } else {
@@ -235,10 +236,12 @@ export default function Projects() {
 
   const handleViewDetails = (project: Project, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    selectProject(project);
     navigate(`/projects/${project.id}`);
   };
 
   const handleCardClick = (project: Project) => {
+    selectProject(project);
     navigate(`/projects/${project.id}`);
   };
 
@@ -420,6 +423,12 @@ export default function Projects() {
                     </Badge>
                   ) : (
                     <>
+                      {project.projectType === 'SCRUM' && (
+                        <Badge variant="outline" className="flex items-center gap-1 text-indigo-600 border-indigo-600">
+                          <Workflow className="h-3 w-3" />
+                          {t('projects.scrum')}
+                        </Badge>
+                      )}
                       <Badge variant="outline" className="flex items-center gap-1">
                         <TrendingUp className="h-3 w-3" />
                         {project.cycleCount || 0} {t('projects.cycles')}
@@ -471,7 +480,7 @@ export default function Projects() {
                           e.stopPropagation();
                           handleViewCycles(project);
                         }}
-                        aria-label={project.projectType === 'KANBAN' 
+                        aria-label={project.projectType === 'KANBAN'
                           ? t('projects.viewBacklogFor', { name: project.name })
                           : t('projects.viewCyclesFor', { name: project.name })}
                       >
@@ -483,7 +492,11 @@ export default function Projects() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {project.projectType === 'KANBAN' ? t('projects.viewBacklog') : t('projects.viewCycles')}
+                      {project.projectType === 'KANBAN'
+                        ? t('projects.viewBacklog')
+                        : project.projectType === 'SCRUM'
+                          ? t('projects.viewSprints')
+                          : t('projects.viewCycles')}
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>
@@ -531,13 +544,19 @@ export default function Projects() {
                           e.stopPropagation();
                           setDeleteDialog({ open: true, project });
                         }}
-                        disabled={project.projectType === 'SHAPE_UP' && (project.cycleCount || 0) > 0}
+                        disabled={(project.projectType === 'SHAPE_UP' || project.projectType === 'SCRUM') && (project.cycleCount || 0) > 0}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>{t('common.delete')}</TooltipContent>
+                    <TooltipContent>
+                      {(project.projectType === 'SHAPE_UP' || project.projectType === 'SCRUM') && (project.cycleCount || 0) > 0
+                        ? project.projectType === 'SCRUM'
+                          ? t('projects.deleteDisabledScrum')
+                          : t('projects.cannotDeleteWithCycles')
+                        : t('common.delete')}
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </CardFooter>
@@ -593,7 +612,7 @@ export default function Projects() {
             </div>
             <div className="space-y-2">
               <Label>{t('projects.projectType')} *</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, projectType: 'SHAPE_UP' })}
@@ -640,6 +659,30 @@ export default function Projects() {
                   </span>
                   <span className="text-xs text-muted-foreground text-center">
                     {t('projects.kanbanDescription')}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, projectType: 'SCRUM' })}
+                  className={cn(
+                    'flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all',
+                    formData.projectType === 'SCRUM'
+                      ? 'border-primary bg-primary/10'
+                      : 'border-muted hover:border-muted-foreground/50'
+                  )}
+                >
+                  <Workflow className={cn(
+                    'h-8 w-8',
+                    formData.projectType === 'SCRUM' ? 'text-primary' : 'text-muted-foreground'
+                  )} />
+                  <span className={cn(
+                    'font-medium text-sm',
+                    formData.projectType === 'SCRUM' ? 'text-primary' : 'text-muted-foreground'
+                  )}>
+                    {t('projects.scrum')}
+                  </span>
+                  <span className="text-xs text-muted-foreground text-center">
+                    {t('projects.scrumDescription')}
                   </span>
                 </button>
               </div>

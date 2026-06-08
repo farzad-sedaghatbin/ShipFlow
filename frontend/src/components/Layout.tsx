@@ -33,13 +33,14 @@ import {
   Github,
   Plug,
   BookOpen,
-  Rss,
   Beaker,
   Map,
   Layers,
   PackageCheck,
   ArrowDownToLine,
   Search,
+  Workflow,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -80,6 +81,7 @@ import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
 import MobileBottomNav from './MobileBottomNav';
 import GlobalSearchCommand from './GlobalSearchCommand';
+import { KeyboardShortcutSheet } from './KeyboardShortcutSheet';
 import packageJson from '../../package.json';
 
 interface LayoutProps {
@@ -100,6 +102,13 @@ const shapeUpMainNavItems: NavItemConfig[] = [
   { textKey: 'nav.cycles', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
 ];
 
+// Main navigation items for Scrum mode (Sprints — same /cycles path, different label)
+const scrumMainNavItems: NavItemConfig[] = [
+  { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
+  { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
+  { textKey: 'nav.sprints', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
+];
+
 // Main navigation items for Kanban mode (no Cycles)
 const kanbanMainNavItems: NavItemConfig[] = [
   { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
@@ -115,6 +124,11 @@ const cycleWorkspaceItems: NavItemConfig[] = [
   { textKey: 'nav.dashboards', icon: LayoutDashboard, path: '/dashboards', tourId: 'dashboards-menu' },
   { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
 ];
+
+// Sprint Workspace - Cycle Workspace without Pitch Board and Betting Table (Scrum only)
+const scrumWorkspaceItems: NavItemConfig[] = cycleWorkspaceItems.filter(
+  (item) => item.path !== '/pitches' && item.path !== '/betting'
+);
 
 // People & Teams
 const peopleItems: NavItemConfig[] = [
@@ -153,13 +167,19 @@ const userAccessItems: NavItemConfig[] = [
 ];
 
 // Integrations section
-const integrationItems: NavItemConfig[] = [
+// `memberIntegrationItems` are visible to every authenticated user — anything
+// here must not require admin permissions on the backend.
+const memberIntegrationItems: NavItemConfig[] = [
+  { textKey: 'integrations.apiKeys', icon: KeyRound, path: '/integrations/api-keys' },
+];
+const adminIntegrationItems: NavItemConfig[] = [
   { textKey: 'integrations.slack', icon: MessageSquare, path: '/integrations/slack' },
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
   { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
   { textKey: 'integrations.inboundWebhooks', icon: ArrowDownToLine, path: '/integrations/inbound-webhooks' },
 ];
+const integrationItems: NavItemConfig[] = [...memberIntegrationItems, ...adminIntegrationItems];
 
 function NavItem({
   item,
@@ -248,7 +268,7 @@ function SectionHeader({ textKey }: { textKey: string }) {
 
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
-  const { isKanbanProject, isAllProjectsSelected } = useProject();
+  const { isKanbanProject, isAllProjectsSelected, isScrumProject } = useProject();
   const { hasPermissionSync, hasPermission } = usePermission();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
@@ -271,7 +291,11 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   // Determine which nav items to show based on project type
   // When "All Projects" is selected, show Shape Up navigation (full features)
   const showKanbanFeatures = isKanbanProject && !isAllProjectsSelected;
-  const mainNavItems = showKanbanFeatures ? kanbanMainNavItems : shapeUpMainNavItems;
+  const mainNavItems = showKanbanFeatures
+    ? kanbanMainNavItems
+    : isScrumProject
+    ? scrumMainNavItems
+    : shapeUpMainNavItems;
   const showCycleWorkspace = !isKanbanProject || isAllProjectsSelected;
 
   return (
@@ -332,14 +356,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           ))}
 
-          {/* Cycle Workspace Section - Only for Shape Up projects or All Projects */}
+          {/* Cycle/Sprint Workspace Section - Only for Shape Up/Scrum projects or All Projects */}
           {showCycleWorkspace && (
             <>
-              <SectionHeader textKey="nav.sections.cycleWorkspace" />
+              <SectionHeader textKey={isScrumProject ? 'nav.sections.sprintWorkspace' : 'nav.sections.cycleWorkspace'} />
               <NavGroup
-                titleKey="nav.groups.cycleTools"
+                titleKey={isScrumProject ? 'nav.groups.sprintTools' : 'nav.groups.cycleTools'}
                 icon={Target}
-                items={cycleWorkspaceItems}
+                items={isScrumProject ? scrumWorkspaceItems : cycleWorkspaceItems}
                 currentPath={currentPath}
                 onItemClick={onItemClick}
                 defaultOpen={isCycleContext}
@@ -354,6 +378,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             isActive={currentPath.startsWith('/backlog')}
             onClick={onItemClick}
           />
+          {/* Sprint Planning — visible only for Scrum projects */}
+          {isScrumProject && (
+            <NavItem
+              item={{ textKey: 'nav.sprintPlanning', icon: Workflow, path: '/sprint-planning' }}
+              isActive={currentPath.startsWith('/sprint-planning')}
+              onClick={onItemClick}
+            />
+          )}
           <NavItem
             item={{ textKey: 'nav.workLogs', icon: Clock, path: '/time/logs', tourId: 'worklogs-menu' }}
             isActive={currentPath.startsWith('/time')}
@@ -412,11 +444,6 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           {/* Help & Guides Section */}
           <SectionHeader textKey="nav.sections.helpSupport" />
           <NavItem
-            item={{ textKey: 'nav.blog', icon: Rss, path: '/blog', tourId: 'blog-menu' }}
-            isActive={currentPath.startsWith('/blog')}
-            onClick={onItemClick}
-          />
-          <NavItem
             item={{ textKey: 'nav.helpGuides', icon: BookOpen, path: '/help', tourId: 'help-menu' }}
             isActive={currentPath.startsWith('/help')}
             onClick={onItemClick}
@@ -432,6 +459,21 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onItemClick={onItemClick}
           />
         </nav>
+
+        {/* Member-visible integrations (API Keys etc.) — accessible to non-admins
+            so they can mint personal keys without needing admin elevation. */}
+        {!hasPermissionSync('SYSTEM', 'MANAGE') && (
+          <nav className="flex flex-col gap-1">
+            <SectionHeader textKey="nav.sections.integrations" />
+            <NavGroup
+              titleKey="nav.groups.integrations"
+              icon={Plug}
+              items={memberIntegrationItems}
+              currentPath={currentPath}
+              onItemClick={onItemClick}
+            />
+          </nav>
+        )}
 
         {/* Admin Section */}
         {hasPermissionSync('SYSTEM', 'MANAGE') && (
@@ -477,6 +519,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const { user, logout } = useAuth();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
@@ -488,6 +531,26 @@ export default function Layout({ children }: LayoutProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Keyboard shortcut help: ? key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      const tag = active?.tagName.toLowerCase();
+      const isTyping =
+        tag === 'input' ||
+        tag === 'textarea' ||
+        tag === 'select' ||
+        (active as HTMLElement | null)?.isContentEditable;
+      if (isTyping) return;
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowShortcuts((prev) => !prev);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -527,13 +590,6 @@ export default function Layout({ children }: LayoutProps) {
           {/* Project Selector - Responsive */}
           <div className="flex-1 min-w-0 lg:flex-none" data-tour="project-selector">
             <ProjectSelector />
-          </div>
-
-          {/* Dashboard Switcher */}
-          <div className="hidden lg:block">
-            <DashboardSwitcher onDashboardChange={() => {
-              // Dashboard changed - widgets will auto-refresh based on context
-            }} />
           </div>
 
           <div className="hidden sm:flex flex-1" />
@@ -691,6 +747,12 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
+
+      {/* Keyboard Shortcut Sheet — triggered by ? key */}
+      <KeyboardShortcutSheet
+        open={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }

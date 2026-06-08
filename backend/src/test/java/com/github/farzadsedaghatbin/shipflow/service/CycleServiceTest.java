@@ -21,6 +21,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.time.LocalDate;
@@ -51,6 +52,9 @@ class CycleServiceTest {
 
   @Mock
   private PitchRepository pitchRepository;
+
+  @Mock
+  private TaskRepository taskRepository;
 
   @Mock
   private RetroRepository retroRepository;
@@ -114,6 +118,7 @@ class CycleServiceTest {
     // Setup pitch count mock (default to 0 for most tests) - using lenient to avoid
     // unnecessary stubbing errors
     lenient().when(pitchRepository.countByCycleIdNotDeleted(any())).thenReturn(0L);
+    lenient().when(taskRepository.countByCycleId(any())).thenReturn(0);
   }
 
   @Test

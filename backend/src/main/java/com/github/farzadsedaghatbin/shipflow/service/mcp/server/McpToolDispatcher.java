@@ -3,13 +3,18 @@ package com.github.farzadsedaghatbin.shipflow.service.mcp.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ApiKeyScope;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.BugReportMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.IdentityMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TestCaseMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorklogMcpTools;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,8 +24,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -41,7 +47,6 @@ import org.springframework.stereotype.Service;
  * {@code SCOPE_ADMIN} authority. Read tools are available to any authenticated key.
  */
 @Service
-@ConditionalOnProperty(name = "mcp.server.enabled", havingValue = "true")
 @RequiredArgsConstructor
 @Slf4j
 public class McpToolDispatcher {
@@ -52,6 +57,22 @@ public class McpToolDispatcher {
   private final McpServerProperties properties;
   private final ObjectMapper objectMapper;
 
+  /**
+   * Resolves the effective write-enabled state (DB runtime toggle, else env default). Injected via
+   * setter so unit tests that construct this dispatcher directly fall back to {@link #properties}.
+   */
+  private McpServerSettingsService serverSettings;
+
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  public void setServerSettings(McpServerSettingsService serverSettings) {
+    this.serverSettings = serverSettings;
+  }
+
+  /** Effective write-enabled state: DB runtime toggle when wired, otherwise the env default. */
+  private boolean isWriteEnabled() {
+    return serverSettings != null ? serverSettings.isWriteEnabled() : properties.isWriteEnabled();
+  }
+
   private final ProjectMcpTools projectTools;
   private final CycleMcpTools cycleTools;
   private final TaskMcpTools taskTools;
@@ -59,6 +80,11 @@ public class McpToolDispatcher {
   private final CommentMcpTools commentTools;
   private final WiseArchitectureMcpTools wiseArchitectureTools;
   private final WorkContextMcpTools workContextTools;
+  private final TaskContextMcpTools taskContextTools;
+  private final WorklogMcpTools worklogTools;
+  private final IdentityMcpTools identityTools;
+  private final TestCaseMcpTools testCaseTools;
+  private final BugReportMcpTools bugReportTools;
 
   /**
    * Names of all write tools, derived once from {@link #writeTools()} at construction time.
@@ -113,8 +139,10 @@ public class McpToolDispatcher {
 
       sessionManager.send(sessionId, jsonRpcSuccess(id, result));
 
-    } catch (McpToolException e) {
-      log.warn("MCP tool error [session={} method={}]: {}", sessionId, method, e.getMessage());
+    } catch (McpToolException | IllegalArgumentException e) {
+      // Invalid/missing tool arguments are a client error (JSON-RPC -32602 Invalid params), not a
+      // server fault. Log at WARN without a stack trace so a bad LLM call doesn't look like a crash.
+      log.warn("MCP invalid params [session={} method={}]: {}", sessionId, method, e.getMessage());
       trySendError(sessionId, id, -32602, e.getMessage());
     } catch (SecurityException e) {
       log.warn("MCP auth error [session={} method={}]: {}", sessionId, method, e.getMessage());
@@ -146,7 +174,7 @@ public class McpToolDispatcher {
         .orElseThrow(() -> new McpToolException("Session not found"));
 
     List<Map<String, Object>> tools = new ArrayList<>(readTools());
-    if (properties.isWriteEnabled() && hasWriteScope(auth)) {
+    if (isWriteEnabled() && hasWriteScope(auth)) {
       tools.addAll(writeTools());
     }
     return Map.of("tools", tools);
@@ -170,9 +198,10 @@ public class McpToolDispatcher {
 
     // Enforce write scope for mutating tools
     if (isWriteTool(toolName)) {
-      if (!properties.isWriteEnabled()) {
+      if (!isWriteEnabled()) {
         throw new SecurityException("Write tools are disabled on this ShipFlow instance. "
-            + "Set MCP_SERVER_WRITE_ENABLED=true to enable them.");
+            + "An admin can enable them in Integrations → MCP → MCP Server, "
+            + "or by setting MCP_SERVER_WRITE_ENABLED=true.");
       }
       if (!hasWriteScope(auth)) {
         throw new SecurityException("This API key does not have WRITE scope. "
@@ -180,7 +209,22 @@ public class McpToolDispatcher {
       }
     }
 
-    Object result = dispatchTool(toolName, args, auth);
+    // Tools run on a virtual executor thread (dispatched from McpMessageController), so the
+    // SecurityContext set by McpAuthFilter on the request thread is not visible here. Bind the
+    // session's authenticated principal to this thread for the duration of the tool call so that
+    // services reading SecurityContextHolder (e.g. ProjectService.getCurrentUser()) see the caller.
+    Object result;
+    SecurityContext previousContext = SecurityContextHolder.getContext();
+    try {
+      SecurityContext toolContext = SecurityContextHolder.createEmptyContext();
+      toolContext.setAuthentication(auth);
+      SecurityContextHolder.setContext(toolContext);
+      result = dispatchTool(toolName, args, auth);
+    } finally {
+      SecurityContextHolder.setContext(previousContext);
+      SecurityContextHolder.clearContext();
+    }
+
     String json;
     try {
       json = objectMapper.writeValueAsString(result);
@@ -206,11 +250,12 @@ public class McpToolDispatcher {
       case CycleMcpTools.TOOL_GET_CYCLE -> cycleTools.getCycle(args);
 
       // Task tools
-      case TaskMcpTools.TOOL_GET_TASKS -> taskTools.getTasks(args);
+      case TaskMcpTools.TOOL_GET_TASKS -> taskTools.getTasks(args, auth);
       case TaskMcpTools.TOOL_GET_TASK -> taskTools.getTask(args);
-      case TaskMcpTools.TOOL_GET_BLOCKERS -> taskTools.getBlockers(args);
+      case TaskMcpTools.TOOL_GET_BLOCKERS -> taskTools.getBlockers(args, auth);
       case TaskMcpTools.TOOL_CREATE_TASK -> taskTools.createTask(args);
       case TaskMcpTools.TOOL_UPDATE_TASK_STATUS -> taskTools.updateTaskStatus(args);
+      case TaskMcpTools.TOOL_UPDATE_TASK_ASSIGNEE -> taskTools.updateTaskAssignee(args, auth);
 
       // Pitch tools
       case PitchMcpTools.TOOL_GET_PITCHES -> pitchTools.getPitches(args);
@@ -222,6 +267,9 @@ public class McpToolDispatcher {
       // Comment write tools — auth passed explicitly to avoid SecurityContextHolder on executor thread
       case CommentMcpTools.TOOL_ADD_COMMENT -> commentTools.addComment(args, auth);
 
+      // Worklog write tools — auth passed explicitly for user/person resolution
+      case WorklogMcpTools.TOOL_LOG_WORK -> worklogTools.logWork(args, auth);
+
       // Wise Architecture tools — auth passed for user scoping and history persistence
       case WiseArchitectureMcpTools.TOOL_LIST_ANALYSES -> wiseArchitectureTools.listAnalyses(args, auth);
       case WiseArchitectureMcpTools.TOOL_GET_FILES -> wiseArchitectureTools.getFiles(args);
@@ -229,6 +277,21 @@ public class McpToolDispatcher {
 
       // Work context graph tool
       case WorkContextMcpTools.TOOL_GET_WORK_CONTEXT -> workContextTools.getWorkContext(args);
+      case TaskContextMcpTools.TOOL_GET_TASK_CONTEXT -> taskContextTools.getTaskContext(args);
+
+      // Identity
+      case IdentityMcpTools.TOOL_WHOAMI -> identityTools.whoami(auth);
+
+      // QA: test cases + runs
+      case TestCaseMcpTools.TOOL_GET_TEST_CASES -> testCaseTools.getTestCases(args);
+      case TestCaseMcpTools.TOOL_GET_TEST_CASE -> testCaseTools.getTestCase(args);
+      case TestCaseMcpTools.TOOL_GET_TEST_RUNS -> testCaseTools.getTestRuns(args);
+      case TestCaseMcpTools.TOOL_RECORD_TEST_RUN -> testCaseTools.recordTestRun(args, auth);
+
+      // Bug reports
+      case BugReportMcpTools.TOOL_GET_BUG_REPORTS -> bugReportTools.getBugReports(args);
+      case BugReportMcpTools.TOOL_GET_BUG_REPORT -> bugReportTools.getBugReport(args);
+      case BugReportMcpTools.TOOL_UPDATE_BUG_STATUS -> bugReportTools.updateBugStatus(args, auth);
 
       default -> throw new McpToolException("Unknown tool: " + name);
     };
@@ -250,7 +313,14 @@ public class McpToolDispatcher {
         PitchMcpTools.getBettingCandidatesDefinition(),
         WiseArchitectureMcpTools.listAnalysesDefinition(),
         WiseArchitectureMcpTools.getFilesDefinition(),
-        WorkContextMcpTools.getWorkContextDefinition());
+        WorkContextMcpTools.getWorkContextDefinition(),
+        TaskContextMcpTools.getTaskContextDefinition(),
+        IdentityMcpTools.whoamiDefinition(),
+        TestCaseMcpTools.getTestCasesDefinition(),
+        TestCaseMcpTools.getTestCaseDefinition(),
+        TestCaseMcpTools.getTestRunsDefinition(),
+        BugReportMcpTools.getBugReportsDefinition(),
+        BugReportMcpTools.getBugReportDefinition());
   }
 
   /**
@@ -263,10 +333,14 @@ public class McpToolDispatcher {
     return List.of(
         TaskMcpTools.createTaskDefinition(),
         TaskMcpTools.updateTaskStatusDefinition(),
+        TaskMcpTools.updateTaskAssigneeDefinition(),
         PitchMcpTools.createPitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
         CommentMcpTools.addCommentDefinition(),
-        WiseArchitectureMcpTools.analyzeDefinition());
+        WiseArchitectureMcpTools.analyzeDefinition(),
+        WorklogMcpTools.logWorkDefinition(),
+        TestCaseMcpTools.recordTestRunDefinition(),
+        BugReportMcpTools.updateBugStatusDefinition());
   }
 
   /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */

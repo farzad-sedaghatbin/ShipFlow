@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -22,6 +23,7 @@ public class RoadmapController {
   private final RoadmapService roadmapService;
 
   @GetMapping("/project/{projectId}/timeline")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.PROJECT, permission = PermissionType.READ)
   @Operation(summary = "Get roadmap timeline for a date range")
   public ResponseEntity<RoadmapTimelineDTO> getRoadmapTimeline(
@@ -32,6 +34,7 @@ public class RoadmapController {
   }
 
   @GetMapping("/project/{projectId}/quarterly")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.PROJECT, permission = PermissionType.READ)
   @Operation(summary = "Get quarterly roadmap view")
   public ResponseEntity<RoadmapTimelineDTO> getQuarterlyRoadmap(
@@ -42,6 +45,7 @@ public class RoadmapController {
   }
 
   @GetMapping("/project/{projectId}/yearly")
+  @PreAuthorize("isAuthenticated()")
   @RequirePermission(resource = ResourceType.PROJECT, permission = PermissionType.READ)
   @Operation(summary = "Get yearly roadmap view")
   public ResponseEntity<RoadmapTimelineDTO> getYearlyRoadmap(

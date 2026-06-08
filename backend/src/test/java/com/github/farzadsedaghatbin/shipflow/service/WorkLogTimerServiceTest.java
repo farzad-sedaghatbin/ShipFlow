@@ -88,7 +88,7 @@ class WorkLogTimerServiceTest {
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.empty());
 
     WorkLogTimer savedTimer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
-        .startTime(LocalDateTime.now()).note("Working on feature").build();
+        .startTime(LocalDateTime.now()).note("Working on feature").status("RUNNING").totalPausedSeconds(0L).build();
 
     when(timerRepository.save(any(WorkLogTimer.class))).thenReturn(savedTimer);
 
@@ -102,6 +102,7 @@ class WorkLogTimerServiceTest {
     assertThat(result.getPitchTitle()).isEqualTo("Test Pitch");
     assertThat(result.getTaskId()).isNull();
     assertThat(result.getNote()).isEqualTo("Working on feature");
+    assertThat(result.getStatus()).isEqualTo("RUNNING");
     verify(timerRepository).save(any(WorkLogTimer.class));
   }
 
@@ -114,7 +115,7 @@ class WorkLogTimerServiceTest {
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.empty());
 
     WorkLogTimer savedTimer = WorkLogTimer.builder().id(1L).person(person).task(task).startTime(LocalDateTime.now())
-        .note("Working on task").build();
+        .note("Working on task").status("RUNNING").totalPausedSeconds(0L).build();
 
     when(timerRepository.save(any(WorkLogTimer.class))).thenReturn(savedTimer);
 
@@ -126,6 +127,7 @@ class WorkLogTimerServiceTest {
     assertThat(result.getTaskId()).isEqualTo(1L);
     assertThat(result.getTaskTitle()).isEqualTo("Test Task");
     assertThat(result.getPitchId()).isNull();
+    assertThat(result.getStatus()).isEqualTo("RUNNING");
     verify(timerRepository).save(any(WorkLogTimer.class));
   }
 
@@ -159,7 +161,7 @@ class WorkLogTimerServiceTest {
     StartTimerRequest request = StartTimerRequest.builder().pitchId(1L).build();
 
     WorkLogTimer existingTimer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
-        .startTime(LocalDateTime.now().minusHours(1)).build();
+        .startTime(LocalDateTime.now().minusHours(1)).status("RUNNING").totalPausedSeconds(0L).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(existingTimer));
 
@@ -174,7 +176,8 @@ class WorkLogTimerServiceTest {
   void shouldStopTimerAndCreateWorkLog() {
     // Given
     WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
-        .startTime(LocalDateTime.now().minusMinutes(45)).note("Working on feature").build();
+        .startTime(LocalDateTime.now().minusMinutes(45)).note("Working on feature").status("RUNNING")
+        .totalPausedSeconds(0L).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -198,7 +201,7 @@ class WorkLogTimerServiceTest {
   void shouldRoundTimeToQuarterHours() {
     // Given - 17 minutes should round to 0.25 hours (15 minutes minimum)
     WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
-        .startTime(LocalDateTime.now().minusMinutes(17)).build();
+        .startTime(LocalDateTime.now().minusMinutes(17)).status("RUNNING").totalPausedSeconds(0L).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -217,7 +220,8 @@ class WorkLogTimerServiceTest {
   void shouldGetActiveTimer() {
     // Given
     WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
-        .startTime(LocalDateTime.now().minusMinutes(30)).note("Active work").build();
+        .startTime(LocalDateTime.now().minusMinutes(30)).note("Active work").status("RUNNING")
+        .totalPausedSeconds(0L).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -228,6 +232,7 @@ class WorkLogTimerServiceTest {
     assertThat(result).isPresent();
     assertThat(result.get().getId()).isEqualTo(1L);
     assertThat(result.get().getElapsedSeconds()).isGreaterThan(1700); // ~30 minutes
+    assertThat(result.get().getStatus()).isEqualTo("RUNNING");
   }
 
   @Test
@@ -246,7 +251,7 @@ class WorkLogTimerServiceTest {
   void shouldCancelTimer() {
     // Given
     WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
-        .startTime(LocalDateTime.now().minusMinutes(10)).build();
+        .startTime(LocalDateTime.now().minusMinutes(10)).status("RUNNING").totalPausedSeconds(0L).build();
 
     when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
 
@@ -266,5 +271,109 @@ class WorkLogTimerServiceTest {
     // When / Then
     assertThatThrownBy(() -> timerService.cancelTimer()).isInstanceOf(BadRequestException.class)
         .hasMessageContaining("No active timer found");
+  }
+
+  @Test
+  void shouldPauseRunningTimer() {
+    // Given
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(10)).status("RUNNING").totalPausedSeconds(0L).build();
+
+    when(timerRepository.findByPersonIdAndStatus(1L, "RUNNING")).thenReturn(Optional.of(timer));
+
+    WorkLogTimer pausedTimer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(timer.getStartTime()).status("PAUSED").pausedAt(LocalDateTime.now()).totalPausedSeconds(0L).build();
+
+    when(timerRepository.save(any(WorkLogTimer.class))).thenReturn(pausedTimer);
+
+    // When
+    WorkLogTimerDTO result = timerService.pauseTimer();
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getStatus()).isEqualTo("PAUSED");
+    verify(timerRepository).save(any(WorkLogTimer.class));
+  }
+
+  @Test
+  void shouldFailPauseWhenNoRunningTimer() {
+    // Given
+    when(timerRepository.findByPersonIdAndStatus(1L, "RUNNING")).thenReturn(Optional.empty());
+
+    // When / Then
+    assertThatThrownBy(() -> timerService.pauseTimer()).isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("No running timer found to pause");
+  }
+
+  @Test
+  void shouldResumeAPausedTimer() {
+    // Given
+    LocalDateTime pausedAt = LocalDateTime.now().minusMinutes(5);
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(20)).status("PAUSED").pausedAt(pausedAt)
+        .totalPausedSeconds(0L).build();
+
+    when(timerRepository.findByPersonIdAndStatus(1L, "PAUSED")).thenReturn(Optional.of(timer));
+
+    WorkLogTimer resumedTimer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(timer.getStartTime()).status("RUNNING").totalPausedSeconds(300L).build();
+
+    when(timerRepository.save(any(WorkLogTimer.class))).thenReturn(resumedTimer);
+
+    // When
+    WorkLogTimerDTO result = timerService.resumeTimer();
+
+    // Then
+    assertThat(result).isNotNull();
+    assertThat(result.getStatus()).isEqualTo("RUNNING");
+    verify(timerRepository).save(any(WorkLogTimer.class));
+  }
+
+  @Test
+  void shouldFailResumeWhenNoPausedTimer() {
+    // Given
+    when(timerRepository.findByPersonIdAndStatus(1L, "PAUSED")).thenReturn(Optional.empty());
+
+    // When / Then
+    assertThatThrownBy(() -> timerService.resumeTimer()).isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("No paused timer found to resume");
+  }
+
+  @Test
+  void shouldExcludePausedTimeFromElapsed() {
+    // Given - timer started 30 min ago, paused for 10 min (total paused = 600s)
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(30)).status("RUNNING").totalPausedSeconds(600L).build();
+
+    when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
+
+    // When
+    Optional<WorkLogTimerDTO> result = timerService.getActiveTimer();
+
+    // Then
+    assertThat(result).isPresent();
+    // Wall clock ~1800s - 600s paused = ~1200s elapsed
+    assertThat(result.get().getElapsedSeconds()).isGreaterThan(1100);
+    assertThat(result.get().getElapsedSeconds()).isLessThan(1300);
+  }
+
+  @Test
+  void shouldComputeCorrectElapsedForPausedTimer() {
+    // Given - started 20 min ago, paused 5 min ago (no prior paused seconds)
+    LocalDateTime pausedAt = LocalDateTime.now().minusMinutes(5);
+    WorkLogTimer timer = WorkLogTimer.builder().id(1L).person(person).pitch(pitch)
+        .startTime(LocalDateTime.now().minusMinutes(20)).status("PAUSED").pausedAt(pausedAt)
+        .totalPausedSeconds(0L).build();
+
+    when(timerRepository.findByPersonId(1L)).thenReturn(Optional.of(timer));
+
+    // When
+    Optional<WorkLogTimerDTO> result = timerService.getActiveTimer();
+
+    // Then - elapsed = (pausedAt - startTime) - 0 = 15 min = ~900s
+    assertThat(result).isPresent();
+    assertThat(result.get().getElapsedSeconds()).isGreaterThan(850);
+    assertThat(result.get().getElapsedSeconds()).isLessThan(950);
+    assertThat(result.get().getStatus()).isEqualTo("PAUSED");
   }
 }
