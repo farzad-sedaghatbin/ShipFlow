@@ -182,34 +182,40 @@ export function BacklogHeader({
           </TooltipProvider>
         )}
 
-        {/* New Task Button */}
-        {isKanbanProject ? (
-          <Button onClick={onNewTask}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('backlogPage.newTask')}
-          </Button>
-        ) : (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    onClick={onNewTask}
-                    disabled={selectedCycle === 'all' || !selectedCycle}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {t('backlogPage.newTask')}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              {(selectedCycle === 'all' || !selectedCycle) && (
-                <TooltipContent>
-                  <p>{t('backlogPage.selectCycleToCreate')}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
-        )}
+        {/* New Task Button.
+            Tasks always belong to a single project, so the button is disabled
+            while "All Projects" is selected. Show a tooltip that tells the user
+            to pick a specific project — otherwise the disabled state looks
+            broken. For non-Kanban projects we additionally require a cycle. */}
+        {(() => {
+          const isAllProjects = !currentProject;
+          const needsCycle = !isKanbanProject && (selectedCycle === 'all' || !selectedCycle);
+          const disabled = isAllProjects || needsCycle;
+          const hintKey = isAllProjects
+            ? 'backlogPage.selectProjectToCreate'
+            : needsCycle
+              ? 'backlogPage.selectCycleToCreate'
+              : null;
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button onClick={onNewTask} disabled={disabled}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t('backlogPage.newTask')}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {hintKey && (
+                  <TooltipContent>
+                    <p>{t(hintKey)}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })()}
       </div>
     </div>
   );

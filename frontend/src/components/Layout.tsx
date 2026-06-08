@@ -40,7 +40,7 @@ import {
   ArrowDownToLine,
   Search,
   Workflow,
-  Upload,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -81,6 +81,7 @@ import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
 import MobileBottomNav from './MobileBottomNav';
 import GlobalSearchCommand from './GlobalSearchCommand';
+import { KeyboardShortcutSheet } from './KeyboardShortcutSheet';
 import packageJson from '../../package.json';
 
 interface LayoutProps {
@@ -166,13 +167,19 @@ const userAccessItems: NavItemConfig[] = [
 ];
 
 // Integrations section
-const integrationItems: NavItemConfig[] = [
+// `memberIntegrationItems` are visible to every authenticated user — anything
+// here must not require admin permissions on the backend.
+const memberIntegrationItems: NavItemConfig[] = [
+  { textKey: 'integrations.apiKeys', icon: KeyRound, path: '/integrations/api-keys' },
+];
+const adminIntegrationItems: NavItemConfig[] = [
   { textKey: 'integrations.slack', icon: MessageSquare, path: '/integrations/slack' },
   { textKey: 'integrations.github', icon: Github, path: '/integrations/github' },
   { textKey: 'integrations.teams', icon: Users2, path: '/integrations/teams' },
   { textKey: 'integrations.mcp', icon: Plug, path: '/integrations/mcp' },
   { textKey: 'integrations.inboundWebhooks', icon: ArrowDownToLine, path: '/integrations/inbound-webhooks' },
 ];
+const integrationItems: NavItemConfig[] = [...memberIntegrationItems, ...adminIntegrationItems];
 
 function NavItem({
   item,
@@ -394,13 +401,6 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           )}
 
-          {/* Import Data */}
-          <NavItem
-            item={{ textKey: 'nav.importData', icon: Upload, path: '/import', tourId: 'import-nav' }}
-            isActive={currentPath === '/import'}
-            onClick={onItemClick}
-          />
-
           {/* Meetings */}
           {meetingsItems.map((item) => (
             <NavItem
@@ -460,6 +460,21 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           />
         </nav>
 
+        {/* Member-visible integrations (API Keys etc.) — accessible to non-admins
+            so they can mint personal keys without needing admin elevation. */}
+        {!hasPermissionSync('SYSTEM', 'MANAGE') && (
+          <nav className="flex flex-col gap-1">
+            <SectionHeader textKey="nav.sections.integrations" />
+            <NavGroup
+              titleKey="nav.groups.integrations"
+              icon={Plug}
+              items={memberIntegrationItems}
+              currentPath={currentPath}
+              onItemClick={onItemClick}
+            />
+          </nav>
+        )}
+
         {/* Admin Section */}
         {hasPermissionSync('SYSTEM', 'MANAGE') && (
           <>
@@ -504,6 +519,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const { user, logout } = useAuth();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
@@ -515,6 +531,26 @@ export default function Layout({ children }: LayoutProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Keyboard shortcut help: ? key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      const tag = active?.tagName.toLowerCase();
+      const isTyping =
+        tag === 'input' ||
+        tag === 'textarea' ||
+        tag === 'select' ||
+        (active as HTMLElement | null)?.isContentEditable;
+      if (isTyping) return;
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowShortcuts((prev) => !prev);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -711,6 +747,12 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
+
+      {/* Keyboard Shortcut Sheet — triggered by ? key */}
+      <KeyboardShortcutSheet
+        open={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }

@@ -90,6 +90,7 @@ public class SecurityConfig {
             .permitAll()
             .requestMatchers("/api/auth/**").permitAll().requestMatchers("/api/public/**").permitAll()
             .requestMatchers("/api/v1/public/**").permitAll()
+            .requestMatchers("/api/sso/**").permitAll()
             .requestMatchers("/api/inbound/**").permitAll()
             .requestMatchers("/api/qa/status").permitAll()
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
@@ -98,6 +99,8 @@ public class SecurityConfig {
             .requestMatchers("/api/**").authenticated()
             .requestMatchers("/mcp/health").permitAll()
             .requestMatchers("/mcp/**").permitAll()
+            // SCIM 2.0 — token-level auth is handled by ScimService, not Spring Security
+            .requestMatchers("/scim/**").permitAll()
             .anyRequest().permitAll())
         .authenticationProvider(authenticationProvider())
         .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)

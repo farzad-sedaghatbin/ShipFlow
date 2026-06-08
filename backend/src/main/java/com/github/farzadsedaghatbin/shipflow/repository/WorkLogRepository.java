@@ -56,6 +56,29 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
          countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND (pc.project.id = :projectId OR tc.project.id = :projectId)")
   Page<WorkLog> findByPersonIdAndProjectId(@Param("personId") Long personId, @Param("projectId") Long projectId, Pageable pageable);
 
+  // ── Date-range variants (all include countQuery so Spring can page correctly) ──
+
+  Page<WorkLog> findByPersonIdAndDateBetween(
+      Long personId, LocalDate from, LocalDate to, Pageable pageable);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND (pc.project.id = :projectId OR tc.project.id = :projectId) AND w.date BETWEEN :from AND :to",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE w.person.id = :personId AND (pc.project.id = :projectId OR tc.project.id = :projectId) AND w.date BETWEEN :from AND :to")
+  Page<WorkLog> findByPersonIdAndProjectIdAndDateBetween(@Param("personId") Long personId, @Param("projectId") Long projectId, @Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId) AND w.date BETWEEN :from AND :to",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE w.person.id = :personId AND (p.cycle.id = :cycleId OR t.cycle.id = :cycleId) AND w.date BETWEEN :from AND :to")
+  Page<WorkLog> findByPersonIdAndCycleIdAndDateBetween(@Param("personId") Long personId, @Param("cycleId") Long cycleId, @Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
+
+  Page<WorkLog> findByDateBetween(LocalDate from, LocalDate to, Pageable pageable);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE (pc.project.id = :projectId OR tc.project.id = :projectId) AND w.date BETWEEN :from AND :to",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN p.cycle pc LEFT JOIN w.task t LEFT JOIN t.cycle tc WHERE (pc.project.id = :projectId OR tc.project.id = :projectId) AND w.date BETWEEN :from AND :to")
+  Page<WorkLog> findByProjectIdAndDateBetween(@Param("projectId") Long projectId, @Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId) AND w.date BETWEEN :from AND :to",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId) AND w.date BETWEEN :from AND :to")
+  Page<WorkLog> findByCycleIdAndDateBetween(@Param("cycleId") Long cycleId, @Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
+
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id = :pitchId")
   Double getTotalHoursByPitchId(@Param("pitchId") Long pitchId);
 

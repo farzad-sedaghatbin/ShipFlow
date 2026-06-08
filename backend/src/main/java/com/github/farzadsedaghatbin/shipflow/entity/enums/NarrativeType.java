@@ -18,5 +18,8 @@ public enum NarrativeType {
   SURPRISES,
   
   /** Full cycle summary combining all narrative types */
-  FULL_SUMMARY
+  FULL_SUMMARY,
+
+  /** AI-generated summary of a retrospective board (went well, blockers, action items) */
+  RETROSPECTIVE_SUMMARY
 }

@@ -104,6 +104,22 @@ public class ApiKeyService {
         .toList();
   }
 
+  @Transactional(readOnly = true)
+  public List<ApiKeyDTO> listAllKeys() {
+    return apiKeyRepository.findAllWithUsers().stream()
+        .map(this::toDTO)
+        .toList();
+  }
+
+  public void adminRevokeKey(Long keyId) {
+    ApiKey key = apiKeyRepository.findById(keyId)
+        .orElseThrow(() -> new IllegalArgumentException("API key not found: " + keyId));
+    key.setIsActive(false);
+    key.setRevokedAt(LocalDateTime.now());
+    apiKeyRepository.save(key);
+    log.info("Admin revoked API key id={}", keyId);
+  }
+
   // ──────────────────────────── helpers ────────────────────────────
 
   private String generateRawKey() {
@@ -133,6 +149,7 @@ public class ApiKeyService {
         .lastUsedAt(key.getLastUsedAt())
         .createdAt(key.getCreatedAt())
         .revokedAt(key.getRevokedAt())
+        .createdByUsername(key.getUser() != null ? key.getUser().getUsername() : null)
         .build();
   }
 }

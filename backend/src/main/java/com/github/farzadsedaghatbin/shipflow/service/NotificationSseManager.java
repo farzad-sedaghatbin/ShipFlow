@@ -68,7 +68,7 @@ public class NotificationSseManager {
     // Send an initial "connected" heartbeat so the browser knows the stream is live
     try {
       emitter.send(SseEmitter.event().name("connected").data("{\"status\":\"connected\"}"));
-      log.info("Notification SSE stream opened for user {} (active streams: {})", userId,
+      log.debug("Notification SSE stream opened for user {} (active streams: {})", userId,
           emitters.size());
     } catch (Exception e) {
       log.warn("Failed to send SSE connected event for user {}: {}", userId, e.getMessage());

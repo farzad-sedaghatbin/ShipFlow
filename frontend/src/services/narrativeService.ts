@@ -3,10 +3,13 @@ import api from './api';
 export interface CycleNarrative {
   id: number;
   cycleId: number;
-  narrativeType: 'WHAT_WE_BET' | 'WHAT_SHIPPED' | 'WHAT_WE_CUT' | 'SURPRISES' | 'FULL_SUMMARY';
+  cycleName?: string;
+  narrativeType: 'WHAT_WE_BET' | 'WHAT_SHIPPED' | 'WHAT_WE_CUT' | 'SURPRISES' | 'FULL_SUMMARY' | 'RETROSPECTIVE_SUMMARY';
   content: string;
   isAiGenerated: boolean;
+  aiModel?: string;
   generatedAt: string;
+  generatedByUsername?: string;
 }
 
 export interface CycleSummary {
@@ -49,5 +52,20 @@ export const narrativeService = {
       responseType: 'text'
     });
     return response.data;
-  }
+  },
+
+  async generateRetroSummary(cycleId: number): Promise<CycleNarrative> {
+    const response = await api.post<CycleNarrative>(`/narratives/cycle/${cycleId}/retrospective/summarize`);
+    return response.data;
+  },
+
+  async getRetroSummary(cycleId: number): Promise<CycleNarrative | null> {
+    try {
+      const response = await api.get<CycleNarrative>(`/narratives/cycle/${cycleId}/retrospective/summary`);
+      // 204 No Content comes back with no body
+      return response.status === 204 ? null : response.data;
+    } catch {
+      return null;
+    }
+  },
 };

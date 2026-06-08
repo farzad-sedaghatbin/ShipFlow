@@ -599,6 +599,28 @@ public class TaskService {
     return updateTaskStatus(id, status, null);
   }
 
+  /**
+   * Assign (or unassign) a task without touching any other field.
+   *
+   * @param taskId   the task to update
+   * @param personId the person to assign to, or {@code null} to clear the assignee
+   * @return the updated task
+   */
+  public TaskDTO updateTaskAssignee(Long taskId, Long personId) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+
+    if (personId == null) {
+      task.setAssignee(null);
+    } else {
+      Person assignee = personRepository.findById(personId)
+          .orElseThrow(() -> new IllegalArgumentException("Person not found with id: " + personId));
+      task.setAssignee(assignee);
+    }
+
+    return toDTO(taskRepository.save(task));
+  }
+
   public TaskDTO updateTaskStatus(Long id, TaskStatus status, String comment) {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
