@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -61,7 +62,7 @@ public class McpMessageController {
   }
 
   @PostMapping("/messages")
-  public ResponseEntity<Void> handleMessage(
+  public ResponseEntity<?> handleMessage(
       @RequestParam String sessionId, @RequestBody Map<String, Object> request) {
 
     if (!serverSettings.isEnabled()) {
@@ -71,8 +72,21 @@ public class McpMessageController {
     // Verify that the caller owns the target session (prevents session-hijacking)
     Optional<McpSession> session = sessionManager.get(sessionId);
     if (session.isEmpty()) {
-      log.warn("MCP /messages: unknown session '{}' rejected", sessionId);
-      return ResponseEntity.badRequest().build();
+      log.debug("MCP /messages: session '{}' not found — client must reconnect via GET /mcp/sse", sessionId);
+      Object requestId = request.get("id");
+      Map<String, Object> error =
+          Map.of(
+              "jsonrpc", "2.0",
+              "id", requestId != null ? requestId : "null",
+              "error",
+                  Map.of(
+                      "code", -32001,
+                      "message",
+                          "Session not found or expired. Reconnect via GET /mcp/sse to establish a new session.",
+                      "data", Map.of("reconnectUrl", "/mcp/sse")));
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(error);
     }
 
     Authentication requestAuth = SecurityContextHolder.getContext().getAuthentication();

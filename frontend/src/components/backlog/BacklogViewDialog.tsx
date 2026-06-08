@@ -62,6 +62,9 @@ export function BacklogViewDialog({
             {task?.parentTaskId && viewHistory.length === 0 && (
               <span className="text-muted-foreground">└─</span>
             )}
+            <span className="text-muted-foreground font-mono text-sm font-normal shrink-0">
+              {task?.projectKey ? `${task.projectKey}-${task.id}` : `#${task?.id}`}
+            </span>
             {task?.title}
           </DialogTitle>
         </DialogHeader>

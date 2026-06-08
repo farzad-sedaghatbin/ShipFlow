@@ -83,6 +83,7 @@ public class DocumentController {
 
   /** Upload a document for a meeting. */
   @PostMapping(value = "/meeting/{meetingId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Upload document for meeting", description = "Upload a document for a meeting (e.g., meeting notes) and extract text for Q&A")
   public ResponseEntity<DocumentUploadResponse> uploadDocumentForMeeting(@PathVariable Long meetingId,
       @RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) {
@@ -101,6 +102,7 @@ public class DocumentController {
 
   /** Upload a document for a cycle. */
   @PostMapping(value = "/cycle/{cycleId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Upload document for cycle", description = "Upload a document for a cycle and extract text for Q&A")
   public ResponseEntity<DocumentUploadResponse> uploadDocumentForCycle(@PathVariable Long cycleId,
       @RequestParam("file") MultipartFile file, @AuthenticationPrincipal UserDetails userDetails) {

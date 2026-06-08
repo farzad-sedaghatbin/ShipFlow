@@ -320,7 +320,7 @@ const TestCaseFormPage: React.FC = () => {
                     onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? t('testCaseForm.selectScope') : "No specific scope"} />
+                      <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? t('testCaseForm.selectScope') : t('testCaseForm.noSpecificScope')} />
                     </SelectTrigger>
                     <SelectContent>
                       <div className="px-2 pb-2">
@@ -331,15 +331,15 @@ const TestCaseFormPage: React.FC = () => {
                           className="h-8"
                         />
                       </div>
-                      <SelectItem value="none">No specific scope</SelectItem>
+                      <SelectItem value="none">{t('testCaseForm.noSpecificScope')}</SelectItem>
                       {searchingScopes ? (
                         <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.searching')}</div>
                       ) : !formData.pitchId && scopeSearch.length > 0 && scopeSearch.length < 3 ? (
                         <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.minCharacters')}</div>
                       ) : scopes.length === 0 && scopeSearch.length >= 3 ? (
-                        <div className="py-6 text-center text-sm text-muted-foreground">No scopes found</div>
+                        <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.noScopesFound')}</div>
                       ) : scopes.length === 0 && !formData.pitchId ? (
-                        <div className="py-6 text-center text-sm text-muted-foreground">Type to search scopes</div>
+                        <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.typeToSearchScopes')}</div>
                       ) : (
                         scopes.slice(0, 50).map((scope) => (
                           <SelectItem key={scope.id} value={String(scope.id)}>
@@ -349,13 +349,13 @@ const TestCaseFormPage: React.FC = () => {
                       )}
                       {scopes.length > 50 && (
                         <div className="py-2 text-center text-xs text-muted-foreground">
-                          Showing first 50 of {scopes.length} scopes. Refine your search for more specific results.
+                          {t('testCaseForm.refineSearch', { shown: 50, total: scopes.length })}
                         </div>
                       )}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {formData.pitchId ? `${scopes.length} scopes available for selected pitch` : 'Search to find scopes (min 3 chars)'}
+                    {formData.pitchId ? t('testCaseForm.scopesAvailable', { count: scopes.length }) : t('testCaseForm.minCharsForSearch')}
                   </p>
                 </div>
               </div>
@@ -363,32 +363,32 @@ const TestCaseFormPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Related Task (optional)</Label>
+                <Label>{t('testCaseForm.relatedTask')}</Label>
                 <Select
                   value={formData.taskId ? String(formData.taskId) : 'none'}
                   onValueChange={(value) => setFormData({ ...formData, taskId: value === 'none' ? undefined : Number(value) })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={formData.cycleId && tasks.length === 0 ? "Loading..." : "No related task"} />
+                    <SelectValue placeholder={formData.cycleId && tasks.length === 0 ? t('common.loading') : t('testCaseForm.noRelatedTask')} />
                   </SelectTrigger>
                   <SelectContent>
                     <div className="px-2 pb-2">
                       <Input
-                        placeholder="Search tasks..."
+                        placeholder={t('testCaseForm.searchTasks')}
                         value={taskSearch}
                         onChange={(e) => setTaskSearch(e.target.value)}
                         className="h-8"
                       />
                     </div>
-                    <SelectItem value="none">No related task</SelectItem>
+                    <SelectItem value="none">{t('testCaseForm.noRelatedTask')}</SelectItem>
                     {searchingTasks ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Searching...</div>
+                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.searching')}</div>
                     ) : !formData.cycleId && taskSearch.length > 0 && taskSearch.length < 3 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Type at least 3 characters to search</div>
+                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.minCharsForSearch')}</div>
                     ) : tasks.length === 0 && taskSearch.length >= 3 ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">No tasks found</div>
+                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.noTasksFound')}</div>
                     ) : tasks.length === 0 && !formData.cycleId ? (
-                      <div className="py-6 text-center text-sm text-muted-foreground">Type to search tasks</div>
+                      <div className="py-6 text-center text-sm text-muted-foreground">{t('testCaseForm.typeToSearchTasks')}</div>
                     ) : (
                       tasks.slice(0, 50).map((task) => (
                         <SelectItem key={task.id} value={String(task.id)}>
@@ -398,24 +398,24 @@ const TestCaseFormPage: React.FC = () => {
                     )}
                     {tasks.length > 50 && (
                       <div className="py-2 text-center text-xs text-muted-foreground">
-                        Showing first 50 of {tasks.length} tasks. Refine your search for more specific results.
+                        {t('testCaseForm.refineSearch', { shown: 50, total: tasks.length })}
                       </div>
                     )}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  {formData.cycleId ? `${tasks.length} tasks available for selected cycle` : 'Search to find tasks (min 3 chars)'}
+                  {formData.cycleId ? t('testCaseForm.scopesAvailable', { count: tasks.length }) : t('testCaseForm.minCharsForSearch')}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Type *</Label>
+                <Label>{t('testCaseForm.type')} *</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => setFormData({ ...formData, type: value as TestCaseType })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder={t('testCaseForm.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
                     {testCaseTypes.map((type) => (
@@ -430,13 +430,13 @@ const TestCaseFormPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>Priority *</Label>
+                <Label>{t('testCaseForm.priority')} *</Label>
                 <Select
                   value={formData.priority}
                   onValueChange={(value) => setFormData({ ...formData, priority: value as TestCasePriority })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
+                    <SelectValue placeholder={t('testCaseForm.selectPriority')} />
                   </SelectTrigger>
                   <SelectContent>
                     {testCasePriorities.map((priority) => (
@@ -449,13 +449,13 @@ const TestCaseFormPage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>{t('testCaseForm.status')}</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value as TestCaseStatus })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={t('testCaseForm.selectStatus')} />
                   </SelectTrigger>
                   <SelectContent>
                     {testCaseStatuses.map((status) => (

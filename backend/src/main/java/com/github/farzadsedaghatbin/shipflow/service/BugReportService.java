@@ -254,6 +254,21 @@ public class BugReportService {
     return bugReportRepository.findByPitchId(pitchId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
+  /** Get bug reports linked to a specific task. */
+  @Transactional(readOnly = true)
+  public List<BugReportDTO> getBugReportsByTask(Long taskId) {
+    checkFeatureEnabled();
+
+    return bugReportRepository.findByTaskId(taskId).stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Number of bug reports linked to a task — cheap count for context aggregators. */
+  @Transactional(readOnly = true)
+  public long countBugReportsByTask(Long taskId) {
+    checkFeatureEnabled();
+    return bugReportRepository.countByTaskId(taskId);
+  }
+
   /** Get bug reports by cycle. */
   @Transactional(readOnly = true)
   public List<BugReportDTO> getBugReportsByCycle(Long cycleId) {

@@ -71,7 +71,7 @@ const TestCasesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
-  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [rawTestCases, setRawTestCases] = useState<TestCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,6 +95,13 @@ const TestCasesPage: React.FC = () => {
     const projectCycleIds = new Set(filteredCycles.map(c => c.id));
     return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
+
+  // Apply project-scoped filter reactively so it re-evaluates whenever cycles/pitches load
+  const testCases = useMemo(() => {
+    if (isAllProjectsSelected || !currentProject) return rawTestCases;
+    const projectPitchIds = new Set(filteredPitches.map(p => p.id));
+    return rawTestCases.filter(tc => !tc.pitchId || projectPitchIds.has(tc.pitchId));
+  }, [rawTestCases, filteredCycles, filteredPitches, currentProject, isAllProjectsSelected]);
 
   // Reset cycle and pitch filters when project changes to ensure clean filtering
   useEffect(() => {
@@ -147,15 +154,7 @@ const TestCasesPage: React.FC = () => {
         response = await qaTestManagementService.getAllTestCases();
       }
       
-      let cases = response.data;
-      // Filter by current project if one is selected
-      if (!isAllProjectsSelected && currentProject) {
-        const projectCycleIds = new Set(cycles.filter(c => c.projectId === currentProject.id).map(c => c.id));
-        const projectPitchIds = new Set(pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId)).map(p => p.id));
-        cases = cases.filter(tc => tc.pitchId && projectPitchIds.has(tc.pitchId));
-      }
-      
-      setTestCases(cases);
+      setRawTestCases(response.data);
     } catch (err) {
       setError(t('testCases.loadFailed'));
       console.error(err);
@@ -465,7 +464,7 @@ const TestCasesPage: React.FC = () => {
                       entityId={tc.id}
                       entityTitle={tc.title}
                       onSuccess={() => {
-                        setTestCases(testCases.filter((testCase) => testCase.id !== tc.id));
+                        setRawTestCases(prev => prev.filter((testCase) => testCase.id !== tc.id));
                       }}
                       variant="ghost"
                       size="sm"

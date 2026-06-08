@@ -5,12 +5,18 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.2.0 — "Competitor Migration Tooling"
+## Current Milestone: v1.6.0 — "MCP Ecosystem"
 
-**Current version**: v1.1.0 (released 2026-05-20) → targeting v1.2.0
+**Current version**: v1.5.0 (released 2026-06-07)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Next: competitor migration tooling (v1.2.0) — CSV import → Linear API → Jira API. Always import into Kanban by default; teams adopt Shape Up/Scrum at their own pace.
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. Next: MCP Ecosystem (v1.6.0) — agentic write tools, plugin SDK, Notion/Confluence clients.
+
+### v1.3.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S31 | MCP server admin toggle + API key management UI — DB-backed runtime toggle, write-tools toggle, API key CRUD with scopes/expiry, admin oversight | ✅ done |
 
 ### v1.2.0 session map
 
@@ -61,6 +67,49 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | S26 | PitchDetail decomposition | ✅ done |
 
 **v0.9.0 released: 2026-04-14** ✅
+
+### v1.4.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S32 | SSO backend — Spring Security SAML2 + OIDC, IdentityProvider entity, Flyway migration | ✅ done |
+| S33 | SSO frontend — identity provider config UI in Org Settings, SSO enforcement toggle, login page SSO button | ✅ done |
+| S34 | SCIM 2.0 user provisioning — backend endpoint + frontend toggle | ✅ done |
+| S35 | Roadmap interactivity — drag-to-move/resize Gantt bars, date range validation, progress indicators | ✅ done |
+| S36 | UX polish — inline pitch title editing, retrospective templates (Went Well/Improve/Action Items), i18n interpolation sweep | ✅ done |
+| S37 | Navigation hardening — deep-link routing for all sidebar routes, keyboard shortcut cheat sheet overlay | ✅ done |
+
+**v1.4.0 released: 2026-06-07** ✅
+
+### v1.5.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S38 | AI Pitch Writer — LLM-powered Shape Up pitch draft from one-sentence problem description, pre-fills pitch form | ✅ done |
+| S39 | Retrospective Summarizer — AI-generated cycle retro summary, template fallback, RetroSummaryPanel below board | ✅ done |
+| S40 | Proactive Dashboard Insights — DashboardInsightsPanel (overdue pitches, at-risk cycles, scope creep, velocity), Redis cache | ✅ done |
+
+**v1.5.0 released: 2026-06-07** ✅
+
+### v1.6.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S41 | Agentic MCP write tools — create/update tasks and pitches via MCP tool calls from AI editors | 🔜 next |
+| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | 🔜 next |
+| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | 🔜 next |
+
+### Future milestones overview
+
+| Version | Theme | Sessions |
+|---------|-------|----------|
+| v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients | S41–S43 |
+| v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S44–S46 |
+| v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S47–S49 |
+| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S50–S52 |
+| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S53–S55 |
+| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S56–S58 |
+| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S59–S61 |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
@@ -411,6 +460,7 @@ Key product/architecture decisions recorded here so future Claude Code sessions 
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-04-05 | Competitor migration tools ship in **v1.2.0**, after Scrum mode (v1.1.0) | 90% of Jira/Linear users work in Sprints. Without Scrum mode, imported sprint history would be dropped or wrongly mapped to Shape Up cycles. Once v1.1 ships, the mapping is clean: Sprint→Sprint, Epic→Pitch, Issue→Task. Migration sequence: CSV import → Linear API → Jira API. Always import into Kanban project by default; teams adopt Shape Up/Scrum at their own pace. |
+| 2026-06-05 | v1.4.0 merges original v1.4 (Enterprise Auth) + v1.5 (UX Depth) into one milestone | SSO and UX polish are both table-stakes before the AI/automation sprint; combining keeps the release train moving without fragmenting small polish fixes into a separate patch version. |
 
 ---
 
