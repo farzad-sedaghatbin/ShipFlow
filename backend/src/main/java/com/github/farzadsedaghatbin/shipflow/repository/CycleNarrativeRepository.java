@@ -4,6 +4,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.CycleNarrative;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.NarrativeType;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,4 +38,12 @@ public interface CycleNarrativeRepository extends JpaRepository<CycleNarrative, 
 
   @Query("SELECT cn FROM CycleNarrative cn WHERE cn.cycle.project.id = :projectId ORDER BY cn.cycle.startDate DESC, cn.generatedAt DESC")
   List<CycleNarrative> findByProjectIdOrderByCycleStartDateDesc(@Param("projectId") Long projectId);
+
+  /**
+   * Pageable overload — used by {@code ProjectSnapshotService} to limit the number of retro
+   * narratives loaded when building the "knownPatterns" snapshot section.
+   */
+  @Query("SELECT cn FROM CycleNarrative cn WHERE cn.cycle.project.id = :projectId ORDER BY cn.cycle.startDate DESC, cn.generatedAt DESC")
+  List<CycleNarrative> findByProjectIdOrderByCycleStartDateDesc(
+      @Param("projectId") Long projectId, Pageable pageable);
 }

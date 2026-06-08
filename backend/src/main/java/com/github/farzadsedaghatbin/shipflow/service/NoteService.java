@@ -142,7 +142,9 @@ public class NoteService {
       case "pitch" :
         note.setPitchId(contextId);
         pitchRepository.findById(contextId).ifPresent(pitch -> {
-          note.setCycleId(pitch.getCycle().getId());
+          if (pitch.getCycle() != null) {
+            note.setCycleId(pitch.getCycle().getId());
+          }
           if (pitch.getTeam() != null) {
             note.setTeamId(pitch.getTeam().getId());
           }
@@ -152,7 +154,9 @@ public class NoteService {
         meetingRepository.findById(contextId).ifPresent(meeting -> {
           if (meeting.getPitch() != null) {
             note.setPitchId(meeting.getPitch().getId());
-            note.setCycleId(meeting.getPitch().getCycle().getId());
+            if (meeting.getPitch().getCycle() != null) {
+              note.setCycleId(meeting.getPitch().getCycle().getId());
+            }
             if (meeting.getPitch().getTeam() != null) {
               note.setTeamId(meeting.getPitch().getTeam().getId());
             }

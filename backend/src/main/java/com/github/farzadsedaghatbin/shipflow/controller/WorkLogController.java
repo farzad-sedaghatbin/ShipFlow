@@ -51,7 +51,15 @@ public class WorkLogController {
   public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogs(
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-      @RequestParam(required = false) Long projectId) {
+      @RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+    if (fromDate != null && toDate != null) {
+      if (projectId != null) {
+        return ResponseEntity.ok(workLogService.getMyWorkLogsByProjectIdAndDateRange(projectId, fromDate, toDate, pageOf(page, size)));
+      }
+      return ResponseEntity.ok(workLogService.getMyWorkLogsByDateRange(fromDate, toDate, pageOf(page, size)));
+    }
     if (projectId != null) {
       return ResponseEntity.ok(workLogService.getMyWorkLogsByProjectId(projectId, pageOf(page, size)));
     }
@@ -62,7 +70,12 @@ public class WorkLogController {
   @Operation(summary = "Get current user's work logs by cycle", description = "Returns work logs for the current user filtered by cycle ID")
   public ResponseEntity<Page<WorkLogDTO>> getMyWorkLogsByCycle(@PathVariable Long cycleId,
       @RequestParam(defaultValue = "0") @Min(0) int page,
-      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+    if (fromDate != null && toDate != null) {
+      return ResponseEntity.ok(workLogService.getMyWorkLogsByCycleAndDateRange(cycleId, fromDate, toDate, pageOf(page, size)));
+    }
     return ResponseEntity.ok(workLogService.getMyWorkLogsByCycle(cycleId, pageOf(page, size)));
   }
 
@@ -120,7 +133,15 @@ public class WorkLogController {
   public ResponseEntity<Page<WorkLogDTO>> getAllWorkLogs(
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
-      @RequestParam(required = false) Long projectId) {
+      @RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+    if (fromDate != null && toDate != null) {
+      if (projectId != null) {
+        return ResponseEntity.ok(workLogService.getAllWorkLogsByProjectIdAndDateRange(projectId, fromDate, toDate, pageOf(page, size)));
+      }
+      return ResponseEntity.ok(workLogService.getAllWorkLogsByDateRange(fromDate, toDate, pageOf(page, size)));
+    }
     if (projectId != null) {
       return ResponseEntity.ok(workLogService.getAllWorkLogsByProjectId(projectId, pageOf(page, size)));
     }
@@ -169,7 +190,12 @@ public class WorkLogController {
   @Operation(summary = "Get work logs by cycle ID")
   public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByCycleId(@PathVariable Long cycleId,
       @RequestParam(defaultValue = "0") @Min(0) int page,
-      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+    if (fromDate != null && toDate != null) {
+      return ResponseEntity.ok(workLogService.getWorkLogsByCycleIdAndDateRange(cycleId, fromDate, toDate, pageOf(page, size)));
+    }
     return ResponseEntity.ok(workLogService.getWorkLogsByCycleId(cycleId, pageOf(page, size)));
   }
 

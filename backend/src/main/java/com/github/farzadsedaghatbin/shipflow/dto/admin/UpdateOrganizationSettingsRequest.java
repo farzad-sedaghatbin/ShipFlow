@@ -53,4 +53,7 @@ public class UpdateOrganizationSettingsRequest {
   // MCP Server runtime toggle (null = leave unchanged)
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;
+
+  // SCIM 2.0 toggle (null = leave unchanged)
+  private Boolean scimEnabled;
 }
