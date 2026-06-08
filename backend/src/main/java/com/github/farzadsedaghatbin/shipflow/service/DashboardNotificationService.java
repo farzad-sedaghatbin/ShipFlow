@@ -101,7 +101,7 @@ public class DashboardNotificationService {
     }
 
     createNotification(assignee, "TASK_ASSIGNED", "New Task Assigned: " + task.getTitle(),
-        String.format("You have been assigned to task '%s'", task.getTitle()), "INFO", "/tasks/" + task.getId(),
+        String.format("You have been assigned to task '%s'", task.getTitle()), "INFO", "/backlog/" + task.getId(),
         "TASK", task.getId());
 
     // Send external notifications (Slack, Teams, etc.)
@@ -117,7 +117,7 @@ public class DashboardNotificationService {
           ? assignee.getPerson().getName()
           : assignee.getUsername();
       emailService.sendTaskAssigned(
-          assignee.getEmail(), recipientName, task.getTitle(), "/tasks/" + task.getId());
+          assignee.getEmail(), recipientName, task.getTitle(), "/backlog/" + task.getId());
     }
 
     log.info("Created task assignment notification for user {} on task {}", assignee.getId(), task.getId());
@@ -137,7 +137,7 @@ public class DashboardNotificationService {
 
     String authorName = author.getPerson() != null ? author.getPerson().getName() : author.getUsername();
 
-    String actionUrl = entityType.equals("TASK") ? "/tasks/" + entityId : "/bugs/" + entityId;
+    String actionUrl = entityType.equals("TASK") ? "/backlog/" + entityId : "/qa/bug-reports/" + entityId;
 
     createNotification(mentionedUser, "COMMENT_MENTION", "You were mentioned in a comment",
         String.format("%s mentioned you: \"%s\"", authorName,
@@ -170,14 +170,14 @@ public class DashboardNotificationService {
     if (oldAssignee != null) {
       createNotification(oldAssignee, "TASK_REASSIGNED", "Task Reassigned: " + task.getTitle(),
           String.format("Task '%s' has been reassigned to someone else", task.getTitle()), "INFO",
-          "/tasks/" + task.getId(), "TASK", task.getId());
+          "/backlog/" + task.getId(), "TASK", task.getId());
     }
 
     // Notify the new assignee
     if (newAssignee != null) {
       createNotification(newAssignee, "TASK_ASSIGNED", "New Task Assigned: " + task.getTitle(),
           String.format("You have been assigned to task '%s'", task.getTitle()), "INFO",
-          "/tasks/" + task.getId(), "TASK", task.getId());
+          "/backlog/" + task.getId(), "TASK", task.getId());
     }
 
     log.info("Created task reassignment notifications for task {}", task.getId());
@@ -195,7 +195,7 @@ public class DashboardNotificationService {
     if (newStatus == TaskStatus.BLOCKED && oldStatus != TaskStatus.BLOCKED) {
       createNotification(assignee, "TASK_STATUS_CHANGED", "Task Blocked: " + task.getTitle(),
           String.format("Task '%s' status changed to BLOCKED", task.getTitle()), "WARNING",
-          "/tasks/" + task.getId(), "TASK", task.getId());
+          "/backlog/" + task.getId(), "TASK", task.getId());
 
       // Send external notifications (Slack, Teams, etc.)
       sendToConfiguredChannels("TASK_BLOCKED",
@@ -204,7 +204,7 @@ public class DashboardNotificationService {
           "TASK", task.getId(), assignee.getPerson());
     } else if (newStatus == TaskStatus.IN_PROGRESS && oldStatus == TaskStatus.BLOCKED) {
       createNotification(assignee, "TASK_STATUS_CHANGED", "Task Unblocked: " + task.getTitle(),
-          String.format("Task '%s' is no longer blocked", task.getTitle()), "INFO", "/tasks/" + task.getId(),
+          String.format("Task '%s' is no longer blocked", task.getTitle()), "INFO", "/backlog/" + task.getId(),
           "TASK", task.getId());
     } else if (newStatus == TaskStatus.DONE) {
       // Send external notifications (Slack, Teams, etc.)
@@ -228,7 +228,7 @@ public class DashboardNotificationService {
 
       createNotification(assignee, "TASK_PRIORITY_CHANGED", "High Priority Task: " + task.getTitle(),
           String.format("Task '%s' priority has been set to %s", task.getTitle(), newPriority), "WARNING",
-          "/tasks/" + task.getId(), "TASK", task.getId());
+          "/backlog/" + task.getId(), "TASK", task.getId());
 
       log.info("Created task priority change notification for task {}", task.getId());
     }
@@ -402,7 +402,7 @@ public class DashboardNotificationService {
         createNotification(task.getAssignee().getUser(), "OVERDUE_TASK", "Task Overdue: " + task.getTitle(),
             String.format("Task '%s' is overdue by %d days", task.getTitle(),
                 LocalDate.now().toEpochDay() - task.getDueDate().toEpochDay()),
-            "WARNING", "/tasks/" + task.getId(), "TASK", task.getId());
+            "WARNING", "/backlog/" + task.getId(), "TASK", task.getId());
       }
     }
 
@@ -425,7 +425,7 @@ public class DashboardNotificationService {
         if (!alreadyNotified) {
           createNotification(task.getAssignee().getUser(), "BLOCKED_TASK", "Task Blocked: " + task.getTitle(),
               String.format("Task '%s' is blocked and needs attention", task.getTitle()), "ERROR",
-              "/tasks/" + task.getId(), "TASK", task.getId());
+              "/backlog/" + task.getId(), "TASK", task.getId());
         }
       }
     }
