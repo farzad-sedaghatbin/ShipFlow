@@ -295,6 +295,40 @@ public class KnowledgeIngestionService {
     log.info("Ingested epic: {} (ID: {})", epic.getName(), epic.getId());
   }
 
+  /**
+   * Stores a risk analysis outcome as a searchable knowledge item.
+   * This enables future RAG calls to find "historically similar pitches had X risk".
+   * Called after a risk analysis completes.
+   */
+  public void ingestRiskSummary(Long pitchId, String pitchTitle, String riskLevel, int riskScore,
+      List<String> insights, List<String> recommendations, Long cycleId) {
+    try {
+      StringBuilder sb = new StringBuilder();
+      sb.append("Risk Analysis Summary\n\n");
+      sb.append("Pitch: ").append(pitchTitle).append("\n");
+      sb.append("Risk Level: ").append(riskLevel).append("\n");
+      sb.append("Risk Score: ").append(riskScore).append("/100\n\n");
+
+      if (insights != null && !insights.isEmpty()) {
+        sb.append("Key Risk Insights:\n");
+        insights.forEach(i -> sb.append("- ").append(i).append("\n"));
+        sb.append("\n");
+      }
+      if (recommendations != null && !recommendations.isEmpty()) {
+        sb.append("Recommendations Given:\n");
+        recommendations.forEach(r -> sb.append("- ").append(r).append("\n"));
+      }
+
+      String title = "Risk Summary: " + pitchTitle + " [" + riskLevel + "]";
+      ingestEntity(KnowledgeEntityType.MANUAL_NOTE, pitchId, title, sb.toString(),
+          cycleId, null, pitchId, null);
+
+      log.info("Ingested risk summary for pitch '{}' (level={}, score={})", pitchTitle, riskLevel, riskScore);
+    } catch (Exception e) {
+      log.warn("Failed to ingest risk summary for pitch {}: {}", pitchId, e.getMessage());
+    }
+  }
+
   /** Ingest a release into the knowledge base. */
   @Transactional
   @Async
@@ -835,21 +869,41 @@ public class KnowledgeIngestionService {
     StringBuilder sb = new StringBuilder();
     sb.append("Pitch: ").append(pitch.getTitle()).append("\n\n");
 
-    if (pitch.getDescription() != null) {
+    if (pitch.getDescription() != null && !pitch.getDescription().isBlank()) {
       sb.append("Description:\n").append(pitch.getDescription()).append("\n\n");
+    }
+    if (pitch.getProblemStatement() != null && !pitch.getProblemStatement().isBlank()) {
+      sb.append("Problem Statement:\n").append(pitch.getProblemStatement()).append("\n\n");
+    }
+    if (pitch.getSolution() != null && !pitch.getSolution().isBlank()) {
+      sb.append("Proposed Solution:\n").append(pitch.getSolution()).append("\n\n");
+    }
+    if (pitch.getRabbitHoles() != null && !pitch.getRabbitHoles().isBlank()) {
+      sb.append("Rabbit Holes (avoid):\n").append(pitch.getRabbitHoles()).append("\n\n");
+    }
+    if (pitch.getRisks() != null && !pitch.getRisks().isBlank()) {
+      sb.append("Known Risks:\n").append(pitch.getRisks()).append("\n\n");
+    }
+    if (pitch.getNoGos() != null && !pitch.getNoGos().isBlank()) {
+      sb.append("No-Gos (out of scope):\n").append(pitch.getNoGos()).append("\n\n");
     }
 
     sb.append("Status: ").append(pitch.getStatus()).append("\n");
-    sb.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n");
-
+    if (pitch.getAppetiteDays() != null) {
+      sb.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n");
+    }
     if (pitch.getCycle() != null) {
       sb.append("Cycle: ").append(pitch.getCycle().getName()).append("\n");
     }
-
     if (pitch.getTeam() != null) {
       sb.append("Team: ").append(pitch.getTeam().getName()).append("\n");
     }
-
+    if (pitch.getEpic() != null) {
+      sb.append("Epic: ").append(pitch.getEpic().getName()).append("\n");
+      if (pitch.getEpic().getInitiative() != null) {
+        sb.append("Initiative: ").append(pitch.getEpic().getInitiative().getName()).append("\n");
+      }
+    }
     sb.append("Created: ").append(pitch.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
     sb.append("Last Updated: ").append(pitch.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
 
@@ -1014,10 +1068,26 @@ public class KnowledgeIngestionService {
     }
 
     if (epic.getPitches() != null && !epic.getPitches().isEmpty()) {
-      sb.append("\nPitches in this Epic:\n");
+      long activePitches = epic.getPitches().stream()
+          .filter(p -> p.getDeletedAt() == null).count();
+      sb.append("\nPitches in this Epic (").append(activePitches).append(" active):\n");
       for (Pitch pitch : epic.getPitches()) {
         if (pitch.getDeletedAt() == null) {
-          sb.append("  - ").append(pitch.getTitle()).append(" (").append(pitch.getStatus()).append(")\n");
+          sb.append("  - ").append(pitch.getTitle())
+              .append(" [Status: ").append(pitch.getStatus()).append("]");
+          if (pitch.getAppetiteDays() != null) {
+            sb.append(" [Appetite: ").append(pitch.getAppetiteDays()).append("d]");
+          }
+          if (pitch.getCycle() != null) {
+            sb.append(" [Cycle: ").append(pitch.getCycle().getName()).append("]");
+          }
+          if (pitch.getProblemStatement() != null && !pitch.getProblemStatement().isBlank()) {
+            String problem = pitch.getProblemStatement().length() > 100
+                ? pitch.getProblemStatement().substring(0, 100) + "..."
+                : pitch.getProblemStatement();
+            sb.append("\n    Problem: ").append(problem);
+          }
+          sb.append("\n");
         }
       }
     }

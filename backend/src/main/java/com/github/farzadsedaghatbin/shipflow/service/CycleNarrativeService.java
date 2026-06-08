@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.narrative.*;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.NarrativeType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import java.time.LocalDateTime;
@@ -36,6 +37,9 @@ public class CycleNarrativeService {
   private final ChatLanguageModel chatLanguageModel;
   private final UserRepository userRepository;
   private final CapacityConfigService capacityConfigService;
+  private final RetroRepository retroRepository;
+  private final RetroItemRepository retroItemRepository;
+  private final ProjectSnapshotService projectSnapshotService;
 
   @Autowired
   public CycleNarrativeService(
@@ -47,7 +51,10 @@ public class CycleNarrativeService {
       AIConfig aiConfig,
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
       UserRepository userRepository,
-      CapacityConfigService capacityConfigService) {
+      CapacityConfigService capacityConfigService,
+      RetroRepository retroRepository,
+      RetroItemRepository retroItemRepository,
+      @org.springframework.lang.Nullable ProjectSnapshotService projectSnapshotService) {
     this.cycleRepository = cycleRepository;
     this.pitchRepository = pitchRepository;
     this.workLogRepository = workLogRepository;
@@ -57,6 +64,9 @@ public class CycleNarrativeService {
     this.chatLanguageModel = chatLanguageModel;
     this.userRepository = userRepository;
     this.capacityConfigService = capacityConfigService;
+    this.retroRepository = retroRepository;
+    this.retroItemRepository = retroItemRepository;
+    this.projectSnapshotService = projectSnapshotService;
   }
 
   /**
@@ -239,10 +249,14 @@ public class CycleNarrativeService {
 
   /**
    * Regenerate all narratives for a cycle.
+   * RETROSPECTIVE_SUMMARY is excluded — use generateRetroSummary() instead.
    */
   @Transactional
   public CycleSummaryDTO regenerateAllNarratives(Long cycleId) {
     for (NarrativeType type : NarrativeType.values()) {
+      if (type == NarrativeType.RETROSPECTIVE_SUMMARY) {
+        continue; // handled separately via generateRetroSummary()
+      }
       generateNarrative(cycleId, type);
     }
     return getCycleSummary(cycleId);
@@ -606,6 +620,177 @@ public class CycleNarrativeService {
     sb.append(generateSurprisesTemplate(cycle, pitches, workHoursMap));
     
     return sb.toString();
+  }
+
+  // ============================================
+  // Retrospective Summary
+  // ============================================
+
+  /**
+   * Generate (or regenerate) an AI retrospective summary for a cycle.
+   * Groups all retro items by column type and produces a Markdown summary.
+   * Falls back to a template-based summary when no LLM is configured.
+   *
+   * @param cycleId the cycle whose retrospective board will be summarised
+   * @return the saved CycleNarrativeDTO with narrativeType = RETROSPECTIVE_SUMMARY
+   * @throws IllegalStateException when no retrospective items exist for the cycle
+   */
+  @Transactional
+  public CycleNarrativeDTO generateRetroSummary(Long cycleId) {
+    Cycle cycle = cycleRepository.findById(cycleId)
+        .orElseThrow(() -> new RuntimeException("Cycle not found: " + cycleId));
+
+    // Load all retrospectives for the cycle
+    List<Retrospective> retros = retroRepository.findByCycleIdOrderByCreatedAtDesc(cycleId);
+    if (retros.isEmpty()) {
+      throw new IllegalStateException("No retrospective data found for this cycle");
+    }
+
+    // Collect all items across every retro for the cycle (e.g. multiple team retros)
+    List<Long> retroIds = retros.stream().map(Retrospective::getId).collect(Collectors.toList());
+    List<RetroItem> allItems = new ArrayList<>();
+    for (Long retroId : retroIds) {
+      allItems.addAll(retroItemRepository.findByRetrospectiveIdOrderByCreatedAtAsc(retroId));
+    }
+
+    if (allItems.isEmpty()) {
+      throw new IllegalStateException("No retrospective data found for this cycle");
+    }
+
+    // Group items by column type
+    Map<RetroColumnType, List<RetroItem>> grouped = allItems.stream()
+        .collect(Collectors.groupingBy(RetroItem::getColumnType));
+
+    String content;
+    boolean isAI = false;
+    String aiModel = null;
+
+    if (isAIEnabled()) {
+      try {
+        content = generateRetroSummaryWithAI(cycle, grouped);
+        isAI = true;
+        aiModel = aiConfig.getModelName();
+      } catch (Exception e) {
+        log.warn("AI retro summary generation failed, falling back to template: {}", e.getMessage());
+        content = generateRetroSummaryTemplate(grouped);
+      }
+    } else {
+      content = generateRetroSummaryTemplate(grouped);
+    }
+
+    // Upsert: find existing RETROSPECTIVE_SUMMARY narrative or create new
+    CycleNarrative narrative = narrativeRepository
+        .findByCycleIdAndNarrativeType(cycleId, NarrativeType.RETROSPECTIVE_SUMMARY)
+        .orElseGet(() -> CycleNarrative.builder()
+            .cycle(cycle)
+            .narrativeType(NarrativeType.RETROSPECTIVE_SUMMARY)
+            .build());
+
+    narrative.setContent(content);
+    narrative.setIsAiGenerated(isAI);
+    narrative.setAiModel(aiModel);
+    narrative.setGeneratedAt(LocalDateTime.now());
+    narrative.setGeneratedBy(resolveGeneratedBy(cycle));
+
+    try {
+      narrative = narrativeRepository.save(narrative);
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      log.warn("Duplicate key on retro narrative save for cycle {}, retrying with update", cycleId);
+      narrative = narrativeRepository
+          .findByCycleIdAndNarrativeType(cycleId, NarrativeType.RETROSPECTIVE_SUMMARY)
+          .orElseThrow(() -> new RuntimeException("Narrative not found after duplicate key error"));
+      narrative.setContent(content);
+      narrative.setIsAiGenerated(isAI);
+      narrative.setAiModel(aiModel);
+      narrative.setGeneratedAt(LocalDateTime.now());
+      narrative.setGeneratedBy(resolveGeneratedBy(cycle));
+      narrative = narrativeRepository.save(narrative);
+    }
+
+    return toDTO(narrative);
+  }
+
+  /**
+   * Retrieve the existing RETROSPECTIVE_SUMMARY for a cycle (if any).
+   *
+   * @param cycleId the cycle id
+   * @return Optional containing the DTO, or empty if no summary has been generated yet
+   */
+  @Transactional(readOnly = true)
+  public Optional<CycleNarrativeDTO> getRetroSummary(Long cycleId) {
+    return narrativeRepository
+        .findByCycleIdAndNarrativeType(cycleId, NarrativeType.RETROSPECTIVE_SUMMARY)
+        .map(this::toDTO);
+  }
+
+  private String generateRetroSummaryWithAI(Cycle cycle, Map<RetroColumnType, List<RetroItem>> grouped) {
+    StringBuilder prompt = new StringBuilder();
+
+    // Prepend project snapshot for richer LLM context
+    if (projectSnapshotService != null && cycle.getProject() != null) {
+      try {
+        String snapshotBlock = projectSnapshotService.buildPromptBlock(cycle.getProject().getId());
+        if (!snapshotBlock.isBlank()) {
+          prompt.append(snapshotBlock).append("\n");
+        }
+      } catch (Exception e) {
+        log.warn(
+            "Snapshot injection skipped for retro summary (cycleId={}): {}",
+            cycle.getId(),
+            e.getMessage());
+      }
+    }
+
+    prompt.append("You are analyzing a team's retrospective board for a Shape Up cycle.\n\n");
+    prompt.append("Cycle: ").append(cycle.getName()).append("\n");
+    prompt.append("Date: ").append(LocalDateTime.now().toLocalDate()).append("\n\n");
+    prompt.append("Retro board entries:\n\n");
+
+    appendRetroSection(prompt, "WENT WELL", grouped.get(RetroColumnType.WENT_WELL));
+    appendRetroSection(prompt, "DID NOT GO WELL", grouped.get(RetroColumnType.DID_NOT_GO_WELL));
+    appendRetroSection(prompt, "TRY NEXT TIME", grouped.get(RetroColumnType.TRY_NEXT));
+    appendRetroSection(prompt, "ACTION ITEMS", grouped.get(RetroColumnType.ACTIONS));
+
+    prompt.append("\nWrite a concise retrospective summary covering:\n");
+    prompt.append("1. Key wins and strengths shown this cycle\n");
+    prompt.append("2. Main blockers or pain points (look for patterns)\n");
+    prompt.append("3. Top 3 action items the team committed to\n");
+    prompt.append("4. Overall team health signal (one of: THRIVING / STABLE / NEEDS_ATTENTION)\n\n");
+    prompt.append("Format as Markdown. Keep it under 400 words. Be specific, not generic.");
+
+    return cleanAIResponse(chatLanguageModel.generate(prompt.toString()));
+  }
+
+  private void appendRetroSection(StringBuilder sb, String label, List<RetroItem> items) {
+    sb.append("**").append(label).append(":**\n");
+    if (items == null || items.isEmpty()) {
+      sb.append("(none)\n");
+    } else {
+      items.forEach(i -> sb.append("- ").append(i.getContent()).append("\n"));
+    }
+    sb.append("\n");
+  }
+
+  private String generateRetroSummaryTemplate(Map<RetroColumnType, List<RetroItem>> grouped) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("## Retrospective Summary\n\n");
+
+    appendTemplateSectionMarkdown(sb, "Key Wins", grouped.get(RetroColumnType.WENT_WELL));
+    appendTemplateSectionMarkdown(sb, "Main Blockers", grouped.get(RetroColumnType.DID_NOT_GO_WELL));
+    appendTemplateSectionMarkdown(sb, "Try Next Time", grouped.get(RetroColumnType.TRY_NEXT));
+    appendTemplateSectionMarkdown(sb, "Action Items", grouped.get(RetroColumnType.ACTIONS));
+
+    return sb.toString();
+  }
+
+  private void appendTemplateSectionMarkdown(StringBuilder sb, String heading, List<RetroItem> items) {
+    sb.append("### ").append(heading).append("\n\n");
+    if (items == null || items.isEmpty()) {
+      sb.append("*No entries.*\n\n");
+    } else {
+      items.forEach(i -> sb.append("- ").append(i.getContent()).append("\n"));
+      sb.append("\n");
+    }
   }
 
   // ============================================

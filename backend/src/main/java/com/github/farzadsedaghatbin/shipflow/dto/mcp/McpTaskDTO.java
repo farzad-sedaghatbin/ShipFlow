@@ -17,6 +17,7 @@ public class McpTaskDTO {
   private Long cycleId;
   private String cycleName;
   private Long projectId;
+  private Long pitchId;
   private String pitchTitle;
   private String assigneeName;
   private Boolean isBlocked;
@@ -33,6 +34,7 @@ public class McpTaskDTO {
         .cycleId(dto.getCycleId())
         .cycleName(dto.getCycleName())
         .projectId(dto.getProjectId())
+        .pitchId(dto.getPitchId())
         .pitchTitle(dto.getPitchTitle())
         .assigneeName(dto.getAssigneeName())
         .isBlocked(dto.getIsBlocked())

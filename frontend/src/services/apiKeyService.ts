@@ -30,6 +30,7 @@ export interface ApiKey {
   lastUsedAt?: string | null;
   createdAt?: string | null;
   revokedAt?: string | null;
+  createdByUsername?: string | null;
 }
 
 /** The create response includes the raw key value exactly once. */
@@ -57,6 +58,7 @@ function normalize(raw: Record<string, unknown>): ApiKey {
     lastUsedAt: (raw.lastUsedAt as string) ?? null,
     createdAt: (raw.createdAt as string) ?? null,
     revokedAt: (raw.revokedAt as string) ?? null,
+    createdByUsername: (raw.createdByUsername as string) ?? null,
   };
 }
 
@@ -84,10 +86,21 @@ export async function revokeApiKey(id: number): Promise<void> {
   await apiKeyApi.delete(`/api/api-keys/${id}`);
 }
 
+export async function listAllApiKeys(): Promise<ApiKey[]> {
+  const response = await apiKeyApi.get<Record<string, unknown>[]>('/api/api-keys/admin');
+  return response.data.map(normalize);
+}
+
+export async function adminRevokeApiKey(id: number): Promise<void> {
+  await apiKeyApi.delete(`/api/api-keys/admin/${id}`);
+}
+
 const apiKeyService = {
   listApiKeys,
   createApiKey,
   revokeApiKey,
+  listAllApiKeys,
+  adminRevokeApiKey,
 };
 
 export default apiKeyService;

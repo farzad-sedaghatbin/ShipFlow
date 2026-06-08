@@ -49,6 +49,7 @@ export const DocumentDropZone: React.FC<DocumentDropZoneProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [showExtracted, setShowExtracted] = useState<number | null>(null);
+  const [rejectedFiles, setRejectedFiles] = useState<string[]>([]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -82,6 +83,12 @@ export const DocumentDropZone: React.FC<DocumentDropZoneProps> = ({
       const ext = file.name.split('.').pop()?.toLowerCase();
       return ['pdf', 'docx', 'doc', 'txt', 'md'].includes(ext || '');
     });
+
+    const rejected = files.filter(f => !validFiles.includes(f)).map(f => f.name);
+    if (rejected.length > 0) {
+      setRejectedFiles(rejected);
+      setTimeout(() => setRejectedFiles([]), 4000);
+    }
 
     if (validFiles.length === 0) {
       return;
@@ -183,7 +190,7 @@ export const DocumentDropZone: React.FC<DocumentDropZoneProps> = ({
       >
         <input
           type="file"
-          className="sr-only"
+          className="hidden"
           multiple
           accept=".pdf,.docx,.doc,.txt,.md"
           onChange={handleFileSelect}
@@ -196,6 +203,13 @@ export const DocumentDropZone: React.FC<DocumentDropZoneProps> = ({
           Supported formats: PDF, DOCX, DOC, TXT, MD (max 10MB)
         </p>
       </label>
+
+      {/* Rejected file types */}
+      {rejectedFiles.length > 0 && (
+        <div className="mt-2 p-2 rounded-md bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+          Unsupported file type: {rejectedFiles.join(', ')}. Only PDF, DOCX, DOC, TXT, MD are allowed.
+        </div>
+      )}
 
       {/* Uploading Files */}
       {uploadingFiles.length > 0 && (
