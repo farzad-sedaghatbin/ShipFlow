@@ -85,6 +85,39 @@ import { KeyboardShortcutSheet } from './KeyboardShortcutSheet';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import packageJson from '../../package.json';
 
+const ROUTE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/projects': 'Projects',
+  '/cycles': 'Cycles',
+  '/pitches': 'Pitches',
+  '/betting': 'Betting Table',
+  '/health': 'Health Overview',
+  '/retros': 'Retrospectives',
+  '/dashboards': 'Custom Dashboards',
+  '/reports': 'Reports',
+  '/backlog': 'Backlog',
+  '/people': 'People',
+  '/teams': 'Teams',
+  '/meetings': 'Meetings',
+  '/time': 'Work Logs',
+  '/settings': 'Settings',
+  '/org-settings': 'Organization Settings',
+  '/qa': 'Quality',
+  '/rd': 'R&D',
+  '/import': 'Import',
+  '/roadmap': 'Roadmap',
+  '/sprint-planning': 'Sprint Planning',
+  '/ai-features': 'AI Features',
+};
+
+function getPageTitle(pathname: string): string {
+  // exact match first
+  if (ROUTE_TITLES[pathname]) return ROUTE_TITLES[pathname];
+  // prefix match: /cycles/123/edit → /cycles → 'Cycles'
+  const segment = '/' + pathname.replace(/^\//, '').split('/')[0];
+  return ROUTE_TITLES[segment] || 'ShipFlow';
+}
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -524,14 +557,35 @@ export default function Layout({ children }: LayoutProps) {
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
+  const location = useLocation();
   const { showHelp: showShortcuts, setShowHelp: setShowShortcuts } = useKeyboardShortcuts();
 
-  // Global search keyboard shortcut: Cmd+K / Ctrl+K
+  // Dynamic tab title: "Cycles | ShipFlow", "Pitches | ShipFlow", etc.
+  useEffect(() => {
+    const pageTitle = getPageTitle(location.pathname);
+    document.title = pageTitle === 'ShipFlow' ? 'ShipFlow' : `${pageTitle} | ShipFlow`;
+  }, [location.pathname]);
+
+  // Global search: Cmd+K / Ctrl+K or plain S key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
+        return;
+      }
+      if ((e.key === 's' || e.key === 'S') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const active = document.activeElement;
+        const tag = active?.tagName.toLowerCase();
+        const typing =
+          tag === 'input' ||
+          tag === 'textarea' ||
+          tag === 'select' ||
+          (active as HTMLElement | null)?.isContentEditable;
+        if (!typing) {
+          e.preventDefault();
+          setSearchOpen(true);
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
