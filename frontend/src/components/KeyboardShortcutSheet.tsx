@@ -82,6 +82,7 @@ export function KeyboardShortcutSheet({ open, onClose }: KeyboardShortcutSheetPr
   const actionShortcuts = [
     { keys: ['Shift', 'N'], descriptionKey: 'shortcuts.createNew' },
     { keys: ['Shift', 'W'], descriptionKey: 'shortcuts.logWork' },
+    { keys: ['S'], descriptionKey: 'shortcuts.openSearch' },
     { keys: ['⌘', 'K'], descriptionKey: 'shortcuts.openSearch' },
   ];
 
