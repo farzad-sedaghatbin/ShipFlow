@@ -825,7 +825,19 @@
     "failedToSave": "Failed to save team",
     "failedToDelete": "Failed to delete team",
     "failedToSaveAssignment": "Failed to save assignment",
-    "loadFailed": "Failed to load teams"
+    "loadFailed": "Failed to load teams",
+    "archiveTeam": "Archive Team",
+    "unarchiveTeam": "Restore Team",
+    "archiveSuccess": "Team archived",
+    "unarchiveSuccess": "Team restored",
+    "failedToArchive": "Failed to archive team",
+    "failedToUnarchive": "Failed to restore team",
+    "showArchived": "Show Archived",
+    "hideArchived": "Hide Archived",
+    "archived": "Archived",
+    "activeTeams": "Active Teams",
+    "archivedTeams": "Archived Teams",
+    "active": "Active"
   },
   "meetings": {
     "title": "Meetings",

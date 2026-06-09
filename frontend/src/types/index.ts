@@ -156,6 +156,7 @@ export interface CreateCycleRequest {
 export interface Team {
   id: number;
   name: string;
+  isArchived?: boolean;
   assignments?: TeamAssignment[];
   // Capacity overrides
   hoursPerDayOverride?: number;

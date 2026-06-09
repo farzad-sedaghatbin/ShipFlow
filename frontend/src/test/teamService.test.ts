@@ -8,6 +8,7 @@ vi.mock('../services/api', () => ({
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
+    patch: vi.fn(),
   },
 }));
 
@@ -84,13 +85,23 @@ describe('teamService', () => {
     });
   });
 
-  describe('delete', () => {
-    it('should delete a team', async () => {
-      mockedApi.delete.mockResolvedValueOnce({ data: null });
+  describe('archive', () => {
+    it('should archive a team', async () => {
+      mockedApi.patch.mockResolvedValueOnce({ data: null });
 
-      await teamService.delete(1);
+      await teamService.archive(1);
 
-      expect(mockedApi.delete).toHaveBeenCalledWith('/teams/1');
+      expect(mockedApi.patch).toHaveBeenCalledWith('/teams/1/archive');
+    });
+  });
+
+  describe('unarchive', () => {
+    it('should unarchive a team', async () => {
+      mockedApi.patch.mockResolvedValueOnce({ data: null });
+
+      await teamService.unarchive(1);
+
+      expect(mockedApi.patch).toHaveBeenCalledWith('/teams/1/unarchive');
     });
   });
 });

@@ -235,7 +235,7 @@ export default function People() {
     if (!personToDelete) return;
 
     try {
-      await api.delete(`/persons/${personToDelete.id}`);
+      await api.post(`/persons/${personToDelete.id}/deactivate`);
       showToast(t('peopleManagement.personDeactivated'), 'success');
       fetchPeople();
       setDeleteConfirmOpen(false);
