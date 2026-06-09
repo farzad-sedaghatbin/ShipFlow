@@ -78,6 +78,46 @@ public class WorkLogService {
     return workLogRepository.findByCycleIdAndDateBetween(cycleId, from, to, pageable).map(this::toDTO);
   }
 
+  /**
+   * Combined-filter query for the admin GET /worklogs endpoint. All parameters are
+   * optional and may be combined freely.
+   */
+  public Page<WorkLogDTO> getWorkLogsFiltered(Long personId, Long projectId, LocalDate from, LocalDate to,
+      Pageable pageable) {
+    if (personId != null && projectId != null && from != null && to != null)
+      return workLogRepository.findByPersonIdAndProjectIdAndDateBetween(personId, projectId, from, to, pageable)
+          .map(this::toDTO);
+    if (personId != null && projectId != null)
+      return workLogRepository.findByPersonIdAndProjectId(personId, projectId, pageable).map(this::toDTO);
+    if (personId != null && from != null && to != null)
+      return workLogRepository.findByPersonIdAndDateBetween(personId, from, to, pageable).map(this::toDTO);
+    if (personId != null)
+      return workLogRepository.findByPersonId(personId, pageable).map(this::toDTO);
+    if (projectId != null && from != null && to != null)
+      return workLogRepository.findByProjectIdAndDateBetween(projectId, from, to, pageable).map(this::toDTO);
+    if (projectId != null)
+      return workLogRepository.findByProjectId(projectId, pageable).map(this::toDTO);
+    if (from != null && to != null)
+      return workLogRepository.findByDateBetween(from, to, pageable).map(this::toDTO);
+    return workLogRepository.findAll(pageable).map(this::toDTO);
+  }
+
+  /**
+   * Combined-filter query for the admin GET /worklogs/cycle/{cycleId} endpoint.
+   * personId and date range are optional.
+   */
+  public Page<WorkLogDTO> getWorkLogsFilteredByCycle(Long cycleId, Long personId, LocalDate from, LocalDate to,
+      Pageable pageable) {
+    if (personId != null && from != null && to != null)
+      return workLogRepository.findByPersonIdAndCycleIdAndDateBetween(personId, cycleId, from, to, pageable)
+          .map(this::toDTO);
+    if (personId != null)
+      return workLogRepository.findByPersonIdAndCycleId(personId, cycleId, pageable).map(this::toDTO);
+    if (from != null && to != null)
+      return workLogRepository.findByCycleIdAndDateBetween(cycleId, from, to, pageable).map(this::toDTO);
+    return workLogRepository.findByCycleId(cycleId, pageable).map(this::toDTO);
+  }
+
   public WorkLogDTO getWorkLogById(Long id) {
     WorkLog workLog = workLogRepository.findById(id)
         .orElseThrow(() -> new IllegalArgumentException("Work log not found with id: " + id));

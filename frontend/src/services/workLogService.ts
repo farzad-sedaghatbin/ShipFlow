@@ -6,8 +6,8 @@ const DEFAULT_SIZE = 20;
 
 export const workLogService = {
   // Admin/Manager endpoints
-  getAll: (page = DEFAULT_PAGE, size = DEFAULT_SIZE, projectId?: number, fromDate?: string, toDate?: string) =>
-    api.get<Page<WorkLog>>('/worklogs', { params: { page, size, ...(projectId !== undefined ? { projectId } : {}), ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}) } }),
+  getAll: (page = DEFAULT_PAGE, size = DEFAULT_SIZE, projectId?: number, fromDate?: string, toDate?: string, personId?: number) =>
+    api.get<Page<WorkLog>>('/worklogs', { params: { page, size, ...(projectId !== undefined ? { projectId } : {}), ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}), ...(personId !== undefined ? { personId } : {}) } }),
   getByPitchId: (pitchId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/pitch/${pitchId}`, { params: { page, size } }),
   getByTaskId: (taskId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
@@ -16,8 +16,8 @@ export const workLogService = {
     api.get<Page<WorkLog>>(`/worklogs/person/${personId}`, { params: { page, size } }),
   getByPersonAndDate: (personId: number, date: string, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/person/${personId}/date/${date}`, { params: { page, size } }),
-  getByCycleId: (cycleId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE, fromDate?: string, toDate?: string) =>
-    api.get<Page<WorkLog>>(`/worklogs/cycle/${cycleId}`, { params: { page, size, ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}) } }),
+  getByCycleId: (cycleId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE, fromDate?: string, toDate?: string, personId?: number) =>
+    api.get<Page<WorkLog>>(`/worklogs/cycle/${cycleId}`, { params: { page, size, ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}), ...(personId !== undefined ? { personId } : {}) } }),
   getById: (id: number) => api.get<WorkLog>(`/worklogs/${id}`),
   create: (data: CreateWorkLogRequest) => api.post<WorkLog>('/worklogs', data),
   update: (id: number, data: CreateWorkLogRequest) => api.put<WorkLog>(`/worklogs/${id}`, data),

@@ -5,12 +5,14 @@ import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO.Revision
 import com.github.farzadsedaghatbin.shipflow.dto.audit.FieldChangeDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.audit.AuditRevisionEntity;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.envers.AuditReader;
@@ -34,6 +36,8 @@ public class AuditService {
 
   @PersistenceContext
   private EntityManager entityManager;
+
+  private final UserRepository userRepository;
 
   /**
    * Get the change history for a Task entity.
@@ -106,6 +110,34 @@ public class AuditService {
 
     // Reverse to show newest first
     Collections.reverse(historyList);
+
+    // Resolve usernames to display names in batch to avoid N+1 lookups
+    List<String> usernames = historyList.stream()
+        .map(EntityHistoryDTO::getModifiedBy)
+        .filter(name -> name != null && !"system".equals(name))
+        .distinct()
+        .collect(Collectors.toList());
+
+    if (!usernames.isEmpty()) {
+      Map<String, String> displayNames = userRepository.findByUsernameIn(usernames).stream()
+          .collect(Collectors.toMap(
+              User::getUsername,
+              u -> u.getPerson() != null ? u.getPerson().getName() : u.getUsername()));
+
+      historyList.replaceAll(dto -> {
+        String resolved = displayNames.get(dto.getModifiedBy());
+        if (resolved != null) {
+          return EntityHistoryDTO.builder()
+              .revisionNumber(dto.getRevisionNumber())
+              .revisionDate(dto.getRevisionDate())
+              .modifiedBy(resolved)
+              .revisionType(dto.getRevisionType())
+              .changes(dto.getChanges())
+              .build();
+        }
+        return dto;
+      });
+    }
 
     // Apply pagination
     int start = (int) pageable.getOffset();

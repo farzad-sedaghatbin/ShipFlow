@@ -129,23 +129,15 @@ public class WorkLogController {
 
   @GetMapping
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
-  @Operation(summary = "Get all work logs", description = "Returns all work logs in the system (admin/manager use)")
+  @Operation(summary = "Get all work logs", description = "Returns all work logs in the system (admin/manager use). All filter parameters are optional and may be combined.")
   public ResponseEntity<Page<WorkLogDTO>> getAllWorkLogs(
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
       @RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) Long personId,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-    if (fromDate != null && toDate != null) {
-      if (projectId != null) {
-        return ResponseEntity.ok(workLogService.getAllWorkLogsByProjectIdAndDateRange(projectId, fromDate, toDate, pageOf(page, size)));
-      }
-      return ResponseEntity.ok(workLogService.getAllWorkLogsByDateRange(fromDate, toDate, pageOf(page, size)));
-    }
-    if (projectId != null) {
-      return ResponseEntity.ok(workLogService.getAllWorkLogsByProjectId(projectId, pageOf(page, size)));
-    }
-    return ResponseEntity.ok(workLogService.getAllWorkLogs(pageOf(page, size)));
+    return ResponseEntity.ok(workLogService.getWorkLogsFiltered(personId, projectId, fromDate, toDate, pageOf(page, size)));
   }
 
   @GetMapping("/pitch/{pitchId}")
@@ -187,16 +179,14 @@ public class WorkLogController {
 
   @GetMapping("/cycle/{cycleId}")
   @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
-  @Operation(summary = "Get work logs by cycle ID")
+  @Operation(summary = "Get work logs by cycle ID", description = "Returns work logs for the given cycle. personId and date range filters are optional and may be combined.")
   public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByCycleId(@PathVariable Long cycleId,
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+      @RequestParam(required = false) Long personId,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
-    if (fromDate != null && toDate != null) {
-      return ResponseEntity.ok(workLogService.getWorkLogsByCycleIdAndDateRange(cycleId, fromDate, toDate, pageOf(page, size)));
-    }
-    return ResponseEntity.ok(workLogService.getWorkLogsByCycleId(cycleId, pageOf(page, size)));
+    return ResponseEntity.ok(workLogService.getWorkLogsFilteredByCycle(cycleId, personId, fromDate, toDate, pageOf(page, size)));
   }
 
   @GetMapping("/{id}")

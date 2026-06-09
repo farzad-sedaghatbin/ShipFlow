@@ -118,15 +118,14 @@ export default function WorkLogsPage() {
   const [filterDateFrom, setFilterDateFrom] = useState<string>('');
   const [filterDateTo, setFilterDateTo] = useState<string>('');
 
-  // Filtered work logs — client-side person/pitch/task; date is server-side
+  // Filtered work logs — pitch/task are still client-side; person and date are server-side
   const filteredWorkLogs = useMemo(() => {
     return workLogs.filter(wl => {
-      if (filterPersonId !== 'all' && wl.personId !== parseInt(filterPersonId, 10)) return false;
       if (filterPitchId !== 'all' && wl.pitchId !== parseInt(filterPitchId, 10)) return false;
       if (filterTaskId !== 'all' && wl.taskId !== parseInt(filterTaskId, 10)) return false;
       return true;
     });
-  }, [workLogs, filterPersonId, filterPitchId, filterTaskId]);
+  }, [workLogs, filterPitchId, filterTaskId]);
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -172,7 +171,7 @@ export default function WorkLogsPage() {
         loadWorkLogs(parseInt(selectedCycle, 10));
       }
     }
-  }, [page, selectedCycle, activeTab, currentProject?.id, filterDateFrom, filterDateTo]);
+  }, [page, selectedCycle, activeTab, currentProject?.id, filterDateFrom, filterDateTo, filterPersonId]);
 
   // Reload summary stats when cycle, tab, or project changes (no page dependency)
   useEffect(() => {
@@ -225,6 +224,10 @@ export default function WorkLogsPage() {
     const dateFrom = from && to ? from : undefined;
     const dateTo = from && to ? to : undefined;
 
+    // Person filter is server-side on the team tab only.
+    // The /worklogs/my* endpoints are already scoped to the current user, so personId is not sent there.
+    const teamPersonId = activeTab === 'team' && filterPersonId !== 'all' ? parseInt(filterPersonId, 10) : undefined;
+
     try {
       let logs: WorkLog[] = [];
       let serverTotalPages = 0;
@@ -238,7 +241,7 @@ export default function WorkLogsPage() {
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
         } else {
-          const response = await workLogService.getAll(page, PAGE_SIZE, projectId, dateFrom, dateTo);
+          const response = await workLogService.getAll(page, PAGE_SIZE, projectId, dateFrom, dateTo, teamPersonId);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
@@ -252,7 +255,7 @@ export default function WorkLogsPage() {
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
         } else {
-          const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE, dateFrom, dateTo);
+          const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE, dateFrom, dateTo, teamPersonId);
           logs = response.data.content;
           serverTotalPages = response.data.totalPages;
           serverTotalElements = response.data.totalElements;
