@@ -82,6 +82,7 @@ import { RouteProgressProvider } from './RouteProgressProvider';
 import MobileBottomNav from './MobileBottomNav';
 import GlobalSearchCommand from './GlobalSearchCommand';
 import { KeyboardShortcutSheet } from './KeyboardShortcutSheet';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import packageJson from '../../package.json';
 
 interface LayoutProps {
@@ -519,11 +520,11 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [showShortcuts, setShowShortcuts] = useState(false);
   const { user, logout } = useAuth();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
+  const { showHelp: showShortcuts, setShowHelp: setShowShortcuts } = useKeyboardShortcuts();
 
   // Global search keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -531,26 +532,6 @@ export default function Layout({ children }: LayoutProps) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Keyboard shortcut help: ? key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const active = document.activeElement;
-      const tag = active?.tagName.toLowerCase();
-      const isTyping =
-        tag === 'input' ||
-        tag === 'textarea' ||
-        tag === 'select' ||
-        (active as HTMLElement | null)?.isContentEditable;
-      if (isTyping) return;
-      if (e.key === '?') {
-        e.preventDefault();
-        setShowShortcuts((prev) => !prev);
       }
     };
     document.addEventListener('keydown', handleKeyDown);
