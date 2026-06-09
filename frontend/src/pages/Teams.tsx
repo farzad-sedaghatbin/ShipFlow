@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
-import { Plus, Trash2, Pencil, UserPlus, History, Clock, ClipboardList, Loader2, Search, ArrowUpDown } from 'lucide-react';
+import { Plus, Archive, ArchiveRestore, Pencil, Trash2, UserPlus, History, Clock, ClipboardList, Loader2, Search, ArrowUpDown } from 'lucide-react';
 import { teamService } from '../services/teamService';
 import { personService } from '../services/personService';
 import { workLogService } from '../services/workLogService';
@@ -65,6 +65,7 @@ export default function Teams() {
   const [, setFieldErrors] = useState<Record<string, string>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'members'>('name');
+  const [showArchived, setShowArchived] = useState(false);
 
   const [teamDialog, setTeamDialog] = useState(false);
   const [assignmentDialog, setAssignmentDialog] = useState(false);
@@ -89,14 +90,14 @@ export default function Teams() {
     const abortController = new AbortController();
     loadData();
     return () => abortController.abort();
-  }, [currentProject, isAllProjectsSelected]);
+  }, [currentProject, isAllProjectsSelected, showArchived]);
 
   const loadData = async () => {
     try {
       setLoading(true);
 
       const [teamsRes, personsData] = await Promise.all([
-        teamService.getAll(),
+        showArchived ? teamService.getAllIncludingArchived() : teamService.getAll(),
         personService.getAll(true),
       ]);
 
@@ -163,13 +164,23 @@ export default function Teams() {
     }
   };
 
-  const handleDeleteTeam = async (id: number) => {
+  const handleArchiveTeam = async (id: number) => {
     try {
-      await teamService.delete(id);
-      showToast(t('teams.deleteSuccess'), 'success');
+      await teamService.archive(id);
+      showToast(t('teams.archiveSuccess'), 'success');
       loadData();
     } catch (error) {
-      showToast(getUserFriendlyError(error, t('teams.failedToDelete')), 'error');
+      showToast(getUserFriendlyError(error, t('teams.failedToArchive')), 'error');
+    }
+  };
+
+  const handleUnarchiveTeam = async (id: number) => {
+    try {
+      await teamService.unarchive(id);
+      showToast(t('teams.unarchiveSuccess'), 'success');
+      loadData();
+    } catch (error) {
+      showToast(getUserFriendlyError(error, t('teams.failedToUnarchive')), 'error');
     }
   };
 
@@ -289,13 +300,24 @@ export default function Teams() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t('teams.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {teams.length} {teams.length !== 1 ? t('teams.teams') : t('teams.team')}
+              {isAllProjectsSelected ? t('dashboard.showingAllProjects') : currentProject?.name} • {teams.filter(t => !t.isArchived).length} {t('teams.active').toLowerCase()}
+              {teams.some(t => t.isArchived) && ` • ${teams.filter(t => t.isArchived).length} ${t('teams.archived').toLowerCase()}`}
             </p>
           </div>
-          <Button onClick={() => handleOpenTeamDialog()} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('teams.newTeam')}
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant={showArchived ? 'secondary' : 'outline'}
+              onClick={() => setShowArchived(!showArchived)}
+              className="flex-1 sm:flex-none"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showArchived ? t('teams.hideArchived') : t('teams.showArchived')}
+            </Button>
+            <Button onClick={() => handleOpenTeamDialog()} className="flex-1 sm:flex-none">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('teams.newTeam')}
+            </Button>
+          </div>
         </div>
 
         {/* Search and Sort Controls */}
@@ -326,15 +348,21 @@ export default function Teams() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-sm text-muted-foreground mb-1">{t('teams.totalTeams')}</p>
-            <p className="text-4xl font-bold">{teams.length}</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('teams.activeTeams')}</p>
+            <p className="text-4xl font-bold">{teams.filter(t => !t.isArchived).length}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <p className="text-sm text-muted-foreground mb-1">{t('teams.archivedTeams')}</p>
+            <p className="text-4xl font-bold text-muted-foreground">{teams.filter(t => t.isArchived).length}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-muted-foreground mb-1">{t('teams.totalMembers')}</p>
             <p className="text-4xl font-bold">
-              {teams.reduce((sum, t) => sum + (t.assignments?.length || 0), 0)}
+              {teams.filter(t => !t.isArchived).reduce((sum, t) => sum + (t.assignments?.length || 0), 0)}
             </p>
           </CardContent>
         </Card>
@@ -368,52 +396,82 @@ export default function Teams() {
       ) : (
         <Accordion type="multiple" defaultValue={filteredAndSortedTeams.map(t => t.id.toString())} className="space-y-2">
           {filteredAndSortedTeams.map((team) => (
-            <AccordionItem key={team.id} value={team.id.toString()} className="border rounded-lg px-4">
+            <AccordionItem key={team.id} value={team.id.toString()} className={cn("border rounded-lg px-4", team.isArchived && "opacity-60")}>
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3 flex-1 pr-4">
                   <span className="text-lg font-semibold">{team.name}</span>
-                  <Badge variant="outline" className="font-normal">
-                    {team.assignments?.length || 0} {t('teams.membersCount')}
-                  </Badge>
+                  {team.isArchived ? (
+                    <Badge variant="secondary" className="font-normal">
+                      {t('teams.archived')}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="font-normal">
+                      {team.assignments?.length || 0} {t('teams.membersCount')}
+                    </Badge>
+                  )}
                   <div className="flex-1" />
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenTeamDialog(team);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
+                  {!team.isArchived && (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                      onClick={(e) => {
                         e.stopPropagation();
                         handleOpenTeamDialog(team);
-                      }
-                    }}
-                    aria-label={t('teams.editTeam')}
-                  >
-                    <Pencil className="h-4 w-4" aria-hidden="true" />
-                  </div>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteTeam(team.id);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleOpenTeamDialog(team);
+                        }
+                      }}
+                      aria-label={t('teams.editTeam')}
+                    >
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                  )}
+                  {team.isArchived ? (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
+                      onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteTeam(team.id);
-                      }
-                    }}
-                    aria-label={t('teams.deleteTeam')}
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  </div>
+                        handleUnarchiveTeam(team.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleUnarchiveTeam(team.id);
+                        }
+                      }}
+                      aria-label={t('teams.unarchiveTeam')}
+                    >
+                      <ArchiveRestore className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                  ) : (
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 text-amber-600 hover:text-amber-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleArchiveTeam(team.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleArchiveTeam(team.id);
+                        }
+                      }}
+                      aria-label={t('teams.archiveTeam')}
+                    >
+                      <Archive className="h-4 w-4" aria-hidden="true" />
+                    </div>
+                  )}
                 </div>
               </AccordionTrigger>
               <AccordionContent>

@@ -5407,7 +5407,19 @@
     "updateTeamDetails": "به‌روزرسانی جزئیات تیم",
     "viewActivity": "مشاهده فعالیت",
     "workActivity": "فعالیت کاری",
-    "workingDaysPerWeek": "روز/هفته"
+    "workingDaysPerWeek": "روز/هفته",
+    "archiveTeam": "بایگانی تیم",
+    "unarchiveTeam": "بازیابی تیم",
+    "archiveSuccess": "تیم بایگانی شد",
+    "unarchiveSuccess": "تیم بازیابی شد",
+    "failedToArchive": "خطا در بایگانی تیم",
+    "failedToUnarchive": "خطا در بازیابی تیم",
+    "showArchived": "نمایش بایگانی‌شده‌ها",
+    "hideArchived": "پنهان کردن بایگانی‌شده‌ها",
+    "archived": "بایگانی شده",
+    "activeTeams": "تیم‌های فعال",
+    "archivedTeams": "تیم‌های بایگانی شده",
+    "active": "فعال"
   },
   "teamsIntegration": {
     "actions": "عملیات‌ها",
