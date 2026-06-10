@@ -48,6 +48,8 @@ export default function CycleForm() {
   const [endDate, setEndDate] = useState<string>('');
   const [useAutoEndDate, setUseAutoEndDate] = useState<boolean>(true);
   const [defaultCycleLengthWeeks, setDefaultCycleLengthWeeks] = useState<number>(6);
+  const [defaultCooldownWeeks, setDefaultCooldownWeeks] = useState<number>(2);
+  const [defaultSprintLengthWeeks, setDefaultSprintLengthWeeks] = useState<number>(2);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -76,28 +78,38 @@ export default function CycleForm() {
     }
   }, [id, isEdit]);
 
+  // Returns the effective week count based on project type and selected phase
+  const effectiveWeeks = isScrumProject
+    ? defaultSprintLengthWeeks
+    : formData.phase === 'BETTING_COOLDOWN'
+    ? defaultCooldownWeeks
+    : defaultCycleLengthWeeks;
+
   // Helper function to calculate end date from start date
-  const calculateEndDate = (startDateStr: string): string => {
+  const calculateEndDate = (startDateStr: string, weeks: number): string => {
     const start = new Date(startDateStr);
     const calculatedEnd = new Date(start);
-    calculatedEnd.setDate(calculatedEnd.getDate() + (defaultCycleLengthWeeks * 7));
+    calculatedEnd.setDate(calculatedEnd.getDate() + (weeks * 7));
     return calculatedEnd.toISOString().split('T')[0];
   };
 
-  // Auto-calculate end date when start date changes and auto mode is enabled
+  // Auto-calculate end date when start date or phase changes and auto mode is enabled
   useEffect(() => {
     if (useAutoEndDate && startDate && !isEdit) {
-      setEndDate(calculateEndDate(startDate));
+      setEndDate(calculateEndDate(startDate, effectiveWeeks));
     }
-  }, [startDate, useAutoEndDate, defaultCycleLengthWeeks, isEdit]);
+  }, [startDate, useAutoEndDate, defaultCycleLengthWeeks, defaultCooldownWeeks, defaultSprintLengthWeeks, formData.phase, isEdit]);
 
   const loadOrganizationSettings = async () => {
     try {
       const response = await organizationSettingsService.getSettings();
       setDefaultCycleLengthWeeks(response.data.defaultCycleLengthWeeks || 6);
+      setDefaultCooldownWeeks(response.data.defaultCooldownWeeks || 2);
+      setDefaultSprintLengthWeeks(response.data.defaultSprintLengthWeeks || 2);
     } catch (err) {
-      // Fallback to default if settings can't be loaded
       setDefaultCycleLengthWeeks(6);
+      setDefaultCooldownWeeks(2);
+      setDefaultSprintLengthWeeks(2);
     }
   };
 
@@ -317,14 +329,13 @@ export default function CycleForm() {
                     onChange={(e) => {
                       setUseAutoEndDate(e.target.checked);
                       if (e.target.checked && startDate) {
-                        // Recalculate end date
-                        setEndDate(calculateEndDate(startDate));
+                        setEndDate(calculateEndDate(startDate, effectiveWeeks));
                       }
                     }}
                     className="h-4 w-4 rounded border-gray-300"
                   />
                   <Label htmlFor="useAutoEndDate" className="cursor-pointer text-sm font-normal">
-                    {t('cycleForm.autoCalculateEndDate', { weeks: defaultCycleLengthWeeks })}
+                    {t('cycleForm.autoCalculateEndDate', { weeks: effectiveWeeks })}
                   </Label>
                 </div>
               )}
@@ -333,7 +344,7 @@ export default function CycleForm() {
               {!isEdit && !canOverrideDates && (
                 <Alert>
                   <AlertDescription className="text-sm">
-                    {t('cycleForm.autoEndDateInfo', { weeks: defaultCycleLengthWeeks })}
+                    {t('cycleForm.autoEndDateInfo', { weeks: effectiveWeeks })}
                   </AlertDescription>
                 </Alert>
               )}

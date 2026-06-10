@@ -36,7 +36,7 @@ export type CyclePhase = 'SHAPING_BUILDING' | 'BETTING_COOLDOWN';
  * In-cycle: PENDING → STARTED → ... → DONE (requires cycle)
  */
 export type PitchStatus = 'IDEA' | 'DRAFT' | 'PENDING' | 'SHAPED' | 'STARTED' | 'IN_PROGRESS' | 'TESTING' | 'DONE' | 'COOLDOWN' | 'CANCELLED';
-export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
+export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'MOBILE' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
 export type MeetingType = 'SHAPING' | 'BETTING' | 'KICKOFF' | 'STANDUP' | 'DEMO' | 'RETROSPECTIVE' | 'HILL_CHART_REVIEW';
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
