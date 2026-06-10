@@ -56,6 +56,9 @@ public class OrganizationSettingsService {
     if (request.getDefaultCooldownWeeks() != null) {
       settings.setDefaultCooldownWeeks(request.getDefaultCooldownWeeks());
     }
+    if (request.getDefaultSprintLengthWeeks() != null) {
+      settings.setDefaultSprintLengthWeeks(request.getDefaultSprintLengthWeeks());
+    }
     if (request.getRiskThresholds() != null) {
       settings.setRiskThresholdsJson(toJson(request.getRiskThresholds()));
     }
@@ -325,7 +328,7 @@ public class OrganizationSettingsService {
     List<OrganizationSettingsDTO.MeetingTypeConfig> defaultMeetingTypes = createDefaultMeetingTypes();
 
     OrganizationSettings settings = OrganizationSettings.builder().organizationName("My Organization")
-        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
+        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).defaultSprintLengthWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
         .riskWeightsJson(toJson(defaultRiskWeights)).taskCategoriesJson(toJson(defaultTaskCategories))
         .pitchCategoriesJson(toJson(defaultPitchCategories)).colorsJson(toJson(defaultColors))
         .bugStatusesJson(toJson(defaultBugStatuses)).severityLevelsJson(toJson(defaultSeverityLevels))
@@ -500,6 +503,7 @@ public class OrganizationSettingsService {
     return OrganizationSettingsDTO.builder().id(entity.getId()).organizationName(entity.getOrganizationName())
         .defaultCycleLengthWeeks(entity.getDefaultCycleLengthWeeks())
         .defaultCooldownWeeks(entity.getDefaultCooldownWeeks())
+        .defaultSprintLengthWeeks(entity.getDefaultSprintLengthWeeks())
         .riskThresholds(fromJson(entity.getRiskThresholdsJson(),
             new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {
             }))

@@ -26,6 +26,7 @@ import {
 } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Combobox } from '../components/ui/combobox';
 import {
   Select,
   SelectContent,
@@ -52,7 +53,7 @@ import {
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Separator } from '../components/ui/separator';
 
-const roles: TeamMemberRole[] = ['BACKEND', 'FRONTEND', 'QA', 'DESIGNER', 'FULLSTACK', 'TECH_LEAD', 'PRODUCT_MANAGER'];
+const roles: TeamMemberRole[] = ['BACKEND', 'FRONTEND', 'MOBILE', 'QA', 'DESIGNER', 'FULLSTACK', 'TECH_LEAD', 'PRODUCT_MANAGER'];
 
 export default function Teams() {
   const { t, i18n } = useTranslation();
@@ -257,6 +258,7 @@ export default function Teams() {
     const classNames: Record<TeamMemberRole, string> = {
       BACKEND: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
       FRONTEND: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
+      MOBILE: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20',
       QA: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
       DESIGNER: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
       FULLSTACK: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20',
@@ -647,26 +649,20 @@ export default function Teams() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="person">{t('teams.person')}</Label>
-              <Select
+              <Label>{t('teams.person')}</Label>
+              <Combobox
+                options={persons.map((person) => ({
+                  value: person.id.toString(),
+                  label: `${person.name}${person.email ? ` (${person.email})` : t('teams.noEmail')}`,
+                }))}
                 value={selectedPersonId}
                 onValueChange={(value) => {
                   setSelectedPersonId(value);
                   setAssignmentForm({ ...assignmentForm, personId: parseInt(value) });
                 }}
                 disabled={!!editAssignmentId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('teams.selectAPerson')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {persons.map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name} {person.email ? `(${person.email})` : t('teams.noEmail')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('teams.selectAPerson')}
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="role">{t('teams.role')}</Label>

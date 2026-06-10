@@ -16,6 +16,7 @@ public class UpdateOrganizationSettingsRequest {
   private String organizationName;
   private Integer defaultCycleLengthWeeks;
   private Integer defaultCooldownWeeks;
+  private Integer defaultSprintLengthWeeks;
   private OrganizationSettingsDTO.RiskThresholds riskThresholds;
   private OrganizationSettingsDTO.RiskWeights riskWeights;
   private List<OrganizationSettingsDTO.CategoryConfig> taskCategories;
