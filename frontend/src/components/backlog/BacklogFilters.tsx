@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
+import { Input } from '../ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { TabsList, TabsTrigger } from '../ui/tabs';
-import { TaskStatus, TaskPriority } from '../../types';
+import { TaskStatus, TaskPriority, Person } from '../../types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '../../constants/backlogConstants';
 
 export interface BacklogFiltersProps {
@@ -20,6 +22,11 @@ export interface BacklogFiltersProps {
   onPriorityFilterChange: (priority: TaskPriority) => void;
   dependencyFilter: 'all' | 'blocked' | 'blocking';
   onDependencyFilterChange: (filter: 'all' | 'blocked' | 'blocking') => void;
+  searchQuery: string;
+  onSearchQueryChange: (query: string) => void;
+  persons: Person[];
+  assigneeFilter: number[];
+  onAssigneeFilterChange: (personId: number) => void;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
@@ -32,6 +39,11 @@ export function BacklogFilters({
   onPriorityFilterChange,
   dependencyFilter,
   onDependencyFilterChange,
+  searchQuery,
+  onSearchQueryChange,
+  persons,
+  assigneeFilter,
+  onAssigneeFilterChange,
   hasActiveFilters,
   onClearFilters,
 }: BacklogFiltersProps) {
@@ -39,20 +51,22 @@ export function BacklogFilters({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
+  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
-      <TabsList>
-        <TabsTrigger value="all" onClick={() => onTabChange('all')}>
-          {t('backlogPage.allTasks')}
-        </TabsTrigger>
-        <TabsTrigger value="my" onClick={() => onTabChange('my')}>
-          {t('backlogPage.myTasks')}
-        </TabsTrigger>
-      </TabsList>
+    <div className="flex flex-col gap-3 mb-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <TabsList>
+          <TabsTrigger value="all" onClick={() => onTabChange('all')}>
+            {t('backlogPage.allTasks')}
+          </TabsTrigger>
+          <TabsTrigger value="my" onClick={() => onTabChange('my')}>
+            {t('backlogPage.myTasks')}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
+        {/* Filters */}
+        <div className="flex items-center gap-2 flex-wrap">
         {/* Status Filter */}
         <DropdownMenu open={statusDropdownOpen} onOpenChange={setStatusDropdownOpen}>
           <DropdownMenuTrigger asChild>
@@ -128,6 +142,34 @@ export function BacklogFilters({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Assignee Filter */}
+        {persons.length > 0 && (
+          <DropdownMenu open={assigneeDropdownOpen} onOpenChange={setAssigneeDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                {t('backlogPage.filters.assignee')} {assigneeFilter.length > 0 && `(${assigneeFilter.length})`}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 max-h-60 overflow-y-auto">
+              {persons.filter(p => p.isActive).map((person) => (
+                <DropdownMenuItem
+                  key={person.id}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onAssigneeFilterChange(person.id);
+                  }}
+                >
+                  <Checkbox
+                    checked={assigneeFilter.includes(person.id)}
+                    className="mr-2"
+                  />
+                  {person.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={onClearFilters}>
             {t('backlogPage.filters.clearFilters')}
@@ -135,5 +177,17 @@ export function BacklogFilters({
         )}
       </div>
     </div>
+
+    {/* Search */}
+    <div className="relative max-w-sm">
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <Input
+        placeholder={t('backlogPage.filters.searchPlaceholder')}
+        value={searchQuery}
+        onChange={(e) => onSearchQueryChange(e.target.value)}
+        className="pl-8"
+      />
+    </div>
+  </div>
   );
 }

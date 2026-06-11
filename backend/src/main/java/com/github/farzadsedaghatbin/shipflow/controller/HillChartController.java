@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.hillchart.ConfidenceAnalysisDTO
 import com.github.farzadsedaghatbin.shipflow.dto.hillchart.HillChartHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.hillchart.UpdateHillChartPositionRequest;
 import com.github.farzadsedaghatbin.shipflow.service.HillChartService;
+import com.github.farzadsedaghatbin.shipflow.service.ScopeProgressService;
 import com.github.farzadsedaghatbin.shipflow.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 public class HillChartController {
 
   private final HillChartService hillChartService;
+  private final ScopeProgressService scopeProgressService;
   private final UserService userService;
 
   @GetMapping
@@ -154,5 +156,23 @@ public class HillChartController {
   public ResponseEntity<Map<String, Integer>> getSuggestedPosition(@PathVariable Long id) {
     Integer position = hillChartService.getSuggestedPosition(id);
     return ResponseEntity.ok(Map.of("suggestedPosition", position));
+  }
+
+  @PostMapping("/pitch/{pitchId}/resync")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Re-sync all scope positions for a pitch",
+      description = "Recalculates and applies the suggested position for every auto-progress-enabled scope under this pitch. Use this to fix stale positions after the weighted-average bug fix.")
+  public ResponseEntity<Map<String, Integer>> resyncPitchScopes(@PathVariable Long pitchId) {
+    int updated = scopeProgressService.syncAllScopesForPitch(pitchId);
+    return ResponseEntity.ok(Map.of("updatedScopes", updated));
+  }
+
+  @PostMapping("/cycle/{cycleId}/resync")
+  @PreAuthorize("hasRole('ADMIN') or hasRole('PROJECT_MANAGER')")
+  @Operation(summary = "Re-sync all scope positions for every pitch in a cycle",
+      description = "Bulk re-sync for a full cycle. Fixes all scopes whose positions were calculated with the old binary DONE/CANCELLED logic.")
+  public ResponseEntity<Map<String, Integer>> resyncCycleScopes(@PathVariable Long cycleId) {
+    int updated = hillChartService.syncAllScopesForCycle(cycleId);
+    return ResponseEntity.ok(Map.of("updatedScopes", updated));
   }
 }

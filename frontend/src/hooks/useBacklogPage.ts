@@ -182,6 +182,10 @@ export function useBacklogPage() {
     if (statusFilter.length > 0) result = result.filter((t) => excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status));
     if (priorityFilter.length > 0) result = result.filter((t) => excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority));
     if (assigneeFilter.length > 0) result = result.filter((t) => excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0));
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
+    }
     return applyDependencyFilter(result);
   };
 
@@ -276,6 +280,13 @@ export function useBacklogPage() {
   const handleTogglePriorityFilter = (priority: TaskPriority) => {
     setPriorityFilter(prev =>
       prev.includes(priority) ? prev.filter(p => p !== priority) : [...prev, priority],
+    );
+    setPage(0);
+  };
+
+  const handleToggleAssigneeFilter = (personId: number) => {
+    setAssigneeFilter(prev =>
+      prev.includes(personId) ? prev.filter(id => id !== personId) : [...prev, personId],
     );
     setPage(0);
   };
@@ -516,6 +527,7 @@ export function useBacklogPage() {
     handleToggleColumn,
     handleToggleStatusFilter,
     handleTogglePriorityFilter,
+    handleToggleAssigneeFilter,
     handlePitchChange,
     handleCategoryChange,
     handleOpenDialog,
