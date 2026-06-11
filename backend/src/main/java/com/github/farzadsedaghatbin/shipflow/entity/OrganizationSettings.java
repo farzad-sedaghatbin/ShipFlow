@@ -32,6 +32,10 @@ public class OrganizationSettings {
   @Builder.Default
   private Integer defaultCooldownWeeks = 2;
 
+  @Column(nullable = false, name = "default_sprint_length_weeks")
+  @Builder.Default
+  private Integer defaultSprintLengthWeeks = 2;
+
   // Risk Thresholds (stored as JSON in a single column for flexibility)
   @Column(columnDefinition = "TEXT")
   private String riskThresholdsJson;

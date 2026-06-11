@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Calendar, Clock, Sparkles } from 'lucide-react';
+import { Calendar, Clock, Sparkles, Repeat } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
@@ -65,6 +65,48 @@ export function CycleSettingsTab({ formData, setFormData }: CycleSettingsTabProp
             <Clock className="h-4 w-4" />
             <AlertDescription>
               {t('organizationSettings.cycleDefaultsNote')}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Scrum / Sprint Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Repeat className="h-5 w-5" />
+            {t('organizationSettings.sprintConfiguration', 'Sprint Configuration')}
+          </CardTitle>
+          <CardDescription>
+            {t('organizationSettings.sprintDesc', 'Default sprint length for Scrum-based projects')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="sprintLength">
+                {t('organizationSettings.defaultSprintLength', 'Default Sprint Length (weeks)')}
+              </Label>
+              <Input
+                id="sprintLength"
+                type="number"
+                min="1"
+                max="4"
+                value={formData.defaultSprintLengthWeeks ?? 2}
+                onChange={(e) =>
+                  setFormData({ ...formData, defaultSprintLengthWeeks: parseInt(e.target.value) })
+                }
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('organizationSettings.defaultSprintLengthNote', 'Typical sprint lengths are 1, 2, 3, or 4 weeks')}
+              </p>
+            </div>
+          </div>
+
+          <Alert>
+            <Repeat className="h-4 w-4" />
+            <AlertDescription>
+              {t('organizationSettings.sprintDefaultsNote', 'This default applies when creating new sprints in Scrum projects')}
             </AlertDescription>
           </Alert>
         </CardContent>

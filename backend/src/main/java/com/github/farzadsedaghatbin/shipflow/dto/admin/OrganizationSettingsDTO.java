@@ -21,6 +21,7 @@ public class OrganizationSettingsDTO {
   // Cycle Configuration
   private Integer defaultCycleLengthWeeks;
   private Integer defaultCooldownWeeks;
+  private Integer defaultSprintLengthWeeks;
 
   // Risk Thresholds
   private RiskThresholds riskThresholds;

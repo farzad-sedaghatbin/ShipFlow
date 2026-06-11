@@ -3503,6 +3503,11 @@
     "defaultCooldownNote": "دوره Cooldown بین سیکل‌ها (معمولاً ۲ هفته)",
     "defaultCycleLength": "طول پیش‌فرض سیکل (هفته)",
     "defaultCycleLengthNote": "سیکل استاندارد Shape Up ۶ هفته است",
+    "sprintConfiguration": "تنظیمات اسپرینت",
+    "sprintDesc": "طول پیش‌فرض اسپرینت برای پروژه‌های Scrum",
+    "defaultSprintLength": "طول پیش‌فرض اسپرینت (هفته)",
+    "defaultSprintLengthNote": "طول معمول اسپرینت ۱، ۲، ۳ یا ۴ هفته است",
+    "sprintDefaultsNote": "این مقدار پیش‌فرض هنگام ایجاد اسپرینت در پروژه‌های Scrum اعمال می‌شود",
     "defaults": {
       "bugStatus": {
         "fixed": "رفع شده",

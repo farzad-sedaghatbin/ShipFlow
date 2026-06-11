@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { Badge } from '../components/ui/badge';
 import {
   Table,
@@ -573,12 +574,12 @@ export default function WorkLogsPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>{t('workLogs.person')} *</Label>
-              <Select value={teamWorkLog.personId ? teamWorkLog.personId.toString() : ''} onValueChange={(v) => setTeamWorkLog({ ...teamWorkLog, personId: Number(v) })}>
-                <SelectTrigger><SelectValue placeholder={t('workLogs.selectPerson')} /></SelectTrigger>
-                <SelectContent>
-                  {persons.map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={persons.map((p) => ({ value: p.id.toString(), label: p.name }))}
+                value={teamWorkLog.personId ? teamWorkLog.personId.toString() : ''}
+                onValueChange={(v) => setTeamWorkLog({ ...teamWorkLog, personId: Number(v) })}
+                placeholder={t('workLogs.selectPerson')}
+              />
             </div>
             <div className="space-y-2">
               <Label>{t('workLogs.logType')} *</Label>
@@ -728,13 +729,16 @@ function LogFilters({ filterDateFrom, onFilterDateFromChange, filterDateTo, onFi
       {showPersonFilter && (
         <div className="space-y-1">
           <Label className="text-xs">{t('workLogsPage.filterByPerson', 'Person')}</Label>
-          <Select value={filterPersonId} onValueChange={onFilterPersonIdChange}>
-            <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder={t('workLogsPage.allPersons', 'All People')} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('workLogsPage.allPersons', 'All People')}</SelectItem>
-              {persons.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <Combobox
+            options={[
+              { value: 'all', label: t('workLogsPage.allPersons', 'All People') },
+              ...persons.map(p => ({ value: p.id.toString(), label: p.name })),
+            ]}
+            value={filterPersonId}
+            onValueChange={onFilterPersonIdChange}
+            placeholder={t('workLogsPage.allPersons', 'All People')}
+            triggerClassName="w-[160px] h-9"
+          />
         </div>
       )}
       <div className="space-y-1">
