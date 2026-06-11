@@ -59,16 +59,15 @@ public class ScopeProgressService {
       return getPositionFromTaskStatus(task.getStatus());
     }
 
-    // Calculate completion percentage from subtasks
-    long totalSubtasks = subtasks.size();
-    long completedSubtasks = subtasks.stream()
-        .filter(t -> t.getStatus() == TaskStatus.DONE || t.getStatus() == TaskStatus.CANCELLED)
-        .count();
+    // Weighted average: each subtask contributes its own status-based position.
+    // Using binary DONE/CANCELLED counting caused IN_REVIEW subtasks (position=75)
+    // to contribute zero, making a scope with all-IN_REVIEW subtasks show 0%.
+    double averagePosition = subtasks.stream()
+        .mapToInt(t -> getPositionFromTaskStatus(t.getStatus()))
+        .average()
+        .orElse(0);
 
-    double completionPercentage = (completedSubtasks * 100.0) / totalSubtasks;
-
-    // Map completion percentage to hill chart position (0-100)
-    return (int) Math.round(completionPercentage);
+    return (int) Math.round(averagePosition);
   }
 
   /**

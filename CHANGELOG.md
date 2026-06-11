@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Hill chart progress bug**: scope positions now use weighted-average of subtask statuses instead of binary DONE/CANCELLED counting — `IN_REVIEW` subtasks now correctly contribute 75% toward scope progress instead of 0% ([`ScopeProgressService`](backend/src/main/java/com/github/farzadsedaghatbin/shipflow/service/ScopeProgressService.java))
+- Added `POST /api/hill-chart/pitch/{pitchId}/resync` and `POST /api/hill-chart/cycle/{cycleId}/resync` endpoints to recalculate stale scope positions
+
+### Changed
+- **Work Logs page** (`/time/logs`): "Quick Log" and "Log Time for Team Member" inline forms replaced with a `+ Log Time` CTA button that opens a modal dialog; pitch/task titles in the table are now clickable links
+- **Backlog**: added search-by-title input and multi-select assignee filter to `BacklogFilters`
+- **My Work Logs** (`/time/my-logs`): pitch and task titles in the log table are now clickable links navigating to the respective detail pages
+
 ## [1.5.0] - 2026-06-07
 
 ### Added — v1.5.0 "AI Copilot v2" (S38–S40)

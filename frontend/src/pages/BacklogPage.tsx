@@ -139,6 +139,11 @@ export default function BacklogPage() {
           onPriorityFilterChange={bp.handleTogglePriorityFilter}
           dependencyFilter={bp.dependencyFilter}
           onDependencyFilterChange={bp.setDependencyFilter}
+          searchQuery={bp.searchQuery}
+          onSearchQueryChange={(q) => { bp.setSearchQuery(q); bp.setPage(0); }}
+          persons={bp.persons}
+          assigneeFilter={bp.assigneeFilter}
+          onAssigneeFilterChange={bp.handleToggleAssigneeFilter}
           hasActiveFilters={bp.hasActiveFilters}
           onClearFilters={bp.handleClearFilters}
         />

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle, PlayCircle } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -585,7 +586,23 @@ export default function MyWorkLogs() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <span>{wl.pitchTitle || wl.taskTitle}</span>
+                          {wl.taskId ? (
+                            <Link
+                              to={`/backlog/${wl.taskId}`}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              {wl.taskTitle}
+                            </Link>
+                          ) : wl.pitchId ? (
+                            <Link
+                              to={`/pitches/${wl.pitchId}`}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              {wl.pitchTitle}
+                            </Link>
+                          ) : (
+                            <span>{wl.pitchTitle || wl.taskTitle}</span>
+                          )}
                           {wl.taskTitle && (
                             <Badge variant="secondary" className="text-xs w-fit">Task</Badge>
                           )}
