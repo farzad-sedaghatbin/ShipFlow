@@ -45,7 +45,7 @@ export default function PitchDetail() {
   const [workLogPage, setWorkLogPage] = useState(0);
   const [, setWorkLogTotalPages] = useState(0);
   const [workLogTotalElements, setWorkLogTotalElements] = useState(0);
-  const WORK_LOG_PAGE_SIZE = 5;
+  const WORK_LOG_PAGE_SIZE = 500; // fetch all for grouped-by-person summary
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
