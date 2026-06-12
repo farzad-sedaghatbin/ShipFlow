@@ -1,0 +1,1 @@
+ALTER TABLE bug_reports ADD COLUMN IF NOT EXISTS component VARCHAR(100);

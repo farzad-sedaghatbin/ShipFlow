@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **Bug Reports — Total stat and pagination NaN**: `@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)` nests `totalElements`/`totalPages` under a `page` sub-object in JSON; all frontend pagination consumers now read `response.data.page?.totalElements ?? response.data.totalElements ?? 0` (system-wide fix across 15+ files). Added `getPageTotal()` / `getPageCount()` helpers to `types/index.ts`.
+- **Bug Reports — component field**: Added `component` column to `bug_reports` table (Flyway `V100__add_component_to_bug_reports.sql`); backend entity/DTO/service updated; frontend form shows component selector; table shows component column.
+- **Bug Reports — pitch/story linking**: Added pitch selector to the bug report form; label adapts to project mode ("Linked Pitch" for Shape Up, "Linked Story / Epic" for Scrum).
+- **Bug Reports — UI layout**: Compact stats cards (`py-2 px-3`, `text-xl`), tighter filter spacing, 3-column form layout for severity/status/component — data is now the focus rather than the header area.
 - **QA role permissions**: `QA` users were blocked from all test-case and test-run write operations — added `QA` to `@PreAuthorize` on create/update/delete test cases, create/update/delete test runs, and AI test case generation (`QATestManagementController`)
 - **Hill chart progress bug**: scope positions now use weighted-average of subtask statuses instead of binary DONE/CANCELLED counting — `IN_REVIEW` subtasks now correctly contribute 75% toward scope progress instead of 0% ([`ScopeProgressService`](backend/src/main/java/com/github/farzadsedaghatbin/shipflow/service/ScopeProgressService.java))
 - Added `POST /api/hill-chart/pitch/{pitchId}/resync` and `POST /api/hill-chart/cycle/{cycleId}/resync` endpoints to recalculate stale scope positions

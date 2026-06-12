@@ -130,8 +130,8 @@ export default function MyWorkLogs() {
     try {
       const response = await workLogService.getMy(page, PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setTotalPages(response.data.totalPages);
-      setTotalElements(response.data.totalElements);
+      setTotalPages(response.data.page?.totalPages ?? response.data.totalPages ?? 0);
+      setTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
     } catch (error) {
       console.error('Failed to load all work logs:', error);
     }
@@ -141,8 +141,8 @@ export default function MyWorkLogs() {
     try {
       const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setTotalPages(response.data.totalPages);
-      setTotalElements(response.data.totalElements);
+      setTotalPages(response.data.page?.totalPages ?? response.data.totalPages ?? 0);
+      setTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }

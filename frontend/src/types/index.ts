@@ -1,31 +1,44 @@
 // Pagination
+// Spring Boot 3.3+ with PageSerializationMode.VIA_DTO puts totalElements/totalPages
+// inside a nested `page` object. All fields except `content` and `page` are optional
+// to remain compatible with both the legacy flat format and VIA_DTO format.
 export interface Page<T> {
   content: T[];
-  pageable: {
+  // Spring Data VIA_DTO format (Boot 3.3+ / Spring Data 3.3+)
+  page?: {
+    size: number;
+    number: number;
+    totalElements: number;
+    totalPages: number;
+  };
+  // Legacy flat fields (Boot ≤ 3.2, kept optional for backward compat)
+  pageable?: {
     pageNumber: number;
     pageSize: number;
-    sort: {
-      sorted: boolean;
-      unsorted: boolean;
-      empty: boolean;
-    };
+    sort: { sorted: boolean; unsorted: boolean; empty: boolean };
     offset: number;
     paged: boolean;
     unpaged: boolean;
   };
-  totalPages: number;
-  totalElements: number;
-  last: boolean;
-  size: number;
-  number: number;
-  sort: {
-    sorted: boolean;
-    unsorted: boolean;
-    empty: boolean;
-  };
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
+  totalPages?: number;
+  totalElements?: number;
+  last?: boolean;
+  size?: number;
+  number?: number;
+  sort?: { sorted: boolean; unsorted: boolean; empty: boolean };
+  numberOfElements?: number;
+  first?: boolean;
+  empty?: boolean;
+}
+
+/** Extract totalElements from either Spring Data page format. */
+export function getPageTotal<T>(p: Page<T>): number {
+  return p.page?.totalElements ?? p.totalElements ?? 0;
+}
+
+/** Extract totalPages from either Spring Data page format. */
+export function getPageCount<T>(p: Page<T>): number {
+  return p.page?.totalPages ?? p.totalPages ?? 0;
 }
 
 // Enums
@@ -1097,12 +1110,13 @@ export interface BugReport {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
-  
+  component?: string;
+
   // Direct project association
   projectId?: number;
   projectName?: string;
   projectKey?: string;
-  
+
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -1148,6 +1162,7 @@ export interface CreateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  component?: string;
   projectId?: number;
   pitchId?: number;
   cycleId?: number;
@@ -1169,6 +1184,7 @@ export interface UpdateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  component?: string;
   projectId?: number;
   pitchId?: number;
   cycleId?: number;

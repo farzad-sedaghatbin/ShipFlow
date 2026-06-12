@@ -66,6 +66,11 @@ public class BugReport {
   @Column(columnDefinition = "TEXT")
   private String environment;
 
+  /** Component/area where the bug was found (e.g., Frontend, Backend, Mobile). */
+  @NotAudited
+  @Column(length = 100)
+  private String component;
+
   /**
    * The project this bug belongs to. Direct project association allows bugs to
    * exist without requiring a cycle, pitch, or task - useful for Kanban projects

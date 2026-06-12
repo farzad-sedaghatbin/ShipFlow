@@ -55,7 +55,7 @@ export default function TaskWorkLogsSection({ taskId, onWorkLogsChanged }: TaskW
       setLoading(true);
       const response = await workLogService.getByTaskId(taskId, 0, PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setTotalElements(response.data.totalElements);
+      setTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
       // Sum from the loaded page — over PAGE_SIZE entries we show a "view all"
       // link so the partial sum is acceptable for the inline display.
       setTotalHours(response.data.content.reduce((acc, wl) => acc + (wl.hoursSpent || 0), 0));

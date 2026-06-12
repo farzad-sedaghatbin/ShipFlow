@@ -201,7 +201,7 @@ export function useBacklogPage() {
         let filtered = applyCommonFilters(response?.data?.content || []);
         if (tabValue === 'my' && user?.personId) filtered = filtered.filter((t) => t.assigneeId === user.personId);
         setTasks(filtered);
-        setTotalElements(response?.data?.totalElements || 0);
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } catch (error) { console.error('Failed to load project tasks:', error); setTasks([]); setTotalElements(0); }
       finally { clearTimeout(timeout); setTasksLoading(false); }
       return;
@@ -220,20 +220,20 @@ export function useBacklogPage() {
         }
         const filtered = (response?.data?.content || []).filter((t: Task) => (t.category || 'PITCH_SCOPE') === activeCategory);
         setTasks(filtered);
-        setTotalElements(selectedCycle === 'all' ? (response?.data?.totalElements || 0) : filtered.length);
+        setTotalElements(selectedCycle === 'all' ? (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0) : filtered.length);
       } else if (selectedCycle === 'all') {
         response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder);
         const byCat = (response?.data?.content || []).filter((t: Task) => (t.category || 'PITCH_SCOPE') === activeCategory);
         setTasks(applyCommonFilters(byCat));
-        setTotalElements(response?.data?.totalElements || 0);
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
         response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, activeCategory, excludeMode, page, rowsPerPage, sortBy, sortOrder);
         setTasks(applyDependencyFilter(response?.data?.content || []));
-        setTotalElements(response?.data?.totalElements || 0);
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else {
         response = await taskService.getByCycleIdAndCategory(selectedCycle, activeCategory, page, rowsPerPage, sortBy, sortOrder);
         setTasks(applyDependencyFilter(response?.data?.content || []));
-        setTotalElements(response?.data?.totalElements || 0);
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       }
     } catch (error) { console.error('Failed to load tasks:', error); setTasks([]); setTotalElements(0); }
     finally { clearTimeout(timeout); setTasksLoading(false); }
