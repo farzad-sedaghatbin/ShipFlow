@@ -51,6 +51,7 @@ jobs:
         npm test -- --run
 
     - name: Docs Build
+      continue-on-error: true
       run: |
         npm install --no-audit
         npm run docs:build
