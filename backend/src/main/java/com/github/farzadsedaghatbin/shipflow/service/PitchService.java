@@ -804,22 +804,26 @@ public class PitchService {
               .isOverBudget(hoursSpent > teamMemberBudget.getTotalBudgetHours())
               .build();
         } else {
-          // Non-team-member who logged the most work — show hours without budget info
+          // Non-team-member — resolve their capacity from person/org settings
           var personRef = pitchWorkLogs.stream()
               .filter(wl -> wl.getPerson() != null && wl.getPerson().getId().equals(topPersonId))
               .map(wl -> wl.getPerson())
               .findFirst().orElse(null);
           if (personRef != null) {
+            var capacityRes = capacityConfigService.getEffectiveHoursPerDay(personRef);
+            double hpd = capacityRes.value();
+            double budgetHours = hpd * pitch.getAppetiteDays();
+            double utilization = budgetHours > 0 ? (hoursSpent / budgetHours) * 100 : 0;
             busiestPerson = PitchDTO.BusiestPersonDTO.builder()
                 .personId(topPersonId)
                 .personName(personRef.getName())
                 .role(null)
-                .hoursPerDay(0.0)
-                .capacitySource("work_log")
-                .totalBudgetHours(0.0)
+                .hoursPerDay(hpd)
+                .capacitySource(capacityRes.source())
+                .totalBudgetHours(budgetHours)
                 .hoursSpent(hoursSpent)
-                .utilizationPercent(0.0)
-                .isOverBudget(false)
+                .utilizationPercent(Math.round(utilization * 10.0) / 10.0)
+                .isOverBudget(hoursSpent > budgetHours)
                 .build();
           }
         }

@@ -430,6 +430,13 @@ export interface WorkLogSummary {
   totalCount: number;
 }
 
+export interface WorkLogPersonSummary {
+  personId: number;
+  personName: string;
+  totalHours: number;
+  entryCount: number;
+}
+
 export interface MeetingAction {
   id?: number;
   description: string;
