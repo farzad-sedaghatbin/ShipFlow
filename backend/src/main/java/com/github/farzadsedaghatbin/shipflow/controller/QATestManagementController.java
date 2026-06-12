@@ -124,7 +124,7 @@ public class QATestManagementController {
   }
 
   @PostMapping("/test-cases")
-  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN')")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Create a test case", description = "Creates a new test case")
   public ResponseEntity<TestCaseDTO> createTestCase(@Valid @RequestBody CreateTestCaseRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
@@ -134,7 +134,7 @@ public class QATestManagementController {
   }
 
   @PutMapping("/test-cases/{id}")
-  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN')")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Update a test case", description = "Updates an existing test case")
   public ResponseEntity<TestCaseDTO> updateTestCase(@PathVariable Long id,
       @Valid @RequestBody UpdateTestCaseRequest request, @AuthenticationPrincipal UserDetails userDetails) {
@@ -144,7 +144,7 @@ public class QATestManagementController {
   }
 
   @DeleteMapping("/test-cases/{id}")
-  @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Delete a test case", description = "Deletes a test case")
   public ResponseEntity<Map<String, String>> deleteTestCase(@PathVariable Long id) {
     checkFeatureEnabled();
@@ -331,7 +331,7 @@ public class QATestManagementController {
   }
 
   @PostMapping("/test-runs")
-  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN')")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Create a test run", description = "Records a new test run execution")
   public ResponseEntity<TestRunDTO> createTestRun(@Valid @RequestBody CreateTestRunRequest request,
       @AuthenticationPrincipal UserDetails userDetails) {
@@ -341,7 +341,7 @@ public class QATestManagementController {
   }
 
   @PatchMapping("/test-runs/{id}/status")
-  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN')")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Update test run status", description = "Updates the status of a test run")
   public ResponseEntity<TestRunDTO> updateTestRunStatus(@PathVariable Long id, @RequestParam TestRunStatus status,
       @RequestParam(required = false) String notes) {
@@ -350,7 +350,7 @@ public class QATestManagementController {
   }
 
   @DeleteMapping("/test-runs/{id}")
-  @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Delete a test run", description = "Deletes a test run")
   public ResponseEntity<Map<String, String>> deleteTestRun(@PathVariable Long id) {
     checkFeatureEnabled();
@@ -377,7 +377,7 @@ public class QATestManagementController {
   // ========== AI Test Generation ==========
 
   @PostMapping("/generate-test-cases")
-  @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Generate test cases with AI", description = "Generates test case suggestions using AI based on pitch context")
   public ResponseEntity<GenerateTestCasesResponse> generateTestCases(
       @Valid @RequestBody GenerateTestCasesRequest request) {

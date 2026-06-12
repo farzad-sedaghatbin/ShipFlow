@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **QA role permissions**: `QA` users were blocked from all test-case and test-run write operations — added `QA` to `@PreAuthorize` on create/update/delete test cases, create/update/delete test runs, and AI test case generation (`QATestManagementController`)
 - **Hill chart progress bug**: scope positions now use weighted-average of subtask statuses instead of binary DONE/CANCELLED counting — `IN_REVIEW` subtasks now correctly contribute 75% toward scope progress instead of 0% ([`ScopeProgressService`](backend/src/main/java/com/github/farzadsedaghatbin/shipflow/service/ScopeProgressService.java))
 - Added `POST /api/hill-chart/pitch/{pitchId}/resync` and `POST /api/hill-chart/cycle/{cycleId}/resync` endpoints to recalculate stale scope positions
 
