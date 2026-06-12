@@ -237,8 +237,8 @@ export default function Teams() {
     try {
       const response = await workLogService.getByPersonId(personId, page, ACTIVITY_PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setActivityTotalPages(response.data.totalPages);
-      setActivityTotalElements(response.data.totalElements);
+      setActivityTotalPages(response.data.page?.totalPages ?? response.data.totalPages ?? 0);
+      setActivityTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
     } catch (error) {
       showToast(t('teams.failedToLoadWorkLogs'), 'error');
       setWorkLogs([]);

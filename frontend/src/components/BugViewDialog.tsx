@@ -138,7 +138,7 @@ export function BugViewDialog({ bug, open, onOpenChange }: BugViewDialogProps) {
     try {
       const response = await qaTestManagementService.getBugReportHistory(bug.id, historyPage, pageSize);
       setHistory(response.data?.content || []);
-      setTotalHistoryPages(response.data?.totalPages || 0);
+      setTotalHistoryPages(response.data?.page?.totalPages ?? response.data?.totalPages ?? 0);
     } catch (err) {
       console.error('Failed to load history:', err);
       setHistoryError(t('history.loadError'));

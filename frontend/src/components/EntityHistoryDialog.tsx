@@ -106,8 +106,8 @@ export function EntityHistoryDialog({
     try {
       const response = await fetchHistory(page, pageSize);
       setHistory(response?.content || []);
-      setTotalPages(response?.totalPages || 0);
-      setTotalElements(response?.totalElements || 0);
+      setTotalPages(response?.page?.totalPages ?? response?.totalPages ?? 0);
+      setTotalElements(response?.page?.totalElements ?? response?.totalElements ?? 0);
     } catch (err) {
       console.error('Failed to load history:', err);
       setError(t('history.loadError'));

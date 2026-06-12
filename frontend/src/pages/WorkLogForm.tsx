@@ -94,8 +94,8 @@ export default function WorkLogForm() {
     try {
       const response = await workLogService.getByCycleId(cycleId, page, WL_PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setWlTotalPages(response.data.totalPages);
-      setWlTotalElements(response.data.totalElements);
+      setWlTotalPages(response.data.page?.totalPages ?? response.data.totalPages ?? 0);
+      setWlTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }

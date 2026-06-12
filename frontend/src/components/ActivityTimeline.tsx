@@ -88,7 +88,7 @@ export function ActivityTimeline({
     try {
       const response = await fetchHistory(page, pageSize);
       setHistory(response?.content || []);
-      setTotalPages(response?.totalPages || 0);
+      setTotalPages(response?.page?.totalPages ?? response?.totalPages ?? 0);
     } catch (err) {
       console.error('Failed to load history:', err);
       setError(t('history.loadError'));

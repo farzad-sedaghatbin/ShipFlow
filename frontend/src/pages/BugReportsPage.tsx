@@ -58,7 +58,7 @@ import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { releaseService } from '../services/releaseService';
 import { useProject } from '../contexts';
-import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release } from '../types';
+import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release, getPageTotal } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
@@ -201,7 +201,7 @@ const BugReportsPage: React.FC = () => {
       }
       
       setBugReports(bugData);
-      setTotalElements(releaseFilter !== undefined ? bugData.length : response.data.totalElements);
+      setTotalElements(releaseFilter !== undefined ? bugData.length : getPageTotal(response.data));
     } catch (err) {
       setError(t('bugReports.loadFailed'));
       console.error(err);
@@ -423,41 +423,41 @@ const BugReportsPage: React.FC = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 gap-3">
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold">{stats.total}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold">{stats.total}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.total')}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-destructive">{stats.open}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-destructive">{stats.open}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.open')}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-primary">{stats.inProgress}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-primary">{stats.inProgress}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.inProgress')}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-success">{stats.resolved}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-success">{stats.resolved}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.resolved')}</p>
           </CardContent>
         </Card>
-        <Card className="col-span-2 sm:col-span-1">
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-destructive">{stats.critical}</p>
+        <Card>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-destructive">{stats.critical}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.criticalBlocker')}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           {/* Search */}
           <div className="relative lg:col-span-2">
@@ -729,6 +729,7 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </div>
                 </TableHead>
+                <TableHead>{t('bugReports.table.component')}</TableHead>
                 <TableHead>{t('bugReports.table.pitch')}</TableHead>
                 <TableHead>{t('bugReports.table.assignee')}</TableHead>
                 <TableHead>{t('bugReports.table.reporter')}</TableHead>
@@ -835,6 +836,13 @@ const BugReportsPage: React.FC = () => {
                     </DropdownMenu>
                   </TableCell>
                   <TableCell>
+                    {bug.component ? (
+                      <Badge variant="outline" className="text-xs font-normal">{bug.component}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <span className="text-muted-foreground">{bug.pitchTitle || '-'}</span>
                   </TableCell>
                   <TableCell>
@@ -922,7 +930,7 @@ const BugReportsPage: React.FC = () => {
               ))}
               {bugReports.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <span className="text-muted-foreground">
                       {searchQuery || statusFilter.length > 0 || severityFilter.length > 0
                         ? t('bugReports.emptyState.noMatches')
@@ -1007,8 +1015,6 @@ const BugReportsPage: React.FC = () => {
         onClose={handleModalClose}
         onSubmit={handleCreateOrUpdate}
         bugReport={selectedBug || undefined}
-        cycleId={!isAllProjectsSelected && currentProject ? filteredCycles[0]?.id : undefined}
-        pitchId={!isAllProjectsSelected && currentProject ? filteredPitches[0]?.id : undefined}
       />
 
       {/* Bug Detail Dialog - uses BugViewDialog with Activity tab */}

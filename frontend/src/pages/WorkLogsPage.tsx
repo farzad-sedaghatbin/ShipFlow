@@ -210,19 +210,19 @@ export default function WorkLogsPage() {
         const projectId = !isAllProjectsSelected && currentProject ? currentProject.id : undefined;
         if (activeTab === 'my') {
           const response = await workLogService.getMy(page, PAGE_SIZE, projectId, dateFrom, dateTo);
-          logs = response.data.content; serverTotalPages = response.data.totalPages; serverTotalElements = response.data.totalElements;
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         } else {
           const response = await workLogService.getAll(page, PAGE_SIZE, projectId, dateFrom, dateTo, teamPersonId);
-          logs = response.data.content; serverTotalPages = response.data.totalPages; serverTotalElements = response.data.totalElements;
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         }
       } else {
         const cycleId = cycleIdOrAll as number;
         if (activeTab === 'my') {
           const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE, dateFrom, dateTo);
-          logs = response.data.content; serverTotalPages = response.data.totalPages; serverTotalElements = response.data.totalElements;
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         } else {
           const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE, dateFrom, dateTo, teamPersonId);
-          logs = response.data.content; serverTotalPages = response.data.totalPages; serverTotalElements = response.data.totalElements;
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         }
       }
       setWorkLogs(logs); setTotalPages(serverTotalPages); setTotalElements(serverTotalElements);

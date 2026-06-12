@@ -186,8 +186,8 @@ export default function MeetingList() {
           });
       
       setMeetings(meetingsRes.data.content);
-      setTotalPages(meetingsRes.data.totalPages);
-      setTotalElements(meetingsRes.data.totalElements);
+      setTotalPages(meetingsRes.data.page?.totalPages ?? meetingsRes.data.totalPages ?? 0);
+      setTotalElements(meetingsRes.data.page?.totalElements ?? meetingsRes.data.totalElements ?? 0);
     } catch (error: any) {
       if (error.name !== 'CanceledError') {
         console.error('Failed to load data:', error);
