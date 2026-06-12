@@ -93,10 +93,6 @@
     "vite": "^6.0.0",
     "vitest": "^2.0.0"
   },
-  "optionalDependencies": {
-    "@tailwindcss/oxide-linux-x64-gnu": "^4.1.18",
-    "@tailwindcss/oxide-linux-x64-musl": "^4.1.18"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
