@@ -57,37 +57,55 @@ export function PitchTeamCapacity({ pitch }: PitchTeamCapacityProps) {
                     <p className="text-sm text-muted-foreground">{pitch.busiestPerson.role}</p>
                   )}
                 </div>
-                <div className={cn(
-                  'px-3 py-1 rounded-full text-sm font-medium',
-                  pitch.busiestPerson.isOverBudget ? 'bg-destructive/10 text-destructive' :
-                  pitch.busiestPerson.utilizationPercent > 80 ? 'bg-orange-500/10 text-orange-500' :
-                  'bg-green-500/10 text-green-500'
-                )}>
-                  {pitch.busiestPerson.utilizationPercent?.toFixed(0)}% {t('pitchDetailPage.utilizationPercent')}
-                </div>
+                {pitch.busiestPerson.capacitySource === 'work_log' ? (
+                  <div className="px-3 py-1 rounded-full text-sm font-medium bg-blue-500/10 text-blue-500">
+                    {t('pitchDetailPage.topContributor', 'Top Contributor')}
+                  </div>
+                ) : (
+                  <div className={cn(
+                    'px-3 py-1 rounded-full text-sm font-medium',
+                    pitch.busiestPerson.isOverBudget ? 'bg-destructive/10 text-destructive' :
+                    pitch.busiestPerson.utilizationPercent > 80 ? 'bg-orange-500/10 text-orange-500' :
+                    'bg-green-500/10 text-green-500'
+                  )}>
+                    {pitch.busiestPerson.utilizationPercent?.toFixed(0)}% {t('pitchDetailPage.utilizationPercent')}
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <p className="text-muted-foreground">{t('pitchDetailPage.hoursPerDay')}</p>
-                  <p className="font-medium">{pitch.busiestPerson.hoursPerDay}h</p>
+
+              {pitch.busiestPerson.capacitySource === 'work_log' ? (
+                /* Non-team-member: only show what's meaningful */
+                <div className="text-sm">
+                  <p className="text-muted-foreground">{t('pitchDetailPage.hoursSpent', 'Spent')}</p>
+                  <p className="font-semibold text-lg">{pitch.busiestPerson.hoursSpent?.toFixed(1)}h</p>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">{t('pitchDetailPage.capacitySource')}</p>
-                  <p className="font-medium capitalize">{pitch.busiestPerson.capacitySource}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Budget</p>
-                  <p className="font-medium">{pitch.busiestPerson.totalBudgetHours?.toFixed(0)}h</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Spent</p>
-                  <p className="font-medium">{pitch.busiestPerson.hoursSpent?.toFixed(1)}h</p>
-                </div>
-              </div>
-              {pitch.busiestPerson.isOverBudget && (
-                <div className="mt-3 p-2 bg-destructive/10 rounded text-sm text-destructive">
-                  ⚠️ {t('pitchDetailPage.overBudget')} - This team member has exceeded their individual budget
-                </div>
+              ) : (
+                /* Team member: show full budget breakdown */
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">{t('pitchDetailPage.hoursPerDay')}</p>
+                      <p className="font-medium">{pitch.busiestPerson.hoursPerDay}h</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{t('pitchDetailPage.capacitySource')}</p>
+                      <p className="font-medium capitalize">{pitch.busiestPerson.capacitySource}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Budget</p>
+                      <p className="font-medium">{pitch.busiestPerson.totalBudgetHours?.toFixed(0)}h</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Spent</p>
+                      <p className="font-medium">{pitch.busiestPerson.hoursSpent?.toFixed(1)}h</p>
+                    </div>
+                  </div>
+                  {pitch.busiestPerson.isOverBudget && (
+                    <div className="mt-3 p-2 bg-destructive/10 rounded text-sm text-destructive">
+                      ⚠️ {t('pitchDetailPage.overBudget')} - This team member has exceeded their individual budget
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
