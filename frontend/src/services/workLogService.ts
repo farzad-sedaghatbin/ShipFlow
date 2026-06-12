@@ -1,5 +1,5 @@
 import api from './api';
-import { WorkLog, Page, CreateWorkLogRequest, CreateWorkLogForSelfRequest, WorkLogSummary } from '../types';
+import { WorkLog, Page, CreateWorkLogRequest, CreateWorkLogForSelfRequest, WorkLogSummary, WorkLogPersonSummary } from '../types';
 
 const DEFAULT_PAGE = 0;
 const DEFAULT_SIZE = 20;
@@ -10,6 +10,10 @@ export const workLogService = {
     api.get<Page<WorkLog>>('/worklogs', { params: { page, size, ...(projectId !== undefined ? { projectId } : {}), ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}), ...(personId !== undefined ? { personId } : {}) } }),
   getByPitchId: (pitchId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/pitch/${pitchId}`, { params: { page, size } }),
+  getPersonSummaryByPitchId: (pitchId: number) =>
+    api.get<WorkLogPersonSummary[]>(`/worklogs/pitch/${pitchId}/by-person`),
+  getByPitchIdAndPersonId: (pitchId: number, personId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/pitch/${pitchId}/person/${personId}`, { params: { page, size } }),
   getByTaskId: (taskId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/task/${taskId}`, { params: { page, size } }),
   getByPersonId: (personId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>

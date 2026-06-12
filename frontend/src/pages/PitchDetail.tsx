@@ -10,7 +10,7 @@ import { meetingService } from '../services/meetingService';
 import { taskService } from '../services/taskService';
 import { documentService, UploadedDocument } from '../services/documentService';
 import { organizationSettingsService } from '../services/organizationSettingsService';
-import { Pitch, Epic, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task } from '../types';
+import { Pitch, Epic, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task, WorkLogPersonSummary } from '../types';
 import { MeetingTypeConfig } from '../types/organizationSettings';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
@@ -41,11 +41,7 @@ export default function PitchDetail() {
   const { currentProject } = useProject();
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [epics, setEpics] = useState<Epic[]>([]);
-  const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
-  const [workLogPage, setWorkLogPage] = useState(0);
-  const [, setWorkLogTotalPages] = useState(0);
-  const [workLogTotalElements, setWorkLogTotalElements] = useState(0);
-  const WORK_LOG_PAGE_SIZE = 500; // fetch all for grouped-by-person summary
+  const [workLogPersonSummaries, setWorkLogPersonSummaries] = useState<WorkLogPersonSummary[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
@@ -106,7 +102,7 @@ export default function PitchDetail() {
     const abortController = new AbortController();
     if (id) {
       loadData(id);
-      loadWorkLogs(id, 0);
+      loadWorkLogs(id);
     }
     return () => abortController.abort();
   }, [id]);
@@ -154,14 +150,12 @@ export default function PitchDetail() {
     }
   };
 
-  const loadWorkLogs = async (pitchId: number, page: number) => {
+  const loadWorkLogs = async (pitchId: number) => {
     try {
-      const res = await workLogService.getByPitchId(pitchId, page, WORK_LOG_PAGE_SIZE);
-      setWorkLogs(res.data.content);
-      setWorkLogTotalPages(res.data.totalPages);
-      setWorkLogTotalElements(res.data.totalElements);
+      const res = await workLogService.getPersonSummaryByPitchId(pitchId);
+      setWorkLogPersonSummaries(res.data);
     } catch (error) {
-      console.error('Failed to load work logs:', error);
+      console.error('Failed to load work log summaries:', error);
     }
   };
 
@@ -332,9 +326,8 @@ export default function PitchDetail() {
         note: '',
       });
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
-      setWorkLogPage(0);
       loadData(pitch.id);
-      loadWorkLogs(pitch.id, 0);
+      loadWorkLogs(pitch.id);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.workLogFailed')));
     } finally {
@@ -347,11 +340,8 @@ export default function PitchDetail() {
     try {
       await workLogService.delete(workLogId);
       showSuccess(t('pitchDetailPage.workLogDeleted'));
-      // If we deleted the last item on a non-first page, go back one page
-      const newPage = workLogs.length === 1 && workLogPage > 0 ? workLogPage - 1 : workLogPage;
-      setWorkLogPage(newPage);
       loadData(pitch.id);
-      loadWorkLogs(pitch.id, newPage);
+      loadWorkLogs(pitch.id);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.workLogDeleteFailed')));
     }
@@ -537,7 +527,7 @@ export default function PitchDetail() {
       <PitchStatsRow
         pitch={pitch}
         totalHours={totalHours}
-        workLogTotalElements={workLogTotalElements}
+        workLogTotalElements={workLogPersonSummaries.reduce((sum, s) => sum + s.entryCount, 0)}
       />
 
       <PitchTeamCapacity pitch={pitch} />
@@ -593,9 +583,8 @@ export default function PitchDetail() {
         {/* Work Logs and Meetings - Two columns on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <PitchWorkLogsSection
-            workLogs={workLogs}
-            workLogTotalElements={workLogTotalElements}
-            workLogPageSize={WORK_LOG_PAGE_SIZE}
+            pitchId={pitch.id}
+            personSummaries={workLogPersonSummaries}
             workLogDialog={workLogDialog}
             newWorkLog={newWorkLog}
             workLogDate={workLogDate}

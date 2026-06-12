@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogForSelfRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.WorkLogPersonSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.service.WorkLogService;
 import jakarta.validation.constraints.Max;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -147,6 +149,25 @@ public class WorkLogController {
       @RequestParam(defaultValue = "0") @Min(0) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
     return ResponseEntity.ok(workLogService.getWorkLogsByPitchId(pitchId, pageOf(page, size)));
+  }
+
+  @GetMapping("/pitch/{pitchId}/by-person")
+  @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
+  @Operation(summary = "Get work-log totals grouped by person for a pitch")
+  public ResponseEntity<List<WorkLogPersonSummaryDTO>> getWorkLogPersonSummaryByPitchId(
+      @PathVariable Long pitchId) {
+    return ResponseEntity.ok(workLogService.getPersonSummaryByPitchId(pitchId));
+  }
+
+  @GetMapping("/pitch/{pitchId}/person/{personId}")
+  @PreAuthorize("@permissionService.hasPermission('PITCH', 'READ')")
+  @Operation(summary = "Get paginated work logs for a specific person on a pitch")
+  public ResponseEntity<Page<WorkLogDTO>> getWorkLogsByPitchIdAndPersonId(
+      @PathVariable Long pitchId,
+      @PathVariable Long personId,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+    return ResponseEntity.ok(workLogService.getByPitchIdAndPersonId(pitchId, personId, pageOf(page, size)));
   }
 
   @GetMapping("/task/{taskId}")

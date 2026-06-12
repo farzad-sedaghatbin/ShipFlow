@@ -3,8 +3,11 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogForSelfRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateWorkLogRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.WorkLogPersonSummaryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.WorkLogSummaryDTO;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
@@ -44,6 +47,20 @@ public class WorkLogService {
 
   public Page<WorkLogDTO> getWorkLogsByPitchId(Long pitchId, Pageable pageable) {
     return workLogRepository.findByPitchId(pitchId, pageable).map(this::toDTO);
+  }
+
+  public List<WorkLogPersonSummaryDTO> getPersonSummaryByPitchId(Long pitchId) {
+    return workLogRepository.getPersonSummaryByPitchId(pitchId).stream()
+        .map(row -> new WorkLogPersonSummaryDTO(
+            (Long) row[0],
+            (String) row[1],
+            ((Number) row[2]).doubleValue(),
+            ((Number) row[3]).longValue()))
+        .collect(Collectors.toList());
+  }
+
+  public Page<WorkLogDTO> getByPitchIdAndPersonId(Long pitchId, Long personId, Pageable pageable) {
+    return workLogRepository.findByPitchIdAndPersonId(pitchId, personId, pageable).map(this::toDTO);
   }
 
   public Page<WorkLogDTO> getWorkLogsByTaskId(Long taskId, Pageable pageable) {
