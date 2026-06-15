@@ -608,7 +608,11 @@
       "searchPlaceholder": "جستجو بر اساس عنوان، توضیحات، یا کلید...",
       "severity": "شدت",
       "sortBy": "مرتب‌سازی بر اساس",
-      "status": "وضعیت"
+      "status": "وضعیت",
+      "allAssignees": "همه مسئولان",
+      "searchAssignee": "جستجوی افراد...",
+      "allReleases": "همه نسخه‌ها",
+      "release": "نسخه"
     },
     "loadFailed": "بارگذاری گزارش‌های باگ ناموفق بود",
     "noBugs": "هیچ باگی گزارش نشده",
@@ -1102,6 +1106,7 @@
     "close": "بستن",
     "confirm": "تأیید",
     "contact": "تماس",
+    "copyLink": "کپی لینک اشتراک‌گذاری",
     "create": "ایجاد",
     "date": "تاریخ",
     "days": "روز",
@@ -1117,6 +1122,7 @@
     "home": "خانه",
     "import": "ورودی",
     "info": "اطلاعات",
+    "linkCopied": "لینک کپی شد",
     "loading": "در حال بارگذاری...",
     "login": "ورود",
     "logout": "خروج",
@@ -6416,7 +6422,18 @@
     "keyShowOnceWarning": "این کلید را همین حالا کپی کنید — دیگر نمایش داده نخواهد شد.",
     "copy": "کپی",
     "copied": "کپی شد!",
-    "never": "هرگز"
+    "never": "هرگز",
+    "tokenSaved": "توکن دسترسی با موفقیت ذخیره شد",
+    "confluenceTab": "کانفلوئنس",
+    "notionServerStatusDesc": "پیکربندی سرور MCP نوشن از متغیرهای محیطی",
+    "confluenceServerStatusDesc": "پیکربندی سرور MCP کانفلوئنس از متغیرهای محیطی",
+    "notionTokenDescription": "توکن یکپارچه‌سازی داخلی برای API نوشن. توسط ویژگی‌های هوش مصنوعی برای خواندن اسناد طراحی و یادداشت‌های جلسه از فضای کاری شما استفاده می‌شود.",
+    "notionTokenHint": "یک یکپارچه‌سازی در notion.so/my-integrations ایجاد کنید و صفحات مرتبط را با آن به اشتراک بگذارید.",
+    "confluenceTokenDescription": "توکن API برای Confluence Cloud. توسط ویژگی‌های هوش مصنوعی برای خواندن اسناد طراحی و یادداشت‌های جلسه از فضای شما استفاده می‌شود.",
+    "confluenceDomain": "دامنه کانفلوئنس",
+    "confluenceDomainHint": "دامنه Atlassian Cloud شما، مثلاً yourcompany.atlassian.net",
+    "confluenceSpaceKey": "کلید فضای پیش‌فرض",
+    "confluenceSpaceKeyHint": "فضای پیش‌فرض کانفلوئنس برای خواندن صفحات، مثلاً ENG یا PRODUCT"
   },
   "conversation": "مکالمه",
   "inboundWebhooks": {
@@ -6852,11 +6869,13 @@
     "shipped150Item2Desc": "داشبورد به‌صورت خودکار پیشنهادات دیرهنگام، چرخه‌های در خطر و روند سرعت تیم را نشان می‌دهد.",
     "phase160Theme": "اکوسیستم MCP",
     "phase160Item0Title": "ابزارهای نوشتاری هوشمند",
-    "phase160Item0Desc": "دستیاران هوش مصنوعی می‌توانند وظایف را ایجاد و پیشنهادات را از هر ویرایشگری به‌روزرسانی کنند.",
+    "phase160Item0Desc": "دستیاران هوش مصنوعی می‌توانند وظایف را ایجاد کرده و پیشنهادات را از هر ویرایشگری به‌روزرسانی کنند، از جمله فیلدهای Shape Up مانند wireframeLinks و solution.",
     "phase160Item1Title": "SDK پلاگین",
-    "phase160Item1Desc": "SDK پلاگین رسمی و Maven archetype برای یکپارچه‌سازی‌های شخص ثالث.",
+    "phase160Item1Desc": "افزونه‌های محاسبه‌گر ریسک، تولیدکننده گزارش و یکپارچه‌سازی را در زمان اجرا ثبت کنید. رابط مدیریتی برای فعال/غیرفعال کردن بدون استقرار مجدد.",
     "phase160Item2Title": "کلاینت‌های Notion و Confluence",
-    "phase160Item2Desc": "اسناد طراحی و یادداشت‌های جلسات را از Notion یا Confluence در ویژگی‌های هوش مصنوعی بخوانید."
+    "phase160Item2Desc": "اسناد طراحی و یادداشت‌های جلسات را از Notion یا Confluence در ویژگی‌های هوش مصنوعی بخوانید.",
+    "phase160Item3Title": "پیش‌نمایش لینک‌های غنی",
+    "phase160Item3Desc": "لینک‌های وظایف، پیشنهادات و چرخه‌ها در Slack، iMessage و هر ابزار پیش‌نمایش لینک با عناوین و توضیحات معنادار نمایش داده می‌شوند."
   },
   "shortcuts": {
     "title": "میانبرهای صفحه‌کلید",
@@ -7016,5 +7035,21 @@
     "daysLeft": "روز مانده",
     "patterns": "مراقب باشید",
     "riskPosture": "وضعیت ریسک"
+  },
+  "pluginSettings": {
+    "navLabel": "افزونه‌ها",
+    "title": "افزونه‌های توسعه‌پذیر",
+    "description": "افزونه‌های فعال را مشاهده و مدیریت کنید. بدون نیاز به استقرار مجدد غیرفعال کنید.",
+    "loadFailed": "بارگذاری افزونه‌ها ناموفق بود",
+    "enabledSuccess": "افزونه فعال شد",
+    "disabledSuccess": "افزونه غیرفعال شد",
+    "toggleFailed": "تغییر وضعیت افزونه ناموفق بود",
+    "noPlugins": "هیچ افزونه‌ای ثبت نشده",
+    "noPluginsHint": "یک JAR که رابط SPI را پیاده‌سازی می‌کند در classpath قرار دهید.",
+    "typeRisk": "محاسبه‌گر ریسک",
+    "typeReport": "تولیدکننده گزارش",
+    "typeIntegration": "ارائه‌دهنده یکپارچه‌سازی",
+    "sdkTitle": "Plugin SDK",
+    "sdkDesc": "با استفاده از Maven archetype افزونه خود را بسازید. هر رابط SPI را پیاده‌سازی کرده و به classpath اضافه کنید."
   }
 }

@@ -41,6 +41,7 @@ public class CsvImportService {
   private final CycleRepository cycleRepository;
   private final PersonRepository personRepository;
   private final UserRepository userRepository;
+  private final BugReportRepository bugReportRepository;
 
   // -------------------------------------------------------------------------
   // Public API
@@ -417,8 +418,24 @@ public class CsvImportService {
     Integer storyPoints = parseIntSafe(storyPointsRaw);
     Person assignee = findPersonByName(assigneeName);
 
-    TaskCategory category =
-        "Bug".equalsIgnoreCase(issueType) ? TaskCategory.DEBT_IMPROVEMENT : TaskCategory.PITCH_SCOPE;
+    if ("Bug".equalsIgnoreCase(issueType)) {
+      BugReport bug = BugReport.builder()
+          .bugKey(nextBugKey())
+          .title(summary)
+          .description(description != null ? description : "")
+          .severity(mapJiraSeverity(safeGet(record, "Priority")))
+          .status(mapJiraBugStatus(safeGet(record, "Status")))
+          .environment(safeGet(record, "Environment"))
+          .tags(labels)
+          .assignee(assignee)
+          .project(project)
+          .cycle(cycle)
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+      bugReportRepository.save(bug);
+      return true;
+    }
 
     Task task =
         Task.builder()
@@ -426,7 +443,7 @@ public class CsvImportService {
             .description(description)
             .status(status)
             .priority(priority)
-            .category(category)
+            .category(TaskCategory.PITCH_SCOPE)
             .project(project)
             .cycle(cycle)
             .assignee(assignee)
@@ -436,6 +453,36 @@ public class CsvImportService {
 
     taskRepository.save(task);
     return true;
+  }
+
+  private String nextBugKey() {
+    Integer max = bugReportRepository.findMaxBugKeyNumber();
+    int next = (max != null ? max : 0) + 1;
+    return String.format("BUG-%03d", next);
+  }
+
+  BugSeverity mapJiraSeverity(String priority) {
+    if (priority == null) return BugSeverity.MAJOR;
+    return switch (priority.toLowerCase()) {
+      case "blocker", "critical" -> BugSeverity.CRITICAL;
+      case "major" -> BugSeverity.MAJOR;
+      case "minor" -> BugSeverity.MINOR;
+      case "trivial" -> BugSeverity.TRIVIAL;
+      default -> BugSeverity.MAJOR;
+    };
+  }
+
+  BugStatus mapJiraBugStatus(String status) {
+    if (status == null) return BugStatus.OPEN;
+    return switch (status.toLowerCase()) {
+      case "in progress", "in development" -> BugStatus.IN_PROGRESS;
+      case "resolved", "done", "closed" -> BugStatus.RESOLVED;
+      case "verified" -> BugStatus.VERIFIED;
+      case "won't fix", "wont fix", "won't do" -> BugStatus.WONT_FIX;
+      case "duplicate" -> BugStatus.DUPLICATE;
+      case "reopened" -> BugStatus.REOPENED;
+      default -> BugStatus.OPEN;
+    };
   }
 
   // ---- Linear ----

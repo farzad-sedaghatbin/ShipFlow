@@ -192,6 +192,20 @@ public class OrganizationSettings {
   @Column(name = "scim_token_hash", length = 500)
   private String scimTokenHash;
 
+  // Notion MCP Configuration (V2026_06_15_0001)
+  @Column(name = "notion_access_token", columnDefinition = "TEXT")
+  private String notionAccessToken;
+
+  // Confluence MCP Configuration (V2026_06_15_0001)
+  @Column(name = "confluence_access_token", columnDefinition = "TEXT")
+  private String confluenceAccessToken;
+
+  @Column(name = "default_confluence_space_key", length = 100)
+  private String defaultConfluenceSpaceKey;
+
+  @Column(name = "default_confluence_domain", length = 255)
+  private String defaultConfluenceDomain;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();

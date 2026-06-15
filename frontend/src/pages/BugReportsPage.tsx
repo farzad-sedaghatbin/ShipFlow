@@ -57,8 +57,9 @@ import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { releaseService } from '../services/releaseService';
+import { personService } from '../services/personService';
 import { useProject } from '../contexts';
-import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release, getPageTotal } from '../types';
+import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release, Person, getPageTotal } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
@@ -93,13 +94,14 @@ const BugReportsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<BugStatus[]>([]);
   const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>([]);
-  const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
+  const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(undefined);
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(undefined);
   const [pitchFilter, setPitchFilter] = useState<number | undefined>(undefined);
   const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
+  const [persons, setPersons] = useState<Person[]>([]);
   const [excludeMode, setExcludeMode] = useState(false);
   const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -146,12 +148,14 @@ const BugReportsPage: React.FC = () => {
 
   const loadCyclesAndPitches = async () => {
     try {
-      const [cyclesRes, pitchesRes] = await Promise.all([
+      const [cyclesRes, pitchesRes, personsData] = await Promise.all([
         cycleService.getMyCycles(),
         pitchService.getMyPitches(),
+        personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
       setPitches(pitchesRes.data);
+      setPersons(personsData);
       // Load releases for current project
       if (currentProject?.id) {
         try {
@@ -185,7 +189,7 @@ const BugReportsPage: React.FC = () => {
         pitchFilter,
         statusFilter.length > 0 ? statusFilter : undefined,
         severityFilter.length > 0 ? severityFilter : undefined,
-        assigneeFilter.length > 0 ? assigneeFilter : undefined,
+        assigneeFilter !== undefined ? [assigneeFilter] : undefined,
         excludeMode,
         effectivePage,
         effectiveSize,
@@ -236,6 +240,9 @@ const BugReportsPage: React.FC = () => {
       } else {
         const response = await qaTestManagementService.createBugReport(data);
         setBugReports([response.data, ...bugReports]);
+        setModalOpen(false);
+        setSelectedBug(null);
+        return response.data; // return so BugReportModal can upload pending attachments
       }
       setModalOpen(false);
       setSelectedBug(null);
@@ -457,10 +464,10 @@ const BugReportsPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-          {/* Search */}
-          <div className="relative lg:col-span-2">
+      <div className="space-y-2">
+        {/* Row 1: Search + Sort */}
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="relative flex-1 min-w-[200px]">
             <Label htmlFor="bugs-search" className="sr-only">{t('bugReports.filters.searchLabel')}</Label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -473,19 +480,49 @@ const BugReportsPage: React.FC = () => {
               aria-label={t('bugReports.filters.searchAriaLabel')}
             />
           </div>
-
-          {/* Status Filter */}
-          <div className="relative">
-            <Label className="text-xs mb-1 block">{t('bugReports.filters.status')}</Label>
+          <div className="flex items-end gap-2">
+            <div className="min-w-[140px]">
+              <Label className="text-xs mb-1 block">{t('bugReports.filters.sortBy')}</Label>
+              <Combobox
+                options={[
+                  { value: 'createdAt', label: t('bugReports.sort.createdDate') },
+                  { value: 'severity', label: t('bugReports.sort.severity') },
+                  { value: 'status', label: t('bugReports.sort.status') },
+                  { value: 'title', label: t('bugReports.sort.title') },
+                ]}
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as typeof sortBy)}
+                placeholder={t('bugReports.filters.sortBy')}
+              />
+            </div>
             <Button
               variant="outline"
-              className="w-full justify-between"
+              size="icon"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              aria-label={sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
+            >
+              {sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Row 2: Filter controls */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Status multi-select */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
               onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
             >
-              {statusFilter.length > 0 ? t('bugReports.filters.itemsSelected', { count: statusFilter.length }) : t('bugReports.filters.allStatus')}
+              {t('bugReports.filters.status')}
+              {statusFilter.length > 0 && (
+                <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-xs">{statusFilter.length}</Badge>
+              )}
             </Button>
             {statusDropdownOpen && (
-              <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md p-2 space-y-1">
+              <div className="absolute z-50 mt-1 min-w-[180px] bg-popover border rounded-md shadow-md p-2 space-y-1">
                 {(Object.keys(statusBadgeVariants) as BugStatus[]).map((status) => (
                   <div
                     key={status}
@@ -493,25 +530,28 @@ const BugReportsPage: React.FC = () => {
                     onClick={() => toggleStatusFilter(status)}
                   >
                     <Checkbox checked={statusFilter.includes(status)} />
-                    <span className="text-sm">{status.replace('_', ' ')}</span>
+                    <span className="text-sm">{status.replace(/_/g, ' ')}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Severity Filter */}
+          {/* Severity multi-select */}
           <div className="relative">
-            <Label className="text-xs mb-1 block">{t('bugReports.filters.severity')}</Label>
             <Button
               variant="outline"
-              className="w-full justify-between"
+              size="sm"
+              className="gap-1.5"
               onClick={() => setSeverityDropdownOpen(!severityDropdownOpen)}
             >
-              {severityFilter.length > 0 ? t('bugReports.filters.itemsSelected', { count: severityFilter.length }) : t('bugReports.filters.allSeverity')}
+              {t('bugReports.filters.severity')}
+              {severityFilter.length > 0 && (
+                <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-xs">{severityFilter.length}</Badge>
+              )}
             </Button>
             {severityDropdownOpen && (
-              <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md p-2 space-y-1">
+              <div className="absolute z-50 mt-1 min-w-[160px] bg-popover border rounded-md shadow-md p-2 space-y-1">
                 {(Object.keys(severityBadgeVariants) as BugSeverity[]).map((severity) => (
                   <div
                     key={severity}
@@ -526,15 +566,79 @@ const BugReportsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Exclude Mode + Clear */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+          {/* Assignee filter */}
+          {persons.length > 0 && (
+            <div className="min-w-[160px]">
+              <Combobox
+                options={[
+                  { value: 'all', label: t('bugReports.filters.allAssignees', 'All Assignees') },
+                  ...persons.map(p => ({ value: p.id.toString(), label: p.name })),
+                ]}
+                value={assigneeFilter?.toString() ?? 'all'}
+                onValueChange={(v) => setAssigneeFilter(v === 'all' ? undefined : parseInt(v))}
+                placeholder={t('bugReports.filters.allAssignees', 'All Assignees')}
+                searchPlaceholder={t('bugReports.filters.searchAssignee', 'Search people...')}
+              />
+            </div>
+          )}
+
+          {/* Cycle + Pitch (Shape Up only) */}
+          {!isKanbanProject && (
+            <>
+              <div className="min-w-[160px]">
+                <Combobox
+                  options={[
+                    { value: 'all', label: t('bugReports.filters.allCycles') },
+                    ...filteredCycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name })),
+                  ]}
+                  value={cycleFilter?.toString() ?? 'all'}
+                  onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
+                  placeholder={t('bugReports.filters.allCycles')}
+                  searchPlaceholder="Search cycles..."
+                />
+              </div>
+              <div className="min-w-[160px]">
+                <Combobox
+                  options={[
+                    { value: 'all', label: t('bugReports.filters.allPitches') },
+                    ...filteredPitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title })),
+                  ]}
+                  value={pitchFilter?.toString() ?? 'all'}
+                  onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
+                  placeholder={t('bugReports.filters.allPitches')}
+                  searchPlaceholder="Search pitches..."
+                />
+              </div>
+            </>
+          )}
+
+          {/* Release */}
+          {releases.length > 0 && (
+            <div className="min-w-[160px]">
+              <Combobox
+                options={[
+                  { value: 'all', label: t('bugReports.filters.allReleases', 'All Releases') },
+                  ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` })),
+                ]}
+                value={releaseFilter?.toString() ?? 'all'}
+                onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
+                placeholder={t('bugReports.filters.allReleases', 'All Releases')}
+                searchPlaceholder="Search releases..."
+              />
+            </div>
+          )}
+
+          {/* Exclude + Clear — pushed to the end */}
+          <div className="ml-auto flex items-center gap-3">
+            <div className="flex items-center gap-1.5">
               <Switch
                 id="exclude-mode"
                 checked={excludeMode}
                 onCheckedChange={setExcludeMode}
               />
-              <Label htmlFor="exclude-mode" className="text-sm">{t('bugReports.filters.exclude')}</Label>
+              <Label htmlFor="exclude-mode" className="text-sm cursor-pointer">
+                {t('bugReports.filters.exclude')}
+              </Label>
             </div>
             <Button
               variant="outline"
@@ -542,7 +646,7 @@ const BugReportsPage: React.FC = () => {
               onClick={() => {
                 setStatusFilter([]);
                 setSeverityFilter([]);
-                setAssigneeFilter([]);
+                setAssigneeFilter(undefined);
                 setCycleFilter(undefined);
                 setPitchFilter(undefined);
                 setReleaseFilter(undefined);
@@ -552,83 +656,7 @@ const BugReportsPage: React.FC = () => {
               {t('bugReports.filters.clear')}
             </Button>
           </div>
-
-          {/* Sort */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Label className="text-xs mb-1 block">{t('bugReports.filters.sortBy')}</Label>
-              <Combobox
-                options={[
-                  { value: 'createdAt', label: t('bugReports.sort.createdDate') },
-                  { value: 'severity', label: t('bugReports.sort.severity') },
-                  { value: 'status', label: t('bugReports.sort.status') },
-                  { value: 'title', label: t('bugReports.sort.title') }
-                ]}
-                value={sortBy}
-                onValueChange={(v) => setSortBy(v as typeof sortBy)}
-                placeholder="Sort by"
-              />
-            </div>
-            <div className="self-end">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              >
-                {sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
         </div>
-
-        {/* Cycle and Pitch Filters Row - Hidden for Kanban projects (Shape Up concepts) */}
-        {!isKanbanProject && (
-          <div className="flex flex-wrap gap-4">
-            <div className="min-w-[180px]">
-              <Label className="text-xs mb-1 block">{t('bugReports.filters.cycle')}</Label>
-              <Combobox
-                options={[
-                  { value: 'all', label: t('bugReports.filters.allCycles') },
-                  ...filteredCycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))
-                ]}
-                value={cycleFilter?.toString() ?? 'all'}
-                onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
-                placeholder={t('bugReports.filters.allCycles')}
-                searchPlaceholder="Search cycles..."
-              />
-            </div>
-
-            <div className="min-w-[180px]">
-              <Label className="text-xs mb-1 block">{t('bugReports.filters.pitch')}</Label>
-              <Combobox
-                options={[
-                  { value: 'all', label: t('bugReports.filters.allPitches') },
-                  ...filteredPitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title }))
-                ]}
-                value={pitchFilter?.toString() ?? 'all'}
-                onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
-                placeholder={t('bugReports.filters.allPitches')}
-                searchPlaceholder="Search pitches..."
-              />
-            </div>
-
-            {releases.length > 0 && (
-              <div className="min-w-[180px]">
-                <Label className="text-xs mb-1 block">{t('bugReports.filters.release', 'Release')}</Label>
-                <Combobox
-                  options={[
-                    { value: 'all', label: t('bugReports.filters.allReleases', 'All Releases') },
-                    ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` }))
-                  ]}
-                  value={releaseFilter?.toString() ?? 'all'}
-                  onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
-                  placeholder={t('bugReports.filters.allReleases', 'All Releases')}
-                  searchPlaceholder="Search releases..."
-                />
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Bug Reports - List View */}

@@ -197,14 +197,16 @@ Once connected, your AI assistant has access to these tools:
 | `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId`, `cycleId`, or `taskId` — `taskId` resolves to the task's parent pitch or cycle) |
 | `get_task_context` | **Task-rooted aggregator for coding agents** — given a single `taskId`, returns the task (with dependency graph and subtasks), its parent pitch (Shape Up fields + `wireframeLinks`), parent cycle, sibling tasks under the same pitch, and a server-generated `hints` array (Figma URL guidance, blocked-by detail, thin-context warnings). Use this instead of stitching `get_task` + `get_pitch_detail` + `get_tasks` when the goal is "implement this task". |
 
-### Write Tools (v0.9.0 S18 — 7 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
+### Write Tools (v1.6.0 S41 — 12 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
 | `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **parentTaskId** for subtasks, assigneeUsername, priority) |
+| `update_task` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, priority (LOW/MEDIUM/HIGH/URGENT), dueDate (YYYY-MM-DD). Omitted fields keep their current values. Use `update_task_status` / `update_task_assignee` for those specific fields. |
 | `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
 | `update_task_assignee` | Reassign an existing task — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true` |
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
+| `update_pitch` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, appetiteDays. Omitted fields keep their current values. Use `update_pitch_status` for status changes. |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
 | `add_comment` | Add a comment to a TASK or BUG_REPORT (entityType, entityId, content required) |
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
@@ -367,6 +369,29 @@ create_task(cycleId: 5, title: "Implement click tracking", pitchId: 10)
 create_task(cycleId: 5, parentTaskId: 8, title: "Wire frontend dispatcher")
 create_task(cycleId: 5, parentTaskId: 8, title: "Add backend ingestion endpoint")
 # Subtasks appear in get_task_context(taskId: 8).task.children
+```
+
+**Updating a task's fields (v1.6.0):**
+
+```
+# Rename a task and raise its priority — all other fields are untouched
+update_task(taskId: 8, title: "Implement click tracking (revised scope)", priority: "HIGH")
+
+# Set a due date
+update_task(taskId: 8, dueDate: "2026-07-01")
+
+# Clear the due date
+update_task(taskId: 8, dueDate: "")
+```
+
+**Enriching a pitch with Shape Up fields (v1.6.0):**
+
+```
+# Add the solution and wireframe link after the Figma design is ready
+update_pitch(pitchId: 10, solution: "Redesign auth flow using WebAuthn", wireframeLinks: "https://www.figma.com/design/AbCd/Auth")
+
+# Set the appetite once it's agreed in the betting table
+update_pitch(pitchId: 10, appetiteDays: 14)
 ```
 
 > **Planned tools** (future releases): `search_all`, `get_initiative`, `get_betting_table`.

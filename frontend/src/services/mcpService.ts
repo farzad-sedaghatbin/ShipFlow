@@ -31,6 +31,8 @@ export interface McpServerStatus {
 export interface McpStatus {
   github: McpServerStatus;
   figma: McpServerStatus;
+  notion: McpServerStatus;
+  confluence: McpServerStatus;
 }
 
 /**
@@ -41,6 +43,12 @@ export interface McpOrganizationSettings {
   hasFigmaAccessToken: boolean;
   // GitHub settings
   hasGithubAccessToken: boolean;
+  // Notion settings
+  hasNotionAccessToken: boolean;
+  // Confluence settings
+  hasConfluenceAccessToken: boolean;
+  defaultConfluenceDomain?: string;
+  defaultConfluenceSpaceKey?: string;
   // Built-in MCP server runtime toggle (effective values: DB override else env default)
   mcpServerEnabled: boolean;
   mcpServerWriteEnabled: boolean;
@@ -54,6 +62,12 @@ export interface UpdateMcpSettingsRequest {
   figmaAccessToken?: string;  // Set to update, empty to clear, omit to leave unchanged
   // GitHub settings
   githubAccessToken?: string;  // Set to update, empty to clear, omit to leave unchanged
+  // Notion settings
+  notionAccessToken?: string;
+  // Confluence settings
+  confluenceAccessToken?: string;
+  defaultConfluenceDomain?: string;
+  defaultConfluenceSpaceKey?: string;
 }
 
 /**
@@ -101,6 +115,10 @@ export async function getMcpSettings(): Promise<McpOrganizationSettings> {
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
+    hasNotionAccessToken: data.hasNotionAccessToken ?? false,
+    hasConfluenceAccessToken: data.hasConfluenceAccessToken ?? false,
+    defaultConfluenceDomain: data.defaultConfluenceDomain ?? undefined,
+    defaultConfluenceSpaceKey: data.defaultConfluenceSpaceKey ?? undefined,
     mcpServerEnabled: Boolean(data.mcpServerEnabled),
     mcpServerWriteEnabled: Boolean(data.mcpServerWriteEnabled),
   };
@@ -115,6 +133,10 @@ export async function updateMcpSettings(request: UpdateMcpSettingsRequest): Prom
   return {
     hasFigmaAccessToken: data.hasFigmaAccessToken ?? false,
     hasGithubAccessToken: data.hasGithubAccessToken ?? false,
+    hasNotionAccessToken: data.hasNotionAccessToken ?? false,
+    hasConfluenceAccessToken: data.hasConfluenceAccessToken ?? false,
+    defaultConfluenceDomain: data.defaultConfluenceDomain ?? undefined,
+    defaultConfluenceSpaceKey: data.defaultConfluenceSpaceKey ?? undefined,
     mcpServerEnabled: Boolean(data.mcpServerEnabled),
     mcpServerWriteEnabled: Boolean(data.mcpServerWriteEnabled),
   };

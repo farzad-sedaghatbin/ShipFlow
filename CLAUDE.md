@@ -95,21 +95,22 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 | Session | Task | Status |
 |---------|------|--------|
-| S41 | Agentic MCP write tools — create/update tasks and pitches via MCP tool calls from AI editors | 🔜 next |
-| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | 🔜 next |
-| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | 🔜 next |
+| S41 | Agentic MCP write tools — `update_task` + `update_pitch` (PATCH-semantic full-field MCP write tools) | ✅ done |
+| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | ✅ done |
+| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | ✅ done |
+| S44 | Rich link preview (OG metadata) — server-rendered `og:title`/`og:description` for task/pitch/cycle URLs so shared links show meaningful previews in Slack, iMessage, etc. | ✅ done |
 
 ### Future milestones overview
 
 | Version | Theme | Sessions |
 |---------|-------|----------|
-| v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients | S41–S43 |
-| v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S44–S46 |
-| v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S47–S49 |
-| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S50–S52 |
-| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S53–S55 |
-| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S56–S58 |
-| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S59–S61 |
+| v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients, rich link preview | S41–S44 |
+| v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S45–S47 |
+| v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S48–S50 |
+| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S51–S53 |
+| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S54–S56 |
+| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S57–S59 |
+| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S60–S62 |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`

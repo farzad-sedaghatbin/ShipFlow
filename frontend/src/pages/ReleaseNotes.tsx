@@ -54,6 +54,7 @@ import {
   FileSpreadsheet,
   FolderInput,
   Wand2,
+  BookOpen,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -72,6 +73,34 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.6.0',
+    date: 'Coming soon',
+    title: 'MCP Ecosystem',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Wrench className="h-5 w-5" />,
+        title: 'update_task & update_pitch MCP write tools',
+        description: 'AI editors (Claude Code, Cursor) can now update task and pitch fields in-place with PATCH semantics — only the fields you supply change. Supply a solution and wireframeLinks to a pitch, or update a task\'s title, priority, and due date, without touching any other field.',
+      },
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'Plugin SDK',
+        description: 'Maven archetype, plugin registry, and first-party plugin scaffold — build and distribute ShipFlow extensions without forking the core.',
+      },
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Notion & Confluence MCP Clients',
+        description: 'Connect ShipFlow to your Notion workspace or Confluence Cloud space. AI features can now pull design docs and meeting notes directly into context — configure tokens in MCP Integration settings.',
+      },
+      {
+        icon: <Network className="h-5 w-5" />,
+        title: 'Rich Link Previews',
+        description: 'Shared task, pitch, and cycle URLs now render meaningful og:title / og:description in Slack, iMessage, and any chat that unfurls links — without exposing protected data.',
+      },
+    ],
+  },
   {
     version: '1.5.0',
     date: 'June 7, 2026',

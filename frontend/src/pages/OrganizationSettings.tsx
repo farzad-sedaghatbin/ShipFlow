@@ -20,6 +20,7 @@ import {
   Users,
   Upload,
   Scale,
+  Puzzle,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useToast } from '../contexts';
@@ -42,6 +43,7 @@ import {
   EmailSettingsTab,
   SsoSettingsTab,
   ScimSettingsTab,
+  PluginsSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -65,6 +67,7 @@ type SectionId =
   | 'weights'
   | 'email'
   | 'features'
+  | 'plugins'
   | 'sso'
   | 'scim'
   | 'import';
@@ -119,6 +122,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     headerKey: 'organizationSettings.sectionFeatures',
     items: [
       { id: 'features', labelKey: 'organizationSettings.features', icon: Sparkles },
+      { id: 'plugins', labelKey: 'pluginSettings.navLabel', icon: Puzzle },
     ],
   },
   {
@@ -299,6 +303,8 @@ export default function OrganizationSettingsPage() {
         return <EmailSettingsTab formData={formData} setFormData={setFormData} />;
       case 'features':
         return <FeaturesSettingsTab formData={formData} setFormData={setFormData} settings={settings} />;
+      case 'plugins':
+        return <PluginsSettingsTab />;
       case 'sso':
         return <SsoSettingsTab />;
       case 'scim':

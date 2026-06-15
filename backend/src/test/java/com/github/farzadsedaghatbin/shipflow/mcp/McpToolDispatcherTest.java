@@ -659,8 +659,8 @@ class McpToolDispatcherTest {
     List<String> toolNames = tools.stream().map(t -> (String) t.get("name")).toList();
 
     assertThat(toolNames).contains(
-        "create_task", "update_task_status",
-        "create_pitch", "update_pitch_status",
+        "create_task", "update_task", "update_task_status",
+        "create_pitch", "update_pitch", "update_pitch_status",
         "add_comment", "log_work");
   }
 
@@ -1823,5 +1823,184 @@ class McpToolDispatcherTest {
     // flip the property locally and don't affect this one)
     assertThat(toolNames).doesNotContain("record_test_run");
     assertThat(toolNames).doesNotContain("update_bug_status");
+  }
+
+  // ── update_task ───────────────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_updateTask_patchesFieldsAndReturnsTask() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    TaskDTO current = TaskDTO.builder()
+        .id(77L)
+        .title("Old Title")
+        .description("Old description")
+        .cycleId(1L)
+        .build();
+    when(taskService.getTaskById(77L)).thenReturn(current);
+
+    TaskDTO updated = TaskDTO.builder().id(77L).title("New Title").build();
+    when(taskService.updateTask(org.mockito.ArgumentMatchers.eq(77L),
+        org.mockito.ArgumentMatchers.any())).thenReturn(updated);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_task",
+            "arguments", Map.of("taskId", 77, "title", "New Title")),
+        "id", 200);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    assertThat((String) content.get(0).get("text")).contains("New Title");
+  }
+
+  @Test
+  void toolsCall_updateTask_missingTaskId_returnsInvalidParams() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "update_task", "arguments", Map.of("title", "Oops")),
+        "id", 201);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat(error.get("code")).isEqualTo(-32602);
+  }
+
+  @Test
+  void toolsCall_updateTask_blockedWhenWriteDisabled() throws Exception {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "update_task",
+            "arguments", Map.of("taskId", 1, "title", "Should not work")),
+        "id", 202);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).contains("Write tools are disabled");
+  }
+
+  // ── update_pitch ──────────────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_updatePitch_patchesShapeUpFieldsAndReturnsPitch() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    PitchDTO current = PitchDTO.builder()
+        .id(42L)
+        .title("Auth Revamp")
+        .status(PitchStatus.DRAFT)
+        .problemStatement("Login is slow")
+        .build();
+    when(pitchService.getPitchById(42L)).thenReturn(current);
+
+    PitchDTO updated = PitchDTO.builder()
+        .id(42L)
+        .title("Auth Revamp")
+        .status(PitchStatus.DRAFT)
+        .solution("Use WebAuthn for passwordless login")
+        .wireframeLinks("https://www.figma.com/design/AbCd/Auth")
+        .build();
+    when(pitchService.updatePitch(org.mockito.ArgumentMatchers.eq(42L),
+        org.mockito.ArgumentMatchers.any())).thenReturn(updated);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_pitch",
+            "arguments", Map.of(
+                "pitchId", 42,
+                "solution", "Use WebAuthn for passwordless login",
+                "wireframeLinks", "https://www.figma.com/design/AbCd/Auth")),
+        "id", 210);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("WebAuthn");
+    assertThat(text).contains("figma.com");
+  }
+
+  @Test
+  void toolsCall_updatePitch_blockedWhenWriteDisabled() throws Exception {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "update_pitch",
+            "arguments", Map.of("pitchId", 1, "title", "Should not work")),
+        "id", 211);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).contains("Write tools are disabled");
   }
 }
