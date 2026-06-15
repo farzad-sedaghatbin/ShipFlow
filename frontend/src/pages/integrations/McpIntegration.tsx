@@ -663,8 +663,8 @@ export default function McpIntegration() {
               <CardDescription>{t('mcpIntegration.notionServerStatusDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
-              {mcpStatus && renderServerStatus(mcpStatus.notion)}
-              {mcpStatus?.notion.enabled && mcpStatus.notion.configured && (
+              {mcpStatus?.notion && renderServerStatus(mcpStatus.notion)}
+              {mcpStatus?.notion?.enabled && mcpStatus.notion?.configured && (
                 <p className="text-sm text-muted-foreground mt-2">
                   {t('mcpIntegration.timeout')}: {mcpStatus.notion.timeoutSeconds}s
                 </p>
@@ -742,8 +742,8 @@ export default function McpIntegration() {
               <CardDescription>{t('mcpIntegration.confluenceServerStatusDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
-              {mcpStatus && renderServerStatus(mcpStatus.confluence)}
-              {mcpStatus?.confluence.enabled && mcpStatus.confluence.configured && (
+              {mcpStatus?.confluence && renderServerStatus(mcpStatus.confluence)}
+              {mcpStatus?.confluence?.enabled && mcpStatus.confluence?.configured && (
                 <p className="text-sm text-muted-foreground mt-2">
                   {t('mcpIntegration.timeout')}: {mcpStatus.confluence.timeoutSeconds}s
                 </p>
