@@ -5,9 +5,9 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.6.0 — "MCP Ecosystem"
+## Current Milestone: v1.7.0 — "Workflow Automations"
 
-**Current version**: v1.5.0 (released 2026-06-07)
+**Current version**: v1.6.0 (released 2026-06-15)
 **All PRs target**: `main` branch
 
 ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. Next: MCP Ecosystem (v1.6.0) — agentic write tools, plugin SDK, Notion/Confluence clients.

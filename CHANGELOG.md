@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-06-15
+
 ### Added — v1.6.0 "MCP Ecosystem" (S41–S44)
 
 #### Notion / Confluence MCP Clients (S43)
