@@ -118,6 +118,9 @@ const ReleaseFormPage = lazy(() => import('./pages/ReleaseFormPage'));
 // Import
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 
+// Workflow Automations
+const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
+
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
 const GettingStartedGuide = lazy(() => import('./pages/guides/GettingStartedGuide'));
@@ -275,6 +278,9 @@ function App() {
                       {/* Organisation */}
                       <Route path="people" element={<People />} />
                       <Route path="teams" element={<Teams />} />
+
+                      {/* Workflow Automations */}
+                      <Route path="automations" element={<AutomationsPage />} />
 
                       {/* User Profile */}
                       <Route path="profile" element={<Profile />} />

@@ -1,6 +1,6 @@
 # ShipFlow — Competitive Analysis
 
-_Last updated: 2026-05-22 (v1.2.0 in progress — CSV import + Linear + Jira OAuth import shipped)_
+_Last updated: 2026-06-16 (v1.7.0 shipped — Workflow Automations: 14 triggers, 7 actions, 20 built-in templates)_
 
 This document positions ShipFlow against the tools teams most commonly evaluate before adopting it.
 It is written factually to help evaluators make an informed decision.
@@ -59,6 +59,9 @@ ShipFlow targets teams that:
 | **CSV import from Jira / Linear / Asana** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Direct Linear API import (OAuth2)** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Direct Jira Cloud API import (OAuth2)** | ✅ (v1.2.0) | ❌ | ❌ | N/A | ❌ | ❌ | ❌ |
+| **No-code workflow automations (trigger/action engine)** | ✅ (v1.7.0) | ✅ | ✅ (Automation for Jira) | ✅ | ✅ | ❌ | Partial |
+| **Shape Up–aware automation triggers (hill chart, appetite, betting table)** | ✅ (v1.7.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Automation execution log (per-run status, payload, result)** | ✅ (v1.7.0) | Partial | Partial | ❌ | Partial | ❌ | ❌ |
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
@@ -74,6 +77,7 @@ ShipFlow targets teams that:
 
 **ShipFlow wins**:
 - The only tool with a complete Shape Up workflow (pitches, betting, hill charts, circuit breaker)
+- **Workflow Automations with Shape Up–aware triggers** — Linear's automation triggers are generic; ShipFlow uniquely fires on hill chart movement, appetite exceeded, scope creep detected, and betting table locked
 - MCP server — Linear has no way to expose project data to AI editors as structured tool calls
 - Self-hosted / open source — Linear is SaaS-only
 - Pluggable AI stack — Ollama for local/private deployments, OpenAI for production
@@ -91,6 +95,7 @@ ShipFlow targets teams that:
 
 **ShipFlow wins**:
 - Zero configuration overhead — Shape Up workflow is first-class, not a custom template
+- **Workflow Automations built-in** — "Automation for Jira" is a paid plugin sold separately; ShipFlow ships 20 automation templates out of the box with no plugin purchase
 - MCP server — Jira has no concept of exposing project data as AI tool calls
 - AI features built-in (no plugins needed): RAG Q&A, technical solution generator, test generation, risk scoring
 - Multi-layer caching for snappy performance (Jira is notoriously slow at scale)
@@ -108,7 +113,7 @@ Both are general-purpose work management tools with strong project templates and
 
 **ShipFlow wins on every Shape Up dimension** — neither Asana nor Monday.com has pitches, hill charts, betting tables, or circuit breakers. Both are adding AI features but none expose structured MCP interfaces for AI editors.
 
-**They win on**: no-code automation, richer reporting dashboards, enterprise tier support, non-technical stakeholder adoption.
+**They win on**: richer reporting dashboards, enterprise tier support, non-technical stakeholder adoption. **Note**: ShipFlow v1.7.0 now ships its own no-code workflow automation engine (14 triggers, 7 actions, 20 templates), closing the automation gap that previously favoured Asana/Monday.
 
 **Who should use them**: Cross-functional teams (marketing, ops, HR) that need a single work management platform. Not the right fit for engineering-first Shape Up teams.
 

@@ -41,6 +41,7 @@ import {
   Search,
   Workflow,
   KeyRound,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -187,6 +188,11 @@ const roadmapItems: NavItemConfig[] = [
   { textKey: 'nav.initiatives', icon: Target, path: '/initiatives', tourId: 'initiatives-menu' },
   { textKey: 'nav.epics', icon: Layers, path: '/epics', tourId: 'epics-menu' },
   { textKey: 'nav.releases', icon: PackageCheck, path: '/releases-management', tourId: 'releases-menu' },
+];
+
+// Workflow Automations
+const automationsItems: NavItemConfig[] = [
+  { textKey: 'nav.automations', icon: Zap, path: '/automations', tourId: 'automations-menu' },
 ];
 
 // Meetings (accessible from cycle context)
@@ -437,6 +443,17 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 
           {/* Meetings */}
           {meetingsItems.map((item) => (
+            <NavItem
+              key={item.path}
+              item={item}
+              isActive={currentPath === item.path}
+              onClick={onItemClick}
+            />
+          ))}
+
+          {/* Workflow Automations */}
+          <SectionHeader textKey="nav.sections.automations" />
+          {automationsItems.map((item) => (
             <NavItem
               key={item.path}
               item={item}

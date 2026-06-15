@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-06-12T16:36:36.824Z",
+  "timestamp": "2026-06-15T22:58:14.208Z",
   "stats": {
-    "totalEnKeys": 7281,
-    "totalFaKeys": 6359,
-    "totalUsedKeys": 4743,
-    "filesScanned": 424
+    "totalEnKeys": 7369,
+    "totalFaKeys": 6449,
+    "totalUsedKeys": 4814,
+    "filesScanned": 432
   },
   "issues": {
     "missingInFa": [
@@ -159,8 +159,6 @@
       "cycleForm.createNewSprint",
       "cycleForm.sprintNameRequired",
       "cycleForm.sprintNamePlaceholder",
-      "bugReports.filters.release",
-      "bugReports.filters.allReleases",
       "bugReports.viewMode.gantt",
       "bugReports.targetRelease",
       "bugReports.noRelease",
@@ -969,7 +967,6 @@
     ],
     "missingInBoth": [
       "common.unknownError",
-      "bugReports.searchPerson",
       "shows loading skeleton while fetching",
       "should render dialog with action type selection",
       "roadmap.releasePitches",
@@ -992,7 +989,6 @@
     "common.import",
     "common.submit",
     "common.clear",
-    "common.name",
     "common.date",
     "common.time",
     "common.type",
@@ -1007,7 +1003,6 @@
     "common.contact",
     "common.warning",
     "common.info",
-    "common.required",
     "common.minutesAgo_other",
     "common.hoursAgo_other",
     "common.daysAgo_other",
@@ -1028,6 +1023,7 @@
     "nav.sections.helpSupport",
     "nav.sections.administration",
     "nav.sections.integrations",
+    "nav.sections.automations",
     "nav.groups.cycleTools",
     "nav.groups.sprintTools",
     "nav.groups.people",
@@ -1927,6 +1923,12 @@
     "testCases.typeValues.UNIT",
     "testCases.updateSuccess",
     "bugReports.bugReport",
+    "bugReports.filters.allStatus",
+    "bugReports.filters.allSeverity",
+    "bugReports.filters.itemsSelected",
+    "bugReports.filters.cycle",
+    "bugReports.filters.pitch",
+    "bugReports.filters.release",
     "bugReports.sort.lastUpdated",
     "bugReports.table.bugKey",
     "bugReports.table.assignedTo",
@@ -2965,6 +2967,13 @@
     "publicRoadmap.phase150Item1Desc",
     "publicRoadmap.phase150Item2Title",
     "publicRoadmap.phase150Item2Desc",
+    "publicRoadmap.phase170Theme",
+    "publicRoadmap.phase170Item0Title",
+    "publicRoadmap.phase170Item0Desc",
+    "publicRoadmap.phase170Item1Title",
+    "publicRoadmap.phase170Item1Desc",
+    "publicRoadmap.phase170Item2Title",
+    "publicRoadmap.phase170Item2Desc",
     "dashboardManager.setDefault",
     "dashboardManager.clone",
     "dashboardManager.created",
@@ -3539,6 +3548,10 @@
     "dashboardInsights.overduePitches",
     "dashboardInsights.atRiskCycle",
     "dashboardInsights.scopeCreep",
-    "dashboardInsights.velocityTrend"
+    "dashboardInsights.velocityTrend",
+    "automation.noResults",
+    "pluginSettings.typeRisk",
+    "pluginSettings.typeReport",
+    "pluginSettings.typeIntegration"
   ]
 }

@@ -42,6 +42,7 @@ docker compose up -d
 | **MCP server** | Claude Code, Cursor, and any MCP client can call `list_projects`, `get_work_context`, `create_task`, and 18 other tools — no browser tab switching |
 | **Pluggable AI stack** | Swap between Ollama (local), OpenAI, Anthropic Claude, or RunPod via one env var. RAG Q&A, risk scoring, test generation, AI Pitch Writer, Retro Summarizer, and technical solutions all work with every provider |
 | **AI Copilot v2** | **AI Pitch Writer** turns a one-sentence problem into a full Shape Up pitch draft. **Retrospective Summarizer** generates structured cycle retros (wins, blockers, team health). **Proactive Dashboard Insights** surfaces at-risk cycles, scope creep, and velocity trends automatically |
+| **Workflow Automations** *(v1.7.0)* | 14 trigger types (task status changes, pitch events, cycle start/end, scope creep, appetite exceeded) × 7 action types (notify, webhook, email, comment, change status). 20 built-in templates — deploy in one click or build custom rules. Async execution with per-run logs |
 | **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
 | **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
@@ -223,6 +224,16 @@ docker compose up -d
   - Supported forms: Epic, Initiative, Bug Report, Pitch, Task
   - Rendered views: Epic Detail, Initiative Detail, Bug View, Task Detail, Pitch Detail (description + Shape Up fields)
   - Uses GFM (GitHub Flavored Markdown) with headings, lists, code blocks, tables, links, and more
+- **Workflow Automations (v1.7.0)**: No-code trigger/action engine that reacts to project events automatically
+  - **14 trigger types**: task created/status-changed/assigned/completed, pitch created/status-changed, cycle started/ended/status-changed, comment added, betting table locked, hill chart moved, appetite exceeded, scope creep detected
+  - **7 action types**: notify assignee, notify project members, send webhook, send email, add comment, change task status, create task
+  - **20 built-in templates** across four categories (Tasks, Shape Up, Automation, Notifications) — install in one click or build custom rules
+  - **Template gallery**: search, filter by category, and preview each template before installing
+  - **Enable/disable toggle** per rule — pause automations without deleting them
+  - **Execution history**: per-rule and per-project log with status (SUCCESS/FAILURE/SKIPPED), trigger payload, result message, and timestamp
+  - **Async engine**: automations execute outside the primary transaction — never delays the triggering action
+  - **`{{key}}` interpolation** in action config — inject event context (task name, assignee, status) into messages and webhooks
+  - REST API: `GET /api/automations/project/{id}`, `POST /api/automations`, `PATCH /api/automations/{id}/toggle`, `GET /api/automations/{id}/executions`
 - **Competitor Migration Tooling (v1.2.0)**: Import your existing projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow
   - Auto-detects source format from CSV column headers (no manual format selection required)
   - Maps rows to Tasks, Epics, and Cycles inside a new Kanban project; teams migrate to Shape Up or Scrum at their own pace
