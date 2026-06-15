@@ -75,9 +75,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.6.0',
-    date: 'Coming soon',
+    date: 'June 15, 2026',
     title: 'MCP Ecosystem',
-    upcoming: true,
     highlights: [
       {
         icon: <Wrench className="h-5 w-5" />,
