@@ -234,6 +234,7 @@ export default function PublicRoadmap() {
         { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase160Item0Title'), description: t('publicRoadmap.phase160Item0Desc') },
         { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.phase160Item1Title'), description: t('publicRoadmap.phase160Item1Desc') },
         { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase160Item2Title'), description: t('publicRoadmap.phase160Item2Desc') },
+        { icon: <Network className="h-5 w-5" />, title: t('publicRoadmap.phase160Item3Title'), description: t('publicRoadmap.phase160Item3Desc') },
       ],
     },
   ];

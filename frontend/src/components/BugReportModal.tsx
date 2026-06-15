@@ -38,7 +38,7 @@ import { Alert, AlertDescription } from './ui/alert';
 interface BugReportModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateBugReportRequest | UpdateBugReportRequest) => Promise<void>;
+  onSubmit: (data: CreateBugReportRequest | UpdateBugReportRequest) => Promise<BugReport | void | undefined>;
   bugReport?: BugReport | null;
   pitchId?: number;
   cycleId?: number;

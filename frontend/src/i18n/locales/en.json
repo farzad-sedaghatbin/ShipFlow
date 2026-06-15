@@ -27,6 +27,8 @@
     "submit": "Submit",
     "reset": "Reset",
     "clear": "Clear",
+    "linkCopied": "Link copied to clipboard",
+    "copyLink": "Copy shareable link",
     "view": "View",
     "viewAll": "View All",
     "details": "Details",
@@ -2313,7 +2315,9 @@
       "pitch": "Pitch",
       "allPitches": "All Pitches",
       "release": "Release",
-      "allReleases": "All Releases"
+      "allReleases": "All Releases",
+      "allAssignees": "All Assignees",
+      "searchAssignee": "Search people..."
     },
     "sort": {
       "lastUpdated": "Last Updated",
@@ -5222,11 +5226,13 @@
     "shipped150Item2Desc": "Dashboard detects overdue pitches, at-risk cycles, scope creep, and velocity trends automatically.",
     "phase160Theme": "MCP Ecosystem",
     "phase160Item0Title": "Agentic Write Tools",
-    "phase160Item0Desc": "AI coding assistants can create tasks, update pitches, and move scopes via MCP tool calls from any editor.",
+    "phase160Item0Desc": "AI coding assistants can create tasks, update pitches (including Shape Up fields like wireframeLinks and solution), and move scopes via MCP tool calls from any editor.",
     "phase160Item1Title": "Plugin SDK",
-    "phase160Item1Desc": "First-party plugin SDK and Maven archetype for third-party integrations.",
+    "phase160Item1Desc": "Register risk calculators, report generators, and integration providers at runtime. Admin UI to enable/disable plugins without redeployment. Sample plugin and Maven scaffold included.",
     "phase160Item2Title": "Notion / Confluence Clients",
-    "phase160Item2Desc": "Read design docs and meeting notes from Notion or Confluence directly in ShipFlow AI features."
+    "phase160Item2Desc": "Read design docs and meeting notes from Notion or Confluence directly in ShipFlow AI features.",
+    "phase160Item3Title": "Rich Link Previews",
+    "phase160Item3Desc": "Shared task, pitch, and cycle URLs unfurl with meaningful titles and descriptions in Slack, iMessage, and any link-preview tool — without exposing protected data."
   },
   "releaseNotes": {
     "title": "Release Notes",
@@ -7443,7 +7449,18 @@
     "keyShowOnceWarning": "Copy this key now — it will not be shown again.",
     "copy": "Copy",
     "copied": "Copied!",
-    "never": "Never"
+    "never": "Never",
+    "tokenSaved": "Access token saved successfully",
+    "confluenceTab": "Confluence",
+    "notionServerStatusDesc": "Notion MCP server configuration from environment variables",
+    "confluenceServerStatusDesc": "Confluence MCP server configuration from environment variables",
+    "notionTokenDescription": "Internal integration token for Notion API. Used by AI features to read design docs and meeting notes from your workspace.",
+    "notionTokenHint": "Create an integration at notion.so/my-integrations, then share relevant pages with it.",
+    "confluenceTokenDescription": "API token for Confluence Cloud. Used by AI features to read design docs and meeting notes from your space.",
+    "confluenceDomain": "Confluence Domain",
+    "confluenceDomainHint": "Your Atlassian Cloud domain, e.g. yourcompany.atlassian.net",
+    "confluenceSpaceKey": "Default Space Key",
+    "confluenceSpaceKeyHint": "Default Confluence space to read pages from, e.g. ENG or PRODUCT"
   },
   "conversation": "Conversation",
   "inboundWebhooks": {
@@ -7982,5 +7999,21 @@
     "daysLeft": "days left",
     "patterns": "Watch out for",
     "riskPosture": "Risk posture"
+  },
+  "pluginSettings": {
+    "navLabel": "Plugins",
+    "title": "Plugin Extensions",
+    "description": "View and manage runtime plugin extensions. Disable individual plugins without redeployment.",
+    "loadFailed": "Failed to load plugins",
+    "enabledSuccess": "Plugin enabled",
+    "disabledSuccess": "Plugin disabled",
+    "toggleFailed": "Failed to toggle plugin",
+    "noPlugins": "No plugins registered",
+    "noPluginsHint": "Drop a JAR implementing a plugin SPI interface into the classpath to register it.",
+    "typeRisk": "Risk Calculator",
+    "typeReport": "Report Generator",
+    "typeIntegration": "Integration Provider",
+    "sdkTitle": "Plugin SDK",
+    "sdkDesc": "Build your own plugin using the Maven archetype. Implement any SPI interface and add it to the classpath."
   }
 }

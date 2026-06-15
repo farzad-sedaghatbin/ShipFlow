@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — v1.6.0 "MCP Ecosystem" (S41–S44)
+
+#### Notion / Confluence MCP Clients (S43)
+- **Notion MCP provider**: `NotionMcpProvider` implements `McpClientService` — reads design docs and meeting notes from Notion workspaces into AI context. Uses `notion-search` (list/search) and `notion-get-page` (read) MCP tools; token stored per-organisation in `organization_settings.notion_access_token`.
+- **Confluence MCP provider**: `ConfluenceMcpProvider` implements `McpClientService` — reads pages from Confluence Cloud spaces. Uses `confluence-get-space-pages`, `confluence-get-page`, and `confluence-search` MCP tools; supports per-org default domain and space key.
+- **Flyway `V2026_06_15_0001__add_notion_confluence_mcp_settings.sql`**: Adds `notion_access_token`, `confluence_access_token`, `default_confluence_space_key`, `default_confluence_domain` columns to `organization_settings`.
+- **Admin settings UI**: `McpIntegration` page gains Notion and Confluence tabs with server-status cards, secure token inputs (show/hide toggle), domain/space-key fields for Confluence, and save/clear actions.
+
+#### Rich Link Preview (S44)
+- **`LinkPreviewController`**: `GET /preview/pitch/{id}`, `/preview/task/{id}`, `/preview/cycle/{id}` return `text/html` responses with Open Graph meta tags (`og:title`, `og:description`, `og:type`, `og:url`). A JavaScript redirect sends browsers to the real SPA route. Publicly accessible — no auth required. HTML values escaped via `HtmlUtils.htmlEscape()` to prevent XSS.
+- **Copy shareable link**: Pitch header, Task detail page, and Cycle detail page each gain a "Copy shareable link" button that writes the `/preview/…` URL to the clipboard, so links shared in Slack, iMessage, or Notion unfurl with meaningful titles and descriptions.
+
+#### Bug Fixes (pre-S43/S44)
+- **Jira CSV import — Bug issues**: `CsvImportService.importJiraRow()` now routes issues with `Issue Type = Bug` to a `BugReport` entity instead of a Task. Jira Priority maps to `BugSeverity` (Blocker/Critical → CRITICAL, Major → MAJOR, Minor → MINOR, Trivial → TRIVIAL); Jira Status maps to `BugStatus` (In Progress → IN_PROGRESS, Resolved/Done/Closed → RESOLVED, Won't Fix/Won't Do → WONT_FIX). 10 new unit tests in `CsvImportServiceTest`.
+- **Bug report creation — image attachment**: Fixed a regression where files added in the "Create Bug" modal were silently dropped. `BugReportsPage.handleCreateOrUpdate` now returns the created `BugReport` so `BugReportModal` can upload pending attachments after the bug ID is known.
+
+### Added — v1.6.0 "MCP Ecosystem" (S41–S42)
+
+#### Plugin SDK (S42)
+- **Plugin admin UI**: New **Organization Settings → Plugins** tab lists all registered plugin extensions (risk calculators, report generators, integration providers) with type badges and runtime enable/disable toggles — no redeployment required.
+- **`PluginRegistry` enable/disable API**: `isEnabled(pluginId)` / `setEnabled(pluginId, enabled)` on the registry; disabled plugins are tracked in a `ConcurrentHashSet` and survive until next restart.
+- **`GET /api/v1/admin/plugins`** and **`PATCH /api/v1/admin/plugins/{pluginId}/enabled`**: ADMIN-only REST endpoints backed by `PluginAdminController`. Return `PluginDTO` (pluginId, displayName, type, enabled).
+- **Plugin SDK scaffold** (`plugin-sdk/`): `README.md` quick-start guide + sample Maven project (`sample-plugin/`) demonstrating `RiskCalculatorPlugin` implementation with a `SampleDeadlineRiskPlugin`.
+
+### Added — v1.6.0 "MCP Ecosystem" (S41)
+
+- **`update_task` MCP write tool**: PATCH-semantic full-field update for tasks via MCP. AI editors can now update a task's title, description, priority, and due date in a single call without overwriting other fields. Existing `update_task_status` and `update_task_assignee` remain the preferred tools for status/assignee changes.
+- **`update_pitch` MCP write tool**: PATCH-semantic update for all Shape Up pitch fields — title, description, problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, appetiteDays. Enables AI editors to enrich a pitch incrementally across multiple calls (e.g. add `wireframeLinks` after a Figma design is created, then add `solution` once it is written). Status changes still require `update_pitch_status`.
+
 ### Fixed
 - **Bug Reports — Total stat and pagination NaN**: `@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)` nests `totalElements`/`totalPages` under a `page` sub-object in JSON; all frontend pagination consumers now read `response.data.page?.totalElements ?? response.data.totalElements ?? 0` (system-wide fix across 15+ files). Added `getPageTotal()` / `getPageCount()` helpers to `types/index.ts`.
 - **Bug Reports — component field**: Added `component` column to `bug_reports` table (Flyway `V100__add_component_to_bug_reports.sql`); backend entity/DTO/service updated; frontend form shows component selector; table shows component column.

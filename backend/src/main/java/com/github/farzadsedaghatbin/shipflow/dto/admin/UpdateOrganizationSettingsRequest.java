@@ -51,6 +51,14 @@ public class UpdateOrganizationSettingsRequest {
   // GitHub MCP Configuration (token managed via MCP settings API)
   private String githubAccessToken;
 
+  // Notion MCP Configuration (token managed via MCP settings API)
+  private String notionAccessToken;
+
+  // Confluence MCP Configuration (token managed via MCP settings API)
+  private String confluenceAccessToken;
+  private String defaultConfluenceDomain;
+  private String defaultConfluenceSpaceKey;
+
   // MCP Server runtime toggle (null = leave unchanged)
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;

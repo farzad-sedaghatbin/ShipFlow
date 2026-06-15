@@ -151,6 +151,26 @@ public class OrganizationSettingsService {
       settings.setGithubAccessToken(request.getGithubAccessToken());
     }
 
+    // Notion MCP Configuration (token only, managed via MCP settings API)
+    if (request.getNotionAccessToken() != null) {
+      settings.setNotionAccessToken(
+          request.getNotionAccessToken().isBlank() ? null : request.getNotionAccessToken());
+    }
+
+    // Confluence MCP Configuration
+    if (request.getConfluenceAccessToken() != null) {
+      settings.setConfluenceAccessToken(
+          request.getConfluenceAccessToken().isBlank() ? null : request.getConfluenceAccessToken());
+    }
+    if (request.getDefaultConfluenceDomain() != null) {
+      settings.setDefaultConfluenceDomain(
+          request.getDefaultConfluenceDomain().isBlank() ? null : request.getDefaultConfluenceDomain());
+    }
+    if (request.getDefaultConfluenceSpaceKey() != null) {
+      settings.setDefaultConfluenceSpaceKey(
+          request.getDefaultConfluenceSpaceKey().isBlank() ? null : request.getDefaultConfluenceSpaceKey());
+    }
+
     // MCP Server runtime toggle (null = leave unchanged)
     if (request.getMcpServerEnabled() != null) {
       settings.setMcpServerEnabled(request.getMcpServerEnabled());
@@ -198,6 +218,42 @@ public class OrganizationSettingsService {
   public String getGithubAccessToken() {
     return settingsRepository.findFirstByOrderByIdAsc()
         .map(OrganizationSettings::getGithubAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get Notion access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Notion access token or null if not configured
+   */
+  public String getNotionAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getNotionAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get Confluence access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Confluence access token or null if not configured
+   */
+  public String getConfluenceAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getConfluenceAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get the default Confluence space key for MCP integration.
+   * @return the default Confluence space key or null if not configured
+   */
+  public String getConfluenceSpaceKey() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getDefaultConfluenceSpaceKey)
         .orElse(null);
   }
 
@@ -537,6 +593,10 @@ public class OrganizationSettingsService {
         // MCP Configuration (tokens not exposed, only presence flags)
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
         .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
+        .hasNotionAccessToken(entity.getNotionAccessToken() != null && !entity.getNotionAccessToken().isBlank())
+        .hasConfluenceAccessToken(entity.getConfluenceAccessToken() != null && !entity.getConfluenceAccessToken().isBlank())
+        .defaultConfluenceDomain(entity.getDefaultConfluenceDomain())
+        .defaultConfluenceSpaceKey(entity.getDefaultConfluenceSpaceKey())
         // MCP Server runtime toggle — effective value: DB override if set, else env default.
         // Write mode is only effective when the server itself is enabled, mirroring
         // McpServerSettingsService.isWriteEnabled() so the DTO never reports a misleading

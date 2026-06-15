@@ -73,6 +73,14 @@ public class OrganizationSettingsDTO {
   // GitHub MCP Configuration (token not exposed, only flag)
   private Boolean hasGithubAccessToken;
 
+  // Notion MCP Configuration (token not exposed, only flag)
+  private Boolean hasNotionAccessToken;
+
+  // Confluence MCP Configuration (token not exposed, only flag)
+  private Boolean hasConfluenceAccessToken;
+  private String defaultConfluenceDomain;
+  private String defaultConfluenceSpaceKey;
+
   // MCP Server runtime toggle (effective values: DB override if set, else env default)
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;
