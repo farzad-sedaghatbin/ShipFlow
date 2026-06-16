@@ -55,6 +55,7 @@ import {
   FolderInput,
   Wand2,
   BookOpen,
+  Sliders,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -73,6 +74,52 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.8.0',
+    date: 'Coming soon',
+    title: 'Custom Fields & Advanced RBAC',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Sliders className="h-5 w-5" />,
+        title: 'Custom Fields on Tasks & Pitches',
+        description: 'Add your own fields — text, number, date, single-select, multi-select — to tasks and pitches. Fields are configured per project and appear everywhere the entity appears.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Project-Level Permissions',
+        description: 'Grant access at the project level, not just the organization. Give a contractor read access to one project without touching global roles.',
+      },
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Field Visibility Rules',
+        description: 'Show or hide custom fields based on role, project type, or cycle phase.',
+      },
+    ],
+  },
+  {
+    version: '1.7.0',
+    date: 'Coming soon',
+    title: 'Workflow Automations',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: 'Trigger / Action Engine',
+        description: 'Define automation rules — e.g. "when pitch moves to Betting, notify the team" or "when a task is overdue, change priority to High" — with a visual rule builder.',
+      },
+      {
+        icon: <Brain className="h-5 w-5" />,
+        title: 'Shape Up Triggers',
+        description: 'Built-in triggers for cycle phase transitions, pitch status changes, scope completion thresholds, and hill-chart milestones.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: '20 Automation Templates',
+        description: 'Pre-built templates for common workflows: on-call rotation, sprint kickoff checklists, bug triage, and release day runbooks.',
+      },
+    ],
+  },
   {
     version: '1.6.0',
     date: 'June 15, 2026',
