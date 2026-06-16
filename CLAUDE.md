@@ -5,12 +5,12 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.7.0 — "Workflow Automations"
+## Current Milestone: v1.8.0 — "Custom Fields & Advanced RBAC"
 
-**Current version**: v1.6.0 (released 2026-06-15)
+**Current version**: v1.7.0 (released 2026-06-16)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. Next: MCP Ecosystem (v1.6.0) — agentic write tools, plugin SDK, Notion/Confluence clients.
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Next: Custom Fields & Advanced RBAC (v1.8.0).
 
 ### v1.3.0 session map
 
@@ -100,12 +100,22 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | ✅ done |
 | S44 | Rich link preview (OG metadata) — server-rendered `og:title`/`og:description` for task/pitch/cycle URLs so shared links show meaningful previews in Slack, iMessage, etc. | ✅ done |
 
+**v1.6.0 released: 2026-06-15** ✅
+
+### v1.7.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S45 | Workflow Automations backend — TriggerType/ActionType enums, WorkflowAutomation/Template/Execution entities, engine, event listener, action dispatcher, 20 SQL-seeded templates | ✅ done |
+| S46 | Shape Up triggers & REST API — HILL_CHART_MOVED, APPETITE_EXCEEDED, SCOPE_CREEP_DETECTED, BETTING_TABLE_LOCKED triggers; WorkflowAutomationController (10 endpoints) | ✅ done |
+| S47 | Automations UI — AutomationsPage (Rules + History tabs), AutomationRuleForm, AutomationTemplateGallery, AutomationExecutionLog, sidebar nav, i18n | ✅ done |
+
+**v1.7.0 released: 2026-06-16** ✅
+
 ### Future milestones overview
 
 | Version | Theme | Sessions |
 |---------|-------|----------|
-| v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients, rich link preview | S41–S44 |
-| v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S45–S47 |
 | v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S48–S50 |
 | v1.9.0 | Wiki / Docs Space — built-in wiki so teams can write and read docs without Confluence/Notion | S51–S53 |
 | v1.10.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
