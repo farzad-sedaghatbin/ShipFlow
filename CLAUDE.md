@@ -107,10 +107,11 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients, rich link preview | S41–S44 |
 | v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S45–S47 |
 | v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S48–S50 |
-| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S51–S53 |
-| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S54–S56 |
-| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S57–S59 |
-| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S60–S62 |
+| v1.9.0 | Wiki / Docs Space — built-in wiki so teams can write and read docs without Confluence/Notion | S51–S53 |
+| v1.10.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
+| v1.11.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
+| v1.12.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
+| v1.13.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
