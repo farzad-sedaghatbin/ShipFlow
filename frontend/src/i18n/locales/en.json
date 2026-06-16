@@ -8010,7 +8010,7 @@
   "pluginSettings": {
     "navLabel": "Plugins",
     "title": "Plugin Extensions",
-    "description": "View and manage runtime plugin extensions. Disable individual plugins without redeployment.",
+    "description": "Manage runtime plugin extensions registered via the Plugin SDK. Third-party plugins appear here automatically once their JAR is on the classpath.",
     "loadFailed": "Failed to load plugins",
     "enabledSuccess": "Plugin enabled",
     "disabledSuccess": "Plugin disabled",
@@ -8021,6 +8021,10 @@
     "typeReport": "Report Generator",
     "typeIntegration": "Integration Provider",
     "sdkTitle": "Plugin SDK",
-    "sdkDesc": "Build your own plugin using the Maven archetype. Implement any SPI interface and add it to the classpath."
+    "sdkDesc": "Build your own plugin using the Maven archetype. Implement any SPI interface and add it to the classpath.",
+    "previewBadge": "Preview",
+    "builtinNote": "These are SDK reference implementations included with ShipFlow. They demonstrate the plugin extension API — replace them with your own plugins to customize behavior.",
+    "builtinDeadlinePressureDesc": "Scores pitches by the gap between time consumed and task completion. Use as a template for custom risk calculators.",
+    "builtinCycleHealthDesc": "Produces a plain-text cycle health summary. Override with your own report format via the Plugin SDK."
   }
 }
