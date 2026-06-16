@@ -348,6 +348,18 @@ public class HelpGuideAIService {
         if (lower.contains("initiative") || lower.contains("epic") || lower.contains("roadmap"))
             return List.of("How do I create an initiative?", "How do epics relate to pitches?",
                     "How do I view the roadmap?");
+        if (lower.contains("plugin") || lower.contains("extension") || lower.contains("sdk"))
+            return List.of("How do I enable or disable a plugin?", "How do I build a custom plugin?",
+                    "What built-in plugins does ShipFlow include?");
+        if (lower.contains("mcp") || lower.contains("claude") || lower.contains("cursor") || lower.contains("ai tool"))
+            return List.of("How do I connect Claude Code to ShipFlow?", "How do I create an API key?",
+                    "How do I enable the MCP server?");
+        if (lower.contains("notion") || lower.contains("confluence"))
+            return List.of("How do I set up a Notion MCP connection?", "How do I set up a Confluence MCP connection?",
+                    "How do I configure MCP integrations?");
+        if (lower.contains("preview") || lower.contains("share") || lower.contains("slack") || lower.contains("whatsapp"))
+            return List.of("How do I share a task link with a preview?", "How do I copy a shareable link?",
+                    "How do I configure webhooks?");
 
         return getDefaultSuggestions();
     }
