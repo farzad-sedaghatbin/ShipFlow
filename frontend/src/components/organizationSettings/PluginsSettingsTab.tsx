@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Puzzle, RefreshCw, AlertCircle } from 'lucide-react';
+import { Puzzle, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
@@ -20,6 +20,15 @@ const TYPE_COLORS: Record<string, string> = {
   report: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   integration: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
 };
+
+const BUILTIN_DESCRIPTIONS: Record<string, string> = {
+  'builtin-deadline-pressure': 'pluginSettings.builtinDeadlinePressureDesc',
+  'builtin-cycle-health-report': 'pluginSettings.builtinCycleHealthDesc',
+};
+
+function isBuiltin(pluginId: string) {
+  return pluginId.startsWith('builtin-');
+}
 
 export function PluginsSettingsTab() {
   const { t } = useTranslation();
@@ -66,6 +75,7 @@ export function PluginsSettingsTab() {
   }, {});
 
   const typeOrder = ['risk', 'report', 'integration'];
+  const hasBuiltins = plugins.some((p) => isBuiltin(p.pluginId));
 
   return (
     <div className="space-y-4">
@@ -92,6 +102,13 @@ export function PluginsSettingsTab() {
             </div>
           ) : (
             <div className="space-y-6">
+              {hasBuiltins && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-800/40 dark:bg-amber-900/10 dark:text-amber-400">
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{t('pluginSettings.builtinNote')}</span>
+                </div>
+              )}
+
               {typeOrder
                 .filter((type) => grouped[type]?.length)
                 .map((type, idx) => (
@@ -105,23 +122,36 @@ export function PluginsSettingsTab() {
                       </span>
                     </div>
                     <div className="space-y-4">
-                      {grouped[type].map((plugin) => (
-                        <div key={plugin.pluginId} className="flex items-center justify-between">
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <Label>{plugin.displayName}</Label>
-                              <Badge variant="outline" className="text-xs font-mono">
-                                {plugin.pluginId}
-                              </Badge>
+                      {grouped[type].map((plugin) => {
+                        const builtin = isBuiltin(plugin.pluginId);
+                        const descKey = BUILTIN_DESCRIPTIONS[plugin.pluginId];
+                        return (
+                          <div key={plugin.pluginId} className="flex items-start justify-between gap-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Label>{plugin.displayName}</Label>
+                                {builtin ? (
+                                  <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/40">
+                                    {t('pluginSettings.previewBadge')}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs font-mono">
+                                    {plugin.pluginId}
+                                  </Badge>
+                                )}
+                              </div>
+                              {descKey && (
+                                <p className="text-xs text-muted-foreground">{t(descKey)}</p>
+                              )}
                             </div>
+                            <Switch
+                              checked={plugin.enabled}
+                              disabled={toggling === plugin.pluginId}
+                              onCheckedChange={(checked) => handleToggle(plugin.pluginId, checked)}
+                            />
                           </div>
-                          <Switch
-                            checked={plugin.enabled}
-                            disabled={toggling === plugin.pluginId}
-                            onCheckedChange={(checked) => handleToggle(plugin.pluginId, checked)}
-                          />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
