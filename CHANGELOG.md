@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.7.0] - 2026-06-15
+## [1.7.0] - 2026-06-16
 
 ### Added — v1.7.0 "Workflow Automations" (S45–S47)
 
