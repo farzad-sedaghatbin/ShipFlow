@@ -81,6 +81,12 @@ public class OrganizationSettingsDTO {
   private String defaultConfluenceDomain;
   private String defaultConfluenceSpaceKey;
 
+  // SharePoint Graph API (credentials not exposed, only presence flags + non-secret fields)
+  private Boolean hasSharepointClientSecret;
+  private String sharepointTenantId;
+  private String sharepointClientId;
+  private String sharepointSiteUrl;
+
   // MCP Server runtime toggle (effective values: DB override if set, else env default)
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;

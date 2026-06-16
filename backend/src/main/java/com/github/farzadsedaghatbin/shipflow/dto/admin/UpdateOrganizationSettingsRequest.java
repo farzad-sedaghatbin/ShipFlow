@@ -59,6 +59,12 @@ public class UpdateOrganizationSettingsRequest {
   private String defaultConfluenceDomain;
   private String defaultConfluenceSpaceKey;
 
+  // SharePoint Graph API — Azure AD client credentials (null = leave unchanged, blank = clear)
+  private String sharepointTenantId;
+  private String sharepointClientId;
+  private String sharepointClientSecret;
+  private String sharepointSiteUrl;
+
   // MCP Server runtime toggle (null = leave unchanged)
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;

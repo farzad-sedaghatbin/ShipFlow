@@ -206,6 +206,19 @@ public class OrganizationSettings {
   @Column(name = "default_confluence_domain", length = 255)
   private String defaultConfluenceDomain;
 
+  // SharePoint Graph API — Azure AD client credentials
+  @Column(name = "sharepoint_tenant_id", length = 255)
+  private String sharepointTenantId;
+
+  @Column(name = "sharepoint_client_id", length = 255)
+  private String sharepointClientId;
+
+  @Column(name = "sharepoint_client_secret", columnDefinition = "TEXT")
+  private String sharepointClientSecret;
+
+  @Column(name = "sharepoint_site_url", length = 500)
+  private String sharepointSiteUrl;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();

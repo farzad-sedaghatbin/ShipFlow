@@ -85,6 +85,13 @@ export default function McpIntegration() {
   const [showNotionToken, setShowNotionToken] = useState(false);
   const [showConfluenceToken, setShowConfluenceToken] = useState(false);
 
+  // SharePoint Graph API form state
+  const [spTenantId, setSpTenantId] = useState('');
+  const [spClientId, setSpClientId] = useState('');
+  const [spClientSecret, setSpClientSecret] = useState('');
+  const [spSiteUrl, setSpSiteUrl] = useState('');
+  const [showSpClientSecret, setShowSpClientSecret] = useState(false);
+
   // Built-in MCP server runtime toggle
   const [serverSettings, setServerSettings] = useState<McpServerSettings | null>(null);
   const [savingToggle, setSavingToggle] = useState(false);
@@ -120,6 +127,10 @@ export default function McpIntegration() {
       const [status, orgSettings] = await Promise.all([getMcpStatus(), getMcpSettings()]);
       setMcpStatus(status);
       setSettings(orgSettings);
+      // Pre-fill non-secret SharePoint fields from saved settings
+      if (orgSettings.sharepointTenantId) setSpTenantId(orgSettings.sharepointTenantId);
+      if (orgSettings.sharepointClientId) setSpClientId(orgSettings.sharepointClientId);
+      if (orgSettings.sharepointSiteUrl) setSpSiteUrl(orgSettings.sharepointSiteUrl);
       // The MCP server runtime toggle is part of the same /settings payload — derive it
       // here instead of making a second identical request.
       setServerSettings({
@@ -262,6 +273,49 @@ export default function McpIntegration() {
       const updated = await updateMcpSettings({ confluenceAccessToken: '' });
       setSettings(updated);
       setConfluenceToken('');
+      setSuccess(t('mcpIntegration.tokenCleared'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // --- SharePoint Graph API handlers ---
+  const handleSaveSharePoint = async () => {
+    if (!spTenantId.trim() && !spClientId.trim() && !spClientSecret.trim() && !spSiteUrl.trim()) return;
+    try {
+      setSaving(true);
+      const req: UpdateMcpSettingsRequest = {};
+      if (spTenantId.trim()) req.sharepointTenantId = spTenantId;
+      if (spClientId.trim()) req.sharepointClientId = spClientId;
+      if (spClientSecret.trim()) req.sharepointClientSecret = spClientSecret;
+      if (spSiteUrl.trim()) req.sharepointSiteUrl = spSiteUrl;
+      const updated = await updateMcpSettings(req);
+      setSettings(updated);
+      setSpClientSecret('');
+      setSuccess(t('mcpIntegration.tokenSaved'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClearSharePoint = async () => {
+    try {
+      setSaving(true);
+      const updated = await updateMcpSettings({
+        sharepointTenantId: '',
+        sharepointClientId: '',
+        sharepointClientSecret: '',
+        sharepointSiteUrl: '',
+      });
+      setSettings(updated);
+      setSpTenantId('');
+      setSpClientId('');
+      setSpClientSecret('');
+      setSpSiteUrl('');
       setSuccess(t('mcpIntegration.tokenCleared'));
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
@@ -455,7 +509,7 @@ export default function McpIntegration() {
 
       {/* Tabs */}
       <Tabs value={tabValue} onValueChange={setTabValue}>
-        <TabsList className="grid w-full max-w-3xl grid-cols-6">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7">
           <TabsTrigger value="github" className="flex items-center gap-2">
             <Github className="h-4 w-4" />
             GitHub
@@ -471,6 +525,10 @@ export default function McpIntegration() {
           <TabsTrigger value="confluence" className="flex items-center gap-2">
             <span className="font-bold text-xs">C</span>
             {t('mcpIntegration.confluenceTab')}
+          </TabsTrigger>
+          <TabsTrigger value="sharepoint" className="flex items-center gap-2">
+            <span className="font-bold text-xs">SP</span>
+            {t('mcpIntegration.sharepointTab')}
           </TabsTrigger>
           <TabsTrigger value="server" className="flex items-center gap-2">
             <Server className="h-4 w-4" />
@@ -821,6 +879,108 @@ export default function McpIntegration() {
             <Button
               onClick={handleSaveConfluence}
               disabled={saving || (!confluenceToken.trim() && !confluenceDomain.trim() && !confluenceSpaceKey.trim())}
+            >
+              {saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {t('common.save')}
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* SharePoint Tab */}
+        <TabsContent value="sharepoint" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                {t('mcpIntegration.sharepointTitle')}
+              </CardTitle>
+              <CardDescription>{t('mcpIntegration.sharepointDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge variant={settings?.hasSharepointClientSecret ? 'default' : 'secondary'}>
+                  {settings?.hasSharepointClientSecret
+                    ? t('mcpIntegration.tokenConfigured')
+                    : t('mcpIntegration.tokenNotConfigured')}
+                </Badge>
+                {settings?.hasSharepointClientSecret && (
+                  <Button variant="ghost" size="sm" onClick={handleClearSharePoint} disabled={saving}>
+                    {t('mcpIntegration.clearToken')}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('mcpIntegration.sharepointCredentialsTitle')}</CardTitle>
+              <CardDescription>{t('mcpIntegration.sharepointCredentialsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="sp-tenant-id">{t('mcpIntegration.sharepointTenantId')}</Label>
+                <Input
+                  id="sp-tenant-id"
+                  value={spTenantId}
+                  onChange={(e) => setSpTenantId(e.target.value)}
+                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointTenantIdHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sp-client-id">{t('mcpIntegration.sharepointClientId')}</Label>
+                <Input
+                  id="sp-client-id"
+                  value={spClientId}
+                  onChange={(e) => setSpClientId(e.target.value)}
+                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointClientIdHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sp-client-secret">{t('mcpIntegration.sharepointClientSecret')}</Label>
+                <div className="relative flex-1">
+                  <Input
+                    id="sp-client-secret"
+                    type={showSpClientSecret ? 'text' : 'password'}
+                    value={spClientSecret}
+                    onChange={(e) => setSpClientSecret(e.target.value)}
+                    placeholder={settings?.hasSharepointClientSecret ? '••••••••••••••••' : t('mcpIntegration.sharepointClientSecretPlaceholder')}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowSpClientSecret(!showSpClientSecret)}
+                  >
+                    {showSpClientSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointClientSecretHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sp-site-url">{t('mcpIntegration.sharepointSiteUrl')}</Label>
+                <Input
+                  id="sp-site-url"
+                  value={spSiteUrl}
+                  onChange={(e) => setSpSiteUrl(e.target.value)}
+                  placeholder="contoso.sharepoint.com:/sites/Engineering"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointSiteUrlHint')}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSaveSharePoint}
+              disabled={saving || (!spTenantId.trim() && !spClientId.trim() && !spClientSecret.trim() && !spSiteUrl.trim())}
             >
               {saving ? (
                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
