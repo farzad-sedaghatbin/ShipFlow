@@ -87,6 +87,17 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.7.0',
+      date: 'June 15, 2026',
+      title: t('publicRoadmap.shipped170Title'),
+      highlights: [
+        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item0Title'), description: t('publicRoadmap.shipped170Item0Desc') },
+        { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item1Title'), description: t('publicRoadmap.shipped170Item1Desc') },
+        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item2Title'), description: t('publicRoadmap.shipped170Item2Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item3Title'), description: t('publicRoadmap.shipped170Item3Desc') },
+      ],
+    },
+    {
       version: '1.6.0',
       date: 'June 15, 2026',
       title: t('publicRoadmap.shipped160Title'),
@@ -240,13 +251,12 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.7.0',
-      theme: t('publicRoadmap.phase170Theme'),
+      version: 'v1.8.0',
+      theme: t('publicRoadmap.phase180Theme'),
       status: 'in-progress',
       items: [
-        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.phase170Item0Title'), description: t('publicRoadmap.phase170Item0Desc') },
-        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase170Item1Title'), description: t('publicRoadmap.phase170Item1Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase170Item2Title'), description: t('publicRoadmap.phase170Item2Desc') },
+        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
       ],
     },
     {

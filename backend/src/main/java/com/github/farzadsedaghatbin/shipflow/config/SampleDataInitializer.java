@@ -64,6 +64,8 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final ImportJobRepository importJobRepository;
   private final OrganizationSettingsRepository organizationSettingsRepository;
   private final IdentityProviderRepository identityProviderRepository;
+  private final WorkflowAutomationRepository workflowAutomationRepository;
+  private final WorkflowAutomationTemplateRepository workflowAutomationTemplateRepository;
 
   @Override
   @Transactional
@@ -931,6 +933,8 @@ public class SampleDataInitializer implements CommandLineRunner {
     if (adminUser != null) {
       createSampleImportJobs(adminUser, saraUser);
     }
+
+    createWorkflowAutomationSampleData(bankingProject);
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
@@ -1811,5 +1815,73 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build());
 
     log.info("SSO sample data created: 2 demo identity providers (Okta OIDC, Azure AD SAML2) — both disabled by default");
+  }
+
+  private void createWorkflowAutomationSampleData(Project project) {
+    if (workflowAutomationRepository.count() > 0) return;
+
+    // Use the first 3 built-in templates as-is so the demo looks realistic
+    var templates = workflowAutomationTemplateRepository.findAllByOrderBySortOrderAsc();
+    if (templates.isEmpty()) return;
+
+    WorkflowAutomationTemplate notifyCompleted = templates.get(0);
+    WorkflowAutomationTemplate notifyPitchChange = templates.size() > 5 ? templates.get(5) : templates.get(0);
+    WorkflowAutomationTemplate cycleStart = templates.size() > 7 ? templates.get(7) : templates.get(0);
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Notify team on task completion")
+        .description("Fires when any task is marked done and notifies all project members.")
+        .project(project)
+        .triggerType(TriggerType.TASK_COMPLETED)
+        .actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .triggerConfig("{}")
+        .actionConfig("{\"message\":\"A task was completed: {{taskTitle}}\"}")
+        .enabled(true)
+        .template(notifyCompleted)
+        .executionCount(47L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 6, 14, 10, 22))
+        .build());
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Alert on pitch status change")
+        .description("Notifies team when a pitch moves to Shaped or Approved.")
+        .project(project)
+        .triggerType(TriggerType.PITCH_STATUS_CHANGED)
+        .actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .triggerConfig("{\"toStatus\":[\"SHAPED\",\"APPROVED\"]}")
+        .actionConfig("{\"message\":\"Pitch {{pitchTitle}} moved to {{newStatus}}.\"}")
+        .enabled(true)
+        .template(notifyPitchChange)
+        .executionCount(8L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 6, 10, 15, 0))
+        .build());
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Cycle kick-off notification")
+        .description("Sends a kick-off message when a cycle transitions to In Progress.")
+        .project(project)
+        .triggerType(TriggerType.CYCLE_STARTED)
+        .actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .triggerConfig("{}")
+        .actionConfig("{\"message\":\"Cycle {{cycleName}} has started! Let's ship it.\"}")
+        .enabled(true)
+        .template(cycleStart)
+        .executionCount(3L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 5, 28, 9, 0))
+        .build());
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Scope creep webhook alert")
+        .description("POSTs to Slack when scope creep is detected in the active cycle.")
+        .project(project)
+        .triggerType(TriggerType.SCOPE_CREEP_DETECTED)
+        .actionType(ActionType.SEND_WEBHOOK)
+        .triggerConfig("{}")
+        .actionConfig("{\"url\":\"https://hooks.slack.com/services/demo\",\"method\":\"POST\"}")
+        .enabled(false)
+        .executionCount(0L)
+        .build());
+
+    log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
   }
 }

@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-06-15
+
+### Added — v1.7.0 "Workflow Automations" (S45–S47)
+
+#### Trigger/Action Engine (S45)
+- **`WorkflowAutomation` entity**: Stores automation rules per project with `triggerType`, `triggerConfig` (JSON), `actionType`, `actionConfig` (JSON), `enabled`, soft-delete, and execution stats (`executionCount`, `lastTriggeredAt`). Backed by Flyway `V2026_06_15_0002__create_workflow_automations.sql`.
+- **`WorkflowAutomationTemplate` entity**: 20 built-in templates seeded by the migration across four categories (Tasks, Shape Up, Automation, Notifications).
+- **`WorkflowAutomationExecution` entity**: Audit log of every automation execution with `status` (SUCCESS/FAILURE/SKIPPED), `triggerEventData` (JSON snapshot), and `resultMessage`.
+- **`WorkflowAutomationEngine`**: Async trigger dispatcher — finds all enabled rules matching a `(triggerType, projectId)` pair, executes each action, and writes an execution record in a new transaction.
+- **`WorkflowAutomationActionDispatcher`**: Routes `ActionType` to the appropriate handler (`NOTIFY_ASSIGNEE`, `NOTIFY_PROJECT_MEMBERS`, `SEND_WEBHOOK`, `SEND_EMAIL`, `ADD_COMMENT`, `CHANGE_TASK_STATUS`, `CREATE_TASK`). Supports `{{key}}` placeholder interpolation from event context.
+- **`WorkflowAutomationEventListener`**: Bridges existing `TaskStatusChangedEvent`, `PitchStatusChangedEvent`, and `CycleStatusChangedEvent` into the automation engine.
+
+#### Shape Up Triggers (S46)
+- 14 trigger types including 4 Shape Up-specific triggers: `BETTING_TABLE_LOCKED`, `HILL_CHART_MOVED`, `APPETITE_EXCEEDED`, `SCOPE_CREEP_DETECTED`.
+- 20 built-in templates covering Tasks, Shape Up, Automation, and Notifications categories, all seeded via SQL migration.
+- Demo automation rules added to `SampleDataInitializer` (4 rules on the Banking project).
+
+#### Automations UI (S47)
+- **`/automations` page**: Lists all automation rules for the current project with enable/disable toggles, execution counts, last triggered timestamps, and per-rule execution log in a side sheet.
+- **Template Gallery**: Modal with search and category tabs showing all 20 built-in templates — one click creates the rule from defaults.
+- **Rule Form**: Create/edit dialog with trigger + action selectors, JSON config textarea with `{{key}}` hint, and enabled toggle.
+- **Execution History tab**: Project-level table showing status badges, trigger type, result message, and timestamp for recent executions.
+- **REST API**: `WorkflowAutomationController` at `/api/automations` — full CRUD for rules, template browsing, toggle endpoint, and execution log endpoints.
+
 ## [1.6.0] - 2026-06-15
 
 ### Added — v1.6.0 "MCP Ecosystem" (S41–S44)

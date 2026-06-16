@@ -56,6 +56,7 @@ import {
   Wand2,
   BookOpen,
   Sliders,
+  Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -99,24 +100,28 @@ const releases: Release[] = [
   },
   {
     version: '1.7.0',
-    date: 'Coming soon',
+    date: 'June 15, 2026',
     title: 'Workflow Automations',
-    upcoming: true,
     highlights: [
       {
+        icon: <Zap className="h-5 w-5" />,
+        title: 'Trigger/Action Engine',
+        description: 'Define automation rules that fire on events like task completion, pitch status changes, cycle starts, and Shape Up-specific triggers like appetite exceeded or scope creep detected.',
+      },
+      {
         icon: <Workflow className="h-5 w-5" />,
-        title: 'Trigger / Action Engine',
-        description: 'Define automation rules — e.g. "when pitch moves to Betting, notify the team" or "when a task is overdue, change priority to High" — with a visual rule builder.',
+        title: '20 Built-in Templates',
+        description: 'Start in seconds with 20 curated templates across Tasks, Shape Up, Automation, and Notifications categories. One click adds a fully configured rule you can customize.',
       },
       {
-        icon: <Brain className="h-5 w-5" />,
-        title: 'Shape Up Triggers',
-        description: 'Built-in triggers for cycle phase transitions, pitch status changes, scope completion thresholds, and hill-chart milestones.',
+        icon: <Activity className="h-5 w-5" />,
+        title: 'Shape Up-Specific Triggers',
+        description: 'Four new triggers designed for Shape Up teams: Betting Table Locked, Hill Chart Moved, Appetite Exceeded, and Scope Creep Detected — automate the moments that matter most.',
       },
       {
-        icon: <FileText className="h-5 w-5" />,
-        title: '20 Automation Templates',
-        description: 'Pre-built templates for common workflows: on-call rotation, sprint kickoff checklists, bug triage, and release day runbooks.',
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Execution Log',
+        description: 'Every automation run is recorded with status, trigger event data, and result message. Browse per-rule or project-wide history to audit what fired and when.',
       },
     ],
   },
