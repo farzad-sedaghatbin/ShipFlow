@@ -171,6 +171,24 @@ public class OrganizationSettingsService {
           request.getDefaultConfluenceSpaceKey().isBlank() ? null : request.getDefaultConfluenceSpaceKey());
     }
 
+    // SharePoint Graph API credentials
+    if (request.getSharepointTenantId() != null) {
+      settings.setSharepointTenantId(
+          request.getSharepointTenantId().isBlank() ? null : request.getSharepointTenantId());
+    }
+    if (request.getSharepointClientId() != null) {
+      settings.setSharepointClientId(
+          request.getSharepointClientId().isBlank() ? null : request.getSharepointClientId());
+    }
+    if (request.getSharepointClientSecret() != null) {
+      settings.setSharepointClientSecret(
+          request.getSharepointClientSecret().isBlank() ? null : request.getSharepointClientSecret());
+    }
+    if (request.getSharepointSiteUrl() != null) {
+      settings.setSharepointSiteUrl(
+          request.getSharepointSiteUrl().isBlank() ? null : request.getSharepointSiteUrl());
+    }
+
     // MCP Server runtime toggle (null = leave unchanged)
     if (request.getMcpServerEnabled() != null) {
       settings.setMcpServerEnabled(request.getMcpServerEnabled());
@@ -254,6 +272,49 @@ public class OrganizationSettingsService {
   public String getConfluenceSpaceKey() {
     return settingsRepository.findFirstByOrderByIdAsc()
         .map(OrganizationSettings::getDefaultConfluenceSpaceKey)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint tenant ID for Graph API integration.
+   * @return the tenant ID or null if not configured
+   */
+  public String getSharepointTenantId() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointTenantId)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint client ID for Graph API integration.
+   * @return the client ID or null if not configured
+   */
+  public String getSharepointClientId() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointClientId)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint client secret for Graph API integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext secret.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the client secret or null if not configured
+   */
+  public String getSharepointClientSecret() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointClientSecret)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint site URL for Graph API integration.
+   * @return the site URL or null if not configured
+   */
+  public String getSharepointSiteUrl() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointSiteUrl)
         .orElse(null);
   }
 
@@ -597,6 +658,10 @@ public class OrganizationSettingsService {
         .hasConfluenceAccessToken(entity.getConfluenceAccessToken() != null && !entity.getConfluenceAccessToken().isBlank())
         .defaultConfluenceDomain(entity.getDefaultConfluenceDomain())
         .defaultConfluenceSpaceKey(entity.getDefaultConfluenceSpaceKey())
+        .hasSharepointClientSecret(entity.getSharepointClientSecret() != null && !entity.getSharepointClientSecret().isBlank())
+        .sharepointTenantId(entity.getSharepointTenantId())
+        .sharepointClientId(entity.getSharepointClientId())
+        .sharepointSiteUrl(entity.getSharepointSiteUrl())
         // MCP Server runtime toggle — effective value: DB override if set, else env default.
         // Write mode is only effective when the server itself is enabled, mirroring
         // McpServerSettingsService.isWriteEnabled() so the DTO never reports a misleading

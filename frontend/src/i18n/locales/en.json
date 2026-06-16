@@ -7481,7 +7481,21 @@
     "confluenceDomain": "Confluence Domain",
     "confluenceDomainHint": "Your Atlassian Cloud domain, e.g. yourcompany.atlassian.net",
     "confluenceSpaceKey": "Default Space Key",
-    "confluenceSpaceKeyHint": "Default Confluence space to read pages from, e.g. ENG or PRODUCT"
+    "confluenceSpaceKeyHint": "Default Confluence space to read pages from, e.g. ENG or PRODUCT",
+    "sharepointTab": "SharePoint",
+    "sharepointTitle": "SharePoint Graph API",
+    "sharepointDesc": "Connect ShipFlow to Microsoft SharePoint via the Microsoft Graph API. AI features can read documents and pages from your SharePoint sites directly — no MCP proxy server required.",
+    "sharepointCredentialsTitle": "Azure AD App Credentials",
+    "sharepointCredentialsDesc": "Create an App Registration in Azure AD with Sites.Read.All permission, then paste the credentials below.",
+    "sharepointTenantId": "Tenant ID",
+    "sharepointTenantIdHint": "Your Azure AD Tenant ID (Directory ID) — found in Azure Portal → Azure Active Directory → Overview.",
+    "sharepointClientId": "Client ID (Application ID)",
+    "sharepointClientIdHint": "The Application (client) ID of your Azure AD App Registration.",
+    "sharepointClientSecret": "Client Secret",
+    "sharepointClientSecretPlaceholder": "Paste client secret value here",
+    "sharepointClientSecretHint": "The client secret value from Azure AD App Registration → Certificates & Secrets. Stored securely, never returned.",
+    "sharepointSiteUrl": "Site URL",
+    "sharepointSiteUrlHint": "Format: hostname:/sites/path — e.g. contoso.sharepoint.com:/sites/Engineering. Or paste the site GUID directly."
   },
   "conversation": "Conversation",
   "inboundWebhooks": {

@@ -6433,7 +6433,21 @@
     "confluenceDomain": "دامنه کانفلوئنس",
     "confluenceDomainHint": "دامنه Atlassian Cloud شما، مثلاً yourcompany.atlassian.net",
     "confluenceSpaceKey": "کلید فضای پیش‌فرض",
-    "confluenceSpaceKeyHint": "فضای پیش‌فرض کانفلوئنس برای خواندن صفحات، مثلاً ENG یا PRODUCT"
+    "confluenceSpaceKeyHint": "فضای پیش‌فرض کانفلوئنس برای خواندن صفحات، مثلاً ENG یا PRODUCT",
+    "sharepointTab": "شیرپوینت",
+    "sharepointTitle": "SharePoint Graph API",
+    "sharepointDesc": "ShipFlow را از طریق Microsoft Graph API به SharePoint متصل کنید. ویژگی‌های هوش مصنوعی می‌توانند اسناد و صفحات سایت‌های SharePoint شما را مستقیماً بخوانند — بدون نیاز به پروکسی MCP.",
+    "sharepointCredentialsTitle": "اطلاعات اپلیکیشن Azure AD",
+    "sharepointCredentialsDesc": "یک App Registration در Azure AD با مجوز Sites.Read.All ایجاد کنید، سپس اطلاعات را در زیر وارد کنید.",
+    "sharepointTenantId": "شناسه Tenant",
+    "sharepointTenantIdHint": "شناسه Azure AD Tenant (Directory ID) — در Azure Portal → Azure Active Directory → Overview قابل مشاهده است.",
+    "sharepointClientId": "شناسه Client (Application ID)",
+    "sharepointClientIdHint": "Application (client) ID ثبت اپلیکیشن Azure AD شما.",
+    "sharepointClientSecret": "Client Secret",
+    "sharepointClientSecretPlaceholder": "مقدار client secret را اینجا وارد کنید",
+    "sharepointClientSecretHint": "مقدار client secret از Azure AD App Registration → Certificates & Secrets. به‌صورت امن ذخیره می‌شود و هرگز برگردانده نمی‌شود.",
+    "sharepointSiteUrl": "آدرس سایت",
+    "sharepointSiteUrlHint": "فرمت: hostname:/sites/path — مثلاً contoso.sharepoint.com:/sites/Engineering. یا مستقیماً GUID سایت را وارد کنید."
   },
   "conversation": "مکالمه",
   "inboundWebhooks": {
