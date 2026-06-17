@@ -248,18 +248,22 @@ docker compose up -d
 - **Expanded Color Palette**: 42 colors for Epics and Initiatives
   - 7 hue groups (Reds, Oranges, Greens, Teals, Blues, Purples, Neutrals) × 6 shades each
   - Hover scale effect and ring indicator on selected color
-- **Retrospectives**: Team retros with voting and merging
+- **Retrospectives**: Live collaborative retro board with voting, reactions, and discuss timer
+  - **Live Board Updates**: Auto-refreshes every 5 seconds while open — no manual reloads needed
+  - **Vote Fill Bar**: Proportional background fill on each item shows relative signal strength at a glance
+  - **👎 Disagree Reaction**: Toggle dislike/disagree alongside existing up-votes; counts shown live
+  - **Discuss Countdown Timer**: Per-item 3-minute timer; turns amber at 1 min, red at 30 s, auto-marks discussed at 0:00
+  - **Persistent Discussed State**: "Discussed" flag + timestamp stored server-side; green badge + strikethrough synced across all participants
+  - **Item Ownership**: Edit/delete restricted to item author; admins and managers can manage any item
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
-  - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
-  - Real-time collaboration and voting
-  - **Flexible Action Conversion (v0.5)**: Transform retro insights into actionable work
-    - **Convert to Pitch**: Create draft pitches for the next betting table
-    - **Convert to Tasks**: Generate tasks for immediate work
+  - **Flexible Action Conversion**: Transform retro insights into actionable work
+    - **Convert to Pitch**: Create draft pitches for the next betting table — choose any project you belong to
+    - **Convert to Tasks**: Generate tasks for immediate work in any project
     - **Mark as Acted On**: Track completion without creating new items
     - Batch processing of multiple retro items with customizable titles and notes
     - Automatic status tracking with notes and timestamps
-  - **Action Tracking (v0.5)**: Track whether teams act on retrospective insights
+  - **Action Tracking**: Track whether teams act on retrospective insights
     - "Did we act on this?" checkbox for Action Items (ACTIONS column)
     - Notes and attribution for action follow-through
     - Follow-through rate calculation per retrospective

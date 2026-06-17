@@ -123,6 +123,21 @@ const releases: Release[] = [
         title: 'Execution Log',
         description: 'Every automation run is recorded with status, trigger event data, and result message. Browse per-rule or project-wide history to audit what fired and when.',
       },
+      {
+        icon: <RefreshCw className="h-5 w-5" />,
+        title: 'Live Retro Board',
+        description: 'Retro boards now auto-refresh every 5 seconds while open — no more manual reloads to see what teammates added or voted on.',
+      },
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Reactions & Discuss Timer',
+        description: 'New 👎 disagree reaction alongside existing votes. Per-item countdown timer (3 min default) auto-marks items as discussed. Vote fill bars show relative signal at a glance.',
+      },
+      {
+        icon: <Clock className="h-5 w-5" />,
+        title: 'Persistent Discussed State & Ownership',
+        description: 'Discussed items are persisted server-side (green badge + strikethrough synced across all participants). Edit/delete now restricted to item authors; admins/managers can manage any item.',
+      },
     ],
   },
   {

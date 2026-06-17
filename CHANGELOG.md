@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — Retro Board Live Collaboration & UX Hardening
+
+#### Live Reactions & Discuss Timer
+- **5-second live polling** while a retro is OPEN — board auto-refreshes for all participants without a manual page reload.
+- **Vote fill bar** — each retro item shows a proportional background fill based on its vote share within the column, making high-signal items immediately visible at a glance.
+- **Dislike / disagree reaction (👎)** — new toggle reaction stored in `retro_item_dislike_votes` table (mirrors the existing vote logic, batch-fetched to avoid N+1). `dislike_count` + `has_disliked` returned in `RetroItemDTO`.
+- **Per-item discuss countdown timer** — click the timer icon on any item to start a 3-minute countdown. Turns amber at 1:00, red/pulsing at 0:30, auto-marks as discussed at 0:00. "Stop & mark done" ends timer early.
+- **Persistent "discussed" state** — `discussed` (boolean) + `discussed_at` (timestamp) columns added to `retro_items`. State is synced via live polling — all participants see the green badge + strikethrough within the next poll cycle.
+
+#### Item Ownership Enforcement
+- Edit and delete buttons are now gated: only the item's author (or ADMIN/MANAGER) can edit/delete their items. Other users' buttons are hidden client-side and enforced server-side via `AccessDeniedException`.
+- Fixed a bug where `canManageRetro` compared against `'PROJECT_MANAGER'` — the actual enum value is `'MANAGER'`.
+
+#### AI Summary Crash Fix
+- `RETROSPECTIVE_SUMMARY` was missing from the `chk_narrative_type` Postgres check constraint, causing every AI retro summary generation to fail with a constraint violation followed by Hibernate session poisoning (`HHH000099`). Fixed by: (1) migration adding the missing enum value, (2) narrowing the catch clause in `CycleNarrativeService` from `DataIntegrityViolationException` to `DuplicateKeyException` so constraint violations are not silently swallowed.
+
+#### Project Selector in Act-on-Items Dialog
+- Users can now redirect converted pitches or tasks to any project they belong to. A "Target Project" `<Select>` appears in `ActOnRetroItemsDialog` when the user has access to more than one project; cycles reload automatically when the project changes.
+- Backend `ConvertRetroToPitchRequest` accepts an optional `targetProjectId` field; `RetroConversionService` uses it for cycle resolution and validation instead of always defaulting to the retro's own project.
+
+#### Migrations
+- `V2026_06_17_0001__add_retro_item_dislikes.sql` — `dislike_count` column + `retro_item_dislike_votes` table.
+- `V2026_06_17_0002__add_retro_item_discussed.sql` — `discussed` + `discussed_at` columns on `retro_items`.
+- `V2026_06_17_0003__add_retrospective_summary_narrative_type.sql` — adds `RETROSPECTIVE_SUMMARY` to the `chk_narrative_type` constraint.
+
 ## [1.7.0] - 2026-06-16
 
 ### Added — v1.7.0 "Workflow Automations" (S45–S47)
