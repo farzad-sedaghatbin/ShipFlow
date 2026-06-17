@@ -1418,6 +1418,10 @@ export interface RetroItem {
   isAnonymous?: boolean;
   voteCount: number;
   hasVoted: boolean;
+  dislikeCount: number;
+  hasDisliked: boolean;
+  discussed?: boolean;
+  discussedAt?: string;
   mergedIntoId?: number;
   mergedItemIds?: number[];
   createdAt: string;

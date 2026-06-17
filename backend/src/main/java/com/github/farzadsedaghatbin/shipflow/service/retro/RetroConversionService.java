@@ -86,11 +86,16 @@ public class RetroConversionService {
               "No actionable items found to convert"));
     }
 
-    // Determine target cycle
-    Cycle targetCycle = resolveTargetCycle(request.getTargetCycleId(), retro);
+    // Determine effective project for cycle resolution and validation
+    Long effectiveProjectId = request.getTargetProjectId() != null
+        ? request.getTargetProjectId()
+        : retro.getProject().getId();
 
-    // Invariant: Target cycle must belong to the same project
-    validateTargetCycleBelongsToProject(targetCycle, retro);
+    // Determine target cycle
+    Cycle targetCycle = resolveTargetCycle(request.getTargetCycleId(), retro, effectiveProjectId);
+
+    // Invariant: Target cycle must belong to the effective project
+    validateTargetCycleBelongsToProject(targetCycle, effectiveProjectId);
 
     // Fetch current user once (not inside loop)
     User currentUser = retroCrudService.getCurrentUser();
@@ -162,17 +167,17 @@ public class RetroConversionService {
   }
 
   /**
-   * Resolves the target cycle for the pitch.
+   * Resolves the target cycle for the pitch, searching within the effective project.
    */
-  private Cycle resolveTargetCycle(Long targetCycleId, Retrospective retro) {
+  private Cycle resolveTargetCycle(Long targetCycleId, Retrospective retro, Long effectiveProjectId) {
     if (targetCycleId != null) {
       return cycleRepository.findById(targetCycleId)
           .orElseThrow(() -> new ResourceNotFoundException(
               "Target cycle not found with id: " + targetCycleId));
     } else {
-      // Find next upcoming cycle in the same project
+      // Find next upcoming cycle in the effective project
       return cycleRepository.findFirstByProjectIdAndStartDateAfterOrderByStartDateAsc(
-          retro.getProject().getId(), LocalDate.now())
+          effectiveProjectId, LocalDate.now())
           .orElseThrow(() -> new ResourceNotFoundException(
               localizationService.getMessageWithDefault(
                   "retro.convert.no.target.cycle",
@@ -181,24 +186,23 @@ public class RetroConversionService {
   }
 
   /**
-   * Validates that the target cycle belongs to the same project as the retrospective.
+   * Validates that the target cycle belongs to the effective project.
    */
-  private void validateTargetCycleBelongsToProject(Cycle targetCycle, Retrospective retro) {
-    Long retroProjectId = retro.getProject() != null ? retro.getProject().getId() : null;
+  private void validateTargetCycleBelongsToProject(Cycle targetCycle, Long effectiveProjectId) {
     Long cycleProjectId = targetCycle.getProject() != null ? targetCycle.getProject().getId() : null;
 
-    if (retroProjectId == null || cycleProjectId == null) {
+    if (cycleProjectId == null) {
       throw new IllegalStateException(
           localizationService.getMessageWithDefault(
               "retro.convert.missing.project",
-              "Retrospective or target cycle is not associated with a project"));
+              "Target cycle is not associated with a project"));
     }
 
-    if (!retroProjectId.equals(cycleProjectId)) {
+    if (!effectiveProjectId.equals(cycleProjectId)) {
       throw new IllegalStateException(
           localizationService.getMessageWithDefault(
               "retro.convert.different.project",
-              "Target cycle must belong to the same project as the retrospective"));
+              "Target cycle must belong to the selected project"));
     }
   }
 

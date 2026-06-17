@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -14,10 +14,14 @@ import {
   Play,
   Square,
   ThumbsUp,
+  ThumbsDown,
   Merge,
   Loader2,
   Rocket,
   LayoutTemplate,
+  Timer,
+  TimerOff,
+  CheckCircle2,
 } from 'lucide-react';
 import { retroService } from '../services/retroService';
 import { ActOnRetroItemsDialog } from '../components/ActOnRetroItemsDialog';
@@ -133,10 +137,15 @@ export default function RetroBoard() {
   });
   const [actOnItemsDialog, setActOnItemsDialog] = useState(false);
   const [templateConfirmDialog, setTemplateConfirmDialog] = useState<RetroTemplate | null>(null);
+  const [discussingItemId, setDiscussingItemId] = useState<number | null>(null);
+  const [discussTimeLeft, setDiscussTimeLeft] = useState(0);
+  const discussTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { user } = useAuth();
-  const canManageRetro = user?.role === 'ADMIN' || user?.role === 'PROJECT_MANAGER';
+  const canManageRetro = user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const isReadOnly = retro?.status === 'CLOSED';
+  const canEditItem = (item: RetroItem) =>
+    canManageRetro || (item.authorId != null && item.authorId === user?.userId);
 
   // Memoize actionable items to avoid repeated filtering
   const actionableItems = useMemo(() => {
@@ -162,10 +171,20 @@ export default function RetroBoard() {
     return map[status];
   };
 
+  const retroStatusRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (id) {
-      loadData(id);
-    }
+    retroStatusRef.current = retro?.status;
+  }, [retro?.status]);
+
+  useEffect(() => {
+    if (!id) return;
+    loadData(id);
+    const timer = setInterval(() => {
+      if (retroStatusRef.current === 'OPEN') {
+        retroService.getItems(id).then((res) => setItems(res.data)).catch(() => {});
+      }
+    }, 10000);
+    return () => clearInterval(timer);
   }, [id]);
 
   const loadData = async (retroId: number) => {
@@ -234,6 +253,62 @@ export default function RetroBoard() {
       showError(t('retroBoardPage.saveFailed'));
     }
   };
+
+  const handleDislike = async (itemId: number) => {
+    try {
+      const res = await retroService.toggleDislike(itemId);
+      setItems(items.map((item) => (item.id === itemId ? res.data : item)));
+    } catch (error) {
+      showError(t('retroBoardPage.saveFailed'));
+    }
+  };
+
+  const startDiscussion = (itemId: number, seconds = 300) => {
+    if (discussTimerRef.current) clearInterval(discussTimerRef.current);
+    setDiscussingItemId(itemId);
+    setDiscussTimeLeft(seconds);
+    discussTimerRef.current = setInterval(() => {
+      setDiscussTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(discussTimerRef.current!);
+          discussTimerRef.current = null;
+          setDiscussingItemId((currentId) => {
+            if (currentId != null) {
+              retroService.markDiscussed(currentId, true)
+                .then((res) => setItems((cur) => cur.map((i) => i.id === currentId ? res.data : i)))
+                .catch(() => {});
+            }
+            return null;
+          });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleMarkDiscussed = async (itemId: number, discussed: boolean) => {
+    try {
+      const res = await retroService.markDiscussed(itemId, discussed);
+      setItems(items.map((item) => (item.id === itemId ? res.data : item)));
+    } catch (error) {
+      showError(t('retroBoardPage.saveFailed'));
+    }
+  };
+
+  const stopDiscussion = (markAsDone = true) => {
+    const itemId = discussingItemId;
+    if (discussTimerRef.current) clearInterval(discussTimerRef.current);
+    discussTimerRef.current = null;
+    setDiscussingItemId(null);
+    setDiscussTimeLeft(0);
+    if (markAsDone && itemId != null) {
+      handleMarkDiscussed(itemId, true);
+    }
+  };
+
+  // Clean up discuss timer on unmount
+  useEffect(() => () => { if (discussTimerRef.current) clearInterval(discussTimerRef.current); }, []);
 
   const handleMerge = async (targetItemId: number) => {
     if (!mergeDialog.sourceItem) return;
@@ -306,7 +381,18 @@ export default function RetroBoard() {
   const getItemsByColumn = (columnType: RetroColumnType) => {
     return items
       .filter((item) => item.columnType === columnType && !item.mergedIntoId)
-      .sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0)); // Sort by votes descending
+      .sort((a, b) => (b.voteCount || 0) - (a.voteCount || 0));
+  };
+
+  const getMaxVotesInColumn = (columnType: RetroColumnType) => {
+    const col = items.filter((i) => i.columnType === columnType && !i.mergedIntoId);
+    return col.length ? Math.max(...col.map((i) => i.voteCount || 0), 1) : 1;
+  };
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    return `${m}:${sec}`;
   };
 
   const getMergeTargets = (columnType: RetroColumnType, excludeId: number) => {
@@ -450,139 +536,242 @@ export default function RetroBoard() {
 
               {/* Items */}
               <div className="flex-1 space-y-2 mb-4">
-                {getItemsByColumn(column.type).map((item) => (
-                  <Card
-                    key={item.id}
-                    className={cn(
-                      'relative',
-                      item.mergedItemIds && item.mergedItemIds.length > 0 && 'border-l-4 border-l-blue-500'
-                    )}
-                  >
-                    <CardContent className="p-3">
-                      {editingItem?.id === item.id ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={editingItem.content}
-                            onChange={(e) => setEditingItem({ ...editingItem, content: e.target.value })}
-                            className="min-h-[60px]"
-                            autoFocus
-                          />
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUpdateItem}>
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingItem(null)}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
+                {getItemsByColumn(column.type).map((item) => {
+                  const isDiscussing = discussingItemId === item.id;
+                  const fillPct = Math.round(((item.voteCount || 0) / getMaxVotesInColumn(column.type)) * 100);
+                  const timeIsUp = isDiscussing && discussTimeLeft === 0;
+                  const isDiscussed = !!item.discussed;
+                  return (
+                    <Card
+                      key={item.id}
+                      className={cn(
+                        'relative overflow-hidden transition-shadow',
+                        item.mergedItemIds && item.mergedItemIds.length > 0 && 'border-l-4 border-l-blue-500',
+                        isDiscussing && 'ring-2 ring-amber-400',
+                        isDiscussed && !isDiscussing && 'opacity-75'
+                      )}
+                    >
+                      {/* Vote fill bar */}
+                      {fillPct > 0 && (
+                        <div
+                          className="absolute inset-0 bg-primary/8 transition-all duration-500"
+                          style={{ width: `${fillPct}%` }}
+                        />
+                      )}
+
+                      {/* Discuss countdown overlay */}
+                      {isDiscussing && (
+                        <div className={cn(
+                          'absolute top-1 right-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-mono font-bold z-10',
+                          timeIsUp
+                            ? 'bg-red-500 text-white animate-pulse'
+                            : 'bg-amber-400 text-amber-900'
+                        )}>
+                          <Timer className="h-3 w-3" />
+                          {timeIsUp ? t('retroBoardPage.timeUp') : formatTime(discussTimeLeft)}
                         </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-sm">{item.content}</p>
+                      )}
 
-                          {/* Show merged items indicator */}
-                          {item.mergedItemIds && item.mergedItemIds.length > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge variant="info" className="text-xs cursor-help">
-                                  +{item.mergedItemIds.length} {t('retroBoardPage.merge').toLowerCase()}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">
-                                <div className="space-y-1">
-                                  <p className="font-semibold text-xs">{t('retroBoardPage.merge')}:</p>
-                                  {items
-                                    .filter((i) => item.mergedItemIds?.includes(i.id))
-                                    .map((mergedItem) => (
-                                      <p key={mergedItem.id} className="text-xs">
-                                        • {mergedItem.content.substring(0, 50)}...
-                                      </p>
-                                    ))}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          )}
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {/* Vote button */}
-                              {!isReadOnly && retro?.status === 'OPEN' && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className={cn(
-                                        'h-8 w-8 relative',
-                                        item.hasVoted && 'text-primary'
-                                      )}
-                                      onClick={() => handleVote(item.id)}
-                                    >
-                                      <ThumbsUp className={cn('h-4 w-4', item.hasVoted && 'fill-current')} />
-                                      {(item.voteCount || 0) > 0 && (
-                                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                                          {item.voteCount}
-                                        </span>
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {item.hasVoted ? t('common.delete') : t('retroBoardPage.vote')}
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                              {isReadOnly && item.voteCount > 0 && (
-                                <Badge variant="secondary" className="gap-1">
-                                  <ThumbsUp className="h-3 w-3" />
-                                  {item.voteCount}
-                                </Badge>
-                              )}
-                              <span className="text-xs text-muted-foreground">
-                                {item.authorName || t('common.anonymous')}
-                              </span>
+                      <CardContent className="p-3 relative">
+                        {editingItem?.id === item.id ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editingItem.content}
+                              onChange={(e) => setEditingItem({ ...editingItem, content: e.target.value })}
+                              className="min-h-[60px]"
+                              autoFocus
+                            />
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleUpdateItem}>
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingItem(null)}>
+                                <X className="h-4 w-4" />
+                              </Button>
                             </div>
-                            {!isReadOnly && (
-                              <div className="flex items-center">
-                                {/* Merge button (admin only) */}
-                                {canManageRetro && retro?.status === 'OPEN' && (
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex items-start gap-2">
+                              <p className={cn('text-sm flex-1', isDiscussed && 'line-through text-muted-foreground')}>{item.content}</p>
+                              {isDiscussed && (
+                                <Badge variant="success" className="shrink-0 gap-1 text-xs px-1.5 py-0">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  {t('retroBoardPage.discussed')}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {item.mergedItemIds && item.mergedItemIds.length > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="info" className="text-xs cursor-help">
+                                    +{item.mergedItemIds.length} {t('retroBoardPage.merge').toLowerCase()}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs">
+                                  <div className="space-y-1">
+                                    <p className="font-semibold text-xs">{t('retroBoardPage.merge')}:</p>
+                                    {items
+                                      .filter((i) => item.mergedItemIds?.includes(i.id))
+                                      .map((mergedItem) => (
+                                        <p key={mergedItem.id} className="text-xs">
+                                          • {mergedItem.content.substring(0, 50)}...
+                                        </p>
+                                      ))}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+
+                            <div className="flex items-center justify-between">
+                              {/* Left: reactions + author */}
+                              <div className="flex items-center gap-1">
+                                {/* Like */}
+                                {!isReadOnly && retro?.status === 'OPEN' && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => openMergeDialog(item)}
+                                        className={cn('h-7 w-7 relative', item.hasVoted && 'text-primary')}
+                                        onClick={() => handleVote(item.id)}
                                       >
-                                        <Merge className="h-4 w-4" />
+                                        <ThumbsUp className={cn('h-3.5 w-3.5', item.hasVoted && 'fill-current')} />
+                                        {(item.voteCount || 0) > 0 && (
+                                          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] text-primary-foreground font-bold">
+                                            {item.voteCount}
+                                          </span>
+                                        )}
                                       </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>{t('retroBoardPage.merge')}</TooltipContent>
+                                    <TooltipContent>{item.hasVoted ? t('common.delete') : t('retroBoardPage.vote')}</TooltipContent>
                                   </Tooltip>
                                 )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => setEditingItem({ id: item.id, content: item.content })}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => handleDeleteItem(item.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                {/* Dislike */}
+                                {!isReadOnly && retro?.status === 'OPEN' && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={cn('h-7 w-7 relative', item.hasDisliked && 'text-destructive')}
+                                        onClick={() => handleDislike(item.id)}
+                                      >
+                                        <ThumbsDown className={cn('h-3.5 w-3.5', item.hasDisliked && 'fill-current')} />
+                                        {(item.dislikeCount || 0) > 0 && (
+                                          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] text-destructive-foreground font-bold">
+                                            {item.dislikeCount}
+                                          </span>
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{item.hasDisliked ? t('common.delete') : t('retroBoardPage.dislike')}</TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {isReadOnly && (item.voteCount > 0 || item.dislikeCount > 0) && (
+                                  <div className="flex items-center gap-1">
+                                    {item.voteCount > 0 && (
+                                      <Badge variant="secondary" className="gap-1 text-xs px-1.5 py-0">
+                                        <ThumbsUp className="h-3 w-3" />{item.voteCount}
+                                      </Badge>
+                                    )}
+                                    {item.dislikeCount > 0 && (
+                                      <Badge variant="destructive" className="gap-1 text-xs px-1.5 py-0">
+                                        <ThumbsDown className="h-3 w-3" />{item.dislikeCount}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+                                <span className="text-xs text-muted-foreground ml-1">
+                                  {item.authorName || t('common.anonymous')}
+                                </span>
                               </div>
-                            )}
+
+                              {/* Right: discuss + merge + edit/delete */}
+                              {!isReadOnly && (
+                                <div className="flex items-center">
+                                  {/* Mark as discussed toggle */}
+                                  {retro?.status === 'OPEN' && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className={cn('h-7 w-7', isDiscussed && 'text-green-500')}
+                                          onClick={() => handleMarkDiscussed(item.id, !isDiscussed)}
+                                        >
+                                          <CheckCircle2 className={cn('h-3.5 w-3.5', isDiscussed && 'fill-current')} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {isDiscussed ? t('retroBoardPage.unmarkDiscussed') : t('retroBoardPage.markDiscussed')}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {/* Discuss timer */}
+                                  {retro?.status === 'OPEN' && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className={cn('h-7 w-7', isDiscussing && 'text-amber-500')}
+                                          onClick={() => isDiscussing ? stopDiscussion() : startDiscussion(item.id)}
+                                        >
+                                          {isDiscussing ? <TimerOff className="h-3.5 w-3.5" /> : <Timer className="h-3.5 w-3.5" />}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {isDiscussing ? t('retroBoardPage.stopDiscussion') : t('retroBoardPage.discussItem')}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {/* Merge (admin/manager only) */}
+                                  {canManageRetro && retro?.status === 'OPEN' && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7"
+                                          onClick={() => openMergeDialog(item)}
+                                        >
+                                          <Merge className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>{t('retroBoardPage.merge')}</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {canEditItem(item) && (
+                                    <>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={() => setEditingItem({ id: item.id, content: item.content })}
+                                      >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-destructive hover:text-destructive"
+                                        onClick={() => handleDeleteItem(item.id)}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
 
               {/* Add New Item */}

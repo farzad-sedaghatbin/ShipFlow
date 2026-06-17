@@ -3,11 +3,14 @@ package com.github.farzadsedaghatbin.shipflow.service.retro;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateRetroItemRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.RetroItemDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.RetroItem;
+import com.github.farzadsedaghatbin.shipflow.entity.RetroItemDislikeVote;
 import com.github.farzadsedaghatbin.shipflow.entity.RetroItemVote;
 import com.github.farzadsedaghatbin.shipflow.entity.Retrospective;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.RetroItemDislikeVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
@@ -15,6 +18,7 @@ import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
 import com.github.farzadsedaghatbin.shipflow.service.MessageService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +33,7 @@ public class RetroItemService {
   private final RetroRepository retroRepository;
   private final RetroItemRepository retroItemRepository;
   private final RetroItemVoteRepository retroItemVoteRepository;
+  private final RetroItemDislikeVoteRepository retroItemDislikeVoteRepository;
   private final LocalizationService localizationService;
   private final MessageService messageService;
   private final RetroMapper retroMapper;
@@ -89,9 +94,12 @@ public class RetroItemService {
       throw new IllegalStateException(localizationService.getMessage("retro.cannot.update.items.closed"));
     }
 
+    User currentUser = retroCrudService.getCurrentUser();
+    checkItemOwnership(item, currentUser);
+
     item.setContent(content);
     RetroItem saved = retroItemRepository.save(item);
-    return retroMapper.toItemDTOWithLookup(saved, retroCrudService.getCurrentUser());
+    return retroMapper.toItemDTOWithLookup(saved, currentUser);
   }
 
   public void deleteRetroItem(Long itemId) {
@@ -107,7 +115,37 @@ public class RetroItemService {
       throw new IllegalStateException(localizationService.getMessage("retro.cannot.delete.items.closed"));
     }
 
+    User currentUser = retroCrudService.getCurrentUser();
+    checkItemOwnership(item, currentUser);
+
     retroItemRepository.deleteById(itemId);
+  }
+
+  public RetroItemDTO markDiscussed(Long itemId, boolean discussed) {
+    RetroItem item = retroItemRepository.findById(itemId)
+        .orElseThrow(() -> new ResourceNotFoundException("Retro item not found with id: " + itemId));
+
+    Retrospective retro = item.getRetrospective();
+    if (retro.getProject() != null) {
+      retroCrudService.validateRetrospectivesEnabled(retro.getProject().getId());
+    }
+
+    item.setDiscussed(discussed);
+    item.setDiscussedAt(discussed ? java.time.LocalDateTime.now() : null);
+
+    RetroItem saved = retroItemRepository.save(item);
+    return retroMapper.toItemDTOWithLookup(saved, retroCrudService.getCurrentUser());
+  }
+
+  private void checkItemOwnership(RetroItem item, User currentUser) {
+    if (currentUser == null) {
+      throw new AccessDeniedException(localizationService.getMessage("retro.item.no.permission"));
+    }
+    boolean isOwner = item.getAuthor() != null && item.getAuthor().getId().equals(currentUser.getId());
+    boolean isPrivileged = currentUser.getRole() == UserRole.ADMIN || currentUser.getRole() == UserRole.MANAGER;
+    if (!isOwner && !isPrivileged) {
+      throw new AccessDeniedException(localizationService.getMessage("retro.item.no.permission"));
+    }
   }
 
   // ==================== VOTING ====================
@@ -149,6 +187,45 @@ public class RetroItemService {
           .build();
       retroItemVoteRepository.save(vote);
       item.setVoteCount(item.getVoteCount() + 1);
+    }
+
+    RetroItem saved = retroItemRepository.save(item);
+    return retroMapper.toItemDTOWithLookup(saved, currentUser);
+  }
+
+  public RetroItemDTO toggleDislike(Long itemId) {
+    RetroItem item = retroItemRepository.findById(itemId)
+        .orElseThrow(() -> new ResourceNotFoundException("Retro item not found with id: " + itemId));
+
+    Retrospective retro = item.getRetrospective();
+    if (retro.getProject() != null) {
+      retroCrudService.validateRetrospectivesEnabled(retro.getProject().getId());
+    }
+
+    if (retro.getStatus() == RetroStatus.CLOSED) {
+      throw new IllegalStateException(localizationService.getMessage("retro.cannot.vote.closed"));
+    }
+
+    if (item.getMergedInto() != null) {
+      throw new IllegalStateException(localizationService.getMessage("retro.cannot.vote.merged"));
+    }
+
+    User currentUser = retroCrudService.getCurrentUser();
+    if (currentUser == null) {
+      throw new IllegalStateException(localizationService.getMessage("retro.user.not.found"));
+    }
+
+    boolean hasDisliked = retroItemDislikeVoteRepository.existsByRetroItemIdAndUserId(itemId, currentUser.getId());
+    if (hasDisliked) {
+      retroItemDislikeVoteRepository.deleteByRetroItemIdAndUserId(itemId, currentUser.getId());
+      item.setDislikeCount(Math.max(0, item.getDislikeCount() - 1));
+    } else {
+      RetroItemDislikeVote vote = RetroItemDislikeVote.builder()
+          .retroItem(item)
+          .user(currentUser)
+          .build();
+      retroItemDislikeVoteRepository.save(vote);
+      item.setDislikeCount(item.getDislikeCount() + 1);
     }
 
     RetroItem saved = retroItemRepository.save(item);

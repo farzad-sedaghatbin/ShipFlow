@@ -231,7 +231,7 @@ public class CycleNarrativeService {
 
     try {
       narrative = narrativeRepository.save(narrative);
-    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+    } catch (org.springframework.dao.DuplicateKeyException e) {
       // Race condition: another thread created the narrative between our find and save
       // Retry by finding the existing one and updating it
       log.warn("Duplicate key on narrative save for cycle {} type {}, retrying with update", cycleId, type);
@@ -694,7 +694,7 @@ public class CycleNarrativeService {
 
     try {
       narrative = narrativeRepository.save(narrative);
-    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+    } catch (org.springframework.dao.DuplicateKeyException e) {
       log.warn("Duplicate key on retro narrative save for cycle {}, retrying with update", cycleId);
       narrative = narrativeRepository
           .findByCycleIdAndNarrativeType(cycleId, NarrativeType.RETROSPECTIVE_SUMMARY)
