@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.RetroItemDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
+import org.springframework.security.access.AccessDeniedException;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
@@ -179,9 +180,9 @@ class RetroItemServiceTest {
     }
 
     @Test
-    @DisplayName("updateRetroItem changes content")
+    @DisplayName("updateRetroItem changes content when user is author")
     void updateRetroItem_ChangesContent() {
-      RetroItem item = aRetroItem().withRetrospective(testRetro).build();
+      RetroItem item = aRetroItem().withRetrospective(testRetro).withAuthor(testUser).build();
       RetroItemDTO dto = RetroItemDTO.builder().id(1L).content("Updated").build();
 
       when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
@@ -196,9 +197,42 @@ class RetroItemServiceTest {
     }
 
     @Test
-    @DisplayName("deleteRetroItem removes item")
+    @DisplayName("updateRetroItem throws when non-owner non-admin tries to edit")
+    void updateRetroItem_WhenNonOwner_Throws() {
+      User otherUser = aUser().withId(99L).withUsername("other").build();
+      RetroItem item = aRetroItem().withRetrospective(testRetro).withAuthor(otherUser).build();
+
+      when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
+      doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
+
+      assertThatThrownBy(() -> service.updateRetroItem(1L, "Hacked"))
+          .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("updateRetroItem succeeds for ADMIN user regardless of authorship")
+    void updateRetroItem_AdminCanEditAnyItem() {
+      User adminUser = User.builder().id(2L).username("admin").role(UserRole.ADMIN).build();
+      when(retroCrudService.getCurrentUser()).thenReturn(adminUser);
+
+      User otherUser = aUser().withId(99L).withUsername("other").build();
+      RetroItem item = aRetroItem().withRetrospective(testRetro).withAuthor(otherUser).build();
+      RetroItemDTO dto = RetroItemDTO.builder().id(1L).content("Updated by admin").build();
+
+      when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
+      doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
+      when(retroItemRepository.save(any())).thenReturn(item);
+      when(retroMapper.toItemDTOWithLookup(any(), any())).thenReturn(dto);
+
+      RetroItemDTO result = service.updateRetroItem(1L, "Updated by admin");
+
+      assertThat(result.getContent()).isEqualTo("Updated by admin");
+    }
+
+    @Test
+    @DisplayName("deleteRetroItem removes item when user is author")
     void deleteRetroItem_RemovesItem() {
-      RetroItem item = aRetroItem().withRetrospective(testRetro).build();
+      RetroItem item = aRetroItem().withRetrospective(testRetro).withAuthor(testUser).build();
 
       when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
       doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
@@ -210,10 +244,23 @@ class RetroItemServiceTest {
     }
 
     @Test
+    @DisplayName("deleteRetroItem throws when non-owner non-admin tries to delete")
+    void deleteRetroItem_WhenNonOwner_Throws() {
+      User otherUser = aUser().withId(99L).withUsername("other").build();
+      RetroItem item = aRetroItem().withRetrospective(testRetro).withAuthor(otherUser).build();
+
+      when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
+      doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
+
+      assertThatThrownBy(() -> service.deleteRetroItem(1L))
+          .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
     @DisplayName("deleteRetroItem throws for closed retro")
     void deleteRetroItem_WhenRetroClosed_Throws() {
       testRetro.setStatus(RetroStatus.CLOSED);
-      RetroItem item = aRetroItem().withRetrospective(testRetro).build();
+      RetroItem item = aRetroItem().withRetrospective(testRetro).withAuthor(testUser).build();
 
       when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
       doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());

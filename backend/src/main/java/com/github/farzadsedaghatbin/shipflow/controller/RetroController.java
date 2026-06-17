@@ -112,9 +112,24 @@ public class RetroController {
   // ==================== VOTING ====================
 
   @PostMapping("/items/{itemId}/vote")
-  @Operation(summary = "Toggle vote on a retrospective item (vote or unvote)")
+  @Operation(summary = "Toggle vote (like) on a retrospective item")
   public ResponseEntity<RetroItemDTO> toggleVote(@PathVariable Long itemId) {
     return ResponseEntity.ok(retroService.toggleVote(itemId));
+  }
+
+  @PostMapping("/items/{itemId}/dislike")
+  @Operation(summary = "Toggle dislike (disagree) on a retrospective item")
+  public ResponseEntity<RetroItemDTO> toggleDislike(@PathVariable Long itemId) {
+    return ResponseEntity.ok(retroService.toggleDislike(itemId));
+  }
+
+  @PostMapping("/items/{itemId}/discussed")
+  @Operation(summary = "Mark or unmark a retrospective item as discussed")
+  public ResponseEntity<RetroItemDTO> markDiscussed(
+      @PathVariable Long itemId,
+      @RequestBody Map<String, Boolean> body) {
+    boolean discussed = Boolean.TRUE.equals(body.get("discussed"));
+    return ResponseEntity.ok(retroService.markDiscussed(itemId, discussed));
   }
 
   // ==================== MERGING ====================
