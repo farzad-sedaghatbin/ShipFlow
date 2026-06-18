@@ -138,9 +138,10 @@ Every session must complete ALL of these before creating the PR:
 7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage). **The full suite must be at 0 failures** — if your change breaks existing tests (e.g. serialization format change, renamed field), fix those tests in the same commit before pushing.
 8. Update `SampleDataInitializer.java` with demo data for the new feature
 9. **If UI layout changed**: verify onboarding tour step selectors in `frontend/src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
-10. **If in-app help guides reference changed UI**: update the relevant help guide content
-11. **Keep public pages in sync** — `ReleaseNotes.tsx` (`/releases`) and `PublicRoadmap.tsx` (`/public-roadmap`) must always match each other. Any feature added to one must appear in the other. Version cards, item titles, descriptions, and milestone status ("upcoming" / "in-progress" / "planned") must be identical across both pages. See the [Public Pages Alignment rule](#public-pages-alignment) below.
-12. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
+10. **Help & Guides — mandatory for every new user-facing feature**: add or update a guide in `backend/src/main/resources/knowledgebase/help-guides/`. Name it `{NN}-{feature}.md` (next sequential number). The file is auto-loaded by `HelpGuideAIService` at startup — no registration needed. If an existing feature's UI changed, update the relevant existing guide. **A feature without a help guide is incomplete.**
+11. **If in-app help guides reference changed UI**: update the relevant help guide content
+12. **Keep public pages in sync** — `ReleaseNotes.tsx` (`/releases`) and `PublicRoadmap.tsx` (`/public-roadmap`) must always match each other. Any feature added to one must appear in the other. Version cards, item titles, descriptions, and milestone status ("upcoming" / "in-progress" / "planned") must be identical across both pages. See the [Public Pages Alignment rule](#public-pages-alignment) below.
+13. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
 
 ---
 
@@ -453,10 +454,11 @@ This project is **open source** — every significant feature must be documented
 | 5 | Update competitor positioning if relevant | `COMPETITOR_ANALYSIS.md` |
 | 6 | Update `CLAUDE.md` if the feature introduces a new repeatable task pattern | `CLAUDE.md` |
 | 7 | Add / update guide doc if users need setup instructions | relevant `*_GUIDE.md` or `MCP_CLIENT_SETUP.md` |
+| 7a | **Add in-app help guide** for every new user-facing feature — `{NN}-{feature}.md` in `backend/src/main/resources/knowledgebase/help-guides/`. Auto-loaded by `HelpGuideAIService`. **A feature without a help guide is incomplete.** | `knowledgebase/help-guides/` |
 | 8 | Add i18n keys to both `en.json` and `fa.json` | `frontend/src/i18n/` |
 | 9 | Update `SampleDataInitializer.java` with demo data for the new feature | `src/main/java/.../SampleDataInitializer.java` |
 | 10 | If UI layout changed: update `data-tour` selectors in `TourContext.tsx` AND the Step Inventory table in `TOUR_GUIDE.md` | `TOUR_GUIDE.md` |
-| 11 | If help guides reference changed UI: update guide content | relevant `*_GUIDE.md` |
+| 11 | If help guides reference changed UI: update guide content | `knowledgebase/help-guides/` |
 | 12 | Tests: ≥ 80% line coverage; **0 failures in the full suite** — fix any tests broken by your change (serialization, renamed fields, etc.) in the same PR | `src/test/` |
 | 13 | Run `./mvnw spotless:apply && ./mvnw verify` — must exit `BUILD SUCCESS, Failures: 0, Errors: 0` | CI must stay green |
 | 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
