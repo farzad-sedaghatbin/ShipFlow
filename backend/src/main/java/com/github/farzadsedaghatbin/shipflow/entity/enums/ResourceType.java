@@ -72,5 +72,8 @@ public enum ResourceType {
   INTEGRATION,
 
   /** WISE architecture / R&D resource */
-  WISE_ARCHITECTURE
+  WISE_ARCHITECTURE,
+
+  /** Wiki documentation space resource */
+  WIKI
 }
