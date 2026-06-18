@@ -4,8 +4,164 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added
+### Added — Knowledge Center
 - Knowledge Center: upload docs and add URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis. Scoped Org / Team / Project. Pluggable provider SPI; GitHub / Confluence / Notion / Drive integrations queued as follow-ups.
+- Migrations: `V2026_06_18_0002__add_knowledge_sources.sql` (knowledge sources table), `V2026_06_18_0003__knowledge_items_deleted_at.sql` (soft-delete column).
+
+### Added — Retro Board Live Collaboration & UX Hardening
+
+#### Live Reactions & Discuss Timer
+- **5-second live polling** while a retro is OPEN — board auto-refreshes for all participants without a manual page reload.
+- **Vote fill bar** — each retro item shows a proportional background fill based on its vote share within the column, making high-signal items immediately visible at a glance.
+- **Dislike / disagree reaction (👎)** — new toggle reaction stored in `retro_item_dislike_votes` table (mirrors the existing vote logic, batch-fetched to avoid N+1). `dislike_count` + `has_disliked` returned in `RetroItemDTO`.
+- **Per-item discuss countdown timer** — click the timer icon on any item to start a 3-minute countdown. Turns amber at 1:00, red/pulsing at 0:30, auto-marks as discussed at 0:00. "Stop & mark done" ends timer early.
+- **Persistent "discussed" state** — `discussed` (boolean) + `discussed_at` (timestamp) columns added to `retro_items`. State is synced via live polling — all participants see the green badge + strikethrough within the next poll cycle.
+
+#### Item Ownership Enforcement
+- Edit and delete buttons are now gated: only the item's author (or ADMIN/MANAGER) can edit/delete their items. Other users' buttons are hidden client-side and enforced server-side via `AccessDeniedException`.
+- Fixed a bug where `canManageRetro` compared against `'PROJECT_MANAGER'` — the actual enum value is `'MANAGER'`.
+
+#### AI Summary Crash Fix
+- `RETROSPECTIVE_SUMMARY` was missing from the `chk_narrative_type` Postgres check constraint, causing every AI retro summary generation to fail with a constraint violation followed by Hibernate session poisoning (`HHH000099`). Fixed by: (1) migration adding the missing enum value, (2) narrowing the catch clause in `CycleNarrativeService` from `DataIntegrityViolationException` to `DuplicateKeyException` so constraint violations are not silently swallowed.
+
+#### Project Selector in Act-on-Items Dialog
+- Users can now redirect converted pitches or tasks to any project they belong to. A "Target Project" `<Select>` appears in `ActOnRetroItemsDialog` when the user has access to more than one project; cycles reload automatically when the project changes.
+- Backend `ConvertRetroToPitchRequest` accepts an optional `targetProjectId` field; `RetroConversionService` uses it for cycle resolution and validation instead of always defaulting to the retro's own project.
+
+#### Migrations
+- `V2026_06_17_0001__add_retro_item_dislikes.sql` — `dislike_count` column + `retro_item_dislike_votes` table.
+- `V2026_06_17_0002__add_retro_item_discussed.sql` — `discussed` + `discussed_at` columns on `retro_items`.
+- `V2026_06_17_0003__add_retrospective_summary_narrative_type.sql` — adds `RETROSPECTIVE_SUMMARY` to the `chk_narrative_type` constraint.
+
+## [1.7.0] - 2026-06-16
+
+### Added — v1.7.0 "Workflow Automations" (S45–S47)
+
+#### Trigger/Action Engine (S45)
+- **`WorkflowAutomation` entity**: Stores automation rules per project with `triggerType`, `triggerConfig` (JSON), `actionType`, `actionConfig` (JSON), `enabled`, soft-delete, and execution stats (`executionCount`, `lastTriggeredAt`). Backed by Flyway `V2026_06_15_0002__create_workflow_automations.sql`.
+- **`WorkflowAutomationTemplate` entity**: 20 built-in templates seeded by the migration across four categories (Tasks, Shape Up, Automation, Notifications).
+- **`WorkflowAutomationExecution` entity**: Audit log of every automation execution with `status` (SUCCESS/FAILURE/SKIPPED), `triggerEventData` (JSON snapshot), and `resultMessage`.
+- **`WorkflowAutomationEngine`**: Async trigger dispatcher — finds all enabled rules matching a `(triggerType, projectId)` pair, executes each action, and writes an execution record in a new transaction.
+- **`WorkflowAutomationActionDispatcher`**: Routes `ActionType` to the appropriate handler (`NOTIFY_ASSIGNEE`, `NOTIFY_PROJECT_MEMBERS`, `SEND_WEBHOOK`, `SEND_EMAIL`, `ADD_COMMENT`, `CHANGE_TASK_STATUS`, `CREATE_TASK`). Supports `{{key}}` placeholder interpolation from event context.
+- **`WorkflowAutomationEventListener`**: Bridges existing `TaskStatusChangedEvent`, `PitchStatusChangedEvent`, and `CycleStatusChangedEvent` into the automation engine.
+
+#### Shape Up Triggers (S46)
+- 14 trigger types including 4 Shape Up-specific triggers: `BETTING_TABLE_LOCKED`, `HILL_CHART_MOVED`, `APPETITE_EXCEEDED`, `SCOPE_CREEP_DETECTED`.
+- 20 built-in templates covering Tasks, Shape Up, Automation, and Notifications categories, all seeded via SQL migration.
+- Demo automation rules added to `SampleDataInitializer` (4 rules on the Banking project).
+
+#### Automations UI (S47)
+- **`/automations` page**: Lists all automation rules for the current project with enable/disable toggles, execution counts, last triggered timestamps, and per-rule execution log in a side sheet.
+- **Template Gallery**: Modal with search and category tabs showing all 20 built-in templates — one click creates the rule from defaults.
+- **Rule Form**: Create/edit dialog with trigger + action selectors, JSON config textarea with `{{key}}` hint, and enabled toggle.
+- **Execution History tab**: Project-level table showing status badges, trigger type, result message, and timestamp for recent executions.
+- **REST API**: `WorkflowAutomationController` at `/api/automations` — full CRUD for rules, template browsing, toggle endpoint, and execution log endpoints.
+
+## [1.6.0] - 2026-06-15
+
+### Added — v1.6.0 "MCP Ecosystem" (S41–S44)
+
+#### Notion / Confluence MCP Clients (S43)
+- **Notion MCP provider**: `NotionMcpProvider` implements `McpClientService` — reads design docs and meeting notes from Notion workspaces into AI context. Uses `notion-search` (list/search) and `notion-get-page` (read) MCP tools; token stored per-organisation in `organization_settings.notion_access_token`.
+- **Confluence MCP provider**: `ConfluenceMcpProvider` implements `McpClientService` — reads pages from Confluence Cloud spaces. Uses `confluence-get-space-pages`, `confluence-get-page`, and `confluence-search` MCP tools; supports per-org default domain and space key.
+- **Flyway `V2026_06_15_0001__add_notion_confluence_mcp_settings.sql`**: Adds `notion_access_token`, `confluence_access_token`, `default_confluence_space_key`, `default_confluence_domain` columns to `organization_settings`.
+- **Admin settings UI**: `McpIntegration` page gains Notion and Confluence tabs with server-status cards, secure token inputs (show/hide toggle), domain/space-key fields for Confluence, and save/clear actions.
+
+#### Rich Link Preview (S44)
+- **`LinkPreviewController`**: `GET /preview/pitch/{id}`, `/preview/task/{id}`, `/preview/cycle/{id}` return `text/html` responses with Open Graph meta tags (`og:title`, `og:description`, `og:type`, `og:url`). A JavaScript redirect sends browsers to the real SPA route. Publicly accessible — no auth required. HTML values escaped via `HtmlUtils.htmlEscape()` to prevent XSS.
+- **Copy shareable link**: Pitch header, Task detail page, and Cycle detail page each gain a "Copy shareable link" button that writes the `/preview/…` URL to the clipboard, so links shared in Slack, iMessage, or Notion unfurl with meaningful titles and descriptions.
+
+#### Bug Fixes (pre-S43/S44)
+- **Jira CSV import — Bug issues**: `CsvImportService.importJiraRow()` now routes issues with `Issue Type = Bug` to a `BugReport` entity instead of a Task. Jira Priority maps to `BugSeverity` (Blocker/Critical → CRITICAL, Major → MAJOR, Minor → MINOR, Trivial → TRIVIAL); Jira Status maps to `BugStatus` (In Progress → IN_PROGRESS, Resolved/Done/Closed → RESOLVED, Won't Fix/Won't Do → WONT_FIX). 10 new unit tests in `CsvImportServiceTest`.
+- **Bug report creation — image attachment**: Fixed a regression where files added in the "Create Bug" modal were silently dropped. `BugReportsPage.handleCreateOrUpdate` now returns the created `BugReport` so `BugReportModal` can upload pending attachments after the bug ID is known.
+
+### Added — v1.6.0 "MCP Ecosystem" (S41–S42)
+
+#### Plugin SDK (S42)
+- **Plugin admin UI**: New **Organization Settings → Plugins** tab lists all registered plugin extensions (risk calculators, report generators, integration providers) with type badges and runtime enable/disable toggles — no redeployment required.
+- **`PluginRegistry` enable/disable API**: `isEnabled(pluginId)` / `setEnabled(pluginId, enabled)` on the registry; disabled plugins are tracked in a `ConcurrentHashSet` and survive until next restart.
+- **`GET /api/v1/admin/plugins`** and **`PATCH /api/v1/admin/plugins/{pluginId}/enabled`**: ADMIN-only REST endpoints backed by `PluginAdminController`. Return `PluginDTO` (pluginId, displayName, type, enabled).
+- **Plugin SDK scaffold** (`plugin-sdk/`): `README.md` quick-start guide + sample Maven project (`sample-plugin/`) demonstrating `RiskCalculatorPlugin` implementation with a `SampleDeadlineRiskPlugin`.
+
+### Added — v1.6.0 "MCP Ecosystem" (S41)
+
+- **`update_task` MCP write tool**: PATCH-semantic full-field update for tasks via MCP. AI editors can now update a task's title, description, priority, and due date in a single call without overwriting other fields. Existing `update_task_status` and `update_task_assignee` remain the preferred tools for status/assignee changes.
+- **`update_pitch` MCP write tool**: PATCH-semantic update for all Shape Up pitch fields — title, description, problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, appetiteDays. Enables AI editors to enrich a pitch incrementally across multiple calls (e.g. add `wireframeLinks` after a Figma design is created, then add `solution` once it is written). Status changes still require `update_pitch_status`.
+
+### Fixed
+- **Bug Reports — Total stat and pagination NaN**: `@EnableSpringDataWebSupport(pageSerializationMode = VIA_DTO)` nests `totalElements`/`totalPages` under a `page` sub-object in JSON; all frontend pagination consumers now read `response.data.page?.totalElements ?? response.data.totalElements ?? 0` (system-wide fix across 15+ files). Added `getPageTotal()` / `getPageCount()` helpers to `types/index.ts`.
+- **Bug Reports — component field**: Added `component` column to `bug_reports` table (Flyway `V100__add_component_to_bug_reports.sql`); backend entity/DTO/service updated; frontend form shows component selector; table shows component column.
+- **Bug Reports — pitch/story linking**: Added pitch selector to the bug report form; label adapts to project mode ("Linked Pitch" for Shape Up, "Linked Story / Epic" for Scrum).
+- **Bug Reports — UI layout**: Compact stats cards (`py-2 px-3`, `text-xl`), tighter filter spacing, 3-column form layout for severity/status/component — data is now the focus rather than the header area.
+- **QA role permissions**: `QA` users were blocked from all test-case and test-run write operations — added `QA` to `@PreAuthorize` on create/update/delete test cases, create/update/delete test runs, and AI test case generation (`QATestManagementController`)
+- **Hill chart progress bug**: scope positions now use weighted-average of subtask statuses instead of binary DONE/CANCELLED counting — `IN_REVIEW` subtasks now correctly contribute 75% toward scope progress instead of 0% ([`ScopeProgressService`](backend/src/main/java/com/github/farzadsedaghatbin/shipflow/service/ScopeProgressService.java))
+- Added `POST /api/hill-chart/pitch/{pitchId}/resync` and `POST /api/hill-chart/cycle/{cycleId}/resync` endpoints to recalculate stale scope positions
+
+### Changed
+- **Work Logs page** (`/time/logs`): "Quick Log" and "Log Time for Team Member" inline forms replaced with a `+ Log Time` CTA button that opens a modal dialog; pitch/task titles in the table are now clickable links
+- **Backlog**: added search-by-title input and multi-select assignee filter to `BacklogFilters`
+- **My Work Logs** (`/time/my-logs`): pitch and task titles in the log table are now clickable links navigating to the respective detail pages
+
+## [1.5.0] - 2026-06-07
+
+### Added — v1.5.0 "AI Copilot v2" (S38–S40)
+
+#### AI Pitch Writer (S38)
+- **AI Pitch Writer**: Click "Write with AI" on the Pitch Board to open a modal, type a one-sentence problem description, and receive a fully structured Shape Up pitch draft — title, problem statement, solution, appetite (14 or 28 days), rabbit holes, no-gos, and risks — all generated by the configured LLM in one call. The draft pre-fills the New Pitch form so the team can review and edit before saving. Optional appetite hint (2-week / 4-week / let AI decide) and project context passed to the LLM for better-targeted output.
+- **Backend**: `POST /api/ai/pitch-writer/generate` + `GET /api/ai/pitch-writer/status`. `AIPitchWriterService` builds a Shape Up–aware prompt, calls the pluggable `ChatLanguageModel`, strips markdown fences from the response, and parses the structured JSON result. Available when any LLM provider is configured (Ollama, OpenAI, Anthropic, RunPod). 13 unit tests covering happy path, fence-stripping, and error cases.
+
+#### Retrospective Summarizer (S39)
+- **AI Retro Summary**: "Summarize with AI" button on the Retro Board generates a structured summary of all board entries — key wins, blockers, top action items, and an overall team health signal (THRIVING / STABLE / NEEDS_ATTENTION). Stored as a `RETROSPECTIVE_SUMMARY` narrative and displayed below the board with Markdown rendering.
+- **Template fallback**: When no LLM is configured, generates a well-structured Markdown summary by grouping entries by column type — no AI required to use the feature.
+- **Backend**: `generateRetroSummary(cycleId)` in `CycleNarrativeService`; new `NarrativeType.RETROSPECTIVE_SUMMARY` enum value; `POST /api/narratives/cycle/{cycleId}/retrospective/summarize` + `GET /api/narratives/cycle/{cycleId}/retrospective/summary`. 8 unit tests.
+
+#### Proactive Dashboard Insights (S40)
+- **AI Insights Panel** on the dashboard Overview tab (Shape Up projects only): detects overdue pitches, at-risk cycles, scope creep (pitches added post-betting), and velocity trends (improving/declining vs. prior cycles). Each alert shows severity coloring, count, detail text, and a deep link. An optional 1–2 sentence AI narrative summarises all alerts at a glance.
+- **Backend**: `DashboardInsightsService` computes metrics from existing `Pitch` and `Cycle` tables — no schema changes needed. Results cached in Redis for 60 minutes (`dashboardInsights` cache added to `RedisConfig`). `GET /api/ai/dashboard/{projectId}/insights` + `POST .../refresh`. 15 unit tests covering all four insight categories and edge cases.
+
+## [1.4.0] - 2026-06-07
+
+### Added — v1.4.0 "Enterprise Auth & UX Depth" (S32–S37)
+
+#### SSO / Enterprise Auth (S32 + S33)
+- **SSO Backend — SAML2 + OIDC (S32)**: New `identity_providers` table (Flyway `V2026_06_05_0001`) and SSO fields on `users` (Flyway `V2026_06_05_0002`). `SsoService` handles OIDC initiate/callback (Redis PKCE state, 5-min TTL, find-or-create user) and SAML 2.0 initiate/callback (XXE-safe DOM parsing of `<saml:NameID>`). `IdentityProviderController` exposes public `/api/sso/*` for the login page and admin `/api/admin/sso/providers` CRUD. `ProviderType` (SAML2 / OIDC) and `ProvisionedVia` (LOCAL / SAML2 / OIDC / SCIM) enums. SecurityConfig permits `/api/sso/**`.
+- **SSO Frontend — Admin UI + Login flow (S33)**: Identity-provider management tab in Organization Settings → SSO (admin-only). Provider-type-conditional form (OIDC: client ID / secret / discovery URL; SAML 2.0: entity ID / SSO URL / certificate). Enable/Disable and Enforce SSO toggles (Enforce SSO shows a destructive warning). Login page shows "Continue with [Provider]" buttons when enabled providers exist. New public `/sso-callback` route processes the `?token=` JWT returned after IdP redirect. 26 i18n keys (`sso.*`, `ssoCallback.*`) in en + fa.
+
+#### SCIM 2.0 User Provisioning (S34)
+- **SCIM 2.0 backend**: Full RFC 7643/7644 implementation at `/scim/v2/Users` — list, get, create, replace, patch (deactivate/reactivate), delete. Bearer-token auth with SHA-256 hashed storage; raw token shown once at generation. Every provisioning event written to `scim_audit_log`. Flyway `V2026_06_06_0001` adds SCIM columns to `organization_settings` and creates the audit table.
+- **SCIM Settings tab** in Organization Settings: enable/disable toggle, "Generate Token" dialog (copy button + one-time warning), SCIM base URL display for IdP configuration.
+
+#### Roadmap Interactivity (S35)
+- **Drag-to-move and drag-to-resize Gantt bars**: Grab a bar body to shift start/end together, or drag either edge handle to resize. Dates snap to day boundaries; out-of-range moves are blocked with a toast. Changes persist on mouse-up.
+- **Progress indicators**: Each bar shows a darker fill proportional to completion — from `progress` field if present, otherwise estimated from status (COMPLETED=100%, IN_PROGRESS=50%, PLANNED=20%, DRAFT=0%).
+
+#### UX Polish (S36)
+- **Inline pitch title editing**: Click the pitch title (or the hover pencil icon) in Pitch Detail to edit in place. Enter/blur saves via API with a loading spinner; Escape cancels without saving.
+- **Retrospective templates**: "Use Template" button in the Retro Board header offers three presets — *Went Well / Improve / Action Items*, *Start / Stop / Continue*, and *4Ls: Liked / Learned / Lacked / Longed For*. Applying to a non-empty board shows a confirmation dialog first.
+- **i18n sweep**: 13 hardcoded English strings in `TestCaseFormPage` and `TaskDetailPage` replaced with `t()` calls; keys added to both en + fa.
+
+#### Navigation Hardening (S37)
+- **Keyboard shortcut cheat sheet**: Press `?` anywhere to open a slide-in overlay listing shortcuts grouped by Navigation, Actions, and General. The global listener skips `<input>`, `<textarea>`, and `contentEditable` targets.
+- **Deep-link routing**: All detail routes (`/pitches/:id`, `/backlog/:taskId`, `/cycles/:cycleId`, etc.) verified to work as fresh-load deep links. `ProjectContext` re-hydrates from the API when localStorage is empty; pages requiring a project show a guard dialog instead of silently redirecting.
+
+## [1.3.0] - 2026-06-05
+
+### Added
+- **MCP Server Runtime Toggle**: Enable or disable the built-in MCP server from Integrations → MCP — a DB-backed toggle that overrides the `MCP_SERVER_ENABLED` environment default and takes effect immediately, no restart required.
+- **MCP Write-Tools Toggle**: Separately allow connected AI tools to create and update data; write tools are automatically disabled whenever the server is off.
+- **API Key Management UI**: Create, list, and revoke API keys from a new "API Keys" tab. Keys support READ / WRITE / ADMIN scopes and an optional expiry date. The raw key (`sf_…`) is shown **once** at creation with a copy button and a clear "copy it now — it won't be shown again" warning.
+- **Admin API Key Oversight**: Admins see all API keys across the entire organization — who created each one and when — and can revoke any user's key directly from the MCP Integration → API Keys tab. New backend endpoints `GET /api/api-keys/admin` and `DELETE /api/api-keys/admin/{keyId}` are guarded by `@PreAuthorize("hasRole('ADMIN')")`.
+
+### Fixed
+- **QA test cases not showing on `/qa/test-cases`**: Three bugs combined to hide all test cases from the list. (1) Race condition: `loadTestCases` and `loadCyclesAndPitches` fired concurrently on page mount; the project-scoped filter ran with `cycles = []` (stale closure), making `projectPitchIds` an empty Set and filtering out every record. After cycles loaded, the list never re-evaluated because `cycles`/`pitches` were absent from the effect dependency array. Fix: moved the project filter out of the async function and into a reactive `useMemo` so it re-evaluates whenever cycles or pitches finish loading. (2) Test cases created without a pitch association were always hidden when a project was selected (`tc.pitchId && ...` short-circuited); changed condition to `!tc.pitchId || projectPitchIds.has(tc.pitchId)` so unassigned test cases are visible. (3) The `findWithFilters` JPQL query in `TestCaseRepository` was missing `AND tc.deletedAt IS NULL`, causing soft-deleted records to reappear whenever any filter was active.
+
+### Added
+- **Admin API key oversight**: Admins can now see all API keys across the entire organization in the MCP Integration → API Keys tab, including who created each key and when. A new "Created by" column is shown for admins, and admins can revoke any user's key directly. New backend endpoints `GET /api/api-keys/admin` and `DELETE /api/api-keys/admin/{keyId}` are guarded by `@PreAuthorize("hasRole('ADMIN')")`.
+
+### Improved
+- **AI Risk Advisor now uses full project context**: Risk analysis previously saw only the single pitch in isolation. Two layers of enrichment added:
+  - *Layer 1 — Structured DB context*: Each risk analysis now includes the pitch's epic goals and status, initiative/roadmap alignment, sibling pitches in the same epic (with same-team warnings), all other pitches sharing the cycle, and the last 3 risk history snapshots showing trend direction. Same data injected into the Risk Q&A advisor prompts.
+  - *Layer 2 — Enriched vector store*: Pitch embeddings now include problem statement, proposed solution, rabbit holes, known risks, no-gos, epic name, and initiative name — making semantic similarity search far more meaningful. Epic embeddings now include per-pitch appetite, cycle assignment, and problem summary. After every AI risk analysis, a `Risk Summary` knowledge item is stored (risk level, score, insights, recommendations) so future analyses can retrieve historical patterns for similar pitches.
 
 ### Fixed
 - **Chat Q&A no longer hallucinates cycle/pitch data**: The "Ask about your active cycles" AI chat was returning wrong pitches and confusing cycle display names with database IDs (e.g. a cycle named "Cycle 7" with db id 9 caused the AI to say "there is no Cycle 7"). Four root causes fixed in `QAService`:
@@ -29,6 +185,8 @@ All notable changes to this project will be documented in this file.
 - **API key management UI**: Create, list, and revoke API keys from the new "API Keys" tab. Keys support READ / WRITE / ADMIN scopes and an optional expiry date. The raw key (`sf_…`) is shown **once** at creation with a copy button and a clear "copy it now — it won't be shown again" warning. (The API-key REST endpoints at `/api/api-keys` already existed; this adds the management UI and a runtime MCP-enablement service, `McpServerSettingsService`.)
 
 ### Fixed
+- **Document (and task attachment) downloads failing after server migration**: The `docker-compose.yml` had no volume for the uploads directory, so all uploaded files lived inside the container's ephemeral layer and were lost on every `docker compose up --build` or server migration. Added a `uploads_data` named volume mounted at `/app/uploads` and set `UPLOAD_DIR=/app/uploads` in the app service. **To recover existing files**: copy the `uploads/` directory from the old server into the new Docker volume (`docker cp` or `docker run --rm -v uploads_data:/data ...`).
+- **Document drop zone scrolled page to top on click**: Clicking the "Drag and drop documents here" area on pitches (and meetings/cycles) caused the page to jump to the top before sometimes opening the file picker. The `<input type="file">` inside the `<label>` drop zone had `class="sr-only"`, which makes it a 1×1 px `position:absolute` element. When the label forwards its click event to that input, the browser scroll-into-view behavior fired and scrolled the `<main>` scroll container back to `scrollTop:0`. Changing the class to `hidden` (`display:none`) prevents the scroll entirely while still allowing the label-to-input click forwarding to open the file picker.
 - **Task attachment download returned 401**: The download button on a task's attachments list was a plain `<a href>` pointing at the API path. Because the JWT lives in localStorage and is only attached by the axios request interceptor, the browser sent no `Authorization` header and the backend rejected the request. The button now fetches the file as a blob through the authenticated axios client and triggers the browser save from an object URL.
 - **Betting board crashed on pitches without an appetite**: A `SHAPED` pitch with no appetite (`appetiteDays = null`) made the betting board throw HTTP 500s — drag-and-drop placement NPE'd in `BettingTableService.canPitchFitInSlot`, and recording a decision violated the `betting_decisions.requested_appetite_days` NOT NULL constraint. Root cause was `PitchService.updatePitch` flipping a pitch to `SHAPED`+ without the appetite check that `markAsShaped`/`validatePitchForStatus` enforce. Now: `updatePitch` validates appetite for `SHAPED`+ (prevents appetite-less betting candidates), the drag preview returns a clean "doesn't fit" instead of NPE-ing, and both placement and betting decisions reject appetite-less pitches with a clear 400 (`error.betting.pitch.no.appetite`, en + fa) instead of a 500.
 - **Hill chart "failed to save point" on pre-cycle pitches**: Adding a scope to a pitch that isn't bet into a cycle yet (board/shaping) threw `"Pitch must have a cycle to create a linked task"`. The scope now saves standalone and the auto-linked task is only created once the pitch has a cycle.

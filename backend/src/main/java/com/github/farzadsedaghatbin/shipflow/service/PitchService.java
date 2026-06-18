@@ -760,52 +760,73 @@ public class PitchService {
       var team = pitch.getTeam();
       var teamBudget = capacityConfigService.calculateTeamBudget(team, pitch.getAppetiteDays());
       
-      // Get hours spent per person from work logs
-      Map<Long, Double> personHoursMap = workLogRepository.findByPitchId(pitch.getId()).stream()
+      // Get hours spent per person from work logs (cached for reuse below)
+      var pitchWorkLogs = workLogRepository.findByPitchId(pitch.getId());
+      Map<Long, Double> personHoursMap = pitchWorkLogs.stream()
           .filter(wl -> wl.getPerson() != null)
           .collect(java.util.stream.Collectors.groupingBy(
               wl -> wl.getPerson().getId(),
               java.util.stream.Collectors.summingDouble(wl -> wl.getHoursSpent() != null ? wl.getHoursSpent().doubleValue() : 0.0)
           ));
-      
+
       // Calculate average hours per day for person-days conversion
-      double avgHoursPerDay = teamBudget.getMemberBudgets().isEmpty() ? 
+      double avgHoursPerDay = teamBudget.getMemberBudgets().isEmpty() ?
           capacityConfigService.getOrganizationDefaultHoursPerDay() :
           teamBudget.getTotalDailyCapacityHours() / teamBudget.getMemberCount();
-      
-      // Find busiest member (highest utilization)
-      var busiestMember = teamBudget.getMemberBudgets().stream()
-          .map(pb -> {
-            double hoursSpent = personHoursMap.getOrDefault(pb.getPersonId(), 0.0);
-            double utilization = pb.getTotalBudgetHours() > 0 ? 
-                (hoursSpent / pb.getTotalBudgetHours()) * 100 : 0;
-            return new Object() {
-              final Long personId = pb.getPersonId();
-              final String personName = pb.getPersonName();
-              final String role = pb.getRole() != null ? pb.getRole().name() : null;
-              final Double hoursPerDay = pb.getHoursPerDay();
-              final String capacitySource = pb.getCapacitySource();
-              final Double totalBudgetHours = pb.getTotalBudgetHours();
-              final Double spent = hoursSpent;
-              final Double util = Math.round(utilization * 10.0) / 10.0;
-              final Boolean overBudget = hoursSpent > pb.getTotalBudgetHours();
-            };
-          })
-          .max((a, b) -> Double.compare(a.util, b.util))
+
+      // Busiest = person with most ACTUAL hours logged (not just team members).
+      // This prevents showing a 0h team member when the real contributors aren't on the team.
+      var topPersonEntry = personHoursMap.entrySet().stream()
+          .max(Map.Entry.comparingByValue())
           .orElse(null);
-      
-      if (busiestMember != null) {
-        busiestPerson = PitchDTO.BusiestPersonDTO.builder()
-            .personId(busiestMember.personId)
-            .personName(busiestMember.personName)
-            .role(busiestMember.role)
-            .hoursPerDay(busiestMember.hoursPerDay)
-            .capacitySource(busiestMember.capacitySource)
-            .totalBudgetHours(busiestMember.totalBudgetHours)
-            .hoursSpent(busiestMember.spent)
-            .utilizationPercent(busiestMember.util)
-            .isOverBudget(busiestMember.overBudget)
-            .build();
+
+      if (topPersonEntry != null) {
+        Long topPersonId = topPersonEntry.getKey();
+        double hoursSpent = topPersonEntry.getValue();
+
+        // Look up their team budget row if they're a team member
+        var teamMemberBudget = teamBudget.getMemberBudgets().stream()
+            .filter(pb -> pb.getPersonId().equals(topPersonId))
+            .findFirst().orElse(null);
+
+        if (teamMemberBudget != null) {
+          double utilization = teamMemberBudget.getTotalBudgetHours() > 0 ?
+              (hoursSpent / teamMemberBudget.getTotalBudgetHours()) * 100 : 0;
+          busiestPerson = PitchDTO.BusiestPersonDTO.builder()
+              .personId(topPersonId)
+              .personName(teamMemberBudget.getPersonName())
+              .role(teamMemberBudget.getRole() != null ? teamMemberBudget.getRole().name() : null)
+              .hoursPerDay(teamMemberBudget.getHoursPerDay())
+              .capacitySource(teamMemberBudget.getCapacitySource())
+              .totalBudgetHours(teamMemberBudget.getTotalBudgetHours())
+              .hoursSpent(hoursSpent)
+              .utilizationPercent(Math.round(utilization * 10.0) / 10.0)
+              .isOverBudget(hoursSpent > teamMemberBudget.getTotalBudgetHours())
+              .build();
+        } else {
+          // Non-team-member — resolve their capacity from person/org settings
+          var personRef = pitchWorkLogs.stream()
+              .filter(wl -> wl.getPerson() != null && wl.getPerson().getId().equals(topPersonId))
+              .map(wl -> wl.getPerson())
+              .findFirst().orElse(null);
+          if (personRef != null) {
+            var capacityRes = capacityConfigService.getEffectiveHoursPerDay(personRef);
+            double hpd = capacityRes.value();
+            double budgetHours = hpd * pitch.getAppetiteDays();
+            double utilization = budgetHours > 0 ? (hoursSpent / budgetHours) * 100 : 0;
+            busiestPerson = PitchDTO.BusiestPersonDTO.builder()
+                .personId(topPersonId)
+                .personName(personRef.getName())
+                .role(null)
+                .hoursPerDay(hpd)
+                .capacitySource(capacityRes.source())
+                .totalBudgetHours(budgetHours)
+                .hoursSpent(hoursSpent)
+                .utilizationPercent(Math.round(utilization * 10.0) / 10.0)
+                .isOverBudget(hoursSpent > budgetHours)
+                .build();
+          }
+        }
       }
       
       // Calculate budget metrics

@@ -45,6 +45,8 @@ import {
   Network,
   Pencil,
   GripHorizontal,
+  ClipboardList,
+  Keyboard,
   Workflow,
   TrendingDown,
   Gauge,
@@ -54,6 +56,9 @@ import {
   BookOpen,
   Link2,
   Building2,
+  Wand2,
+  Sliders,
+  Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -73,7 +78,7 @@ interface Release {
 
 const releases: Release[] = [
   {
-    version: '1.4.0',
+    version: '1.8.0',
     date: 'In Development',
     title: 'Knowledge Center',
     upcoming: true,
@@ -99,10 +104,160 @@ const releases: Release[] = [
     ],
   },
   {
-    version: '1.3.0',
-    date: 'In Development',
-    title: 'MCP Server Admin & API Keys',
+    version: '1.9.0',
+    date: 'Coming soon',
+    title: 'Custom Fields & Advanced RBAC',
     upcoming: true,
+    highlights: [
+      {
+        icon: <Sliders className="h-5 w-5" />,
+        title: 'Custom Fields on Tasks & Pitches',
+        description: 'Add your own fields — text, number, date, single-select, multi-select — to tasks and pitches. Fields are configured per project and appear everywhere the entity appears.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Project-Level Permissions',
+        description: 'Grant access at the project level, not just the organization. Give a contractor read access to one project without touching global roles.',
+      },
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Field Visibility Rules',
+        description: 'Show or hide custom fields based on role, project type, or cycle phase.',
+      },
+    ],
+  },
+  {
+    version: '1.7.0',
+    date: 'June 15, 2026',
+    title: 'Workflow Automations',
+    highlights: [
+      {
+        icon: <Zap className="h-5 w-5" />,
+        title: 'Trigger/Action Engine',
+        description: 'Define automation rules that fire on events like task completion, pitch status changes, cycle starts, and Shape Up-specific triggers like appetite exceeded or scope creep detected.',
+      },
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: '20 Built-in Templates',
+        description: 'Start in seconds with 20 curated templates across Tasks, Shape Up, Automation, and Notifications categories. One click adds a fully configured rule you can customize.',
+      },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'Shape Up-Specific Triggers',
+        description: 'Four new triggers designed for Shape Up teams: Betting Table Locked, Hill Chart Moved, Appetite Exceeded, and Scope Creep Detected — automate the moments that matter most.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Execution Log',
+        description: 'Every automation run is recorded with status, trigger event data, and result message. Browse per-rule or project-wide history to audit what fired and when.',
+      },
+      {
+        icon: <RefreshCw className="h-5 w-5" />,
+        title: 'Live Retro Board',
+        description: 'Retro boards now auto-refresh every 5 seconds while open — no more manual reloads to see what teammates added or voted on.',
+      },
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Reactions & Discuss Timer',
+        description: 'New 👎 disagree reaction alongside existing votes. Per-item countdown timer (3 min default) auto-marks items as discussed. Vote fill bars show relative signal at a glance.',
+      },
+      {
+        icon: <Clock className="h-5 w-5" />,
+        title: 'Persistent Discussed State & Ownership',
+        description: 'Discussed items are persisted server-side (green badge + strikethrough synced across all participants). Edit/delete now restricted to item authors; admins/managers can manage any item.',
+      },
+    ],
+  },
+  {
+    version: '1.6.0',
+    date: 'June 15, 2026',
+    title: 'MCP Ecosystem',
+    highlights: [
+      {
+        icon: <Wrench className="h-5 w-5" />,
+        title: 'update_task & update_pitch MCP write tools',
+        description: 'AI editors (Claude Code, Cursor) can now update task and pitch fields in-place with PATCH semantics — only the fields you supply change. Supply a solution and wireframeLinks to a pitch, or update a task\'s title, priority, and due date, without touching any other field.',
+      },
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'Plugin SDK',
+        description: 'Maven archetype, plugin registry, and first-party plugin scaffold — build and distribute ShipFlow extensions without forking the core.',
+      },
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Notion & Confluence MCP Clients',
+        description: 'Connect ShipFlow to your Notion workspace or Confluence Cloud space. AI features can now pull design docs and meeting notes directly into context — configure tokens in MCP Integration settings.',
+      },
+      {
+        icon: <Network className="h-5 w-5" />,
+        title: 'Rich Link Previews',
+        description: 'Shared task, pitch, and cycle URLs now render meaningful og:title / og:description in Slack, iMessage, and any chat that unfurls links — without exposing protected data.',
+      },
+    ],
+  },
+  {
+    version: '1.5.0',
+    date: 'June 7, 2026',
+    title: 'AI Copilot v2',
+    highlights: [
+      {
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'AI Pitch Writer',
+        description: 'Type a problem in plain language and get a full Shape Up pitch draft — title, problem statement, solution, appetite, rabbit holes, and no-gos — in one click. Pre-fills the pitch form for human review.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Retrospective Summarizer',
+        description: 'AI-generated retro summary after each cycle close. Highlights patterns, recurring blockers, and team health signals across all board entries.',
+      },
+      {
+        icon: <TrendingUp className="h-5 w-5" />,
+        title: 'Proactive Dashboard Insights',
+        description: 'The dashboard surfaces AI-driven alerts: overdue pitches, at-risk cycles, scope creep warnings, and velocity trend sparklines — computed in the background and cached.',
+      },
+    ],
+  },
+  {
+    version: '1.4.0',
+    date: 'June 7, 2026',
+    title: 'Enterprise Auth & UX Depth',
+    highlights: [
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'SSO / SAML 2.0 & OIDC',
+        description: 'Sign in via Okta, Keycloak, Auth0, or Azure AD. SAML 2.0 and OIDC both supported. Just-in-time user provisioning and SSO enforcement mode for enterprise instances.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'SCIM 2.0 User Provisioning',
+        description: 'Automatically create and deactivate users when they join or leave your identity provider group — no manual user management.',
+      },
+      {
+        icon: <GripHorizontal className="h-5 w-5" />,
+        title: 'Interactive Roadmap Timeline',
+        description: 'Drag to move or resize epic and initiative bars on the roadmap. Progress indicators shown on bars. One-click "Set dates" for undated items.',
+      },
+      {
+        icon: <Pencil className="h-5 w-5" />,
+        title: 'Inline Pitch Title Editing',
+        description: 'Edit pitch names directly from the detail header or the epic\'s pitch list. Click to edit, Enter or blur to save, Escape to cancel.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Retrospective Templates',
+        description: 'Structured retrospective format with Went Well, Improve, and Action Items columns. Rich-text entries, required before cycle close.',
+      },
+      {
+        icon: <Keyboard className="h-5 w-5" />,
+        title: 'Keyboard Shortcut Cheat Sheet',
+        description: 'Press ? anywhere to see all keyboard shortcuts. Navigation, quick actions, and search — all documented in a single overlay.',
+      },
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: 'June 5, 2026',
+    title: 'MCP Server Admin & API Keys',
     highlights: [
       {
         icon: <Plug className="h-5 w-5" />,
@@ -121,6 +276,12 @@ const releases: Release[] = [
         title: 'API Key Management UI',
         description:
           'Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry. The raw key is shown once with a copy button and a copy-it-now warning.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Admin API Key Oversight',
+        description:
+          'Admins see all API keys across the organization — who created each one and when — and can revoke any key directly from the MCP Integration → API Keys tab.',
       },
     ],
   },
@@ -238,38 +399,6 @@ const releases: Release[] = [
         title: 'Sprint Goal on Cycles',
         description:
           'Capture the goal statement for each sprint when creating or editing a cycle. The goal is surfaced on the sprint planning header and on the cycle list cards.',
-      },
-    ],
-  },
-  {
-    version: '1.0.1',
-    date: 'May 2026',
-    title: 'UX Polish & Roadmap Interactivity',
-    upcoming: true,
-    highlights: [
-      {
-        icon: <Pencil className="h-5 w-5" />,
-        title: 'Inline Pitch Title Editing',
-        description:
-          'Edit pitch names directly from the detail header or the epic\'s pitch list. Click to edit, Enter or blur to save, Escape to cancel.',
-      },
-      {
-        icon: <GripHorizontal className="h-5 w-5" />,
-        title: 'Interactive Roadmap Timeline',
-        description:
-          'Drag-to-move and drag-to-resize timeline bars to adjust epic and initiative dates. Progress percentages and status indicators shown on bars. One-click "Set dates" for items without a timeline.',
-      },
-      {
-        icon: <Shield className="h-5 w-5" />,
-        title: 'Backend Date Validation',
-        description:
-          'Epic and initiative date endpoints now validate that start date ≤ end date, returning 400 on invalid ranges. @DateTimeFormat annotations ensure explicit ISO date parsing.',
-      },
-      {
-        icon: <Bug className="h-5 w-5" />,
-        title: 'Release Form Navigation Fix',
-        description:
-          'After creating or editing a release, the form now correctly navigates to the release detail page instead of a broken route.',
       },
     ],
   },

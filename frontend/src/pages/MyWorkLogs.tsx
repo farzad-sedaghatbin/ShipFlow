@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, Clock, CalendarDays, Loader2, AlertTriangle, PlayCircle } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -129,8 +130,8 @@ export default function MyWorkLogs() {
     try {
       const response = await workLogService.getMy(page, PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setTotalPages(response.data.totalPages);
-      setTotalElements(response.data.totalElements);
+      setTotalPages(response.data.page?.totalPages ?? response.data.totalPages ?? 0);
+      setTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
     } catch (error) {
       console.error('Failed to load all work logs:', error);
     }
@@ -140,8 +141,8 @@ export default function MyWorkLogs() {
     try {
       const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setTotalPages(response.data.totalPages);
-      setTotalElements(response.data.totalElements);
+      setTotalPages(response.data.page?.totalPages ?? response.data.totalPages ?? 0);
+      setTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }
@@ -585,7 +586,23 @@ export default function MyWorkLogs() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">
-                          <span>{wl.pitchTitle || wl.taskTitle}</span>
+                          {wl.taskId ? (
+                            <Link
+                              to={`/backlog/${wl.taskId}`}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              {wl.taskTitle}
+                            </Link>
+                          ) : wl.pitchId ? (
+                            <Link
+                              to={`/pitches/${wl.pitchId}`}
+                              className="text-primary hover:underline font-medium"
+                            >
+                              {wl.pitchTitle}
+                            </Link>
+                          ) : (
+                            <span>{wl.pitchTitle || wl.taskTitle}</span>
+                          )}
                           {wl.taskTitle && (
                             <Badge variant="secondary" className="text-xs w-fit">Task</Badge>
                           )}

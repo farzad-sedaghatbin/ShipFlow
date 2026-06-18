@@ -51,12 +51,16 @@ import { Label } from '../components/ui/label';
 import MarkdownEditor from '../components/MarkdownEditor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { PermissionGate } from '../hooks/usePermission';
+import AIPitchWriterModal from '../components/AIPitchWriterModal';
+import { Sparkles } from 'lucide-react';
+import { useProject } from '../contexts';
 
 export default function EpicDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
+  const { currentProject } = useProject();
   const [epic, setEpic] = useState<Epic | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +71,9 @@ export default function EpicDetailPage() {
   const [ideaTitle, setIdeaTitle] = useState('');
   const [ideaDescription, setIdeaDescription] = useState('');
   const [addingIdea, setAddingIdea] = useState(false);
+
+  // AI Pitch Writer state
+  const [aiWriterOpen, setAiWriterOpen] = useState(false);
 
   // Epic dependency state
   const [blockingEpics, setBlockingEpics] = useState<EpicDependency[]>([]);
@@ -741,16 +748,43 @@ export default function EpicDetailPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIdeaDialog(false)}>
-              {t('common.cancel')}
+          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between gap-2">
+            <Button
+              variant="outline"
+              className="gap-2 text-primary border-primary/40 hover:bg-primary/5"
+              onClick={() => { setIdeaDialog(false); setAiWriterOpen(true); }}
+            >
+              <Sparkles className="h-4 w-4" />
+              {t('aiPitchWriter.writeWithAI')}
             </Button>
-            <Button onClick={handleAddIdea} disabled={addingIdea || !ideaTitle.trim()}>
-              {addingIdea ? t('common.saving') : t('pitches.addIdea')}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIdeaDialog(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={handleAddIdea} disabled={addingIdea || !ideaTitle.trim()}>
+                {addingIdea ? t('common.saving') : t('pitches.addIdea')}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* AI Pitch Writer — pre-fills the idea form on accept */}
+      <AIPitchWriterModal
+        open={aiWriterOpen}
+        onClose={() => setAiWriterOpen(false)}
+        projectId={currentProject?.id}
+        onAccept={(draft) => {
+          setIdeaTitle(draft.title || '');
+          // Compose a concise description from the problem statement and solution
+          const parts: string[] = [];
+          if (draft.problemStatement) parts.push(`**Problem:** ${draft.problemStatement}`);
+          if (draft.solution) parts.push(`**Solution:** ${draft.solution}`);
+          setIdeaDescription(parts.join('\n\n'));
+          setAiWriterOpen(false);
+          setIdeaDialog(true);
+        }}
+      />
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>

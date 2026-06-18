@@ -12,7 +12,7 @@ export function useKnowledgeSourceEvents(): void {
   const qc = useQueryClient();
 
   const handler = useCallback(
-    (_payload: unknown, eventName?: string) => {
+    (eventName: string, _payload: unknown) => {
       if (eventName && eventName.startsWith('knowledge.source.')) {
         qc.invalidateQueries({ queryKey: ['knowledge'] });
       }

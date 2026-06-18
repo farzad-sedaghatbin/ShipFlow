@@ -190,7 +190,7 @@ export const DocumentDropZone: React.FC<DocumentDropZoneProps> = ({
       >
         <input
           type="file"
-          className="sr-only"
+          className="hidden"
           multiple
           accept=".pdf,.docx,.doc,.txt,.md"
           onChange={handleFileSelect}

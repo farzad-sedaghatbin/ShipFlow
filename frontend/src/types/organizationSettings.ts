@@ -9,6 +9,7 @@ export interface OrganizationSettings {
   // Cycle Configuration
   defaultCycleLengthWeeks: number;
   defaultCooldownWeeks: number;
+  defaultSprintLengthWeeks: number;
   
   // Capacity Configuration
   defaultHoursPerDay: number;
@@ -51,6 +52,9 @@ export interface OrganizationSettings {
 
   // Figma Integration (for Wise Architecture)
   hasFigmaAccessToken: boolean;
+
+  // SCIM 2.0 provisioning
+  scimEnabled?: boolean;
 
   updatedAt: string;
   updatedBy: string;
@@ -127,6 +131,7 @@ export interface UpdateOrganizationSettingsRequest {
   organizationName?: string;
   defaultCycleLengthWeeks?: number;
   defaultCooldownWeeks?: number;
+  defaultSprintLengthWeeks?: number;
   defaultHoursPerDay?: number;
   defaultWorkingDaysPerWeek?: number;
   riskThresholds?: RiskThresholds;

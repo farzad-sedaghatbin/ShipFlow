@@ -5,12 +5,18 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.2.0 — "Competitor Migration Tooling"
+## Current Milestone: v1.8.0 — "Custom Fields & Advanced RBAC"
 
-**Current version**: v1.2.1 (released 2026-06-03)
+**Current version**: v1.7.0 (released 2026-06-16)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Next: competitor migration tooling (v1.2.0) — CSV import → Linear API → Jira API. Always import into Kanban by default; teams adopt Shape Up/Scrum at their own pace.
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Next: Custom Fields & Advanced RBAC (v1.8.0).
+
+### v1.3.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S31 | MCP server admin toggle + API key management UI — DB-backed runtime toggle, write-tools toggle, API key CRUD with scopes/expiry, admin oversight | ✅ done |
 
 ### v1.2.0 session map
 
@@ -62,6 +68,61 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 **v0.9.0 released: 2026-04-14** ✅
 
+### v1.4.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S32 | SSO backend — Spring Security SAML2 + OIDC, IdentityProvider entity, Flyway migration | ✅ done |
+| S33 | SSO frontend — identity provider config UI in Org Settings, SSO enforcement toggle, login page SSO button | ✅ done |
+| S34 | SCIM 2.0 user provisioning — backend endpoint + frontend toggle | ✅ done |
+| S35 | Roadmap interactivity — drag-to-move/resize Gantt bars, date range validation, progress indicators | ✅ done |
+| S36 | UX polish — inline pitch title editing, retrospective templates (Went Well/Improve/Action Items), i18n interpolation sweep | ✅ done |
+| S37 | Navigation hardening — deep-link routing for all sidebar routes, keyboard shortcut cheat sheet overlay | ✅ done |
+
+**v1.4.0 released: 2026-06-07** ✅
+
+### v1.5.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S38 | AI Pitch Writer — LLM-powered Shape Up pitch draft from one-sentence problem description, pre-fills pitch form | ✅ done |
+| S39 | Retrospective Summarizer — AI-generated cycle retro summary, template fallback, RetroSummaryPanel below board | ✅ done |
+| S40 | Proactive Dashboard Insights — DashboardInsightsPanel (overdue pitches, at-risk cycles, scope creep, velocity), Redis cache | ✅ done |
+
+**v1.5.0 released: 2026-06-07** ✅
+
+### v1.6.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S41 | Agentic MCP write tools — `update_task` + `update_pitch` (PATCH-semantic full-field MCP write tools) | ✅ done |
+| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | ✅ done |
+| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | ✅ done |
+| S44 | Rich link preview (OG metadata) — server-rendered `og:title`/`og:description` for task/pitch/cycle URLs so shared links show meaningful previews in Slack, iMessage, etc. | ✅ done |
+
+**v1.6.0 released: 2026-06-15** ✅
+
+### v1.7.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S45 | Workflow Automations backend — TriggerType/ActionType enums, WorkflowAutomation/Template/Execution entities, engine, event listener, action dispatcher, 20 SQL-seeded templates | ✅ done |
+| S46 | Shape Up triggers & REST API — HILL_CHART_MOVED, APPETITE_EXCEEDED, SCOPE_CREEP_DETECTED, BETTING_TABLE_LOCKED triggers; WorkflowAutomationController (10 endpoints) | ✅ done |
+| S47 | Automations UI — AutomationsPage (Rules + History tabs), AutomationRuleForm, AutomationTemplateGallery, AutomationExecutionLog, sidebar nav, i18n | ✅ done |
+
+**v1.7.0 released: 2026-06-16** ✅
+
+### Future milestones overview
+
+| Version | Theme | Sessions |
+|---------|-------|----------|
+| v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S48–S50 |
+| v1.9.0 | Wiki / Docs Space — built-in wiki so teams can write and read docs without Confluence/Notion | S51–S53 |
+| v1.10.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
+| v1.11.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
+| v1.12.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
+| v1.13.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
+
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
 
@@ -77,9 +138,10 @@ Every session must complete ALL of these before creating the PR:
 7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage). **The full suite must be at 0 failures** — if your change breaks existing tests (e.g. serialization format change, renamed field), fix those tests in the same commit before pushing.
 8. Update `SampleDataInitializer.java` with demo data for the new feature
 9. **If UI layout changed**: verify onboarding tour step selectors in `frontend/src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
-10. **If in-app help guides reference changed UI**: update the relevant help guide content
-11. **Keep public pages in sync** — `ReleaseNotes.tsx` (`/releases`) and `PublicRoadmap.tsx` (`/public-roadmap`) must always match each other. Any feature added to one must appear in the other. Version cards, item titles, descriptions, and milestone status ("upcoming" / "in-progress" / "planned") must be identical across both pages. See the [Public Pages Alignment rule](#public-pages-alignment) below.
-12. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
+10. **Help & Guides — mandatory for every new user-facing feature**: add or update a guide in `backend/src/main/resources/knowledgebase/help-guides/`. Name it `{NN}-{feature}.md` (next sequential number). The file is auto-loaded by `HelpGuideAIService` at startup — no registration needed. If an existing feature's UI changed, update the relevant existing guide. **A feature without a help guide is incomplete.**
+11. **If in-app help guides reference changed UI**: update the relevant help guide content
+12. **Keep public pages in sync** — `ReleaseNotes.tsx` (`/releases`) and `PublicRoadmap.tsx` (`/public-roadmap`) must always match each other. Any feature added to one must appear in the other. Version cards, item titles, descriptions, and milestone status ("upcoming" / "in-progress" / "planned") must be identical across both pages. See the [Public Pages Alignment rule](#public-pages-alignment) below.
+13. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
 
 ---
 
@@ -403,10 +465,11 @@ This project is **open source** — every significant feature must be documented
 | 5 | Update competitor positioning if relevant | `COMPETITOR_ANALYSIS.md` |
 | 6 | Update `CLAUDE.md` if the feature introduces a new repeatable task pattern | `CLAUDE.md` |
 | 7 | Add / update guide doc if users need setup instructions | relevant `*_GUIDE.md` or `MCP_CLIENT_SETUP.md` |
+| 7a | **Add in-app help guide** for every new user-facing feature — `{NN}-{feature}.md` in `backend/src/main/resources/knowledgebase/help-guides/`. Auto-loaded by `HelpGuideAIService`. **A feature without a help guide is incomplete.** | `knowledgebase/help-guides/` |
 | 8 | Add i18n keys to both `en.json` and `fa.json` | `frontend/src/i18n/` |
 | 9 | Update `SampleDataInitializer.java` with demo data for the new feature | `src/main/java/.../SampleDataInitializer.java` |
 | 10 | If UI layout changed: update `data-tour` selectors in `TourContext.tsx` AND the Step Inventory table in `TOUR_GUIDE.md` | `TOUR_GUIDE.md` |
-| 11 | If help guides reference changed UI: update guide content | relevant `*_GUIDE.md` |
+| 11 | If help guides reference changed UI: update guide content | `knowledgebase/help-guides/` |
 | 12 | Tests: ≥ 80% line coverage; **0 failures in the full suite** — fix any tests broken by your change (serialization, renamed fields, etc.) in the same PR | `src/test/` |
 | 13 | Run `./mvnw spotless:apply && ./mvnw verify` — must exit `BUILD SUCCESS, Failures: 0, Errors: 0` | CI must stay green |
 | 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
@@ -422,6 +485,7 @@ Key product/architecture decisions recorded here so future Claude Code sessions 
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-04-05 | Competitor migration tools ship in **v1.2.0**, after Scrum mode (v1.1.0) | 90% of Jira/Linear users work in Sprints. Without Scrum mode, imported sprint history would be dropped or wrongly mapped to Shape Up cycles. Once v1.1 ships, the mapping is clean: Sprint→Sprint, Epic→Pitch, Issue→Task. Migration sequence: CSV import → Linear API → Jira API. Always import into Kanban project by default; teams adopt Shape Up/Scrum at their own pace. |
+| 2026-06-05 | v1.4.0 merges original v1.4 (Enterprise Auth) + v1.5 (UX Depth) into one milestone | SSO and UX polish are both table-stakes before the AI/automation sprint; combining keeps the release train moving without fragmenting small polish fixes into a separate patch version. |
 
 ---
 

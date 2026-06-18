@@ -254,6 +254,7 @@ public class McpToolDispatcher {
       case TaskMcpTools.TOOL_GET_TASK -> taskTools.getTask(args);
       case TaskMcpTools.TOOL_GET_BLOCKERS -> taskTools.getBlockers(args, auth);
       case TaskMcpTools.TOOL_CREATE_TASK -> taskTools.createTask(args);
+      case TaskMcpTools.TOOL_UPDATE_TASK -> taskTools.updateTask(args);
       case TaskMcpTools.TOOL_UPDATE_TASK_STATUS -> taskTools.updateTaskStatus(args);
       case TaskMcpTools.TOOL_UPDATE_TASK_ASSIGNEE -> taskTools.updateTaskAssignee(args, auth);
 
@@ -262,6 +263,7 @@ public class McpToolDispatcher {
       case PitchMcpTools.TOOL_GET_PITCH -> pitchTools.getPitchDetail(args);
       case PitchMcpTools.TOOL_GET_BETTING_CANDIDATES -> pitchTools.getBettingCandidates(args);
       case PitchMcpTools.TOOL_CREATE_PITCH -> pitchTools.createPitch(args);
+      case PitchMcpTools.TOOL_UPDATE_PITCH -> pitchTools.updatePitch(args);
       case PitchMcpTools.TOOL_UPDATE_PITCH_STATUS -> pitchTools.updatePitchStatus(args);
 
       // Comment write tools — auth passed explicitly to avoid SecurityContextHolder on executor thread
@@ -332,9 +334,11 @@ public class McpToolDispatcher {
   private static List<Map<String, Object>> writeToolDefinitions() {
     return List.of(
         TaskMcpTools.createTaskDefinition(),
+        TaskMcpTools.updateTaskDefinition(),
         TaskMcpTools.updateTaskStatusDefinition(),
         TaskMcpTools.updateTaskAssigneeDefinition(),
         PitchMcpTools.createPitchDefinition(),
+        PitchMcpTools.updatePitchDefinition(),
         PitchMcpTools.updatePitchStatusDefinition(),
         CommentMcpTools.addCommentDefinition(),
         WiseArchitectureMcpTools.analyzeDefinition(),

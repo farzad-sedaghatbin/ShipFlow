@@ -21,6 +21,7 @@ public class OrganizationSettingsDTO {
   // Cycle Configuration
   private Integer defaultCycleLengthWeeks;
   private Integer defaultCooldownWeeks;
+  private Integer defaultSprintLengthWeeks;
 
   // Risk Thresholds
   private RiskThresholds riskThresholds;
@@ -72,9 +73,26 @@ public class OrganizationSettingsDTO {
   // GitHub MCP Configuration (token not exposed, only flag)
   private Boolean hasGithubAccessToken;
 
+  // Notion MCP Configuration (token not exposed, only flag)
+  private Boolean hasNotionAccessToken;
+
+  // Confluence MCP Configuration (token not exposed, only flag)
+  private Boolean hasConfluenceAccessToken;
+  private String defaultConfluenceDomain;
+  private String defaultConfluenceSpaceKey;
+
+  // SharePoint Graph API (credentials not exposed, only presence flags + non-secret fields)
+  private Boolean hasSharepointClientSecret;
+  private String sharepointTenantId;
+  private String sharepointClientId;
+  private String sharepointSiteUrl;
+
   // MCP Server runtime toggle (effective values: DB override if set, else env default)
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;
+
+  // SCIM 2.0 provisioning settings
+  private Boolean scimEnabled;
 
   /**
    * Configurable risk detection thresholds for automated health assessment. These

@@ -124,4 +124,18 @@ public class OrganizationSettingsController {
     log.info("Test email sent to {} by admin {}", email, userDetails.getUsername());
     return ResponseEntity.ok(Map.of("message", "Test email sent to " + email));
   }
+
+  /**
+   * Generate (or regenerate) the SCIM 2.0 bearer token. Returns the raw token once — it cannot be
+   * recovered after this response is sent.
+   */
+  @PostMapping("/settings/scim/generate-token")
+  @Operation(summary = "Generate SCIM bearer token (shown once)")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<Map<String, String>> generateScimToken(
+      @AuthenticationPrincipal UserDetails userDetails) {
+    log.info("SCIM token generation requested by {}", userDetails.getUsername());
+    String rawToken = settingsService.generateScimToken(userDetails.getUsername());
+    return ResponseEntity.ok(Map.of("token", rawToken));
+  }
 }

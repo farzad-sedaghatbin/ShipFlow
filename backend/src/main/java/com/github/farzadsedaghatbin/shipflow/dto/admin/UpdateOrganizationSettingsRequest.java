@@ -16,6 +16,7 @@ public class UpdateOrganizationSettingsRequest {
   private String organizationName;
   private Integer defaultCycleLengthWeeks;
   private Integer defaultCooldownWeeks;
+  private Integer defaultSprintLengthWeeks;
   private OrganizationSettingsDTO.RiskThresholds riskThresholds;
   private OrganizationSettingsDTO.RiskWeights riskWeights;
   private List<OrganizationSettingsDTO.CategoryConfig> taskCategories;
@@ -50,7 +51,24 @@ public class UpdateOrganizationSettingsRequest {
   // GitHub MCP Configuration (token managed via MCP settings API)
   private String githubAccessToken;
 
+  // Notion MCP Configuration (token managed via MCP settings API)
+  private String notionAccessToken;
+
+  // Confluence MCP Configuration (token managed via MCP settings API)
+  private String confluenceAccessToken;
+  private String defaultConfluenceDomain;
+  private String defaultConfluenceSpaceKey;
+
+  // SharePoint Graph API — Azure AD client credentials (null = leave unchanged, blank = clear)
+  private String sharepointTenantId;
+  private String sharepointClientId;
+  private String sharepointClientSecret;
+  private String sharepointSiteUrl;
+
   // MCP Server runtime toggle (null = leave unchanged)
   private Boolean mcpServerEnabled;
   private Boolean mcpServerWriteEnabled;
+
+  // SCIM 2.0 toggle (null = leave unchanged)
+  private Boolean scimEnabled;
 }

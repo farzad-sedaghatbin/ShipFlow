@@ -5,12 +5,16 @@ import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.*;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO.*;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
+import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.PitchRiskHistory;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRiskHistoryRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkLogRepository;
@@ -50,17 +54,24 @@ public class RiskAnalysisService {
   private final OrganizationSettingsService organizationSettingsService;
   private final RiskHistoryService riskHistoryService;
   private final CapacityConfigService capacityConfigService;
+  private final EpicRepository epicRepository;
+  private final InitiativeRepository initiativeRepository;
 
   @Autowired(required = false)
   @Lazy
   private PitchHealthService pitchHealthService;
+
+  @Autowired(required = false)
+  @Lazy
+  private KnowledgeIngestionService knowledgeIngestionService;
 
   @Autowired
   public RiskAnalysisService(AIConfig aiConfig, @Autowired(required = false) ChatLanguageModel chatLanguageModel,
       PitchRepository pitchRepository, CycleRepository cycleRepository, WorkLogRepository workLogRepository,
       AICacheService cacheService, PitchRiskHistoryRepository riskHistoryRepository,
       OrganizationSettingsService organizationSettingsService, RiskHistoryService riskHistoryService,
-      CapacityConfigService capacityConfigService) {
+      CapacityConfigService capacityConfigService, EpicRepository epicRepository,
+      InitiativeRepository initiativeRepository) {
     this.aiConfig = aiConfig;
     this.chatLanguageModel = chatLanguageModel;
     this.pitchRepository = pitchRepository;
@@ -71,6 +82,8 @@ public class RiskAnalysisService {
     this.organizationSettingsService = organizationSettingsService;
     this.riskHistoryService = riskHistoryService;
     this.capacityConfigService = capacityConfigService;
+    this.epicRepository = epicRepository;
+    this.initiativeRepository = initiativeRepository;
   }
 
   /** Analyze risk for a single pitch (with AI if enabled). */
@@ -211,6 +224,18 @@ public class RiskAnalysisService {
       // Save to risk history (only for AI-enabled or manual analyses, not fast mode)
       if (useAI) {
         riskHistoryService.saveRiskHistory(pitch, result, PitchRiskHistory.TriggerType.MANUAL);
+
+        // Ingest risk summary into vector store for future historical pattern RAG
+        if (knowledgeIngestionService != null && result.getInsights() != null) {
+          Long cycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
+          knowledgeIngestionService.ingestRiskSummary(
+              pitch.getId(), pitch.getTitle(),
+              result.getRiskLevel() != null ? result.getRiskLevel().name() : "UNKNOWN",
+              result.getRiskScore(),
+              result.getInsights(),
+              result.getRecommendations(),
+              cycleId);
+        }
       }
 
       return result;
@@ -363,7 +388,10 @@ public class RiskAnalysisService {
 
       Cycle cycle = pitch.getCycle();
       LocalDate today = LocalDate.now();
-      long daysRemaining = ChronoUnit.DAYS.between(today, cycle.getEndDate());
+      long daysRemaining =
+          (cycle != null && cycle.getEndDate() != null)
+              ? ChronoUnit.DAYS.between(today, cycle.getEndDate())
+              : 0L;
 
       // Build context for AI - include all Shape Up methodology fields
       StringBuilder pitchDetails = new StringBuilder();
@@ -414,7 +442,8 @@ public class RiskAnalysisService {
           Current Recommendations:
           %s
           """, pitch.getTitle(), pitch.getStatus(),
-          pitch.getTeam() != null ? pitch.getTeam().getName() : "No team assigned", cycle.getName(),
+          pitch.getTeam() != null ? pitch.getTeam().getName() : "No team assigned",
+          cycle != null ? cycle.getName() : "No cycle assigned",
           daysRemaining, pitchDetails.toString(), totalHours, appetiteHours,
           riskAnalysis.getRiskScore() > 0 ? (totalHours / appetiteHours * 100) : 0,
           riskAnalysis.getRiskScore(), riskAnalysis.getRiskLevel(), riskAnalysis.getConfidenceScore(),
@@ -422,6 +451,12 @@ public class RiskAnalysisService {
               .collect(Collectors.joining("\n")),
           String.join("\n- ", riskAnalysis.getInsights()),
           String.join("\n- ", riskAnalysis.getRecommendations()));
+
+      // Enrich Q&A context with epic, initiative, cycle load, and risk history
+      String broadContext = buildEpicAndInitiativeContext(pitch);
+      if (!broadContext.isBlank()) {
+        context = context + "\n" + broadContext;
+      }
 
       String prompt = String.format(
           """
@@ -592,6 +627,115 @@ public class RiskAnalysisService {
     return parseAIResponse(response);
   }
 
+  /**
+   * Builds a structured context block covering the pitch's epic, sibling pitches
+   * within that epic, initiative/roadmap alignment, cycle-level load, and recent
+   * risk history — all fetched directly from the DB so the LLM gets ground truth.
+   */
+  private String buildEpicAndInitiativeContext(Pitch pitch) {
+    StringBuilder sb = new StringBuilder();
+
+    try {
+      Epic epic = pitch.getEpic();
+      if (epic == null && pitch.getEpic() != null) {
+        epic = epicRepository.findById(pitch.getEpic().getId()).orElse(null);
+      }
+
+      if (epic != null) {
+        sb.append("\n=== EPIC & ROADMAP CONTEXT ===\n");
+        sb.append("Epic: ").append(epic.getName()).append("\n");
+        if (epic.getDescription() != null && !epic.getDescription().isBlank()) {
+          String desc = epic.getDescription().length() > 300
+              ? epic.getDescription().substring(0, 300) + "..."
+              : epic.getDescription();
+          sb.append("Epic Goal: ").append(desc).append("\n");
+        }
+        if (epic.getStatus() != null) {
+          sb.append("Epic Status: ").append(epic.getStatus()).append("\n");
+        }
+        if (epic.getTargetEndDate() != null) {
+          sb.append("Epic Target End: ").append(epic.getTargetEndDate()).append("\n");
+        }
+
+        // Initiative / roadmap alignment
+        Initiative initiative = epic.getInitiative();
+        if (initiative != null) {
+          sb.append("\nInitiative: ").append(initiative.getName()).append("\n");
+          if (initiative.getDescription() != null && !initiative.getDescription().isBlank()) {
+            String idesc = initiative.getDescription().length() > 200
+                ? initiative.getDescription().substring(0, 200) + "..."
+                : initiative.getDescription();
+            sb.append("Initiative Goal: ").append(idesc).append("\n");
+          }
+          if (initiative.getStatus() != null) {
+            sb.append("Initiative Status: ").append(initiative.getStatus()).append("\n");
+          }
+        }
+
+        // Sibling pitches in same epic
+        List<Pitch> siblings = pitchRepository.findByEpicIdNotDeleted(epic.getId());
+        List<Pitch> otherSiblings = siblings.stream()
+            .filter(p -> !p.getId().equals(pitch.getId()))
+            .collect(Collectors.toList());
+
+        if (!otherSiblings.isEmpty()) {
+          sb.append("\nOther pitches in this epic (").append(otherSiblings.size()).append(" total):\n");
+          for (Pitch sibling : otherSiblings) {
+            sb.append("  - ").append(sibling.getTitle())
+                .append(" [").append(sibling.getStatus()).append("]");
+            if (sibling.getAppetiteDays() != null) {
+              sb.append(" [Appetite: ").append(sibling.getAppetiteDays()).append(" days]");
+            }
+            if (sibling.getTeam() != null && pitch.getTeam() != null
+                && sibling.getTeam().getId().equals(pitch.getTeam().getId())) {
+              sb.append(" SAME TEAM");
+            }
+            sb.append("\n");
+          }
+        }
+      }
+
+      // Cycle-level load: how many other pitches share this cycle
+      if (pitch.getCycle() != null) {
+        List<Pitch> cyclePitches = pitchRepository.findByCycleIdNotDeleted(pitch.getCycle().getId());
+        List<Pitch> otherCyclePitches = cyclePitches.stream()
+            .filter(p -> !p.getId().equals(pitch.getId()))
+            .collect(Collectors.toList());
+
+        if (!otherCyclePitches.isEmpty()) {
+          sb.append("\n=== CYCLE LOAD ===\n");
+          sb.append("Other pitches in this cycle (").append(otherCyclePitches.size()).append("):\n");
+          for (Pitch cp : otherCyclePitches) {
+            sb.append("  - ").append(cp.getTitle())
+                .append(" [").append(cp.getStatus()).append("]");
+            if (cp.getTeam() != null && pitch.getTeam() != null
+                && cp.getTeam().getId().equals(pitch.getTeam().getId())) {
+              sb.append(" SAME TEAM");
+            }
+            sb.append("\n");
+          }
+        }
+      }
+
+      // Recent risk history for this pitch
+      List<PitchRiskHistory> history =
+          riskHistoryRepository.findByPitchIdOrderByRecordedAtDesc(pitch.getId());
+      if (history != null && !history.isEmpty()) {
+        sb.append("\n=== RISK HISTORY (last 3 snapshots) ===\n");
+        history.stream().limit(3).forEach(h -> {
+          sb.append("  ").append(h.getRecordedAt().toLocalDate())
+              .append(" — Level: ").append(h.getRiskLevel())
+              .append(", Score: ").append(h.getRiskScore()).append("/100\n");
+        });
+      }
+
+    } catch (Exception e) {
+      log.warn("Failed to build epic/initiative context for pitch {}: {}", pitch.getId(), e.getMessage());
+    }
+
+    return sb.toString();
+  }
+
   private String buildAIPrompt(Pitch pitch, List<RiskFactor> factors, double progress, double cycleProgress) {
     StringBuilder sb = new StringBuilder();
     sb.append("You are a project risk advisor for a software development team using the Shape Up methodology.\n\n");
@@ -635,11 +779,21 @@ public class RiskAnalysisService {
       }
     }
 
+    // Inject epic, initiative, cycle-load, and risk-history context
+    String broadContext = buildEpicAndInitiativeContext(pitch);
+    if (!broadContext.isBlank()) {
+      sb.append(broadContext);
+    }
+
     sb.append("\nProvide your analysis in the following format:\n");
     sb.append("INSIGHTS:\n- [insight 1]\n- [insight 2]\n- [insight 3]\n\n");
     sb.append("RECOMMENDATIONS:\n- [recommendation 1]\n- [recommendation 2]\n- [recommendation 3]\n\n");
     sb.append("CONFIDENCE: [0-100]\n\n");
-    sb.append("Keep insights actionable and specific to this pitch.");
+    sb.append("STRICT RULES:\n");
+    sb.append("- Reference sibling pitches by name if they share the same team or create competing scope.\n");
+    sb.append("- Flag initiative/roadmap pressure explicitly if the initiative is delayed or at risk.\n");
+    sb.append("- If risk history shows a worsening trend, call it out.\n");
+    sb.append("- Keep insights actionable and specific to this pitch — do not repeat generic advice.");
 
     return sb.toString();
   }

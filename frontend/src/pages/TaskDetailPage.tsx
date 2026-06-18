@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
-import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, Square, Clock } from 'lucide-react';
+import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, Square, Clock, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -232,6 +232,13 @@ export default function TaskDetailPage() {
     }
   };
 
+  const handleCopyPreviewLink = () => {
+    if (!task) return;
+    const url = `${window.location.origin}/preview/task/${task.id}`;
+    navigator.clipboard.writeText(url);
+    toast.success(t('common.linkCopied'));
+  };
+
   const handleEdit = () => {
     if (!task) return;
     
@@ -311,7 +318,7 @@ export default function TaskDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading task...</div>
+        <div className="text-muted-foreground">{t('taskDetailPage.loadingTask')}</div>
       </div>
     );
   }
@@ -343,7 +350,12 @@ export default function TaskDetailPage() {
                 {task.parentTaskId && (
                   <span className="text-muted-foreground">└─</span>
                 )}
-                <CardTitle className="text-2xl">{task.title}</CardTitle>
+                <div>
+                  <p className="text-sm font-mono text-muted-foreground mb-0.5">
+                    {task.projectKey ? `${task.projectKey}-${task.id}` : `#${task.id}`}
+                  </p>
+                  <CardTitle className="text-2xl">{task.title}</CardTitle>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={statusOptions.find(s => s.value === task.status)?.variant}>
@@ -387,6 +399,14 @@ export default function TaskDetailPage() {
                   {t('taskDetailPage.startTimer')}
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCopyPreviewLink}
+                title={t('common.copyLink')}
+              >
+                <Link2 className="h-4 w-4" />
+              </Button>
               <Button
                 variant="default"
                 size="sm"

@@ -6,7 +6,7 @@ import { hillChartApi } from '../services/hillChartApi';
 import { pitchService } from '../services/pitchService';
 import { taskService } from '../services/taskService';
 import { HillChartPoint, CreateHillChartPointRequest, UpdateHillChartPointRequest, Pitch, Task } from '../types';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { safeParseId } from '../utils/validation';
 import { HillChartSkeleton } from '../components/Skeletons';
 import { Button } from '../components/ui/button';
@@ -39,6 +39,7 @@ export const PitchHillChart: React.FC = () => {
   const { t } = useTranslation();
   const { pitchId: pitchIdParam } = useParams<{ pitchId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const pitchId = safeParseId(pitchIdParam);
   // Only use location.state pitch if its ID matches the current pitchId
   const initialPitch = location.state?.pitch?.id === pitchId ? location.state.pitch : null;
@@ -262,6 +263,7 @@ export const PitchHillChart: React.FC = () => {
             onPointUpdate={handlePositionUpdate}
             onPointEdit={handleEditPoint}
             onPointDelete={(point) => setDeleteDialog({ open: true, point })}
+            onNavigateToTask={(point) => point.linkedTaskId && navigate(`/backlog/${point.linkedTaskId}`)}
             animateEntrance
           />
         </div>
@@ -311,7 +313,12 @@ export const PitchHillChart: React.FC = () => {
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                                 {task.status}
                               </Badge>
-                              <span className="text-xs text-muted-foreground truncate">{task.title}</span>
+                              <Link
+                                to={`/backlog/${task.id}`}
+                                className="text-xs text-primary hover:underline truncate"
+                              >
+                                {task.title}
+                              </Link>
                             </div>
                           ))}
                         </div>

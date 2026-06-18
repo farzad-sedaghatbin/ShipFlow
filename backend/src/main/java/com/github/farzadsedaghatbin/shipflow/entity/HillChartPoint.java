@@ -19,10 +19,10 @@ public class HillChartPoint {
   @JoinColumn(name = "pitch_id", nullable = false)
   private Pitch pitch;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String scope;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
   // Position on hill: 0-50 is uphill (figuring things out), 50-100 is downhill

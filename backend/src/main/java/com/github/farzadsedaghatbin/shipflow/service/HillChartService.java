@@ -377,4 +377,16 @@ public class HillChartService {
         .suggestedPosition(suggestedPosition)
         .createdAt(point.getCreatedAt()).updatedAt(point.getUpdatedAt()).build();
   }
+
+  public int syncAllScopesForCycle(Long cycleId) {
+    List<HillChartPoint> scopes = hillChartPointRepository.findByPitchCycleId(cycleId);
+    int updated = 0;
+    for (HillChartPoint scope : scopes) {
+      if (scopeProgressService.syncProgressIfEnabled(scope.getId())) {
+        updated++;
+      }
+    }
+    log.info("Bulk resync for cycle {}: {} scopes updated", cycleId, updated);
+    return updated;
+  }
 }

@@ -54,8 +54,14 @@ public class VectorStoreProviderFactory {
     for (VectorStoreProvider provider : providerList) {
       VectorStoreProviderType type = provider.getProviderType();
       if (providers.containsKey(type)) {
-        log.warn("Duplicate vector store provider registration for type {}: {} will be overwritten by {}", type,
-            providers.get(type).getClass().getSimpleName(), provider.getClass().getSimpleName());
+        VectorStoreProvider existing = providers.get(type);
+        if (existing.getClass().equals(provider.getClass())) {
+          // Same implementation registered twice (e.g. picked up by two component scans) — skip silently
+          log.debug("Skipping duplicate registration of {} for type {} (same class, harmless)", provider.getClass().getSimpleName(), type);
+          continue;
+        }
+        log.warn("Conflicting vector store provider for type {}: {} will be overwritten by {}", type,
+            existing.getClass().getSimpleName(), provider.getClass().getSimpleName());
       }
       providers.put(type, provider);
       log.info("Registered vector store provider: {} -> {}", type.getConfigValue(),

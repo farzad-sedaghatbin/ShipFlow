@@ -64,10 +64,17 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final SavedViewRepository savedViewRepository;
   private final ImportJobRepository importJobRepository;
   private final KnowledgeSourceRepository knowledgeSourceRepository;
+  private final OrganizationSettingsRepository organizationSettingsRepository;
+  private final IdentityProviderRepository identityProviderRepository;
+  private final WorkflowAutomationRepository workflowAutomationRepository;
+  private final WorkflowAutomationTemplateRepository workflowAutomationTemplateRepository;
 
   @Override
   @Transactional
   public void run(String... args) {
+    // Always ensure a safe OrganizationSettings row exists (idempotent).
+    seedOrganizationSettingsIfAbsent();
+
     // Always seed the Scrum demo project independently so it appears even when
     // the rest of the sample data was already seeded by an older version.
     seedScrumDemoProjectIfAbsent();
@@ -717,6 +724,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .expectedBehavior("Idempotency key prevents duplicate processing.")
         .actualBehavior("PSP processes second request independently. Balance deducted twice.")
         .environment("iOS 17.4 / Production PSP sandbox")
+        .component("Backend")
         .severity(BugSeverity.CRITICAL)
         .status(BugStatus.IN_PROGRESS)
         .project(bankingProject)
@@ -742,6 +750,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .expectedBehavior("BiometricPrompt should appear.")
         .actualBehavior("Biometric dialog skipped silently, falls to PIN.")
         .environment("Samsung Galaxy S24 Ultra / Android 14 / One UI 6.1")
+        .component("Mobile (Android)")
         .severity(BugSeverity.MAJOR)
         .status(BugStatus.OPEN)
         .project(bankingProject)
@@ -765,6 +774,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .expectedBehavior("Amounts formatted as '1,500,000 ﷼' in Persian locale.")
         .actualBehavior("Amounts show as '1500000' with no currency symbol.")
         .environment("iOS 17.4 + Android 14 / Persian locale")
+        .component("Frontend")
         .severity(BugSeverity.MINOR)
         .status(BugStatus.OPEN)
         .project(bankingProject)
@@ -931,6 +941,8 @@ public class SampleDataInitializer implements CommandLineRunner {
       seedKnowledgeSources(adminUser);
     }
 
+    createWorkflowAutomationSampleData(bankingProject);
+
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
   }
@@ -965,6 +977,27 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build());
 
     log.info("Seeded 2 demo Knowledge Sources");
+  }
+
+  /**
+   * Ensures that at least one OrganizationSettings row exists with safe MCP defaults. Called
+   * unconditionally so that deployments upgraded from older versions (which had no such row) get
+   * the row without needing a full re-seed.
+   */
+  private void seedOrganizationSettingsIfAbsent() {
+    if (organizationSettingsRepository.findFirstByOrderByIdAsc().isPresent()) {
+      log.info("OrganizationSettings already exists — skipping seed");
+      return;
+    }
+    OrganizationSettings settings =
+        OrganizationSettings.builder()
+            .organizationName("ShipFlow Demo")
+            .mcpServerEnabled(false)
+            .mcpServerWriteEnabled(false)
+            .updatedBy("system")
+            .build();
+    organizationSettingsRepository.save(settings);
+    log.info("OrganizationSettings seeded with safe MCP defaults (server=off, write=off)");
   }
 
   /**
@@ -1792,5 +1825,102 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build());
 
     log.info("Import jobs sample data created: 5 demo entries (Jira CSV x2, Linear CSV, Linear API, Jira API failed)");
+    createSsoSampleData();
+  }
+
+  private void createSsoSampleData() {
+    if (identityProviderRepository.count() > 0) return;
+
+    identityProviderRepository.save(
+        IdentityProvider.builder()
+            .name("Demo Okta (OIDC)")
+            .providerType(ProviderType.OIDC)
+            .clientId("0oa1demo00000000000")
+            .clientSecret("demo-secret-not-real")
+            .metadataUrl("https://demo.okta.com/.well-known/openid-configuration")
+            .isEnabled(false)
+            .enforceSso(false)
+            .build());
+
+    identityProviderRepository.save(
+        IdentityProvider.builder()
+            .name("Demo Azure AD (SAML 2.0)")
+            .providerType(ProviderType.SAML2)
+            .entityId("https://sts.windows.net/demo-tenant-id/")
+            .ssoUrl("https://login.microsoftonline.com/demo-tenant-id/saml2")
+            .metadataUrl("https://login.microsoftonline.com/demo-tenant-id/federationmetadata/2007-06/federationmetadata.xml")
+            .isEnabled(false)
+            .enforceSso(false)
+            .build());
+
+    log.info("SSO sample data created: 2 demo identity providers (Okta OIDC, Azure AD SAML2) — both disabled by default");
+  }
+
+  private void createWorkflowAutomationSampleData(Project project) {
+    if (workflowAutomationRepository.count() > 0) return;
+
+    // Use the first 3 built-in templates as-is so the demo looks realistic
+    var templates = workflowAutomationTemplateRepository.findAllByOrderBySortOrderAsc();
+    if (templates.isEmpty()) return;
+
+    WorkflowAutomationTemplate notifyCompleted = templates.get(0);
+    WorkflowAutomationTemplate notifyPitchChange = templates.size() > 5 ? templates.get(5) : templates.get(0);
+    WorkflowAutomationTemplate cycleStart = templates.size() > 7 ? templates.get(7) : templates.get(0);
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Notify team on task completion")
+        .description("Fires when any task is marked done and notifies all project members.")
+        .project(project)
+        .triggerType(TriggerType.TASK_COMPLETED)
+        .actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .triggerConfig("{}")
+        .actionConfig("{\"message\":\"A task was completed: {{taskTitle}}\"}")
+        .enabled(true)
+        .template(notifyCompleted)
+        .executionCount(47L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 6, 14, 10, 22))
+        .build());
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Alert on pitch status change")
+        .description("Notifies team when a pitch moves to Shaped or Approved.")
+        .project(project)
+        .triggerType(TriggerType.PITCH_STATUS_CHANGED)
+        .actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .triggerConfig("{\"toStatus\":[\"SHAPED\",\"APPROVED\"]}")
+        .actionConfig("{\"message\":\"Pitch {{pitchTitle}} moved to {{newStatus}}.\"}")
+        .enabled(true)
+        .template(notifyPitchChange)
+        .executionCount(8L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 6, 10, 15, 0))
+        .build());
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Cycle kick-off notification")
+        .description("Sends a kick-off message when a cycle transitions to In Progress.")
+        .project(project)
+        .triggerType(TriggerType.CYCLE_STARTED)
+        .actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .triggerConfig("{}")
+        .actionConfig("{\"message\":\"Cycle {{cycleName}} has started! Let's ship it.\"}")
+        .enabled(true)
+        .template(cycleStart)
+        .executionCount(3L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 5, 28, 9, 0))
+        .build());
+
+    workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Scope creep webhook alert")
+        .description("POSTs to Slack when scope creep is detected in the active cycle.")
+        .project(project)
+        .triggerType(TriggerType.SCOPE_CREEP_DETECTED)
+        .actionType(ActionType.SEND_WEBHOOK)
+        .triggerConfig("{}")
+        .actionConfig("{\"url\":\"https://hooks.slack.com/services/demo\",\"method\":\"POST\"}")
+        .enabled(false)
+        .executionCount(0L)
+        .build());
+
+    log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
   }
 }

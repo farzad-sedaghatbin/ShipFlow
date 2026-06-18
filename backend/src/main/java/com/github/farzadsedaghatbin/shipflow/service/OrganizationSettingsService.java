@@ -8,7 +8,12 @@ import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.UpdateOrganizationSettingsRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.OrganizationSettings;
 import com.github.farzadsedaghatbin.shipflow.repository.OrganizationSettingsRepository;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +55,9 @@ public class OrganizationSettingsService {
     }
     if (request.getDefaultCooldownWeeks() != null) {
       settings.setDefaultCooldownWeeks(request.getDefaultCooldownWeeks());
+    }
+    if (request.getDefaultSprintLengthWeeks() != null) {
+      settings.setDefaultSprintLengthWeeks(request.getDefaultSprintLengthWeeks());
     }
     if (request.getRiskThresholds() != null) {
       settings.setRiskThresholdsJson(toJson(request.getRiskThresholds()));
@@ -143,12 +151,55 @@ public class OrganizationSettingsService {
       settings.setGithubAccessToken(request.getGithubAccessToken());
     }
 
+    // Notion MCP Configuration (token only, managed via MCP settings API)
+    if (request.getNotionAccessToken() != null) {
+      settings.setNotionAccessToken(
+          request.getNotionAccessToken().isBlank() ? null : request.getNotionAccessToken());
+    }
+
+    // Confluence MCP Configuration
+    if (request.getConfluenceAccessToken() != null) {
+      settings.setConfluenceAccessToken(
+          request.getConfluenceAccessToken().isBlank() ? null : request.getConfluenceAccessToken());
+    }
+    if (request.getDefaultConfluenceDomain() != null) {
+      settings.setDefaultConfluenceDomain(
+          request.getDefaultConfluenceDomain().isBlank() ? null : request.getDefaultConfluenceDomain());
+    }
+    if (request.getDefaultConfluenceSpaceKey() != null) {
+      settings.setDefaultConfluenceSpaceKey(
+          request.getDefaultConfluenceSpaceKey().isBlank() ? null : request.getDefaultConfluenceSpaceKey());
+    }
+
+    // SharePoint Graph API credentials
+    if (request.getSharepointTenantId() != null) {
+      settings.setSharepointTenantId(
+          request.getSharepointTenantId().isBlank() ? null : request.getSharepointTenantId());
+    }
+    if (request.getSharepointClientId() != null) {
+      settings.setSharepointClientId(
+          request.getSharepointClientId().isBlank() ? null : request.getSharepointClientId());
+    }
+    if (request.getSharepointClientSecret() != null) {
+      settings.setSharepointClientSecret(
+          request.getSharepointClientSecret().isBlank() ? null : request.getSharepointClientSecret());
+    }
+    if (request.getSharepointSiteUrl() != null) {
+      settings.setSharepointSiteUrl(
+          request.getSharepointSiteUrl().isBlank() ? null : request.getSharepointSiteUrl());
+    }
+
     // MCP Server runtime toggle (null = leave unchanged)
     if (request.getMcpServerEnabled() != null) {
       settings.setMcpServerEnabled(request.getMcpServerEnabled());
     }
     if (request.getMcpServerWriteEnabled() != null) {
       settings.setMcpServerWriteEnabled(request.getMcpServerWriteEnabled());
+    }
+
+    // SCIM toggle (null = leave unchanged)
+    if (request.getScimEnabled() != null) {
+      settings.setScimEnabled(request.getScimEnabled());
     }
 
     settings.setUpdatedBy(username);
@@ -188,6 +239,85 @@ public class OrganizationSettingsService {
         .orElse(null);
   }
 
+  /**
+   * Get Notion access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Notion access token or null if not configured
+   */
+  public String getNotionAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getNotionAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get Confluence access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Confluence access token or null if not configured
+   */
+  public String getConfluenceAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getConfluenceAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get the default Confluence space key for MCP integration.
+   * @return the default Confluence space key or null if not configured
+   */
+  public String getConfluenceSpaceKey() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getDefaultConfluenceSpaceKey)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint tenant ID for Graph API integration.
+   * @return the tenant ID or null if not configured
+   */
+  public String getSharepointTenantId() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointTenantId)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint client ID for Graph API integration.
+   * @return the client ID or null if not configured
+   */
+  public String getSharepointClientId() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointClientId)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint client secret for Graph API integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext secret.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the client secret or null if not configured
+   */
+  public String getSharepointClientSecret() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointClientSecret)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint site URL for Graph API integration.
+   * @return the site URL or null if not configured
+   */
+  public String getSharepointSiteUrl() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointSiteUrl)
+        .orElse(null);
+  }
+
   /** Reset settings to defaults. */
   @Transactional
   public OrganizationSettingsDTO resetToDefaults(String username) {
@@ -195,6 +325,62 @@ public class OrganizationSettingsService {
     OrganizationSettings settings = createDefaultSettings(username);
     log.info("Organization settings reset to defaults by {}", username);
     return toDTO(settings);
+  }
+
+  /**
+   * Generate a new SCIM bearer token. Stores the SHA-256 hash in the database and returns the raw
+   * token once — callers must persist it; it cannot be recovered later.
+   *
+   * @param username admin who triggered the generation (for audit)
+   * @return the raw Base64URL-encoded bearer token (shown once)
+   */
+  @Transactional
+  public String generateScimToken(String username) {
+    OrganizationSettings settings = settingsRepository.findFirstByOrderByIdAsc()
+        .orElseGet(() -> createDefaultSettings(username));
+
+    // Generate 32 cryptographically random bytes → Base64URL string
+    SecureRandom rng = new SecureRandom();
+    byte[] rawBytes = new byte[32];
+    rng.nextBytes(rawBytes);
+    String rawToken = Base64.getUrlEncoder().withoutPadding().encodeToString(rawBytes);
+
+    // Store only the SHA-256 hash
+    settings.setScimTokenHash(sha256Hex(rawToken));
+    settings.setScimEnabled(true);
+    settings.setUpdatedBy(username);
+    settings.setUpdatedAt(LocalDateTime.now());
+    settingsRepository.save(settings);
+
+    log.info("SCIM bearer token regenerated by {}", username);
+    return rawToken;
+  }
+
+  /**
+   * Verify a raw SCIM bearer token against the stored hash. Returns {@code true} if SCIM is
+   * enabled and the token matches.
+   */
+  public boolean verifyScimToken(String rawToken) {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(s -> s.isScimEnabled()
+            && s.getScimTokenHash() != null
+            && s.getScimTokenHash().equals(sha256Hex(rawToken)))
+        .orElse(false);
+  }
+
+  /** Compute a lowercase hex-encoded SHA-256 digest. */
+  private static String sha256Hex(String input) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+      StringBuilder sb = new StringBuilder(hash.length * 2);
+      for (byte b : hash) {
+        sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("SHA-256 not available", e);
+    }
   }
 
   /** Create default organization settings. */
@@ -259,7 +445,7 @@ public class OrganizationSettingsService {
     List<OrganizationSettingsDTO.MeetingTypeConfig> defaultMeetingTypes = createDefaultMeetingTypes();
 
     OrganizationSettings settings = OrganizationSettings.builder().organizationName("My Organization")
-        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
+        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).defaultSprintLengthWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
         .riskWeightsJson(toJson(defaultRiskWeights)).taskCategoriesJson(toJson(defaultTaskCategories))
         .pitchCategoriesJson(toJson(defaultPitchCategories)).colorsJson(toJson(defaultColors))
         .bugStatusesJson(toJson(defaultBugStatuses)).severityLevelsJson(toJson(defaultSeverityLevels))
@@ -434,6 +620,7 @@ public class OrganizationSettingsService {
     return OrganizationSettingsDTO.builder().id(entity.getId()).organizationName(entity.getOrganizationName())
         .defaultCycleLengthWeeks(entity.getDefaultCycleLengthWeeks())
         .defaultCooldownWeeks(entity.getDefaultCooldownWeeks())
+        .defaultSprintLengthWeeks(entity.getDefaultSprintLengthWeeks())
         .riskThresholds(fromJson(entity.getRiskThresholdsJson(),
             new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {
             }))
@@ -467,12 +654,22 @@ public class OrganizationSettingsService {
         // MCP Configuration (tokens not exposed, only presence flags)
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
         .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
+        .hasNotionAccessToken(entity.getNotionAccessToken() != null && !entity.getNotionAccessToken().isBlank())
+        .hasConfluenceAccessToken(entity.getConfluenceAccessToken() != null && !entity.getConfluenceAccessToken().isBlank())
+        .defaultConfluenceDomain(entity.getDefaultConfluenceDomain())
+        .defaultConfluenceSpaceKey(entity.getDefaultConfluenceSpaceKey())
+        .hasSharepointClientSecret(entity.getSharepointClientSecret() != null && !entity.getSharepointClientSecret().isBlank())
+        .sharepointTenantId(entity.getSharepointTenantId())
+        .sharepointClientId(entity.getSharepointClientId())
+        .sharepointSiteUrl(entity.getSharepointSiteUrl())
         // MCP Server runtime toggle — effective value: DB override if set, else env default.
         // Write mode is only effective when the server itself is enabled, mirroring
         // McpServerSettingsService.isWriteEnabled() so the DTO never reports a misleading
         // "write enabled" while the server is off.
         .mcpServerEnabled(resolveMcpEnabled(entity))
         .mcpServerWriteEnabled(resolveMcpEnabled(entity) && resolveMcpWriteEnabled(entity))
+        // SCIM 2.0 (token hash never exposed — only the enabled flag)
+        .scimEnabled(entity.isScimEnabled())
         .updatedAt(entity.getUpdatedAt()).updatedBy(entity.getUpdatedBy()).build();
   }
 

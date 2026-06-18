@@ -182,6 +182,10 @@ export function useBacklogPage() {
     if (statusFilter.length > 0) result = result.filter((t) => excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status));
     if (priorityFilter.length > 0) result = result.filter((t) => excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority));
     if (assigneeFilter.length > 0) result = result.filter((t) => excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0));
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
+    }
     return applyDependencyFilter(result);
   };
 
@@ -197,7 +201,7 @@ export function useBacklogPage() {
         let filtered = applyCommonFilters(response?.data?.content || []);
         if (tabValue === 'my' && user?.personId) filtered = filtered.filter((t) => t.assigneeId === user.personId);
         setTasks(filtered);
-        setTotalElements(response?.data?.totalElements || 0);
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } catch (error) { console.error('Failed to load project tasks:', error); setTasks([]); setTotalElements(0); }
       finally { clearTimeout(timeout); setTasksLoading(false); }
       return;
@@ -208,28 +212,45 @@ export function useBacklogPage() {
     const timeout = setTimeout(() => setTasksLoading(false), 10000);
     try {
       let response: any;
+
+      // Server-side search: when query ≥ 3 chars, hit /tasks/search then filter locally
+      if (searchQuery.trim().length >= 3) {
+        response = await taskService.search(searchQuery.trim(), 0, 500, sortBy, sortOrder);
+        let results: Task[] = response?.data?.content || [];
+        if (selectedCycle !== 'all') results = results.filter((t) => t.cycleId === selectedCycle);
+        results = results.filter((t) => (t.category || 'PITCH_SCOPE') === activeCategory);
+        if (statusFilter.length > 0) results = results.filter((t) => excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status));
+        if (priorityFilter.length > 0) results = results.filter((t) => excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority));
+        if (assigneeFilter.length > 0) results = results.filter((t) => excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0));
+        if (tabValue === 'my' && user?.personId) results = results.filter((t) => t.assigneeId === user.personId);
+        results = applyDependencyFilter(results);
+        setTasks(results);
+        setTotalElements(results.length);
+        return;
+      }
+
       if (tabValue === 'my') {
         if (selectedCycle === 'all') {
           response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder);
         } else {
           response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
         }
-        const filtered = (response?.data?.content || []).filter((t: Task) => (t.category || 'PITCH_SCOPE') === activeCategory);
+        const filtered = applyCommonFilters((response?.data?.content || []).filter((t: Task) => (t.category || 'PITCH_SCOPE') === activeCategory));
         setTasks(filtered);
-        setTotalElements(selectedCycle === 'all' ? (response?.data?.totalElements || 0) : filtered.length);
+        setTotalElements(selectedCycle === 'all' ? (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0) : filtered.length);
       } else if (selectedCycle === 'all') {
         response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder);
         const byCat = (response?.data?.content || []).filter((t: Task) => (t.category || 'PITCH_SCOPE') === activeCategory);
         setTasks(applyCommonFilters(byCat));
-        setTotalElements(response?.data?.totalElements || 0);
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
         response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, activeCategory, excludeMode, page, rowsPerPage, sortBy, sortOrder);
-        setTasks(applyDependencyFilter(response?.data?.content || []));
-        setTotalElements(response?.data?.totalElements || 0);
+        setTasks(applyCommonFilters(response?.data?.content || []));
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else {
         response = await taskService.getByCycleIdAndCategory(selectedCycle, activeCategory, page, rowsPerPage, sortBy, sortOrder);
-        setTasks(applyDependencyFilter(response?.data?.content || []));
-        setTotalElements(response?.data?.totalElements || 0);
+        setTasks(applyCommonFilters(response?.data?.content || []));
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       }
     } catch (error) { console.error('Failed to load tasks:', error); setTasks([]); setTotalElements(0); }
     finally { clearTimeout(timeout); setTasksLoading(false); }
@@ -276,6 +297,13 @@ export function useBacklogPage() {
   const handleTogglePriorityFilter = (priority: TaskPriority) => {
     setPriorityFilter(prev =>
       prev.includes(priority) ? prev.filter(p => p !== priority) : [...prev, priority],
+    );
+    setPage(0);
+  };
+
+  const handleToggleAssigneeFilter = (personId: number) => {
+    setAssigneeFilter(prev =>
+      prev.includes(personId) ? prev.filter(id => id !== personId) : [...prev, personId],
     );
     setPage(0);
   };
@@ -516,6 +544,7 @@ export function useBacklogPage() {
     handleToggleColumn,
     handleToggleStatusFilter,
     handleTogglePriorityFilter,
+    handleToggleAssigneeFilter,
     handlePitchChange,
     handleCategoryChange,
     handleOpenDialog,

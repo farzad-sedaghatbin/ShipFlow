@@ -32,6 +32,7 @@ public class BugReportService {
   private final PersonRepository personRepository;
   private final TaskRepository taskRepository;
   private final ProjectRepository projectRepository;
+  private final ReleaseRepository releaseRepository;
 
   @Value("${app.qa.test-management.enabled:true}")
   private boolean testManagementEnabled;
@@ -47,7 +48,8 @@ public class BugReportService {
     BugReport bugReport = BugReport.builder().bugKey(generateBugKey()).title(request.getTitle())
         .description(request.getDescription()).stepsToReproduce(request.getStepsToReproduce())
         .expectedBehavior(request.getExpectedBehavior()).actualBehavior(request.getActualBehavior())
-        .environment(request.getEnvironment()).severity(request.getSeverity())
+        .environment(request.getEnvironment()).component(request.getComponent())
+        .severity(request.getSeverity())
         .status(request.getStatus() != null ? request.getStatus() : BugStatus.OPEN)
         .tags(request.getTags() != null ? String.join(",", request.getTags()) : null)
         .attachments(request.getAttachments()).reporter(reporter).build();
@@ -107,6 +109,12 @@ public class BugReportService {
       bugReport.setAssignee(assignee);
     }
 
+    if (request.getTargetReleaseId() != null) {
+      com.github.farzadsedaghatbin.shipflow.entity.Release release = releaseRepository.findById(request.getTargetReleaseId())
+          .orElseThrow(() -> new IllegalArgumentException("Release not found: " + request.getTargetReleaseId()));
+      bugReport.setTargetRelease(release);
+    }
+
     bugReport = bugReportRepository.save(bugReport);
     log.info("Created bug report: {} by user: {}", bugReport.getBugKey(), userId);
 
@@ -133,6 +141,8 @@ public class BugReportService {
       bugReport.setActualBehavior(request.getActualBehavior());
     if (request.getEnvironment() != null)
       bugReport.setEnvironment(request.getEnvironment());
+    if (request.getComponent() != null)
+      bugReport.setComponent(request.getComponent());
     if (request.getSeverity() != null)
       bugReport.setSeverity(request.getSeverity());
     if (request.getTags() != null)
@@ -188,6 +198,18 @@ public class BugReportService {
       Person assignee = personRepository.findById(request.getAssigneeId())
           .orElseThrow(() -> new IllegalArgumentException("Assignee not found: " + request.getAssigneeId()));
       bugReport.setAssignee(assignee);
+    }
+
+    if (request.getTargetReleaseId() != null) {
+      com.github.farzadsedaghatbin.shipflow.entity.Release release = releaseRepository.findById(request.getTargetReleaseId())
+          .orElseThrow(() -> new IllegalArgumentException("Release not found: " + request.getTargetReleaseId()));
+      bugReport.setTargetRelease(release);
+    }
+
+    if (request.getFixedInReleaseId() != null) {
+      com.github.farzadsedaghatbin.shipflow.entity.Release release = releaseRepository.findById(request.getFixedInReleaseId())
+          .orElseThrow(() -> new IllegalArgumentException("Release not found: " + request.getFixedInReleaseId()));
+      bugReport.setFixedInRelease(release);
     }
 
     bugReport = bugReportRepository.save(bugReport);
@@ -400,10 +422,12 @@ public class BugReportService {
 
   /** Convert entity to DTO. */
   public BugReportDTO toDTO(BugReport bugReport) {
+    boolean isSlipped = bugReport.getTargetRelease() != null && bugReport.getFixedInRelease() != null
+        && !bugReport.getTargetRelease().getId().equals(bugReport.getFixedInRelease().getId());
     return BugReportDTO.builder().id(bugReport.getId()).bugKey(bugReport.getBugKey()).title(bugReport.getTitle())
         .description(bugReport.getDescription()).stepsToReproduce(bugReport.getStepsToReproduce())
         .expectedBehavior(bugReport.getExpectedBehavior()).actualBehavior(bugReport.getActualBehavior())
-        .environment(bugReport.getEnvironment())
+        .environment(bugReport.getEnvironment()).component(bugReport.getComponent())
         .projectId(bugReport.getProject() != null ? bugReport.getProject().getId() : null)
         .projectName(bugReport.getProject() != null ? bugReport.getProject().getName() : null)
         .projectKey(bugReport.getProject() != null ? bugReport.getProject().getProjectKey() : null)
@@ -424,6 +448,14 @@ public class BugReportService {
         .assigneeId(bugReport.getAssignee() != null ? bugReport.getAssignee().getId() : null)
         .assigneeName(bugReport.getAssignee() != null ? bugReport.getAssignee().getName() : null)
         .resolution(bugReport.getResolution()).resolvedAt(bugReport.getResolvedAt())
-        .createdAt(bugReport.getCreatedAt()).updatedAt(bugReport.getUpdatedAt()).build();
+        .createdAt(bugReport.getCreatedAt()).updatedAt(bugReport.getUpdatedAt())
+        .targetReleaseId(bugReport.getTargetRelease() != null ? bugReport.getTargetRelease().getId() : null)
+        .targetReleaseName(bugReport.getTargetRelease() != null ? bugReport.getTargetRelease().getName() : null)
+        .targetReleaseVersion(bugReport.getTargetRelease() != null ? bugReport.getTargetRelease().getVersion() : null)
+        .fixedInReleaseId(bugReport.getFixedInRelease() != null ? bugReport.getFixedInRelease().getId() : null)
+        .fixedInReleaseName(bugReport.getFixedInRelease() != null ? bugReport.getFixedInRelease().getName() : null)
+        .fixedInReleaseVersion(bugReport.getFixedInRelease() != null ? bugReport.getFixedInRelease().getVersion() : null)
+        .isSlipped(isSlipped)
+        .build();
   }
 }

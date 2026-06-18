@@ -10,16 +10,18 @@ import {
   ChevronUp,
   Unplug,
   Plug,
+  FileSpreadsheet,
 } from 'lucide-react';
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { cn } from '@/lib/utils';
 import { importService } from '../services/importService';
-import { ImportJobDTO, JiraConnectionStatus, JiraProject, LinearConnectionStatus, LinearTeam } from '../types';
+import { pitchService } from '../services/pitchService';
+import { ImportJobDTO, JiraConnectionStatus, JiraProject, LinearConnectionStatus, LinearTeam, Pitch, ZephyrImportReportDTO } from '../types';
 import { useToast } from '../contexts';
 
 type Step = 1 | 2 | 3;
-type TabSource = 'csv' | 'linear' | 'jira';
+type TabSource = 'csv' | 'linear' | 'jira' | 'zephyr';
 
 const FORMAT_OPTIONS = [
   { value: 'auto', labelKey: 'importPage.formatAuto' },
@@ -830,6 +832,429 @@ function JiraTab() {
   );
 }
 
+// ── Zephyr Import Report ──────────────────────────────────────────────────────
+function ZephyrReportView({
+  report,
+  onReset,
+}: {
+  report: ZephyrImportReportDTO;
+  onReset: () => void;
+}) {
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+
+  const [showFailuresOnly, setShowFailuresOnly] = useState(false);
+  const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [pitchesLoading, setPitchesLoading] = useState(false);
+  const [selectedPitchId, setSelectedPitchId] = useState<string>('');
+  const [taskIdInput, setTaskIdInput] = useState('');
+  const [linking, setLinking] = useState(false);
+  const [linkResult, setLinkResult] = useState<{ linked: number; pitchName?: string } | null>(null);
+  const [linkError, setLinkError] = useState('');
+
+  // Load pitches for the link dropdown
+  useEffect(() => {
+    setPitchesLoading(true);
+    pitchService
+      .getAll()
+      .then((res) => setPitches(res.data))
+      .catch(() => setPitches([]))
+      .finally(() => setPitchesLoading(false));
+  }, []);
+
+  const displayedRows =
+    showFailuresOnly ? report.rows.filter((r) => !r.success) : report.rows;
+  const hasMany = report.rows.length > 50;
+
+  async function handleLink() {
+    const pitchIdNum = selectedPitchId ? Number(selectedPitchId) : undefined;
+    const taskIdNum = taskIdInput.trim() ? Number(taskIdInput.trim()) : undefined;
+    if (!pitchIdNum && !taskIdNum) return;
+    setLinking(true);
+    setLinkError('');
+    try {
+      const res = await importService.linkImportedTestCases(
+        report.importJobId,
+        pitchIdNum,
+        taskIdNum
+      );
+      const pitchName = pitches.find((p) => p.id === pitchIdNum)?.title;
+      setLinkResult({ linked: res.linked, pitchName });
+      showToast(t('importPage.zephyr.linkSuccess', { count: res.linked }), 'success');
+    } catch {
+      setLinkError(t('importPage.zephyr.linkError'));
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Summary header */}
+      <div className="flex flex-col items-center gap-3 py-4 text-center">
+        {report.status === 'COMPLETED' ? (
+          <CheckCircle2 className="h-14 w-14 text-green-500" />
+        ) : (
+          <XCircle className="h-14 w-14 text-destructive" />
+        )}
+        <h2 className="text-xl font-bold text-foreground">
+          {t('importPage.zephyr.reportTitle')}
+        </h2>
+      </div>
+
+      {/* Stat chips */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { labelKey: 'importPage.totalRows', value: report.totalRows },
+          { labelKey: 'importPage.imported', value: report.importedRows },
+          { labelKey: 'importPage.failed', value: report.failedRows },
+        ].map(({ labelKey, value }) => (
+          <div
+            key={labelKey}
+            className="flex flex-col items-center gap-1 rounded-lg border border-border bg-card p-4"
+          >
+            <span className="text-2xl font-bold text-foreground">{value}</span>
+            <span className="text-xs text-muted-foreground">{t(labelKey)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Row results table */}
+      {report.rows.length > 0 && (
+        <div className="space-y-2">
+          {hasMany && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowFailuresOnly((prev) => !prev)}
+                className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+              >
+                {showFailuresOnly
+                  ? t('importPage.zephyr.showAll')
+                  : t('importPage.zephyr.showFailuresOnly')}
+              </button>
+            </div>
+          )}
+          <div className="overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50">
+                <tr>
+                  <th className="px-3 py-2 text-start text-xs font-semibold uppercase tracking-wide text-muted-foreground w-12">
+                    {t('importPage.zephyr.rowNum')}
+                  </th>
+                  <th className="px-3 py-2 text-start text-xs font-semibold uppercase tracking-wide text-muted-foreground w-24">
+                    {t('importPage.zephyr.key')}
+                  </th>
+                  <th className="px-3 py-2 text-start text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t('importPage.zephyr.testCaseTitle')}
+                  </th>
+                  <th className="px-3 py-2 text-start text-xs font-semibold uppercase tracking-wide text-muted-foreground w-36">
+                    {t('importPage.zephyr.rowStatus')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {displayedRows.map((row) => (
+                  <tr
+                    key={row.rowNumber}
+                    className={cn(
+                      !row.success && 'bg-red-50 dark:bg-red-950/20'
+                    )}
+                  >
+                    <td className="px-3 py-2 text-muted-foreground tabular-nums">
+                      {row.rowNumber}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-foreground">
+                      {row.zephyrKey}
+                    </td>
+                    <td className="px-3 py-2 text-foreground">{row.title}</td>
+                    <td className="px-3 py-2">
+                      {row.success ? (
+                        <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                          <span className="text-xs font-medium">
+                            {t('importPage.zephyr.rowSuccess')}
+                          </span>
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-1 text-destructive"
+                          title={row.error ?? undefined}
+                        >
+                          <XCircle className="h-3.5 w-3.5 shrink-0" />
+                          <span className="max-w-[10rem] truncate text-xs font-medium">
+                            {row.error ?? '—'}
+                          </span>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Post-import linking section */}
+      {report.importedRows > 0 && (
+        <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+          <p className="text-sm font-semibold text-foreground">
+            {t('importPage.zephyr.linkSection')}
+          </p>
+
+          {/* Pitch dropdown */}
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-muted-foreground">
+              {t('importPage.zephyr.selectPitch')}
+            </label>
+            <SelectPrimitive.Root
+              value={selectedPitchId}
+              onValueChange={setSelectedPitchId}
+              disabled={pitchesLoading || linking || !!linkResult}
+            >
+              <SelectPrimitive.Trigger className="flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60">
+                <SelectPrimitive.Value
+                  placeholder={
+                    pitchesLoading
+                      ? t('common.loading')
+                      : t('importPage.zephyr.selectPitch')
+                  }
+                />
+                <SelectPrimitive.Icon>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </SelectPrimitive.Icon>
+              </SelectPrimitive.Trigger>
+              <SelectPrimitive.Portal>
+                <SelectPrimitive.Content
+                  position="popper"
+                  className="z-50 max-h-60 w-full min-w-[var(--radix-select-trigger-width)] overflow-auto rounded-md border border-border bg-popover shadow-md"
+                >
+                  <SelectPrimitive.Viewport className="p-1">
+                    <SelectPrimitive.Item
+                      value=""
+                      className="flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm text-muted-foreground outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                    >
+                      <SelectPrimitive.ItemText>
+                        {t('importPage.zephyr.selectPitch')}
+                      </SelectPrimitive.ItemText>
+                    </SelectPrimitive.Item>
+                    {pitches.map((pitch) => (
+                      <SelectPrimitive.Item
+                        key={pitch.id}
+                        value={String(pitch.id)}
+                        className="flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                      >
+                        <SelectPrimitive.ItemText>{pitch.title}</SelectPrimitive.ItemText>
+                      </SelectPrimitive.Item>
+                    ))}
+                  </SelectPrimitive.Viewport>
+                </SelectPrimitive.Content>
+              </SelectPrimitive.Portal>
+            </SelectPrimitive.Root>
+          </div>
+
+          {/* Task ID input */}
+          <div className="space-y-1">
+            <label htmlFor="zephyrLinkTaskId" className="block text-xs font-medium text-muted-foreground">
+              {t('importPage.zephyr.taskIdLabel')}
+            </label>
+            <input
+              id="zephyrLinkTaskId"
+              type="number"
+              min={1}
+              value={taskIdInput}
+              onChange={(e) => setTaskIdInput(e.target.value)}
+              disabled={linking || !!linkResult}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </div>
+
+          {/* Link result / error feedback */}
+          {linkResult && (
+            <div className="flex items-center gap-2 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950/30 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>
+                {t('importPage.zephyr.linkSuccess', { count: linkResult.linked })}
+                {linkResult.pitchName && ` — ${linkResult.pitchName}`}
+              </span>
+            </div>
+          )}
+          {linkError && (
+            <p className="text-xs text-destructive">{linkError}</p>
+          )}
+
+          {/* Link button */}
+          {!linkResult && (
+            <button
+              type="button"
+              onClick={handleLink}
+              disabled={linking || (!selectedPitchId && !taskIdInput.trim())}
+              className={cn(
+                'flex w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors',
+                linking || (!selectedPitchId && !taskIdInput.trim())
+                  ? 'cursor-not-allowed bg-muted text-muted-foreground'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
+              )}
+            >
+              {linking && <Loader2 className="h-4 w-4 animate-spin" />}
+              {linking
+                ? t('importPage.zephyr.linking')
+                : t('importPage.zephyr.linkButton', { count: report.importedRows })}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Import another button */}
+      <button
+        type="button"
+        onClick={onReset}
+        className="w-full rounded-md border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-accent transition-colors"
+      >
+        {t('importPage.zephyrImportAnother')}
+      </button>
+    </div>
+  );
+}
+
+// ── Zephyr Tab ────────────────────────────────────────────────────────────────
+function ZephyrTab() {
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [fileError, setFileError] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState<ZephyrImportReportDTO | null>(null);
+
+  function validateAndSetFile(f: File) {
+    if (!f.name.endsWith('.xlsx')) {
+      setFileError(t('importPage.zephyrWrongFormat'));
+      setFile(null);
+    } else {
+      setFileError('');
+      setFile(f);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) validateAndSetFile(dropped);
+  }
+
+  function handleDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(true);
+  }
+
+  function handleDragLeave() {
+    setDragActive(false);
+  }
+
+  function handleFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (selected) validateAndSetFile(selected);
+  }
+
+  async function handleImport() {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const report = await importService.importFromZephyr(file);
+      setImportReport(report);
+    } catch {
+      showToast(t('importPage.importError'), 'error');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  function handleReset() {
+    setFile(null);
+    setFileError('');
+    setImportReport(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  if (importReport) {
+    return <ZephyrReportView report={importReport} onReset={handleReset} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Heading */}
+      <div>
+        <h2 className="text-base font-semibold text-foreground">{t('importPage.zephyrHeading')}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t('importPage.zephyrDescription')}</p>
+      </div>
+
+      {/* Drop Zone */}
+      <div>
+        <input
+          type="file"
+          accept=".xlsx"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleFileInputChange}
+        />
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={cn(
+            'flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 transition-colors',
+            dragActive
+              ? 'border-primary bg-primary/5'
+              : 'border-border hover:border-primary/60 hover:bg-accent/40'
+          )}
+        >
+          <FileSpreadsheet
+            className={cn(
+              'h-10 w-10 transition-colors',
+              dragActive ? 'text-primary' : 'text-muted-foreground'
+            )}
+          />
+          {file ? (
+            <p className="text-sm font-medium text-foreground">
+              {t('importPage.selectedFile', { name: file.name })}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {t('importPage.zephyrDropzoneHint')}
+            </p>
+          )}
+        </div>
+        {fileError && <p className="mt-1 text-xs text-destructive">{fileError}</p>}
+      </div>
+
+      {/* Import button */}
+      <button
+        type="button"
+        onClick={handleImport}
+        disabled={!file || importing}
+        className={cn(
+          'flex w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors',
+          !file || importing
+            ? 'cursor-not-allowed bg-muted text-muted-foreground'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+        )}
+      >
+        {importing && <Loader2 className="h-4 w-4 animate-spin" />}
+        {importing ? t('importPage.zephyrImporting') : t('importPage.zephyrImportButton')}
+      </button>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function ImportPage() {
   const { t } = useTranslation();
@@ -841,6 +1266,7 @@ export default function ImportPage() {
     const tab = params.get('tab');
     if (tab === 'linear') return 'linear';
     if (tab === 'jira') return 'jira';
+    if (tab === 'zephyr') return 'zephyr';
     return 'csv';
   });
 
@@ -970,22 +1396,24 @@ export default function ImportPage() {
       <div className="mb-8 flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
         {(
           [
-            { id: 'csv' as const, labelKey: 'importPage.tabCsv' },
-            { id: 'linear' as const, labelKey: 'importPage.tabLinear' },
-            { id: 'jira' as const, labelKey: 'importPage.tabJira' },
+            { id: 'csv' as const, labelKey: 'importPage.tabCsv', icon: null },
+            { id: 'linear' as const, labelKey: 'importPage.tabLinear', icon: null },
+            { id: 'jira' as const, labelKey: 'importPage.tabJira', icon: null },
+            { id: 'zephyr' as const, labelKey: 'importPage.zephyrTitle', icon: FileSpreadsheet },
           ] as const
-        ).map(({ id, labelKey }) => (
+        ).map(({ id, labelKey, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
             className={cn(
-              'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors',
+              'flex flex-1 items-center justify-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-colors',
               activeTab === id
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
+            {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
             {t(labelKey)}
           </button>
         ))}
@@ -1208,6 +1636,9 @@ export default function ImportPage() {
 
       {/* ── Jira tab ─────────────────────────────────────────────────────── */}
       {activeTab === 'jira' && <JiraTab />}
+
+      {/* ── Zephyr tab ───────────────────────────────────────────────────── */}
+      {activeTab === 'zephyr' && <ZephyrTab />}
     </div>
   );
 }

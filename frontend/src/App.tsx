@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -14,6 +14,7 @@ import { isRTLLanguage } from './i18n';
 // Public pages
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
+const SsoCallbackPage = lazy(() => import('./pages/SsoCallbackPage'));
 const ReleaseNotes = lazy(() => import('./pages/ReleaseNotes'));
 const CompetitorsComparison = lazy(() => import('./pages/CompetitorsComparison'));
 const PublicRoadmap = lazy(() => import('./pages/PublicRoadmap'));
@@ -120,6 +121,9 @@ const ImportPage = lazy(() => import('./pages/ImportPage'));
 // Knowledge Center
 const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter'));
 
+// Workflow Automations
+const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
+
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
 const GettingStartedGuide = lazy(() => import('./pages/guides/GettingStartedGuide'));
@@ -142,6 +146,7 @@ const IdeaToRoadmapGuide = lazy(() => import('./pages/guides/IdeaToRoadmapGuide'
 const ImportGuide = lazy(() => import('./pages/guides/ImportGuide'));
 const ScrumModeGuide = lazy(() => import('./pages/guides/ScrumModeGuide'));
 const MigrationGuide = lazy(() => import('./pages/guides/MigrationGuide'));
+const WorkflowAutomationsGuide = lazy(() => import('./pages/guides/WorkflowAutomationsGuide'));
 
 // ── Suspense fallback ─────────────────────────────────────────────────────────
 function PageLoader() {
@@ -150,6 +155,18 @@ function PageLoader() {
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
     </div>
   );
+}
+
+/** Redirect /tasks/:taskId → /backlog/:taskId (legacy notification actionUrls) */
+function TaskToBacklogRedirect() {
+  const { taskId } = useParams<{ taskId: string }>();
+  return <Navigate to={`/backlog/${taskId}`} replace />;
+}
+
+/** Redirect /bugs/:bugId → /qa/bug-reports/:bugId (legacy notification actionUrls) */
+function BugToBugReportRedirect() {
+  const { bugId } = useParams<{ bugId: string }>();
+  return <Navigate to={`/qa/bug-reports/${bugId}`} replace />;
 }
 
 function App() {
@@ -191,6 +208,8 @@ function App() {
         <Route path="/blog" element={<Blog />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/login" element={<Login />} />
+        {/* SSO callback — processes token from IdP redirect, no auth required */}
+        <Route path="/sso-callback" element={<SsoCallbackPage />} />
         <Route
           path="/*"
           element={
@@ -248,6 +267,8 @@ function App() {
                         element={<Navigate to="/backlog?category=DEBT_IMPROVEMENT" replace />}
                       />
                       <Route path="tasks" element={<Navigate to="/backlog" replace />} />
+                      <Route path="tasks/:taskId" element={<TaskToBacklogRedirect />} />
+                      <Route path="bugs/:bugId" element={<BugToBugReportRedirect />} />
 
                       {/* Time Tracking */}
                       <Route path="time/logs" element={<WorkLogsPage />} />
@@ -261,6 +282,9 @@ function App() {
                       {/* Organisation */}
                       <Route path="people" element={<People />} />
                       <Route path="teams" element={<Teams />} />
+
+                      {/* Workflow Automations */}
+                      <Route path="automations" element={<AutomationsPage />} />
 
                       {/* User Profile */}
                       <Route path="profile" element={<Profile />} />
@@ -352,9 +376,20 @@ function App() {
                       <Route path="help/import" element={<ImportGuide />} />
                       <Route path="help/scrum-mode" element={<ScrumModeGuide />} />
                       <Route path="help/migration" element={<MigrationGuide />} />
+                      <Route path="help/automations" element={<WorkflowAutomationsGuide />} />
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                      {/*
+                       * S37a deep-link routing review (2026-06-06):
+                       * All detail routes (/pitches/:id, /backlog/:taskId, /cycles/:cycleId, etc.)
+                       * are registered as flat top-level paths — they do NOT depend on a parent
+                       * route loader. ProjectContext is bootstrap-loaded from localStorage on mount
+                       * and re-hydrated from the API, so a fresh deep-link load finds the stored
+                       * project within the first render. Pages that require a project (RoadmapPage,
+                       * BacklogPage) guard with <ProjectRequiredDialog> rather than redirecting,
+                       * keeping the URL stable. No routing changes required.
+                       */}
                     </Routes>
                   </Layout>
                 </TourProvider>

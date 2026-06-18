@@ -1,31 +1,44 @@
 // Pagination
+// Spring Boot 3.3+ with PageSerializationMode.VIA_DTO puts totalElements/totalPages
+// inside a nested `page` object. All fields except `content` and `page` are optional
+// to remain compatible with both the legacy flat format and VIA_DTO format.
 export interface Page<T> {
   content: T[];
-  pageable: {
+  // Spring Data VIA_DTO format (Boot 3.3+ / Spring Data 3.3+)
+  page?: {
+    size: number;
+    number: number;
+    totalElements: number;
+    totalPages: number;
+  };
+  // Legacy flat fields (Boot ≤ 3.2, kept optional for backward compat)
+  pageable?: {
     pageNumber: number;
     pageSize: number;
-    sort: {
-      sorted: boolean;
-      unsorted: boolean;
-      empty: boolean;
-    };
+    sort: { sorted: boolean; unsorted: boolean; empty: boolean };
     offset: number;
     paged: boolean;
     unpaged: boolean;
   };
-  totalPages: number;
-  totalElements: number;
-  last: boolean;
-  size: number;
-  number: number;
-  sort: {
-    sorted: boolean;
-    unsorted: boolean;
-    empty: boolean;
-  };
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
+  totalPages?: number;
+  totalElements?: number;
+  last?: boolean;
+  size?: number;
+  number?: number;
+  sort?: { sorted: boolean; unsorted: boolean; empty: boolean };
+  numberOfElements?: number;
+  first?: boolean;
+  empty?: boolean;
+}
+
+/** Extract totalElements from either Spring Data page format. */
+export function getPageTotal<T>(p: Page<T>): number {
+  return p.page?.totalElements ?? p.totalElements ?? 0;
+}
+
+/** Extract totalPages from either Spring Data page format. */
+export function getPageCount<T>(p: Page<T>): number {
+  return p.page?.totalPages ?? p.totalPages ?? 0;
 }
 
 // Enums
@@ -36,7 +49,7 @@ export type CyclePhase = 'SHAPING_BUILDING' | 'BETTING_COOLDOWN';
  * In-cycle: PENDING → STARTED → ... → DONE (requires cycle)
  */
 export type PitchStatus = 'IDEA' | 'DRAFT' | 'PENDING' | 'SHAPED' | 'STARTED' | 'IN_PROGRESS' | 'TESTING' | 'DONE' | 'COOLDOWN' | 'CANCELLED';
-export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
+export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'MOBILE' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
 export type MeetingType = 'SHAPING' | 'BETTING' | 'KICKOFF' | 'STANDUP' | 'DEMO' | 'RETROSPECTIVE' | 'HILL_CHART_REVIEW';
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -156,6 +169,7 @@ export interface CreateCycleRequest {
 export interface Team {
   id: number;
   name: string;
+  isArchived?: boolean;
   assignments?: TeamAssignment[];
   // Capacity overrides
   hoursPerDayOverride?: number;
@@ -427,6 +441,13 @@ export interface WorkLogSummary {
   todayCount: number;
   totalHours: number;
   totalCount: number;
+}
+
+export interface WorkLogPersonSummary {
+  personId: number;
+  personName: string;
+  totalHours: number;
+  entryCount: number;
 }
 
 export interface MeetingAction {
@@ -1089,12 +1110,13 @@ export interface BugReport {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
-  
+  component?: string;
+
   // Direct project association
   projectId?: number;
   projectName?: string;
   projectKey?: string;
-  
+
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -1140,6 +1162,7 @@ export interface CreateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  component?: string;
   projectId?: number;
   pitchId?: number;
   cycleId?: number;
@@ -1161,6 +1184,7 @@ export interface UpdateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  component?: string;
   projectId?: number;
   pitchId?: number;
   cycleId?: number;
@@ -1394,6 +1418,10 @@ export interface RetroItem {
   isAnonymous?: boolean;
   voteCount: number;
   hasVoted: boolean;
+  dislikeCount: number;
+  hasDisliked: boolean;
+  discussed?: boolean;
+  discussedAt?: string;
   mergedIntoId?: number;
   mergedItemIds?: number[];
   createdAt: string;
@@ -1797,6 +1825,26 @@ export interface ImportJobDTO {
   projectId: number | null;
   projectName: string | null;
   createdAt: string;
+  completedAt: string | null;
+}
+
+export interface ZephyrRowResult {
+  rowNumber: number;
+  zephyrKey: string;
+  title: string;
+  success: boolean;
+  testCaseId: number | null;
+  error: string | null;
+}
+
+export interface ZephyrImportReportDTO {
+  importJobId: number;
+  fileName: string;
+  status: 'COMPLETED' | 'FAILED';
+  totalRows: number;
+  importedRows: number;
+  failedRows: number;
+  rows: ZephyrRowResult[];
   completedAt: string | null;
 }
 

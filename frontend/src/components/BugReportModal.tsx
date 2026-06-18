@@ -12,9 +12,11 @@ import {
   Task,
   Person,
   Release,
+  Pitch,
 } from '../types';
 import { taskService } from '../services/taskService';
 import { releaseService } from '../services/releaseService';
+import { pitchService } from '../services/pitchService';
 import { documentService } from '../services/documentService';
 import api from '../services/api';
 import {
@@ -36,13 +38,25 @@ import { Alert, AlertDescription } from './ui/alert';
 interface BugReportModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateBugReportRequest | UpdateBugReportRequest) => Promise<void>;
+  onSubmit: (data: CreateBugReportRequest | UpdateBugReportRequest) => Promise<BugReport | void | undefined>;
   bugReport?: BugReport | null;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
   testRunId?: number;
 }
+
+const COMPONENT_OPTIONS = [
+  'Frontend',
+  'Backend',
+  'Mobile (iOS)',
+  'Mobile (Android)',
+  'API',
+  'Database',
+  'Authentication',
+  'Infrastructure',
+  'Other',
+];
 
 const severities: BugSeverity[] = ['TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER'];
 const statuses: BugStatus[] = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'VERIFIED', 'CLOSED', 'REOPENED', 'WONT_FIX', 'DUPLICATE'];
@@ -58,7 +72,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   testRunId,
 }) => {
   const { t } = useTranslation();
-  const { currentProject } = useProject();
+  const { currentProject, isScrumProject } = useProject();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +80,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
+  const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loadingPeople, setLoadingPeople] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
@@ -81,10 +96,10 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         expectedBehavior: bugReport?.expectedBehavior || '',
         actualBehavior: bugReport?.actualBehavior || '',
         environment: bugReport?.environment || '',
+        component: bugReport?.component || '',
         severity: bugReport?.severity || 'MAJOR',
         status: bugReport?.status || 'OPEN',
         tags: bugReport?.tagList || [],
-        // Auto-set projectId from current project context
         projectId: bugReport?.projectId || currentProject?.id,
         pitchId: bugReport?.pitchId || pitchId,
         cycleId: bugReport?.cycleId || cycleId,
@@ -99,10 +114,10 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       setPendingAttachments([]);
       loadPeople();
       loadReleases();
+      loadPitches();
     }
   }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
 
-  // Load people for assignee selection
   const loadPeople = async () => {
     if (loadingPeople) return;
     setLoadingPeople(true);
@@ -116,15 +131,24 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     }
   };
 
-  // Load releases for target release selection
   const loadReleases = async () => {
     if (!currentProject?.id) return;
     try {
       const response = await releaseService.getByProject(currentProject.id);
       setReleases(response.data);
     } catch (err) {
-      console.error('Failed to load releases:', err);
       setReleases([]);
+    }
+  };
+
+  const loadPitches = async () => {
+    if (!currentProject?.id) return;
+    try {
+      const response = await pitchService.getMyPitches();
+      // Filter pitches to those belonging to cycles in the current project
+      setPitches(response.data);
+    } catch (err) {
+      setPitches([]);
     }
   };
 
@@ -132,19 +156,15 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   useEffect(() => {
     const loadTasks = async () => {
       if (!open) return;
-      
       try {
         if (cycleId) {
-          // Load a limited number of tasks for specific cycle to avoid excessive upfront loading
           const tasksRes = await taskService.getByCycleId(cycleId, 0, 50, 'createdAt', 'desc');
           const taskData = Array.isArray(tasksRes.data) ? tasksRes.data : tasksRes.data.content;
           setTasks(taskData);
         } else {
-          // No cycle context - start with empty, user must search
           setTasks([]);
         }
       } catch (err) {
-        console.error('Failed to load tasks:', err);
         setTasks([]);
       }
     };
@@ -172,15 +192,15 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 
   const handleSubmit = async () => {
     if (!formData.title?.trim()) {
-      setError('Title is required');
+      setError(t('bugReports.form.titleRequired', 'Title is required'));
       return;
     }
     if (!formData.description?.trim()) {
-      setError('Description is required');
+      setError(t('bugReports.form.descriptionRequired', 'Description is required'));
       return;
     }
     if (!formData.severity) {
-      setError('Severity is required');
+      setError(t('bugReports.form.severityRequired', 'Severity is required'));
       return;
     }
 
@@ -191,21 +211,15 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       if (isEdit) {
         await onSubmit(formData as UpdateBugReportRequest);
       } else {
-        // Create the bug first
         const createdBug = await onSubmit(formData as CreateBugReportRequest);
-        
-        // Upload any pending attachments if bug was created successfully
         if (pendingAttachments.length > 0 && createdBug && typeof createdBug === 'object' && 'id' in createdBug) {
           const bugId = (createdBug as BugReport).id;
           try {
-            // Upload all pending attachments
             await Promise.all(
               pendingAttachments.map(file => documentService.uploadBugAttachment(bugId, file))
             );
           } catch (uploadErr) {
             console.error('Failed to upload attachments:', uploadErr);
-            // Don't fail the whole operation if attachment upload fails
-            // The bug was created successfully, user can add attachments later
           }
         }
       }
@@ -217,16 +231,25 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     }
   };
 
+  const pitchLabel = isScrumProject
+    ? t('bugReports.form.linkedStory', 'Linked Story / Epic')
+    : t('bugReports.form.linkedPitch', 'Linked Pitch');
+  const pitchPlaceholder = isScrumProject
+    ? t('bugReports.form.selectStory', 'Select story or epic')
+    : t('bugReports.form.selectPitch', 'Select pitch');
+
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? `Edit Bug Report: ${bugReport.bugKey}` : 'Report New Bug'}
+            {isEdit
+              ? `${t('bugReports.form.editTitle', 'Edit Bug')} — ${bugReport.bugKey}`
+              : t('bugReports.reportBug', 'Report New Bug')}
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4 py-4">
+
+        <div className="space-y-3 py-2">
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
@@ -234,108 +257,101 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
           )}
 
           {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="bug-title">Title *</Label>
+          <div className="space-y-1">
+            <Label htmlFor="bug-title">{t('bugReports.form.title', 'Title')} *</Label>
             <Input
               id="bug-title"
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="Brief summary of the bug"
-            />
-            <p className="text-xs text-muted-foreground">Brief summary of the bug</p>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="bug-description">Description *</Label>
-            <MarkdownEditor
-              id="bug-description"
-              value={formData.description}
-              onChange={(value) => handleChange('description', value)}
-              placeholder="Detailed description of the bug"
-              rows={5}
+              placeholder={t('bugReports.form.titlePlaceholder', 'Brief summary of the bug')}
             />
           </div>
 
-          {/* Severity & Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Severity *</Label>
+          {/* Severity / Status / Component row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <Label>{t('bugReports.form.severity', 'Severity')} *</Label>
               <Combobox
-                options={severities.map(severity => ({ value: severity, label: severity }))}
+                options={severities.map(s => ({ value: s, label: s }))}
                 value={formData.severity}
                 onValueChange={(value) => handleChange('severity', value)}
-                placeholder="Select severity"
+                placeholder={t('bugReports.form.selectSeverity', 'Select severity')}
               />
             </div>
 
             {isEdit && (
-              <div className="space-y-2">
-                <Label>Status</Label>
+              <div className="space-y-1">
+                <Label>{t('bugReports.form.status', 'Status')}</Label>
                 <Combobox
-                  options={statuses.map(status => ({ value: status, label: status.replace('_', ' ') }))}
+                  options={statuses.map(s => ({ value: s, label: s.replace('_', ' ') }))}
                   value={formData.status}
                   onValueChange={(value) => handleChange('status', value)}
-                  placeholder="Select status"
+                  placeholder={t('bugReports.form.selectStatus', 'Select status')}
                 />
               </div>
             )}
-          </div>
 
-          <div className="space-y-2">
-            <Label>{t('bugReports.assignee')}</Label>
-            <Combobox
-              options={[
-                { value: 'unassigned', label: t('bugReports.unassigned') },
-                ...people.map(person => ({ value: person.id.toString(), label: person.name }))
-              ]}
-              value={formData.assigneeId?.toString() || 'unassigned'}
-              onValueChange={(value) => handleChange('assigneeId', value === 'unassigned' ? undefined : Number(value))}
-              placeholder={t('bugReports.selectAssignee')}
-              searchPlaceholder="Search persons..."
-            />
-          </div>
-
-          {/* Task Traceability */}
-          <div className="space-y-2">
-            <Label>Related Task (optional)</Label>
-            <Combobox
-              options={[
-                { value: 'none', label: 'No related task' },
-                ...tasks.slice(0, 50).map(task => ({ value: String(task.id), label: task.title }))
-              ]}
-              value={formData.taskId ? String(formData.taskId) : 'none'}
-              onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : Number(value))}
-              placeholder={cycleId && tasks.length === 0 ? "Loading tasks..." : "No related task"}
-              searchPlaceholder="Search tasks..."
-              emptyText={cycleId ? "No tasks found" : "Select a cycle first"}
-            />
-            <p className="text-xs text-muted-foreground">
-              {cycleId ? `Link to the task that caused or needs to fix this bug (${tasks.length} available)` : 'Select a cycle to see available tasks'}
-            </p>
-          </div>
-          {/* Target Release */}
-          {releases.length > 0 && (
-            <div className="space-y-2">
-              <Label>{t('bugReports.targetRelease', 'Target Release')}</Label>
+            <div className="space-y-1">
+              <Label htmlFor="bug-component">{t('bugReports.component', 'Component')}</Label>
               <Combobox
                 options={[
-                  { value: 'none', label: t('bugReports.noRelease', 'No target release') },
-                  ...releases.map(r => ({ value: String(r.id), label: `${r.name} (${r.version})` }))
+                  { value: '', label: t('bugReports.noComponent', 'No component') },
+                  ...COMPONENT_OPTIONS.map(c => ({ value: c, label: c })),
                 ]}
-                value={formData.targetReleaseId ? String(formData.targetReleaseId) : 'none'}
-                onValueChange={(value) => handleChange('targetReleaseId', value === 'none' ? undefined : Number(value))}
-                placeholder={t('bugReports.selectRelease', 'Select target release')}
-                searchPlaceholder={t('bugReports.searchRelease', 'Search releases...')}
+                value={formData.component || ''}
+                onValueChange={(value) => handleChange('component', value || undefined)}
+                placeholder={t('bugReports.selectComponent', 'Select component')}
+                searchPlaceholder={t('bugReports.searchComponent', 'Search or type...')}
               />
-              <p className="text-xs text-muted-foreground">
-                {t('bugReports.targetReleaseHint', 'Associate this bug with a release for tracking')}
-              </p>
             </div>
-          )}
-          {/* Steps to Reproduce */}
-          <div className="space-y-2">
-            <Label htmlFor="steps-to-reproduce">Steps to Reproduce</Label>
+          </div>
+
+          {/* Assignee / Linked Pitch row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>{t('bugReports.assignee', 'Assignee')}</Label>
+              <Combobox
+                options={[
+                  { value: 'unassigned', label: t('bugReports.unassigned', 'Unassigned') },
+                  ...people.map(p => ({ value: p.id.toString(), label: p.name })),
+                ]}
+                value={formData.assigneeId?.toString() || 'unassigned'}
+                onValueChange={(value) => handleChange('assigneeId', value === 'unassigned' ? undefined : Number(value))}
+                placeholder={t('bugReports.selectAssignee', 'Select assignee')}
+                searchPlaceholder={t('bugReports.searchPerson', 'Search persons...')}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>{pitchLabel}</Label>
+              <Combobox
+                options={[
+                  { value: 'none', label: t('bugReports.form.noPitch', 'No linked pitch') },
+                  ...pitches.map(p => ({ value: String(p.id), label: p.title })),
+                ]}
+                value={formData.pitchId ? String(formData.pitchId) : 'none'}
+                onValueChange={(value) => handleChange('pitchId', value === 'none' ? undefined : Number(value))}
+                placeholder={pitchPlaceholder}
+                searchPlaceholder={t('bugReports.form.searchPitch', 'Search...')}
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1">
+            <Label htmlFor="bug-description">{t('bugReports.form.description', 'Description')} *</Label>
+            <MarkdownEditor
+              id="bug-description"
+              value={formData.description}
+              onChange={(value) => handleChange('description', value)}
+              placeholder={t('bugReports.form.descriptionPlaceholder', 'Detailed description of the bug')}
+              rows={4}
+            />
+          </div>
+
+          {/* Steps / Expected / Actual */}
+          <div className="space-y-1">
+            <Label htmlFor="steps-to-reproduce">{t('bugReports.form.stepsToReproduce', 'Steps to Reproduce')}</Label>
             <Textarea
               id="steps-to-reproduce"
               value={formData.stepsToReproduce}
@@ -345,53 +361,86 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
             />
           </div>
 
-          {/* Expected & Actual Behavior */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="expected-behavior">Expected Behavior</Label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="expected-behavior">{t('bugReports.form.expectedBehavior', 'Expected Behavior')}</Label>
               <Textarea
                 id="expected-behavior"
                 value={formData.expectedBehavior}
                 onChange={(e) => handleChange('expectedBehavior', e.target.value)}
-                placeholder="What should happen"
+                placeholder={t('bugReports.form.expectedPlaceholder', 'What should happen')}
                 rows={2}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="actual-behavior">Actual Behavior</Label>
+            <div className="space-y-1">
+              <Label htmlFor="actual-behavior">{t('bugReports.form.actualBehavior', 'Actual Behavior')}</Label>
               <Textarea
                 id="actual-behavior"
                 value={formData.actualBehavior}
                 onChange={(e) => handleChange('actualBehavior', e.target.value)}
-                placeholder="What actually happens"
+                placeholder={t('bugReports.form.actualPlaceholder', 'What actually happens')}
                 rows={2}
               />
             </div>
           </div>
 
-          {/* Environment */}
-          <div className="space-y-2">
-            <Label htmlFor="environment">Environment</Label>
-            <Input
-              id="environment"
-              value={formData.environment}
-              onChange={(e) => handleChange('environment', e.target.value)}
-              placeholder="Browser, OS, version, device, etc."
-            />
+          {/* Environment / Related Task */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="environment">{t('bugReports.form.environment', 'Environment')}</Label>
+              <Input
+                id="environment"
+                value={formData.environment}
+                onChange={(e) => handleChange('environment', e.target.value)}
+                placeholder={t('bugReports.form.environmentPlaceholder', 'Browser, OS, version, device…')}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>{t('bugReports.form.relatedTask', 'Related Task')}</Label>
+              <Combobox
+                options={[
+                  { value: 'none', label: t('bugReports.form.noRelatedTask', 'No related task') },
+                  ...tasks.slice(0, 50).map(task => ({ value: String(task.id), label: task.title })),
+                ]}
+                value={formData.taskId ? String(formData.taskId) : 'none'}
+                onValueChange={(value) => handleChange('taskId', value === 'none' ? undefined : Number(value))}
+                placeholder={cycleId && tasks.length === 0 ? t('common.loading', 'Loading…') : t('bugReports.form.noRelatedTask', 'No related task')}
+                searchPlaceholder={t('bugReports.form.searchTask', 'Search tasks...')}
+                emptyText={cycleId ? t('bugReports.form.noTasksFound', 'No tasks found') : t('bugReports.form.selectCycleFirst', 'Select a cycle first')}
+              />
+            </div>
           </div>
 
+          {/* Target Release */}
+          {releases.length > 0 && (
+            <div className="space-y-1">
+              <Label>{t('bugReports.targetRelease', 'Target Release')}</Label>
+              <Combobox
+                options={[
+                  { value: 'none', label: t('bugReports.noRelease', 'No target release') },
+                  ...releases.map(r => ({ value: String(r.id), label: `${r.name} (${r.version})` })),
+                ]}
+                value={formData.targetReleaseId ? String(formData.targetReleaseId) : 'none'}
+                onValueChange={(value) => handleChange('targetReleaseId', value === 'none' ? undefined : Number(value))}
+                placeholder={t('bugReports.selectRelease', 'Select target release')}
+                searchPlaceholder={t('bugReports.searchRelease', 'Search releases...')}
+              />
+            </div>
+          )}
+
           {/* Tags */}
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags</Label>
+          <div className="space-y-1">
+            <Label htmlFor="tags">{t('bugReports.form.tags', 'Tags')}</Label>
             <Input
               id="tags"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleAddTag}
-              placeholder="Add tags (press Enter)"
+              placeholder={t('bugReports.form.tagsPlaceholder', 'Add tags (press Enter)')}
             />
             {formData.tags && formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {formData.tags.map((tag) => (
                   <Badge key={tag} variant="outline" className="gap-1">
                     {tag}
@@ -408,18 +457,14 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
             )}
           </div>
 
-          {/* Attachments Section */}
-          <div className="space-y-2">
+          {/* Attachments */}
+          <div className="space-y-1">
             <Label className="flex items-center gap-2">
               <Paperclip className="h-4 w-4" />
               {t('bugAttachments.title')}
             </Label>
             {isEdit && bugReport?.id ? (
-              <MediaAttachmentUpload
-                bugId={bugReport.id}
-                disabled={loading}
-                compact
-              />
+              <MediaAttachmentUpload bugId={bugReport.id} disabled={loading} compact />
             ) : (
               <MediaAttachmentUpload
                 bugId={null}
@@ -433,13 +478,13 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 
           {/* Resolution (edit only) */}
           {isEdit && (
-            <div className="space-y-2">
-              <Label htmlFor="resolution">Resolution</Label>
+            <div className="space-y-1">
+              <Label htmlFor="resolution">{t('bugReports.form.resolution', 'Resolution')}</Label>
               <Textarea
                 id="resolution"
                 value={(formData as UpdateBugReportRequest).resolution || ''}
                 onChange={(e) => handleChange('resolution' as keyof CreateBugReportRequest, e.target.value)}
-                placeholder="How was this bug fixed?"
+                placeholder={t('bugReports.form.resolutionPlaceholder', 'How was this bug fixed?')}
                 rows={2}
               />
             </div>
@@ -448,10 +493,14 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancel
+            {t('common.cancel', 'Cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+            {loading
+              ? t('common.saving', 'Saving…')
+              : isEdit
+                ? t('common.update', 'Update')
+                : t('common.create', 'Create')}
           </Button>
         </DialogFooter>
       </DialogContent>

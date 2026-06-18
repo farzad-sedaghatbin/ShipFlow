@@ -1,23 +1,27 @@
 import api from './api';
-import { WorkLog, Page, CreateWorkLogRequest, CreateWorkLogForSelfRequest, WorkLogSummary } from '../types';
+import { WorkLog, Page, CreateWorkLogRequest, CreateWorkLogForSelfRequest, WorkLogSummary, WorkLogPersonSummary } from '../types';
 
 const DEFAULT_PAGE = 0;
 const DEFAULT_SIZE = 20;
 
 export const workLogService = {
   // Admin/Manager endpoints
-  getAll: (page = DEFAULT_PAGE, size = DEFAULT_SIZE, projectId?: number, fromDate?: string, toDate?: string) =>
-    api.get<Page<WorkLog>>('/worklogs', { params: { page, size, ...(projectId !== undefined ? { projectId } : {}), ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}) } }),
+  getAll: (page = DEFAULT_PAGE, size = DEFAULT_SIZE, projectId?: number, fromDate?: string, toDate?: string, personId?: number) =>
+    api.get<Page<WorkLog>>('/worklogs', { params: { page, size, ...(projectId !== undefined ? { projectId } : {}), ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}), ...(personId !== undefined ? { personId } : {}) } }),
   getByPitchId: (pitchId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/pitch/${pitchId}`, { params: { page, size } }),
+  getPersonSummaryByPitchId: (pitchId: number) =>
+    api.get<WorkLogPersonSummary[]>(`/worklogs/pitch/${pitchId}/by-person`),
+  getByPitchIdAndPersonId: (pitchId: number, personId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
+    api.get<Page<WorkLog>>(`/worklogs/pitch/${pitchId}/person/${personId}`, { params: { page, size } }),
   getByTaskId: (taskId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/task/${taskId}`, { params: { page, size } }),
   getByPersonId: (personId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/person/${personId}`, { params: { page, size } }),
   getByPersonAndDate: (personId: number, date: string, page = DEFAULT_PAGE, size = DEFAULT_SIZE) =>
     api.get<Page<WorkLog>>(`/worklogs/person/${personId}/date/${date}`, { params: { page, size } }),
-  getByCycleId: (cycleId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE, fromDate?: string, toDate?: string) =>
-    api.get<Page<WorkLog>>(`/worklogs/cycle/${cycleId}`, { params: { page, size, ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}) } }),
+  getByCycleId: (cycleId: number, page = DEFAULT_PAGE, size = DEFAULT_SIZE, fromDate?: string, toDate?: string, personId?: number) =>
+    api.get<Page<WorkLog>>(`/worklogs/cycle/${cycleId}`, { params: { page, size, ...(fromDate ? { fromDate } : {}), ...(toDate ? { toDate } : {}), ...(personId !== undefined ? { personId } : {}) } }),
   getById: (id: number) => api.get<WorkLog>(`/worklogs/${id}`),
   create: (data: CreateWorkLogRequest) => api.post<WorkLog>('/worklogs', data),
   update: (id: number, data: CreateWorkLogRequest) => api.put<WorkLog>(`/worklogs/${id}`, data),

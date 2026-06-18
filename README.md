@@ -40,14 +40,16 @@ docker compose up -d
 |---|---|
 | **Triple project modes** | Shape Up (pitches, betting, hill charts, circuit breaker), Kanban, and Scrum (story points, burndown, velocity) — per project, switchable any time |
 | **MCP server** | Claude Code, Cursor, and any MCP client can call `list_projects`, `get_work_context`, `create_task`, and 18 other tools — no browser tab switching |
-| **Pluggable AI stack** | Swap between Ollama (local), OpenAI, Anthropic Claude, or RunPod via one env var. RAG Q&A, risk scoring, test generation, and technical solutions all work with every provider |
+| **Pluggable AI stack** | Swap between Ollama (local), OpenAI, Anthropic Claude, or RunPod via one env var. RAG Q&A, risk scoring, test generation, AI Pitch Writer, Retro Summarizer, and technical solutions all work with every provider |
+| **AI Copilot v2** | **AI Pitch Writer** turns a one-sentence problem into a full Shape Up pitch draft. **Retrospective Summarizer** generates structured cycle retros (wins, blockers, team health). **Proactive Dashboard Insights** surfaces at-risk cycles, scope creep, and velocity trends automatically |
+| **Workflow Automations** *(v1.7.0)* | 14 trigger types (task status changes, pitch events, cycle start/end, scope creep, appetite exceeded) × 7 action types (notify, webhook, email, comment, change status). 20 built-in templates — deploy in one click or build custom rules. Async execution with per-run logs |
 | **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
 | **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
 | **Knowledge Center** | Upload docs and paste URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis — scoped Org / Team / Project, pluggable provider SPI |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
 | **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
-| **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching |
+| **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -193,6 +195,7 @@ docker compose up -d
   - Grouped results by entity type with score-based ranking
   - Debounced 300ms search with loading, empty, and minimum-chars feedback
   - Requires specific project context (disabled when "All Projects" selected)
+- **AI Pitch Writer** *(v1.5.0)*: Click "Write with AI" on the Pitch Board → type a problem in plain language → get a full Shape Up pitch draft (title, problem statement, solution, appetite, rabbit holes, no-gos, risks) in one step. Pre-fills the New Pitch form for human review before saving.
 - **AI-Powered Q&A (RAG)**: Conversational assistant over your project knowledge base
   - Ask questions like "What pitches are at risk in Cycle 5?" or "What are the rabbit holes for the mobile checkout pitch?"
   - **Multi-turn memory**: Conversation context persists across follow-up questions — the AI remembers what you asked
@@ -222,6 +225,16 @@ docker compose up -d
   - Supported forms: Epic, Initiative, Bug Report, Pitch, Task
   - Rendered views: Epic Detail, Initiative Detail, Bug View, Task Detail, Pitch Detail (description + Shape Up fields)
   - Uses GFM (GitHub Flavored Markdown) with headings, lists, code blocks, tables, links, and more
+- **Workflow Automations (v1.7.0)**: No-code trigger/action engine that reacts to project events automatically
+  - **14 trigger types**: task created/status-changed/assigned/completed, pitch created/status-changed, cycle started/ended/status-changed, comment added, betting table locked, hill chart moved, appetite exceeded, scope creep detected
+  - **7 action types**: notify assignee, notify project members, send webhook, send email, add comment, change task status, create task
+  - **20 built-in templates** across four categories (Tasks, Shape Up, Automation, Notifications) — install in one click or build custom rules
+  - **Template gallery**: search, filter by category, and preview each template before installing
+  - **Enable/disable toggle** per rule — pause automations without deleting them
+  - **Execution history**: per-rule and per-project log with status (SUCCESS/FAILURE/SKIPPED), trigger payload, result message, and timestamp
+  - **Async engine**: automations execute outside the primary transaction — never delays the triggering action
+  - **`{{key}}` interpolation** in action config — inject event context (task name, assignee, status) into messages and webhooks
+  - REST API: `GET /api/automations/project/{id}`, `POST /api/automations`, `PATCH /api/automations/{id}/toggle`, `GET /api/automations/{id}/executions`
 - **Competitor Migration Tooling (v1.2.0)**: Import your existing projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow
   - Auto-detects source format from CSV column headers (no manual format selection required)
   - Maps rows to Tasks, Epics, and Cycles inside a new Kanban project; teams migrate to Shape Up or Scrum at their own pace
@@ -236,18 +249,22 @@ docker compose up -d
 - **Expanded Color Palette**: 42 colors for Epics and Initiatives
   - 7 hue groups (Reds, Oranges, Greens, Teals, Blues, Purples, Neutrals) × 6 shades each
   - Hover scale effect and ring indicator on selected color
-- **Retrospectives**: Team retros with voting and merging
+- **Retrospectives**: Live collaborative retro board with voting, reactions, and discuss timer
+  - **Live Board Updates**: Auto-refreshes every 5 seconds while open — no manual reloads needed
+  - **Vote Fill Bar**: Proportional background fill on each item shows relative signal strength at a glance
+  - **👎 Disagree Reaction**: Toggle dislike/disagree alongside existing up-votes; counts shown live
+  - **Discuss Countdown Timer**: Per-item 3-minute timer; turns amber at 1 min, red at 30 s, auto-marks discussed at 0:00
+  - **Persistent Discussed State**: "Discussed" flag + timestamp stored server-side; green badge + strikethrough synced across all participants
+  - **Item Ownership**: Edit/delete restricted to item author; admins and managers can manage any item
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
-  - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
-  - Real-time collaboration and voting
-  - **Flexible Action Conversion (v0.5)**: Transform retro insights into actionable work
-    - **Convert to Pitch**: Create draft pitches for the next betting table
-    - **Convert to Tasks**: Generate tasks for immediate work
+  - **Flexible Action Conversion**: Transform retro insights into actionable work
+    - **Convert to Pitch**: Create draft pitches for the next betting table — choose any project you belong to
+    - **Convert to Tasks**: Generate tasks for immediate work in any project
     - **Mark as Acted On**: Track completion without creating new items
     - Batch processing of multiple retro items with customizable titles and notes
     - Automatic status tracking with notes and timestamps
-  - **Action Tracking (v0.5)**: Track whether teams act on retrospective insights
+  - **Action Tracking**: Track whether teams act on retrospective insights
     - "Did we act on this?" checkbox for Action Items (ACTIONS column)
     - Notes and attribution for action follow-through
     - Follow-through rate calculation per retrospective
@@ -374,6 +391,12 @@ docker compose up -d
   - **Roadmap Context Integration**: Uses Epic/Initiative relationships for extensibility recommendations
   - **Context Availability Warnings**: Transparent feedback when context sources are missing
   - Configurable via Organization Settings with per-org Figma token storage
+- **SSO / Enterprise Auth (v1.4.0)**: Single Sign-On support via SAML 2.0 and OIDC
+  - Admin UI under Organization Settings → SSO tab: add/edit/delete identity providers (Okta, Azure AD, Keycloak, Auth0, etc.)
+  - Provider-type-conditional config form (OIDC: client ID / secret / discovery URL; SAML 2.0: entity ID / SSO URL / certificate)
+  - Enforce SSO toggle: blocks password login when enabled (with destructive warning in the UI)
+  - Login page auto-discovers enabled providers and shows "Continue with …" buttons
+  - `/sso-callback` public route processes JWT from IdP redirect and logs the user in
 - **MCP Server (AI Editor Integration)**: Use ShipFlow data directly from your AI coding assistant — no context switching
   - Works with **Claude Code**, **Cursor**, **Claude Desktop**, **GitHub Copilot**, and any MCP-compatible client
   - **Opt-in** — disabled by default; enable with `MCP_SERVER_ENABLED=true` **or** flip the runtime toggle in the UI (Integrations → MCP → "MCP Server" tab, no restart). Manage API keys from the "API Keys" tab.

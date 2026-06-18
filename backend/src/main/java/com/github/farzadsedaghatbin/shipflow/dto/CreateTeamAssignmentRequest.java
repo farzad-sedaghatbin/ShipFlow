@@ -22,4 +22,5 @@ public class CreateTeamAssignmentRequest {
   private LocalDate startDate;
   private LocalDate endDate;
   private String notes;
+  private Double hoursPerDayOverride;
 }

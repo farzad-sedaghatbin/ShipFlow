@@ -51,4 +51,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
    */
   @Query("SELECT u FROM User u LEFT JOIN FETCH u.person p WHERE u.isActive = true AND p IS NOT NULL AND p.name IN :names")
   List<User> findByPersonNameIn(@Param("names") List<String> names);
+
+  /**
+   * Find a user by their external IdP subject/sub claim and IdP id.
+   * Used during SSO callback to match an existing SSO-provisioned account.
+   */
+  Optional<User> findByExternalUserIdAndIdentityProviderId(
+      String externalUserId, Long identityProviderId);
 }

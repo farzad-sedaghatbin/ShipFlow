@@ -19,9 +19,7 @@ const RECONNECT_DELAY_MS = 5_000;
  *   event name, when supplied by the server) each time a non-{@code connected}
  *   event arrives
  */
-export function useNotificationStream(
-  onNewNotification: (payload: unknown, eventName?: string) => void
-): void {
+export function useNotificationStream(onNewNotification: (eventName: string, payload: unknown) => void): void {
   // Use a ref so the callback can be updated without restarting the stream
   const callbackRef = useRef(onNewNotification);
   callbackRef.current = onNewNotification;
@@ -88,7 +86,7 @@ export function useNotificationStream(
               try {
                 const payload = JSON.parse(data);
                 if (eventName !== 'connected') {
-                  callbackRef.current(payload, eventName || undefined);
+                  callbackRef.current(eventName || 'notification', payload);
                 }
               } catch {
                 // Ignore malformed JSON frames
