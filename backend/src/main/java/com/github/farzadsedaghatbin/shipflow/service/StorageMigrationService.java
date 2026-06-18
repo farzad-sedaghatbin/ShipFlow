@@ -34,6 +34,9 @@ public class StorageMigrationService {
   // ── Per-entity migration methods ──────────────────────────────────────────
 
   private MigrationResultDTO migrateTaskAttachments() {
+    // TaskAttachment currently has no deletedAt soft-delete column, so findAll() is correct here.
+    // If soft-delete is added later, replace with a "not-deleted" query so logically-deleted
+    // attachments are not migrated.
     List<TaskAttachment> all = taskAttachmentRepository.findAll();
     StorageProviderType active = objectStorageService.activeProvider();
     int migrated = 0, skipped = 0, failed = 0;
