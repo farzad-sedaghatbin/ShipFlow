@@ -87,7 +87,7 @@ class WikiControllerTest {
 
   @Test
   void createSpace_happyPath_returns201() throws Exception {
-    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("Engineering", "ENG", "Engineering docs");
+    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("Engineering", "ENG", "Engineering docs", null);
 
     mockMvc
         .perform(
@@ -101,7 +101,7 @@ class WikiControllerTest {
 
   @Test
   void listSpaces_returnsCreatedSpaces() throws Exception {
-    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("Docs", "DOCS", null);
+    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("Docs", "DOCS", null, null);
     mockMvc
         .perform(
             post("/api/wiki/spaces")

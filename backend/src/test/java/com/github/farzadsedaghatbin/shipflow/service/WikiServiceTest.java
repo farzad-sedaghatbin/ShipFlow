@@ -10,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.wiki.CreateWikiSpaceRequest;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.MovePageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
@@ -467,13 +468,62 @@ class WikiServiceTest {
         .when(permissionService)
         .requireCreateSpace(eq(userId));
 
-    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("My Space", "my-space", "desc");
+    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("My Space", "my-space", "desc", null);
 
     assertThatThrownBy(() -> wikiService.createSpace(req, userId))
         .isInstanceOf(AccessDeniedException.class);
 
     // Space must not have been persisted
     verify(spaceRepository, never()).save(any());
+  }
+
+  @Test
+  void createSpace_withProjectId_persistsProjectIdOnSavedEntity() {
+    Long userId = 1L;
+    Long projectId = 42L;
+
+    WikiSpace savedSpace = new WikiSpace();
+    savedSpace.setId(10L);
+    savedSpace.setName("Linked Space");
+    savedSpace.setSpaceKey("linked-space");
+    savedSpace.setProjectId(projectId);
+    savedSpace.setCreatedBy(userId);
+    savedSpace.setCreatedAt(OffsetDateTime.now());
+    savedSpace.setUpdatedAt(OffsetDateTime.now());
+
+    ArgumentCaptor<WikiSpace> spaceCaptor = ArgumentCaptor.forClass(WikiSpace.class);
+    when(spaceRepository.save(spaceCaptor.capture())).thenReturn(savedSpace);
+    doNothing().when(permissionService).requireCreateSpace(eq(userId));
+
+    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("Linked Space", "linked-space", "desc", projectId);
+    WikiSpaceDTO result = wikiService.createSpace(req, userId);
+
+    assertThat(spaceCaptor.getValue().getProjectId()).isEqualTo(projectId);
+    assertThat(result.projectId()).isEqualTo(projectId);
+  }
+
+  @Test
+  void createSpace_withoutProjectId_leavesProjectIdNull() {
+    Long userId = 1L;
+
+    WikiSpace savedSpace = new WikiSpace();
+    savedSpace.setId(11L);
+    savedSpace.setName("Standalone Space");
+    savedSpace.setSpaceKey("standalone-space");
+    savedSpace.setProjectId(null);
+    savedSpace.setCreatedBy(userId);
+    savedSpace.setCreatedAt(OffsetDateTime.now());
+    savedSpace.setUpdatedAt(OffsetDateTime.now());
+
+    ArgumentCaptor<WikiSpace> spaceCaptor = ArgumentCaptor.forClass(WikiSpace.class);
+    when(spaceRepository.save(spaceCaptor.capture())).thenReturn(savedSpace);
+    doNothing().when(permissionService).requireCreateSpace(eq(userId));
+
+    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("Standalone Space", "standalone-space", null, null);
+    WikiSpaceDTO result = wikiService.createSpace(req, userId);
+
+    assertThat(spaceCaptor.getValue().getProjectId()).isNull();
+    assertThat(result.projectId()).isNull();
   }
 
   @Test

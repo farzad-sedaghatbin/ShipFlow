@@ -82,6 +82,7 @@ public class WikiService {
     space.setName(req.name());
     space.setSpaceKey(req.spaceKey() != null ? req.spaceKey() : toSlug(req.name()));
     space.setDescription(req.description());
+    space.setProjectId(req.projectId());
     space.setCreatedBy(userId);
     space = spaceRepository.save(space);
 
@@ -307,6 +308,7 @@ public class WikiService {
     permissionService.requireWrite(userId, space);
     if (req.name() != null) space.setName(req.name());
     if (req.description() != null) space.setDescription(req.description());
+    if (req.projectId() != null) space.setProjectId(req.projectId());
     space = spaceRepository.save(space);
     return toSpaceDTO(space);
   }
@@ -512,6 +514,8 @@ public class WikiService {
         space.getId(),
         space.getName(),
         space.getSpaceKey(),
+        space.getDescription(),
+        space.getProjectId(),
         space.getCreatedBy(),
         space.getCreatedAt(),
         space.getUpdatedAt());

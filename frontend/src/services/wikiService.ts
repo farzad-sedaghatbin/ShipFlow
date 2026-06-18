@@ -6,6 +6,8 @@ export interface WikiSpaceDTO {
   id: number;
   name: string;
   spaceKey: string;
+  description?: string | null;
+  projectId?: number | null;
   createdBy: number;
   createdAt: string;
   updatedAt: string;
@@ -63,6 +65,7 @@ export interface CreateWikiSpaceRequest {
   name: string;
   spaceKey: string;
   description?: string;
+  projectId?: number | null;
 }
 
 export interface UpdateWikiSpaceRequest {
