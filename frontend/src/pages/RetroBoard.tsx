@@ -171,20 +171,22 @@ export default function RetroBoard() {
     return map[status];
   };
 
-  const retroStatusRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    retroStatusRef.current = retro?.status;
-  }, [retro?.status]);
-
   useEffect(() => {
     if (!id) return;
     loadData(id);
-    const timer = setInterval(() => {
-      if (retroStatusRef.current === 'OPEN') {
+  }, [id]);
+
+  // Live updates via SSE — refetch items when the server broadcasts a board change for this retro.
+  useEffect(() => {
+    if (!id) return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ retroId: number }>).detail;
+      if (detail?.retroId === Number(id)) {
         retroService.getItems(id).then((res) => setItems(res.data)).catch(() => {});
       }
-    }, 10000);
-    return () => clearInterval(timer);
+    };
+    window.addEventListener('retro-updated', handler);
+    return () => window.removeEventListener('retro-updated', handler);
   }, [id]);
 
   const loadData = async (retroId: number) => {
