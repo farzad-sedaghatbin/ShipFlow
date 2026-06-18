@@ -12,4 +12,6 @@ public interface WikiPageRepository extends JpaRepository<WikiPage, Long> {
       Long spaceId, Long parentId);
 
   List<WikiPage> findBySpaceIdAndDeletedAtIsNull(Long spaceId);
+
+  List<WikiPage> findBySpaceIdAndParentIdIsNullAndDeletedAtIsNullOrderByPositionAsc(Long spaceId);
 }

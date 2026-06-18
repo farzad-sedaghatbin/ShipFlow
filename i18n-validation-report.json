@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-06-15T22:58:14.208Z",
+  "timestamp": "2026-06-18T17:39:45.803Z",
   "stats": {
-    "totalEnKeys": 7369,
-    "totalFaKeys": 6449,
-    "totalUsedKeys": 4814,
-    "filesScanned": 432
+    "totalEnKeys": 7485,
+    "totalFaKeys": 6565,
+    "totalUsedKeys": 4912,
+    "filesScanned": 446
   },
   "issues": {
     "missingInFa": [
@@ -969,6 +969,7 @@
       "common.unknownError",
       "shows loading skeleton while fetching",
       "should render dialog with action type selection",
+      "scope",
       "roadmap.releasePitches",
       "roadmap.releaseTasks",
       "roadmap.releaseBugs",
@@ -2387,6 +2388,7 @@
     "organizationSettings.sectionNotifications",
     "organizationSettings.sectionFeatures",
     "organizationSettings.sectionEnterprise",
+    "organizationSettings.sectionInfrastructure",
     "organizationSettings.sectionData",
     "userManagement.editUser",
     "userManagement.activateUser",
@@ -2737,6 +2739,7 @@
     "bettingTablePage.decisionDialog.sendBackShaping",
     "retroBoardPage.title",
     "retroBoardPage.votes",
+    "retroBoardPage.dislikes",
     "retroBoardPage.edit",
     "retroBoardPage.delete",
     "retroBoardPage.status",
@@ -3552,6 +3555,23 @@
     "automation.noResults",
     "pluginSettings.typeRisk",
     "pluginSettings.typeReport",
-    "pluginSettings.typeIntegration"
+    "pluginSettings.typeIntegration",
+    "pluginSettings.builtinDeadlinePressureDesc",
+    "pluginSettings.builtinCycleHealthDesc",
+    "knowledgeCenter.nav",
+    "knowledgeCenter.scope.team",
+    "knowledgeCenter.scope.project",
+    "knowledgeCenter.provider.FILE_UPLOAD",
+    "knowledgeCenter.provider.URL",
+    "knowledgeCenter.provider.GITHUB",
+    "knowledgeCenter.provider.CONFLUENCE",
+    "knowledgeCenter.provider.NOTION",
+    "knowledgeCenter.provider.GOOGLE_DRIVE",
+    "knowledgeCenter.status.READY",
+    "knowledgeCenter.status.INGESTING",
+    "knowledgeCenter.status.PENDING",
+    "knowledgeCenter.status.STALE",
+    "knowledgeCenter.status.FAILED",
+    "storage.loadFailed"
   ]
 }
