@@ -10,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
 import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageKeyGenerator;
 import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
 import com.github.farzadsedaghatbin.shipflow.service.storage.StoredObjectRef;
 import java.io.IOException;
@@ -76,7 +77,7 @@ public class TaskAttachmentService {
 
     TaskAttachment attachment = TaskAttachment.builder()
         .task(task)
-        .fileName(resolveOriginalName(file))
+        .fileName(StorageKeyGenerator.sanitize(file.getOriginalFilename()))
         .filePath(ref.getKey()) // populate legacy column for backward compatibility
         .storageProvider(objectStorageService.activeProvider())
         .storageKey(ref.getKey())
@@ -121,13 +122,14 @@ public class TaskAttachmentService {
             ? attachment.getStorageKey()
             : attachment.getFilePath();
 
-    DownloadResource dr = objectStorageService.retrieve(provider, key);
-
     // Use the entity's stored contentType and originalFileName (NOT the provider's)
     // to preserve correct metadata for legacy files that have no sidecar.
     Resource resource;
     try {
+      DownloadResource dr = objectStorageService.retrieve(provider, key);
       resource = new InputStreamResource(dr.getStream());
+    } catch (ResourceNotFoundException e) {
+      throw e;
     } catch (Exception e) {
       throw new ResourceNotFoundException("File not found: " + attachment.getFileName());
     }
