@@ -54,11 +54,12 @@ class LocalFsStorageProviderTest {
   @Test
   void store_thenRetrieve_returnsSameBytes() throws IOException {
     byte[] content = "hello local fs".getBytes(StandardCharsets.UTF_8);
+    String explicitKey = "tasks/123/abc.txt";
 
     StorePutContext ctx =
         StorePutContext.builder()
             .bucket("test-bucket")
-            .key("docs/file.txt")
+            .key(explicitKey)
             .stream(new ByteArrayInputStream(content))
             .contentType("text/plain")
             .sizeBytes(content.length)
@@ -67,17 +68,26 @@ class LocalFsStorageProviderTest {
 
     StoredObjectRef ref = provider.store(ctx);
 
+    // (a) returned key must equal the exact input key verbatim — no mangling
+    assertThat(ref.getKey()).isEqualTo(explicitKey);
     assertThat(ref.getBucket()).isEqualTo("test-bucket");
     assertThat(ref.getContentType()).isEqualTo("text/plain");
     assertThat(ref.getSizeBytes()).isEqualTo(content.length);
-    // Key must be non-null and contain the original filename hint
-    assertThat(ref.getKey()).isNotNull();
 
-    // Verify the file actually landed on disk somewhere under tempDir
+    // (c) data file must exist at exactly tempDir/{key}
+    Path expectedFile = tempDir.resolve(explicitKey);
+    assertThat(Files.exists(expectedFile)).isTrue();
+
+    // (b) retrieve round-trips bytes and (d) content-type via sidecar
+    try (var stream = provider.retrieve(ref.getBucket(), ref.getKey(), null).getStream()) {
+      byte[] retrieved = stream.readAllBytes();
+      assertThat(retrieved).isEqualTo(content);
+    }
+
     DownloadResource dl = provider.retrieve(ref.getBucket(), ref.getKey(), null);
-    assertThat(dl).isNotNull();
-    byte[] retrieved = dl.getStream().readAllBytes();
-    assertThat(retrieved).isEqualTo(content);
+    try (var stream = dl.getStream()) {
+      assertThat(stream.readAllBytes()).isEqualTo(content);
+    }
     assertThat(dl.getContentType()).isEqualTo("text/plain");
     assertThat(dl.getSizeBytes()).isEqualTo(content.length);
   }
@@ -85,11 +95,12 @@ class LocalFsStorageProviderTest {
   @Test
   void store_createsParentDirectories() {
     byte[] content = "nested".getBytes(StandardCharsets.UTF_8);
+    String explicitKey = "a/b/c/file.txt";
 
     StorePutContext ctx =
         StorePutContext.builder()
             .bucket("bucket")
-            .key("a/b/c/file.txt")
+            .key(explicitKey)
             .stream(new ByteArrayInputStream(content))
             .contentType("text/plain")
             .sizeBytes(content.length)
@@ -97,6 +108,9 @@ class LocalFsStorageProviderTest {
             .build();
 
     assertThatNoException().isThrownBy(() -> provider.store(ctx));
+
+    // Verify file landed at the verbatim key path
+    assertThat(Files.exists(tempDir.resolve(explicitKey))).isTrue();
   }
 
   // ── delete ────────────────────────────────────────────────────────────────
@@ -104,11 +118,12 @@ class LocalFsStorageProviderTest {
   @Test
   void delete_removesFileFromDisk() throws IOException {
     byte[] content = "delete me".getBytes(StandardCharsets.UTF_8);
+    String explicitKey = "del/file.bin";
 
     StorePutContext ctx =
         StorePutContext.builder()
             .bucket("bucket")
-            .key("del/file.bin")
+            .key(explicitKey)
             .stream(new ByteArrayInputStream(content))
             .contentType("application/octet-stream")
             .sizeBytes(content.length)
@@ -117,15 +132,15 @@ class LocalFsStorageProviderTest {
 
     StoredObjectRef ref = provider.store(ctx);
 
-    // File must exist after store
-    DownloadResource dl = provider.retrieve(ref.getBucket(), ref.getKey(), null);
-    assertThat(dl.getStream().readAllBytes()).isEqualTo(content);
+    // File must exist after store — close the stream properly
+    try (var stream = provider.retrieve(ref.getBucket(), ref.getKey(), null).getStream()) {
+      assertThat(stream.readAllBytes()).isEqualTo(content);
+    }
 
     // Delete
     provider.delete(ref.getBucket(), ref.getKey(), null);
 
-    // The underlying file should be gone
-    // Resolve via tempDir to verify on disk
+    // The underlying file should be gone at the verbatim key path
     Path stored = tempDir.resolve(ref.getKey());
     assertThat(Files.exists(stored)).isFalse();
   }

@@ -31,7 +31,7 @@ public final class StorageKeyGenerator {
    * Strips path separators and null bytes; truncates to 200 characters — mirrors
    * {@code TaskAttachmentService#sanitize}.
    */
-  static String sanitize(String name) {
+  public static String sanitize(String name) {
     if (name == null || name.isBlank()) return "attachment";
     String safe = name.replaceAll("[/\\\\:\\*\\?\"<>|\\x00]", "_");
     return safe.length() > 200 ? safe.substring(0, 200) : safe;
