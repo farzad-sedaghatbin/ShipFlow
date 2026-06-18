@@ -5258,11 +5258,6 @@
     "shipped170Item2Desc": "Betting Table Locked, Hill Chart Moved, Appetite Exceeded, and Scope Creep Detected — automate the moments that matter most in your Shape Up cycles.",
     "shipped170Item3Title": "Execution Log",
     "shipped170Item3Desc": "Every automation run is recorded with status, trigger event data, and result message for full auditability.",
-    "phase180Theme": "Custom Fields & Advanced RBAC",
-    "phase180Item0Title": "Custom Fields",
-    "phase180Item0Desc": "Add custom fields to tasks and pitches — text, number, date, dropdown — and filter and sort by them in the backlog.",
-    "phase180Item1Title": "Project-Level Permissions",
-    "phase180Item1Desc": "Grant or restrict roles at the project level independently of the global RBAC matrix.",
     "shipped160Title": "MCP Ecosystem",
     "shipped160Item0Title": "Agentic MCP Write Tools",
     "shipped160Item0Desc": "AI editors can update task and pitch fields in-place with PATCH semantics via MCP tool calls — only the supplied fields change.",
@@ -5292,7 +5287,16 @@
     "phase190Item1Title": "Rich-Text Editor",
     "phase190Item1Desc": "Block-based editor with headings, tables, code blocks, inline images, and @mention links to tasks, pitches, and team members.",
     "phase190Item2Title": "Searchable Knowledge Base",
-    "phase190Item2Desc": "Full-text search across all wiki pages. AI can pull relevant docs into context alongside Notion, Confluence, and SharePoint — or replace them entirely for teams that prefer to stay in-tool."
+    "phase190Item2Desc": "Full-text search across all wiki pages. AI can pull relevant docs into context alongside Notion, Confluence, and SharePoint — or replace them entirely for teams that prefer to stay in-tool.",
+    "shipped190Title": "Wiki / Docs Space",
+    "shipped190Item0Title": "Built-in Wiki",
+    "shipped190Item0Desc": "Hierarchical spaces → pages tree with a Notion-style block editor (headings, lists, checkboxes, tables, code blocks, callouts, slash menu). Drag pages to reorganize.",
+    "shipped190Item1Title": "Versioned docs with history",
+    "shipped190Item1Desc": "Every edit is versioned; restore any past revision. Breadcrumbs, auto table-of-contents, full-text search, @mentions, internal page links, and file attachments.",
+    "shipped190Item2Title": "AI-connected docs",
+    "shipped190Item2Desc": "Wiki pages auto-feed the Knowledge Center, so AI Q&A and Wise Architecture answer from your team's docs automatically.",
+    "shipped190Item3Title": "Pluggable Object Storage",
+    "shipped190Item3Desc": "Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; encrypted-by-config credentials, connection test, and one-click migration between backends."
   },
   "releaseNotes": {
     "title": "Release Notes",
@@ -7184,6 +7188,10 @@
     "knowledgeCenter": {
       "title": "Knowledge Center",
       "description": "Upload docs or paste links here — they feed every AI feature."
+    },
+    "wikiLink": {
+      "title": "📖 Team Wiki",
+      "description": "The built-in wiki lives right here. Create spaces and pages, write docs with a rich block editor, and link pages directly to pitches and tasks — no Confluence or Notion needed."
     }
   },
   "aria": {

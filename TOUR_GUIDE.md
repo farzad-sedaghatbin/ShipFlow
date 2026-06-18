@@ -12,7 +12,7 @@ This file is the **single source of truth** for the interactive onboarding tour.
 
 | File | Responsibility |
 |------|---------------|
-| `frontend/src/contexts/TourContext.tsx` | All 25 tour steps, driver.js config, navigation, skip-confirm |
+| `frontend/src/contexts/TourContext.tsx` | All 26 tour steps, driver.js config, navigation, skip-confirm |
 | `frontend/src/components/WelcomeTourDialog.tsx` | Auto-shown welcome modal for first-time users |
 | `frontend/src/styles/tour.css` | Custom dark-theme styling for driver.js popovers — imported from `TourContext.tsx` |
 | `frontend/src/components/Layout.tsx` | Renders `<WelcomeTourDialog>`, exposes "Start Tour" / "Restart Tour" buttons in sidebar + topbar |
@@ -77,8 +77,9 @@ Each step has a `data-tour` attribute on its target element. The table below is 
 | 22 | Reports & Analytics | `reports-overview` | `Reports.tsx` (outer container div) | `/reports` |
 | 23 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` — **Conditional: only included in the tour when the active project has `projectType === 'SCRUM'`**. `getTourSteps()` in `TourContext.tsx` filters this step out for non-SCRUM projects (which would otherwise be redirected to `/backlog`, breaking the tour). |
 | 24 | Knowledge Center | `knowledge-add-source` | `KnowledgeCenter.tsx` (Add source button) | `/knowledge` |
-| 25 | Project Selector | `project-selector` | `Layout.tsx:537` | `/health` |
-| 26 | You're All Set! | `user-menu` | `Layout.tsx:639` | `/health` |
+| 25 | Team Wiki | `wiki-link` | `Layout.tsx` (Wiki nav item `tourId`) | `/wiki` |
+| 26 | Project Selector | `project-selector` | `Layout.tsx:537` | `/health` |
+| 27 | You're All Set! | `user-menu` | `Layout.tsx:639` | `/health` |
 
 ### How `navItem` tourIds work
 

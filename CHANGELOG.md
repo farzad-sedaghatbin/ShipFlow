@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — Wiki / Docs Space (v1.9.0)
+
+#### Built-in Wiki
+- **Hierarchical spaces → pages**: Create named spaces (e.g. "Engineering", "Product") and organize pages in a nested tree of any depth. Drag pages to reorganize.
+- **Notion-style block editor**: Slash-command menu for headings, bullet/numbered/checkbox lists, tables, fenced code blocks (with language selector), callout boxes, dividers, and file/image embeds.
+- **Per-space ACL**: Space-level permissions — Viewer / Editor / Admin — independent of project RBAC. Admins always have full access; other roles default to org-member read.
+- **REST API**: `WikiSpaceController` and `WikiPageController` at `/api/v1/wiki/spaces` and `.../pages` — full CRUD, move, children listing, and search.
+- **File attachments on pages**: Attach files to any wiki page; downloads are routed through the pluggable object storage facade.
+
+#### Versioned Docs
+- **Revision history**: Every page save creates an immutable `WikiRevision`. `GET .../pages/{id}/revisions` lists all revisions; `POST .../revisions/{revId}/restore` creates a new head revision from a past snapshot.
+- **Breadcrumbs + auto table-of-contents**: Returned by the page API so the frontend can render navigation context without extra round-trips.
+- **Full-text search**: `GET /api/v1/wiki/search?q=…` — PostgreSQL trigram index on title + body. H2 test profile executes the SQL shape but skips ranked search.
+- **@mention notifications**: Mentioning `@user` in a page body fires an `ApplicationEvent` that routes through the existing notification pipeline.
+- **Internal page links**: Pages support `[[pageId]]` link tokens resolved by the backend to stable `/wiki/pages/{id}` URLs.
+
+#### AI-connected docs
+- **Auto Knowledge Center ingestion**: `WikiPageChangedEvent` triggers `KnowledgeSourceService` to upsert a chunk keyed `(WIKI_PAGE, pageId)` on every save. AI Q&A, Wise Architecture, and risk analysis draw on wiki content automatically.
+- **Known follow-up**: wiki attachment text-extraction into the Knowledge Center is deferred (pages are ingested today; binary files are not yet parsed).
+
+### Added — Pluggable Object Storage (v1.9.0)
+- **`ObjectStorageFacade` SPI**: Single Spring-bean interface `store(ref, bytes)` / `retrieve(ref)` / `delete(ref)` / `testConnection()`. Implementations: `LocalFsStorageProvider`, `S3StorageProvider`, `MinioStorageProvider`.
+- **Org Settings → Storage tab**: Admin UI for selecting `LOCAL_FS`, `S3`, or `MinIO`; filling credentials; running a connection test; and triggering one-click migration between backends.
+- **Credential encryption**: Access keys / secrets stored via AES-GCM with the app encryption key; never returned in plain text after first save.
+- **Pre-signed download URLs**: S3 and MinIO downloads use 1-hour pre-signed URLs; `LOCAL_FS` downloads go through an authenticated internal endpoint.
+- **Background migration job**: Switches all stored object references to a new backend while the application is live; progress tracked in a `storage_migrations` table.
+- **Migrations**: `V2026_06_18_0004__add_storage_config.sql` (org-level storage backend config) + `V2026_06_18_0005__add_storage_migrations.sql`.
+
+### Known follow-ups
+- (a) Wiki attachment text-extraction into the Knowledge Center is deferred — page body content is ingested on every save; binary file content (PDF, DOCX) within wiki attachments is not yet extracted.
+- (b) Wiki global-search trigram index requires PostgreSQL (`pg_trgm` extension). The feature is verified manually against Postgres; H2 integration tests cover the SQL shape but not ranked relevance scoring.
+
 ### Added — Knowledge Center
 - Knowledge Center: upload docs and add URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis. Scoped Org / Team / Project. Pluggable provider SPI; GitHub / Confluence / Notion / Drive integrations queued as follow-ups.
 - Migrations: `V2026_06_18_0002__add_knowledge_sources.sql` (knowledge sources table), `V2026_06_18_0003__knowledge_items_deleted_at.sql` (soft-delete column).

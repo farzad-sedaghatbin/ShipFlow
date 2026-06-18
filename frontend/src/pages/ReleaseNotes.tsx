@@ -57,7 +57,6 @@ import {
   Link2,
   Building2,
   Wand2,
-  Sliders,
   Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -105,24 +104,32 @@ const releases: Release[] = [
   },
   {
     version: '1.9.0',
-    date: 'Coming soon',
-    title: 'Custom Fields & Advanced RBAC',
-    upcoming: true,
+    date: 'June 18, 2026',
+    title: 'Wiki / Docs Space',
     highlights: [
       {
-        icon: <Sliders className="h-5 w-5" />,
-        title: 'Custom Fields on Tasks & Pitches',
-        description: 'Add your own fields — text, number, date, single-select, multi-select — to tasks and pitches. Fields are configured per project and appear everywhere the entity appears.',
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Built-in Wiki',
+        description:
+          'Hierarchical spaces → pages tree with a Notion-style block editor (headings, lists, checkboxes, tables, code blocks, callouts, slash menu). Drag pages to reorganize.',
       },
       {
-        icon: <Shield className="h-5 w-5" />,
-        title: 'Project-Level Permissions',
-        description: 'Grant access at the project level, not just the organization. Give a contractor read access to one project without touching global roles.',
+        icon: <Clock className="h-5 w-5" />,
+        title: 'Versioned docs with history',
+        description:
+          'Every edit is versioned; restore any past revision. Breadcrumbs, auto table-of-contents, full-text search, @mentions, internal page links, and file attachments.',
       },
       {
-        icon: <Layout className="h-5 w-5" />,
-        title: 'Field Visibility Rules',
-        description: 'Show or hide custom fields based on role, project type, or cycle phase.',
+        icon: <Brain className="h-5 w-5" />,
+        title: 'AI-connected docs',
+        description:
+          'Wiki pages auto-feed the Knowledge Center, so AI Q&A and Wise Architecture answer from your team\'s docs automatically.',
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Pluggable Object Storage',
+        description:
+          'Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; encrypted-by-config credentials, connection test, and one-click migration between backends.',
       },
     ],
   },

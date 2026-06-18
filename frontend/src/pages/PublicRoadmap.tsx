@@ -89,6 +89,17 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.9.0',
+      date: 'June 18, 2026',
+      title: t('publicRoadmap.shipped190Title'),
+      highlights: [
+        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item0Title'), description: t('publicRoadmap.shipped190Item0Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item1Title'), description: t('publicRoadmap.shipped190Item1Desc') },
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item2Title'), description: t('publicRoadmap.shipped190Item2Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item3Title'), description: t('publicRoadmap.shipped190Item3Desc') },
+      ],
+    },
+    {
       version: '1.7.0',
       date: 'June 15, 2026',
       title: t('publicRoadmap.shipped170Title'),
@@ -263,23 +274,13 @@ export default function PublicRoadmap() {
       ],
     },
     {
-      version: 'v1.9.0',
+      version: 'v1.10.0',
       theme: t('publicRoadmap.phase180Theme'),
       status: 'planned',
       items: [
         { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
         { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
         { icon: <Layout className="h-5 w-5" />, title: t('publicRoadmap.phase180Item2Title'), description: t('publicRoadmap.phase180Item2Desc') },
-      ],
-    },
-    {
-      version: 'v1.10.0',
-      theme: t('publicRoadmap.phase190Theme'),
-      status: 'planned',
-      items: [
-        { icon: <BookmarkCheck className="h-5 w-5" />, title: t('publicRoadmap.phase190Item0Title'), description: t('publicRoadmap.phase190Item0Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase190Item1Title'), description: t('publicRoadmap.phase190Item1Desc') },
-        { icon: <Rss className="h-5 w-5" />, title: t('publicRoadmap.phase190Item2Title'), description: t('publicRoadmap.phase190Item2Desc') },
       ],
     },
   ];
