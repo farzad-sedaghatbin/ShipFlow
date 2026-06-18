@@ -38,6 +38,7 @@ public class RetroItemService {
   private final MessageService messageService;
   private final RetroMapper retroMapper;
   private final RetroCrudService retroCrudService;
+  private final RetroSseService retroSseService;
 
   // ==================== ITEM CRUD ====================
 
@@ -78,6 +79,7 @@ public class RetroItemService {
         .build();
 
     RetroItem saved = retroItemRepository.save(item);
+    retroSseService.broadcastBoardUpdate(retro.getId(), retro.getProject() != null ? retro.getProject().getId() : null);
     return retroMapper.toItemDTOWithLookup(saved, currentUser);
   }
 
@@ -99,6 +101,7 @@ public class RetroItemService {
 
     item.setContent(content);
     RetroItem saved = retroItemRepository.save(item);
+    retroSseService.broadcastBoardUpdate(retro.getId(), retro.getProject() != null ? retro.getProject().getId() : null);
     return retroMapper.toItemDTOWithLookup(saved, currentUser);
   }
 
@@ -118,7 +121,10 @@ public class RetroItemService {
     User currentUser = retroCrudService.getCurrentUser();
     checkItemOwnership(item, currentUser);
 
+    Long projectId = retro.getProject() != null ? retro.getProject().getId() : null;
+    Long retroId = retro.getId();
     retroItemRepository.deleteById(itemId);
+    retroSseService.broadcastBoardUpdate(retroId, projectId);
   }
 
   public RetroItemDTO markDiscussed(Long itemId, boolean discussed) {
@@ -134,6 +140,7 @@ public class RetroItemService {
     item.setDiscussedAt(discussed ? java.time.LocalDateTime.now() : null);
 
     RetroItem saved = retroItemRepository.save(item);
+    retroSseService.broadcastBoardUpdate(retro.getId(), retro.getProject() != null ? retro.getProject().getId() : null);
     return retroMapper.toItemDTOWithLookup(saved, retroCrudService.getCurrentUser());
   }
 
@@ -190,6 +197,7 @@ public class RetroItemService {
     }
 
     RetroItem saved = retroItemRepository.save(item);
+    retroSseService.broadcastBoardUpdate(retro.getId(), retro.getProject() != null ? retro.getProject().getId() : null);
     return retroMapper.toItemDTOWithLookup(saved, currentUser);
   }
 
@@ -229,6 +237,7 @@ public class RetroItemService {
     }
 
     RetroItem saved = retroItemRepository.save(item);
+    retroSseService.broadcastBoardUpdate(retro.getId(), retro.getProject() != null ? retro.getProject().getId() : null);
     return retroMapper.toItemDTOWithLookup(saved, currentUser);
   }
 
@@ -291,6 +300,7 @@ public class RetroItemService {
 
     // Save target with updated vote count
     RetroItem saved = retroItemRepository.save(targetItem);
+    retroSseService.broadcastBoardUpdate(retro.getId(), retro.getProject() != null ? retro.getProject().getId() : null);
     return retroMapper.toItemDTOWithLookup(saved, retroCrudService.getCurrentUser());
   }
 
@@ -313,6 +323,7 @@ public class RetroItemService {
 
     item.setMergedInto(null);
     RetroItem saved = retroItemRepository.save(item);
+    retroSseService.broadcastBoardUpdate(retro.getId(), retro.getProject() != null ? retro.getProject().getId() : null);
     return retroMapper.toItemDTOWithLookup(saved, retroCrudService.getCurrentUser());
   }
 

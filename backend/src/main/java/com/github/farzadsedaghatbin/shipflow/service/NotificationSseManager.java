@@ -102,6 +102,28 @@ public class NotificationSseManager {
   }
 
   /**
+   * Push an arbitrary named SSE event to a specific user's stream without persisting to the
+   * notification table. Used for transient real-time signals (e.g. retro board updates).
+   *
+   * @param userId    the target user's ID
+   * @param eventName the SSE event name (e.g. {@code "retro-updated"})
+   * @param payload   the payload to serialise as JSON
+   */
+  public void sendEventToUser(Long userId, String eventName, Object payload) {
+    SseEmitter emitter = emitters.get(userId);
+    if (emitter == null) {
+      return;
+    }
+    try {
+      emitter.send(
+          SseEmitter.event().name(eventName).data(payload, MediaType.APPLICATION_JSON));
+    } catch (Exception e) {
+      log.debug("SSE send '{}' failed for user {} — removing stale emitter", eventName, userId);
+      emitters.remove(userId, emitter);
+    }
+  }
+
+  /**
    * Number of currently active SSE streams. Useful for monitoring/metrics.
    *
    * @return count of open emitters
