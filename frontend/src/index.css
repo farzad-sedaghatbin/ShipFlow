@@ -796,3 +796,51 @@ html[dir="rtl"] ol {
   border-left: 2px solid rgba(0, 0, 0, 0.4);
   border-right: none;
 }
+
+/* ── Wiki page → PDF export (print only) ──────────────────────────────────────
+   "Export PDF" on a wiki page calls window.print(); this stylesheet prints only
+   the page content (#wiki-print-area), hides app chrome, and forces a readable
+   light layout regardless of the active theme. Save-as-PDF in the print dialog. */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #wiki-print-area,
+  #wiki-print-area * {
+    visibility: visible !important;
+  }
+  #wiki-print-area {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  /* Readable black-on-white regardless of dark/light theme */
+  #wiki-print-area,
+  #wiki-print-area * {
+    color: #111111 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+  /* Elements inside the print area that should not appear in the PDF */
+  #wiki-print-area .no-print {
+    display: none !important;
+  }
+  /* Let the editor/content expand naturally instead of scrolling in a box */
+  #wiki-print-area .wiki-content {
+    border: none !important;
+    overflow: visible !important;
+    min-height: 0 !important;
+  }
+  .bn-container,
+  .bn-editor {
+    overflow: visible !important;
+  }
+  @page {
+    margin: 0.75in;
+  }
+}

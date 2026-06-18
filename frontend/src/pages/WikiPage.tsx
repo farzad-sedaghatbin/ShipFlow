@@ -2,7 +2,7 @@ import { lazy, Suspense, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Edit2, Paperclip, Download, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Edit2, Paperclip, Download, Trash2, ChevronDown, ChevronUp, FileDown } from "lucide-react";
 import WikiTree from "../components/wiki/WikiTree";
 import WikiBreadcrumbs from "../components/wiki/WikiBreadcrumbs";
 import WikiTableOfContents from "../components/wiki/WikiTableOfContents";
@@ -120,6 +120,19 @@ export default function WikiPage() {
     }
   }
 
+  function handleExportPdf() {
+    // Print just the page content (see the @media print rules in index.css) and
+    // let the user Save as PDF. Use the page title as the default PDF filename.
+    const previousTitle = document.title;
+    if (page) document.title = page.title;
+    const restore = () => {
+      document.title = previousTitle;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) uploadMutation.mutate(file);
@@ -206,20 +219,22 @@ export default function WikiPage() {
       {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto py-8 px-6 space-y-6">
+          <div id="wiki-print-area" className="max-w-3xl mx-auto py-8 px-6 space-y-6">
             {/* Breadcrumbs */}
             {space && (
-              <WikiBreadcrumbs
-                space={space}
-                ancestors={findAncestors()}
-                currentTitle={page.title}
-              />
+              <div className="no-print">
+                <WikiBreadcrumbs
+                  space={space}
+                  ancestors={findAncestors()}
+                  currentTitle={page.title}
+                />
+              </div>
             )}
 
             {/* Title + toolbar */}
             <div className="flex items-start justify-between gap-4">
               <h1 className="text-3xl font-bold leading-tight">{page.title}</h1>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 no-print">
                 {editMode ? (
                   <>
                     <button
@@ -240,13 +255,22 @@ export default function WikiPage() {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => setEditMode(true)}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-input hover:bg-muted transition-colors"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    {t("wiki.edit")}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setEditMode(true)}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-input hover:bg-muted transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      {t("wiki.edit")}
+                    </button>
+                    <button
+                      onClick={handleExportPdf}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-input hover:bg-muted transition-colors"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      {t("wiki.exportPdf")}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -257,7 +281,7 @@ export default function WikiPage() {
             </p>
 
             {/* Editor / viewer */}
-            <div className="rounded-lg border border-border min-h-[300px] overflow-hidden">
+            <div className="wiki-content rounded-lg border border-border min-h-[300px] overflow-hidden">
               {editMode ? (
                 <Suspense
                   fallback={
@@ -294,7 +318,7 @@ export default function WikiPage() {
             </div>
 
             {/* Attachments */}
-            <section className="space-y-3">
+            <section className="space-y-3 no-print">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <Paperclip className="w-4 h-4" />
@@ -357,7 +381,7 @@ export default function WikiPage() {
             </section>
 
             {/* History (collapsible) */}
-            <section className="border-t border-border pt-4 space-y-3">
+            <section className="border-t border-border pt-4 space-y-3 no-print">
               <button
                 onClick={() => setHistoryOpen((o) => !o)}
                 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
