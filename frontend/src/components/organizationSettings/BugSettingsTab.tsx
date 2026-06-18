@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import { Bug } from 'lucide-react';
+import { Bug, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
+import { Button } from '../ui/button';
 import { OrganizationSettings } from '../../types/organizationSettings';
 
 interface BugSettingsTabProps {
@@ -26,9 +27,26 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h3 className="font-semibold mb-3">{t('organizationSettings.bugStatuses')}</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">{t('organizationSettings.bugStatuses')}</h3>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const current = formData.bugStatuses || [];
+                setFormData({
+                  ...formData,
+                  bugStatuses: [...current, { name: '', description: '', color: '#6b7280', isActive: true, order: current.length + 1, isClosed: false }],
+                });
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              {t('organizationSettings.addStatus')}
+            </Button>
+          </div>
           <div className="space-y-2">
-            {formData.bugStatuses?.map((status, index) => (
+            {(formData.bugStatuses || []).map((status, index) => (
               <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
                 <Input
                   type="color"
@@ -85,6 +103,17 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
                     />
                     <Label className="text-xs">{t('organizationSettings.closed')}</Label>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const updated = (formData.bugStatuses || []).filter((_, i) => i !== index);
+                      setFormData({ ...formData, bugStatuses: updated });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -94,9 +123,26 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
         <Separator />
 
         <div>
-          <h3 className="font-semibold mb-3">{t('organizationSettings.severityLevels')}</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">{t('organizationSettings.severityLevels')}</h3>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const current = formData.severityLevels || [];
+                setFormData({
+                  ...formData,
+                  severityLevels: [...current, { name: '', description: '', color: '#6b7280', isActive: true, order: current.length + 1, priority: current.length + 1 }],
+                });
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              {t('organizationSettings.addSeverity')}
+            </Button>
+          </div>
           <div className="space-y-2">
-            {formData.severityLevels?.map((severity, index) => (
+            {(formData.severityLevels || []).map((severity, index) => (
               <div key={index} className="flex items-center gap-3 p-3 rounded-lg border">
                 <Input
                   type="color"
@@ -157,6 +203,17 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
                     />
                     <Label className="text-xs">{t('organizationSettings.active')}</Label>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const updated = (formData.severityLevels || []).filter((_, i) => i !== index);
+                      setFormData({ ...formData, severityLevels: updated });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
               </div>
             ))}
