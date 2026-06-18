@@ -8,21 +8,18 @@ import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
+import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StoredObjectRef;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,35 +29,22 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Handles file upload, retrieval, and deletion for task attachments.
  *
- * <p>Allowed content types cover the most common work artefacts:
- * images (screenshots, mockups), PDFs, Word docs, plain text, and Markdown.
- * Videos are intentionally excluded to keep storage lean.
+ * <p>Validation (size, MIME type) and key generation are delegated to {@link ObjectStorageService}.
+ * Allowed content types cover the most common work artefacts: images (screenshots, mockups), PDFs,
+ * Word docs, plain text, and Markdown. Videos are intentionally excluded to keep storage lean.
  *
- * <p>Only the uploader or an ADMIN may delete an attachment; everyone with
- * BACKLOG READ permission may download.
+ * <p>Only the uploader or an ADMIN may delete an attachment; everyone with BACKLOG READ permission
+ * may download.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TaskAttachmentService {
 
-  private static final long MAX_FILE_SIZE = 10 * 1024 * 1024L; // 10 MB
-
-  private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-      "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/msword",
-      "text/plain",
-      "text/markdown"
-  );
-
   private final TaskAttachmentRepository attachmentRepository;
   private final TaskRepository taskRepository;
   private final UserRepository userRepository;
-
-  @Value("${app.upload.dir:uploads}")
-  private String uploadDir;
+  private final ObjectStorageService objectStorageService;
 
   // ── Upload ────────────────────────────────────────────────────────────────
 
@@ -69,36 +53,41 @@ public class TaskAttachmentService {
     Task task = taskRepository.findById(taskId)
         .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
 
-    validateFile(file);
+    if (file == null || file.isEmpty()) {
+      throw new IllegalArgumentException("File must not be empty");
+    }
 
-    User uploader = getCurrentUser();
+    String contentType = resolveContentType(file);
 
-    String originalName = sanitize(file.getOriginalFilename());
-    String storedName = UUID.randomUUID() + "_" + originalName;
-
-    Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+    // Delegate validation + persistence to the façade (throws IllegalArgumentException on violation)
+    StoredObjectRef ref;
     try {
-      Files.createDirectories(uploadPath);
-      Path dest = uploadPath.resolve(storedName);
-      if (!dest.normalize().startsWith(uploadPath)) {
-        throw new IllegalArgumentException("Invalid file path detected");
-      }
-      Files.copy(file.getInputStream(), dest, StandardCopyOption.REPLACE_EXISTING);
+      ref = objectStorageService.store(
+          "tasks/" + taskId,
+          file.getOriginalFilename(),
+          contentType,
+          file.getSize(),
+          file.getInputStream());
     } catch (IOException e) {
       throw new RuntimeException("Failed to store attachment: " + e.getMessage(), e);
     }
 
+    User uploader = getCurrentUser();
+
     TaskAttachment attachment = TaskAttachment.builder()
         .task(task)
-        .fileName(originalName)
-        .filePath(storedName)
+        .fileName(resolveOriginalName(file))
+        .filePath(ref.getKey()) // populate legacy column for backward compatibility
+        .storageProvider(objectStorageService.activeProvider())
+        .storageKey(ref.getKey())
         .fileSize(file.getSize())
-        .contentType(resolveContentType(file))
+        .contentType(contentType)
         .uploadedBy(uploader)
         .build();
 
     attachment = attachmentRepository.save(attachment);
-    log.info("Attachment uploaded: task={} file={} user={}", taskId, originalName, uploader.getUsername());
+    log.info("Attachment uploaded: task={} file={} user={}", taskId, attachment.getFileName(),
+        uploader.getUsername());
     return toDTO(attachment);
   }
 
@@ -121,17 +110,28 @@ public class TaskAttachmentService {
   @Transactional(readOnly = true)
   public DownloadResult downloadAttachment(Long taskId, Long attachmentId) {
     TaskAttachment attachment = resolveAttachment(taskId, attachmentId);
+
+    // Determine provider and key — fall back to LOCAL_FS + filePath for legacy rows
+    StorageProviderType provider =
+        attachment.getStorageProvider() != null
+            ? attachment.getStorageProvider()
+            : StorageProviderType.LOCAL_FS;
+    String key =
+        attachment.getStorageKey() != null && !attachment.getStorageKey().isBlank()
+            ? attachment.getStorageKey()
+            : attachment.getFilePath();
+
+    DownloadResource dr = objectStorageService.retrieve(provider, key);
+
+    // Use the entity's stored contentType and originalFileName (NOT the provider's)
+    // to preserve correct metadata for legacy files that have no sidecar.
+    Resource resource;
     try {
-      Path file = Paths.get(uploadDir).toAbsolutePath().normalize()
-          .resolve(attachment.getFilePath()).normalize();
-      Resource resource = new UrlResource(file.toUri());
-      if (!resource.exists() || !resource.isReadable()) {
-        throw new ResourceNotFoundException("File not found on disk: " + attachment.getFileName());
-      }
-      return new DownloadResult(resource, attachment.getFileName(), attachment.getContentType());
-    } catch (java.net.MalformedURLException e) {
-      throw new RuntimeException("Could not resolve file path", e);
+      resource = new InputStreamResource(dr.getStream());
+    } catch (Exception e) {
+      throw new ResourceNotFoundException("File not found: " + attachment.getFileName());
     }
+    return new DownloadResult(resource, attachment.getFileName(), attachment.getContentType());
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -149,17 +149,22 @@ public class TaskAttachmentService {
       throw new AccessDeniedException("Only the uploader or an ADMIN may delete this attachment");
     }
 
-    // Remove from disk (best-effort; DB record always removed)
-    try {
-      Path file = Paths.get(uploadDir).toAbsolutePath().normalize()
-          .resolve(attachment.getFilePath()).normalize();
-      Files.deleteIfExists(file);
-    } catch (IOException e) {
-      log.warn("Could not delete attachment file from disk: {}", attachment.getFilePath(), e);
-    }
+    // Determine provider and key — fall back to LOCAL_FS + filePath for legacy rows
+    StorageProviderType provider =
+        attachment.getStorageProvider() != null
+            ? attachment.getStorageProvider()
+            : StorageProviderType.LOCAL_FS;
+    String key =
+        attachment.getStorageKey() != null && !attachment.getStorageKey().isBlank()
+            ? attachment.getStorageKey()
+            : attachment.getFilePath();
+
+    // Best-effort removal from storage backend
+    objectStorageService.delete(provider, key);
 
     attachmentRepository.delete(attachment);
-    log.info("Attachment deleted: id={} task={} user={}", attachmentId, taskId, currentUser.getUsername());
+    log.info("Attachment deleted: id={} task={} user={}", attachmentId, taskId,
+        currentUser.getUsername());
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -168,23 +173,15 @@ public class TaskAttachmentService {
     TaskAttachment a = attachmentRepository.findById(attachmentId)
         .orElseThrow(() -> new ResourceNotFoundException("Attachment not found: " + attachmentId));
     if (!a.getTask().getId().equals(taskId)) {
-      throw new ResourceNotFoundException("Attachment " + attachmentId + " does not belong to task " + taskId);
+      throw new ResourceNotFoundException(
+          "Attachment " + attachmentId + " does not belong to task " + taskId);
     }
     return a;
   }
 
-  private void validateFile(MultipartFile file) {
-    if (file == null || file.isEmpty()) {
-      throw new IllegalArgumentException("File must not be empty");
-    }
-    if (file.getSize() > MAX_FILE_SIZE) {
-      throw new IllegalArgumentException("File exceeds the 10 MB limit");
-    }
-    String ct = resolveContentType(file);
-    if (!ALLOWED_CONTENT_TYPES.contains(ct)) {
-      throw new IllegalArgumentException(
-          "Unsupported file type '" + ct + "'. Allowed: images, PDF, DOCX, DOC, TXT, MD");
-    }
+  private String resolveOriginalName(MultipartFile file) {
+    String name = file.getOriginalFilename();
+    return (name != null && !name.isBlank()) ? name : "attachment";
   }
 
   private String resolveContentType(MultipartFile file) {
@@ -209,14 +206,6 @@ public class TaskAttachmentService {
       };
     }
     return "application/octet-stream";
-  }
-
-  private String sanitize(String name) {
-    if (name == null || name.isBlank()) return "attachment";
-    // Strip directory separators and null bytes
-    String safe = name.replaceAll("[/\\\\:\\*\\?\"<>|\\x00]", "_");
-    // Truncate to 200 characters to stay well within VARCHAR(255) and filesystem limits
-    return safe.length() > 200 ? safe.substring(0, 200) : safe;
   }
 
   private User getCurrentUser() {
