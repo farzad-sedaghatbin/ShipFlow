@@ -28,8 +28,21 @@ export default function WikiSpace() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  // null = create a top-level page; a number = create a child of that page.
+  const [parentId, setParentId] = useState<number | null>(null);
 
   const numSpaceId = Number(spaceId);
+
+  function openCreateDialog(parent: number | null) {
+    setParentId(parent);
+    setDialogOpen(true);
+  }
+
+  function closeCreateDialog() {
+    setDialogOpen(false);
+    setParentId(null);
+    reset();
+  }
 
   const { data: space, isLoading: spaceLoading } = useQuery({
     queryKey: ["wiki-space", numSpaceId],
@@ -48,6 +61,7 @@ export default function WikiSpace() {
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["wiki-tree", numSpaceId] });
       setDialogOpen(false);
+      setParentId(null);
       reset();
       navigate(`/wiki/${numSpaceId}/${res.data.id}`);
     },
@@ -63,7 +77,11 @@ export default function WikiSpace() {
   });
 
   function onSubmit(data: CreatePageForm) {
-    createPageMutation.mutate({ spaceId: numSpaceId, title: data.title });
+    createPageMutation.mutate({
+      spaceId: numSpaceId,
+      title: data.title,
+      parentId: parentId ?? undefined,
+    });
   }
 
   if (spaceLoading) {
@@ -85,7 +103,7 @@ export default function WikiSpace() {
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-sm truncate">{space.name}</h2>
           <button
-            onClick={() => setDialogOpen(true)}
+            onClick={() => openCreateDialog(null)}
             className="text-muted-foreground hover:text-primary transition-colors"
             aria-label={t("wiki.createPage")}
           >
@@ -97,7 +115,11 @@ export default function WikiSpace() {
             {t("wiki.pages")}…
           </div>
         ) : (
-          <WikiTree spaceId={numSpaceId} nodes={tree ?? []} />
+          <WikiTree
+            spaceId={numSpaceId}
+            nodes={tree ?? []}
+            onAddChild={(pid) => openCreateDialog(pid)}
+          />
         )}
       </aside>
 
@@ -107,7 +129,7 @@ export default function WikiSpace() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold">{space.name}</h1>
             <button
-              onClick={() => setDialogOpen(true)}
+              onClick={() => openCreateDialog(null)}
               className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -144,7 +166,9 @@ export default function WikiSpace() {
       {dialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-background rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <h2 className="text-lg font-semibold">{t("wiki.createPage")}</h2>
+            <h2 className="text-lg font-semibold">
+              {parentId ? t("wiki.addSubpage") : t("wiki.createPage")}
+            </h2>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -165,10 +189,7 @@ export default function WikiSpace() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setDialogOpen(false);
-                    reset();
-                  }}
+                  onClick={closeCreateDialog}
                   className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
                 >
                   {t("wiki.cancel")}

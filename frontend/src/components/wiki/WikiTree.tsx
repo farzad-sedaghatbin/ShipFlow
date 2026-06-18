@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Plus } from "lucide-react";
 import { type WikiTreeNodeDTO } from "../../services/wikiService";
 import { wikiService } from "../../services/wikiService";
 
@@ -12,6 +12,8 @@ export interface WikiTreeProps {
   nodes: WikiTreeNodeDTO[];
   currentPageId?: number;
   onNavigate?: (pageId: number) => void;
+  /** Called when the "add subpage" affordance on a node is clicked. */
+  onAddChild?: (parentId: number) => void;
 }
 
 // ─── Single node (recursive) ──────────────────────────────────────────────────
@@ -22,6 +24,7 @@ interface WikiTreeNodeProps {
   currentPageId?: number;
   onNavigate?: (pageId: number) => void;
   onDrop: (draggedId: number, targetParentId: number | null, newIndex: number) => void;
+  onAddChild?: (parentId: number) => void;
 }
 
 function WikiTreeNode({
@@ -30,6 +33,7 @@ function WikiTreeNode({
   currentPageId,
   onNavigate,
   onDrop,
+  onAddChild,
 }: WikiTreeNodeProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(true);
@@ -79,7 +83,7 @@ function WikiTreeNode({
       className="list-none"
     >
       <div
-        className={`flex items-center gap-1 px-2 py-1 rounded cursor-pointer text-sm hover:bg-muted/60 ${
+        className={`group flex items-center gap-1 px-2 py-1 rounded cursor-pointer text-sm hover:bg-muted/60 ${
           isActive ? "bg-muted font-medium" : ""
         }`}
         onClick={handleClick}
@@ -101,6 +105,22 @@ function WikiTreeNode({
           )}
         </button>
         <span className="truncate">{node.title}</span>
+        {/* Add subpage (child) */}
+        {onAddChild && (
+          <button
+            type="button"
+            data-testid={`wiki-add-child-${node.id}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddChild(node.id);
+            }}
+            className="ml-auto flex-none w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+            aria-label="Add subpage"
+            title="Add subpage"
+          >
+            <Plus className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {hasChildren && open && (
@@ -113,6 +133,7 @@ function WikiTreeNode({
               currentPageId={currentPageId}
               onNavigate={onNavigate}
               onDrop={onDrop}
+              onAddChild={onAddChild}
             />
           ))}
         </ul>
@@ -128,6 +149,7 @@ export default function WikiTree({
   nodes,
   currentPageId,
   onNavigate,
+  onAddChild,
 }: WikiTreeProps) {
   const queryClient = useQueryClient();
 
@@ -168,6 +190,7 @@ export default function WikiTree({
           currentPageId={currentPageId}
           onNavigate={onNavigate}
           onDrop={handleDrop}
+          onAddChild={onAddChild}
         />
       ))}
     </ul>
