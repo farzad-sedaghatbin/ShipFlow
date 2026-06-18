@@ -2,7 +2,13 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 
 import { type Block, type PartialBlock } from "@blocknote/core";
-import { BlockNoteViewRaw as BlockNoteView, useCreateBlockNote } from "@blocknote/react";
+import { useCreateBlockNote } from "@blocknote/react";
+// Use the Mantine flavor's BlockNoteView — it wires the default UI (SideMenu,
+// formatting toolbar, slash menu). @blocknote/react only exports the bare
+// BlockNoteViewRaw, which leaves those components undefined and crashes in the
+// production bundle ("undefined is not an object (evaluating '…SideMenu')").
+import { BlockNoteView } from "@blocknote/mantine";
+import { useEffect } from "react";
 
 // ─── Pure helpers (exported for unit tests without mounting the editor) ───────
 
@@ -44,9 +50,25 @@ export default function WikiEditor({
   editable,
   onChange,
 }: WikiEditorProps) {
-  const editor = useCreateBlockNote({
-    initialContent: parseBlockNoteContent(initialContent),
-  });
+  // Create the editor with an empty document. We deliberately do NOT pass
+  // initialContent here: useCreateBlockNote throws synchronously if the stored
+  // JSON is not a structurally valid BlockNote document (e.g. legacy/imported/
+  // hand-authored content), which would white-screen the whole page. Instead we
+  // load the content defensively below.
+  const editor = useCreateBlockNote();
+
+  useEffect(() => {
+    const blocks = parseBlockNoteContent(initialContent);
+    if (!blocks || blocks.length === 0) return;
+    try {
+      editor.replaceBlocks(editor.document, blocks);
+    } catch (e) {
+      // Malformed stored content — start from an empty document rather than crash.
+      console.warn("WikiEditor: could not load stored content, starting empty", e);
+    }
+    // Only re-run when the source content changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialContent]);
 
   return (
     <BlockNoteView
