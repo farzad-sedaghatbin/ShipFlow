@@ -9,6 +9,7 @@ import { useCreateBlockNote } from "@blocknote/react";
 // production bundle ("undefined is not an object (evaluating '…SideMenu')").
 import { BlockNoteView } from "@blocknote/mantine";
 import { useEffect } from "react";
+import { useTheme } from "../../contexts";
 
 // ─── Pure helpers (exported for unit tests without mounting the editor) ───────
 
@@ -56,6 +57,10 @@ export default function WikiEditor({
   // hand-authored content), which would white-screen the whole page. Instead we
   // load the content defensively below.
   const editor = useCreateBlockNote();
+  // Keep the editor's theme in sync with the app theme; otherwise BlockNote
+  // keeps whatever color scheme it mounted with (e.g. a dark editor surface
+  // lingering after switching the app back to light mode).
+  const { actualMode } = useTheme();
 
   useEffect(() => {
     const blocks = parseBlockNoteContent(initialContent);
@@ -74,6 +79,7 @@ export default function WikiEditor({
     <BlockNoteView
       editor={editor}
       editable={editable}
+      theme={actualMode}
       onChange={() => {
         onChange(serializeBlockNoteContent(editor.document));
       }}
