@@ -96,6 +96,44 @@ public class WikiPermissionService {
     }
   }
 
+  /**
+   * Returns {@code true} if {@code userId} may create a new wiki space.
+   *
+   * <p>Allowed when the user is ADMIN, or when the user's role has the global
+   * {@code WIKI / CREATE} permission via {@link PermissionService}.
+   * Fail-closed: returns {@code false} if the user is not found.
+   *
+   * @param userId the user to check
+   * @return true if the user may create a wiki space
+   */
+  @Transactional(readOnly = true)
+  public boolean canCreateSpace(Long userId) {
+    Optional<User> userOpt = userRepository.findById(userId);
+    if (userOpt.isEmpty()) {
+      log.warn("WikiPermissionService: user {} not found — denying createSpace", userId);
+      return false;
+    }
+    User user = userOpt.get();
+    if (user.getRole() == UserRole.ADMIN) {
+      return true;
+    }
+    return permissionService.hasPermission(user.getRole(), ResourceType.WIKI, PermissionType.CREATE);
+  }
+
+  /**
+   * Asserts that {@code userId} may create a new wiki space; throws
+   * {@link AccessDeniedException} if denied.
+   *
+   * @param userId the user to check
+   * @throws AccessDeniedException if the user is not permitted to create a wiki space
+   */
+  public void requireCreateSpace(Long userId) {
+    if (!canCreateSpace(userId)) {
+      throw new AccessDeniedException(
+          String.format("User %d does not have permission to create a wiki space", userId));
+    }
+  }
+
   // -----------------------------------------------------------------------
   // Internal resolution logic
   // -----------------------------------------------------------------------

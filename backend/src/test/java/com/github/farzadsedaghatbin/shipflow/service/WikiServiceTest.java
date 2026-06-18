@@ -6,6 +6,8 @@ import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.CreateWikiPageRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.CreateWikiSpaceRequest;
+
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.MovePageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
@@ -21,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -194,7 +197,7 @@ class WikiServiceTest {
   }
 
   @Test
-  void movePage_resequencesSiblingPositions() {
+  void movePage_sameParent_resequencesContiguousPositions() {
     Long userId = 1L;
     Long spaceId = 10L;
     Long pageId = 1L;
@@ -205,6 +208,8 @@ class WikiServiceTest {
     space.setSpaceKey("space");
     space.setCreatedBy(userId);
 
+    // Three root-level pages: page(pos=0), sibling1(pos=1), sibling2(pos=2).
+    // Move page from position 0 to index 1 within the same root level.
     WikiPage page = new WikiPage();
     page.setId(pageId);
     page.setSpaceId(spaceId);
@@ -233,25 +238,118 @@ class WikiServiceTest {
     when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
     when(pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId))
         .thenReturn(List.of(page, sibling1, sibling2));
-    // First call (old siblings, excludes the moved page → 2 items after filter)
-    // Second call (new siblings, excludeId=null → returns 2 items; page is then inserted)
+    // getSiblings(spaceId, null, pageId) excludes the moved page → [sibling1, sibling2]
     when(pageRepository.findBySpaceIdAndParentIdIsNullAndDeletedAtIsNullOrderByPositionAsc(spaceId))
-        .thenReturn(
-            new ArrayList<>(List.of(page, sibling1, sibling2)), // first call
-            new ArrayList<>(List.of(sibling1, sibling2))); // second call (page already removed)
+        .thenReturn(new ArrayList<>(List.of(page, sibling1, sibling2)));
     when(pageRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
     doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
 
+    // Move page (currently pos=0) to index 1 within the same parent (null)
     MovePageRequest req = new MovePageRequest(null, 1);
     wikiService.movePage(pageId, req, userId);
 
     @SuppressWarnings("rawtypes")
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
-    verify(pageRepository, atLeastOnce()).saveAll(captor.capture());
-    // After reorder, the second saveAll call should contain 3 items (two original + inserted page)
+    verify(pageRepository, times(1)).saveAll(captor.capture());
+
+    // Single saveAll should contain all 3 siblings with contiguous positions 0,1,2
+    @SuppressWarnings("unchecked")
+    List<WikiPage> saved = captor.getValue();
+    assertThat(saved).hasSize(3);
+    List<Integer> positions = saved.stream()
+        .map(WikiPage::getPosition)
+        .sorted()
+        .collect(Collectors.toList());
+    assertThat(positions).containsExactly(0, 1, 2);
+    // page should now be at position 1 (inserted at index 1)
+    assertThat(page.getPosition()).isEqualTo(1);
+  }
+
+  @Test
+  void movePage_crossParent_resequencesBothSourceAndDestContiguously() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    Long pageId = 1L;
+    Long destParentId = 99L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setName("Space");
+    space.setSpaceKey("space");
+    space.setCreatedBy(userId);
+
+    // Source: page(pos=0) and srcSibling(pos=1) under parent=null
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+    page.setParentId(null);
+    page.setPosition(0);
+    page.setTitle("MovedPage");
+    page.setSlug("moved-page");
+
+    WikiPage srcSibling = new WikiPage();
+    srcSibling.setId(2L);
+    srcSibling.setSpaceId(spaceId);
+    srcSibling.setParentId(null);
+    srcSibling.setPosition(1);
+    srcSibling.setTitle("SrcSibling");
+    srcSibling.setSlug("src-sibling");
+
+    // Destination: destSibling(pos=0) under parent=destParentId
+    WikiPage destSibling = new WikiPage();
+    destSibling.setId(3L);
+    destSibling.setSpaceId(spaceId);
+    destSibling.setParentId(destParentId);
+    destSibling.setPosition(0);
+    destSibling.setTitle("DestSibling");
+    destSibling.setSlug("dest-sibling");
+
+    when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    // Descendants check
+    when(pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId))
+        .thenReturn(List.of(page, srcSibling, destSibling));
+    // getSiblings for source parent (null, excludeId=pageId) → [srcSibling]
+    when(pageRepository.findBySpaceIdAndParentIdIsNullAndDeletedAtIsNullOrderByPositionAsc(spaceId))
+        .thenReturn(new ArrayList<>(List.of(page, srcSibling)));
+    // getSiblings for dest parent (destParentId, excludeId=null) → [destSibling]
+    when(pageRepository.findBySpaceIdAndParentIdAndDeletedAtIsNullOrderByPositionAsc(spaceId, destParentId))
+        .thenReturn(new ArrayList<>(List.of(destSibling)));
+    when(pageRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+
+    // Move page to dest parent at index 0
+    MovePageRequest req = new MovePageRequest(destParentId, 0);
+    wikiService.movePage(pageId, req, userId);
+
+    @SuppressWarnings("rawtypes")
+    ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
+    verify(pageRepository, times(2)).saveAll(captor.capture());
+
     List<List> allCalls = captor.getAllValues();
-    boolean found = allCalls.stream().anyMatch(l -> l.size() == 3);
-    assertThat(found).isTrue();
+
+    // Source list: only srcSibling remains, re-numbered to position 0
+    @SuppressWarnings("unchecked")
+    List<WikiPage> sourceList = allCalls.get(0);
+    assertThat(sourceList).hasSize(1);
+    assertThat(sourceList.get(0).getId()).isEqualTo(2L);
+    assertThat(sourceList.get(0).getPosition()).isEqualTo(0);
+
+    // Dest list: page inserted at index 0, destSibling pushed to index 1
+    @SuppressWarnings("unchecked")
+    List<WikiPage> destList = allCalls.get(1);
+    assertThat(destList).hasSize(2);
+    // Positions must be contiguous 0,1
+    List<Integer> destPositions = destList.stream()
+        .map(WikiPage::getPosition)
+        .sorted()
+        .collect(Collectors.toList());
+    assertThat(destPositions).containsExactly(0, 1);
+    // The moved page should be at position 0 and have the new parent
+    assertThat(page.getParentId()).isEqualTo(destParentId);
+    assertThat(page.getPosition()).isEqualTo(0);
+    // destSibling should be at position 1
+    assertThat(destSibling.getPosition()).isEqualTo(1);
   }
 
   @Test
@@ -356,6 +454,22 @@ class WikiServiceTest {
     when(pageRepository.findById(999L)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> wikiService.getPage(999L, 1L))
         .isInstanceOf(NoSuchElementException.class);
+  }
+
+  @Test
+  void createSpace_propagatesAccessDeniedExceptionWhenGuardDenies() {
+    Long userId = 1L;
+    doThrow(new AccessDeniedException("No createSpace permission"))
+        .when(permissionService)
+        .requireCreateSpace(eq(userId));
+
+    CreateWikiSpaceRequest req = new CreateWikiSpaceRequest("My Space", "my-space", "desc");
+
+    assertThatThrownBy(() -> wikiService.createSpace(req, userId))
+        .isInstanceOf(AccessDeniedException.class);
+
+    // Space must not have been persisted
+    verify(spaceRepository, never()).save(any());
   }
 
   @Test

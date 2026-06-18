@@ -297,7 +297,50 @@ class WikiPermissionServiceTest {
   }
 
   // -----------------------------------------------------------------------
-  // 5. require* throws AccessDeniedException on deny
+  // 5. canCreateSpace / requireCreateSpace
+  // -----------------------------------------------------------------------
+
+  @Nested
+  @DisplayName("canCreateSpace / requireCreateSpace")
+  class CreateSpacePermission {
+
+    @Test
+    @DisplayName("ADMIN is always allowed to create a space")
+    void adminCanCreateSpace() {
+      User admin = userWithRole(1L, UserRole.ADMIN);
+      when(userRepository.findById(1L)).thenReturn(Optional.of(admin));
+
+      assertThat(wikiPermissionService.canCreateSpace(1L)).isTrue();
+      verifyNoInteractions(wikiSpacePermissionRepository, permissionService);
+    }
+
+    @Test
+    @DisplayName("role with WIKI CREATE permission is allowed")
+    void roleWithWikiCreateCanCreateSpace() {
+      User member = userWithRole(2L, UserRole.MEMBER);
+      when(userRepository.findById(2L)).thenReturn(Optional.of(member));
+      when(permissionService.hasPermission(UserRole.MEMBER, ResourceType.WIKI, PermissionType.CREATE))
+          .thenReturn(true);
+
+      assertThat(wikiPermissionService.canCreateSpace(2L)).isTrue();
+    }
+
+    @Test
+    @DisplayName("role without WIKI CREATE permission → requireCreateSpace throws AccessDeniedException")
+    void roleWithoutWikiCreateThrows() {
+      User readonly = userWithRole(3L, UserRole.READONLY);
+      when(userRepository.findById(3L)).thenReturn(Optional.of(readonly));
+      when(permissionService.hasPermission(UserRole.READONLY, ResourceType.WIKI, PermissionType.CREATE))
+          .thenReturn(false);
+
+      assertThat(wikiPermissionService.canCreateSpace(3L)).isFalse();
+      assertThatThrownBy(() -> wikiPermissionService.requireCreateSpace(3L))
+          .isInstanceOf(AccessDeniedException.class);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 6. require* throws AccessDeniedException on deny
   // -----------------------------------------------------------------------
 
   @Nested

@@ -62,6 +62,7 @@ public class WikiService {
   // --- Space operations ---
 
   public WikiSpaceDTO createSpace(CreateWikiSpaceRequest req, Long userId) {
+    permissionService.requireCreateSpace(userId);
     WikiSpace space = new WikiSpace();
     space.setName(req.name());
     space.setSpaceKey(req.spaceKey() != null ? req.spaceKey() : toSlug(req.name()));
@@ -180,22 +181,36 @@ public class WikiService {
       }
     }
 
-    // Remove page from old siblings and resequence
-    List<WikiPage> oldSiblings = getSiblings(page.getSpaceId(), page.getParentId(), pageId);
-    for (int i = 0; i < oldSiblings.size(); i++) {
-      oldSiblings.get(i).setPosition(i);
-    }
-    pageRepository.saveAll(oldSiblings);
+    Long oldParentId = page.getParentId();
 
-    // Insert at new index among new siblings
-    List<WikiPage> newSiblings = getSiblings(page.getSpaceId(), newParentId, null);
-    int insertAt = Math.min(req.newIndex(), newSiblings.size());
-    newSiblings.add(insertAt, page);
-    for (int i = 0; i < newSiblings.size(); i++) {
-      newSiblings.get(i).setPosition(i);
+    if (Objects.equals(oldParentId, newParentId)) {
+      // Same-parent reorder: operate on a single list to avoid double-processing.
+      List<WikiPage> siblings = getSiblings(page.getSpaceId(), oldParentId, pageId);
+      int insertAt = Math.min(req.newIndex(), siblings.size());
+      siblings.add(insertAt, page);
+      for (int i = 0; i < siblings.size(); i++) {
+        siblings.get(i).setPosition(i);
+      }
+      page.setParentId(newParentId);
+      pageRepository.saveAll(siblings);
+    } else {
+      // Cross-parent move: compute both lists in memory, then persist in one pass each.
+      List<WikiPage> sourceSiblings = getSiblings(page.getSpaceId(), oldParentId, pageId);
+      for (int i = 0; i < sourceSiblings.size(); i++) {
+        sourceSiblings.get(i).setPosition(i);
+      }
+
+      List<WikiPage> destSiblings = getSiblings(page.getSpaceId(), newParentId, null);
+      int insertAt = Math.min(req.newIndex(), destSiblings.size());
+      destSiblings.add(insertAt, page);
+      for (int i = 0; i < destSiblings.size(); i++) {
+        destSiblings.get(i).setPosition(i);
+      }
+
+      page.setParentId(newParentId);
+      pageRepository.saveAll(sourceSiblings);
+      pageRepository.saveAll(destSiblings);
     }
-    page.setParentId(newParentId);
-    pageRepository.saveAll(newSiblings);
   }
 
   public void deletePage(Long pageId, Long userId) {
