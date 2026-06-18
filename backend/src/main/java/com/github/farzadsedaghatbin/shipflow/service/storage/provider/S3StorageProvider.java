@@ -28,11 +28,4 @@ public class S3StorageProvider extends AwsS3BaseStorageProvider {
     requireField(config, KEY_SECRET_KEY);
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  private static void requireField(JsonNode config, String key) throws InvalidConfigException {
-    if (cfgStr(config, key) == null) {
-      throw new InvalidConfigException("S3 storage config missing required field: " + key);
-    }
-  }
 }

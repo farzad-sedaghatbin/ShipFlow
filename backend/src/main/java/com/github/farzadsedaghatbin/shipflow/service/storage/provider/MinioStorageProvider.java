@@ -79,11 +79,4 @@ public class MinioStorageProvider extends AwsS3BaseStorageProvider {
         .build();
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
-  private static void requireField(JsonNode config, String key) throws InvalidConfigException {
-    if (cfgStr(config, key) == null) {
-      throw new InvalidConfigException("MinIO storage config missing required field: " + key);
-    }
-  }
 }

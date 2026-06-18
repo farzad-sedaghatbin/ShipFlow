@@ -137,39 +137,38 @@ public abstract class AwsS3BaseStorageProvider implements ObjectStorageProvider 
 
   @Override
   public StoredObjectRef store(StorePutContext ctx) {
-    S3Client client = s3Client(ctx.getConfig());
-    PutObjectRequest request =
-        PutObjectRequest.builder()
-            .bucket(ctx.getBucket())
-            .key(ctx.getKey())
-            .contentType(ctx.getContentType())
-            .build();
+    try (S3Client client = s3Client(ctx.getConfig())) {
+      PutObjectRequest request =
+          PutObjectRequest.builder()
+              .bucket(ctx.getBucket())
+              .key(ctx.getKey())
+              .contentType(ctx.getContentType())
+              .build();
 
-    client.putObject(request, RequestBody.fromInputStream(ctx.getStream(), ctx.getSizeBytes()));
+      client.putObject(request, RequestBody.fromInputStream(ctx.getStream(), ctx.getSizeBytes()));
 
-    log.debug("Stored object: bucket={} key={}", ctx.getBucket(), ctx.getKey());
+      log.debug("Stored object: bucket={} key={}", ctx.getBucket(), ctx.getKey());
 
-    return StoredObjectRef.builder()
-        .bucket(ctx.getBucket())
-        .key(ctx.getKey())
-        .contentType(ctx.getContentType())
-        .sizeBytes(ctx.getSizeBytes())
-        .build();
+      return StoredObjectRef.builder()
+          .bucket(ctx.getBucket())
+          .key(ctx.getKey())
+          .contentType(ctx.getContentType())
+          .sizeBytes(ctx.getSizeBytes())
+          .build();
+    }
   }
 
   @Override
   public DownloadResource retrieve(String bucket, String key, JsonNode config) {
-    S3Client client = s3Client(config);
-    GetObjectRequest request = GetObjectRequest.builder().bucket(bucket).key(key).build();
+    GetObjectRequest getReq = GetObjectRequest.builder().bucket(bucket).key(key).build();
 
-    software.amazon.awssdk.core.ResponseInputStream<GetObjectResponse> response =
-        client.getObject(request);
-    GetObjectResponse meta = response.response();
+    try (S3Client client = s3Client(config);
+        software.amazon.awssdk.core.ResponseInputStream<GetObjectResponse> response =
+            client.getObject(getReq)) {
+      GetObjectResponse meta = response.response();
+      String contentType = meta.contentType();
+      long sizeBytes = meta.contentLength() != null ? meta.contentLength() : -1L;
 
-    String contentType = meta.contentType();
-    long sizeBytes = meta.contentLength() != null ? meta.contentLength() : -1L;
-
-    try {
       byte[] bytes = response.readAllBytes();
       log.debug("Retrieved object: bucket={} key={} size={}", bucket, key, bytes.length);
       return DownloadResource.builder()
@@ -186,25 +185,28 @@ public abstract class AwsS3BaseStorageProvider implements ObjectStorageProvider 
 
   @Override
   public void delete(String bucket, String key, JsonNode config) {
-    S3Client client = s3Client(config);
-    client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
-    log.debug("Deleted object: bucket={} key={}", bucket, key);
+    try (S3Client client = s3Client(config)) {
+      client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+      log.debug("Deleted object: bucket={} key={}", bucket, key);
+    }
   }
 
   @Override
   public Optional<String> presignUrl(
       String bucket, String key, long expirySeconds, JsonNode config) {
-    S3Presigner presigner = s3Presigner(config);
-    GetObjectPresignRequest presignRequest =
-        GetObjectPresignRequest.builder()
-            .signatureDuration(Duration.ofSeconds(expirySeconds))
-            .getObjectRequest(GetObjectRequest.builder().bucket(bucket).key(key).build())
-            .build();
+    try (S3Presigner presigner = s3Presigner(config)) {
+      GetObjectPresignRequest presignRequest =
+          GetObjectPresignRequest.builder()
+              .signatureDuration(Duration.ofSeconds(expirySeconds))
+              .getObjectRequest(GetObjectRequest.builder().bucket(bucket).key(key).build())
+              .build();
 
-    PresignedGetObjectRequest presigned = presigner.presignGetObject(presignRequest);
-    String url = presigned.url().toString();
-    log.debug("Pre-signed URL generated: bucket={} key={} expirySeconds={}", bucket, key, expirySeconds);
-    return Optional.of(url);
+      PresignedGetObjectRequest presigned = presigner.presignGetObject(presignRequest);
+      String url = presigned.url().toString();
+      log.debug(
+          "Pre-signed URL generated: bucket={} key={} expirySeconds={}", bucket, key, expirySeconds);
+      return Optional.of(url);
+    }
   }
 
   @Override
@@ -214,14 +216,21 @@ public abstract class AwsS3BaseStorageProvider implements ObjectStorageProvider 
 
   @Override
   public ConnectionStatus testConnection(JsonNode config) {
-    try {
-      S3Client client = s3Client(config);
+    try (S3Client client = s3Client(config)) {
       String bucket = cfgStr(config, KEY_BUCKET);
       client.headBucket(HeadBucketRequest.builder().bucket(bucket).build());
       return ConnectionStatus.ok();
     } catch (Exception e) {
       log.warn("S3/MinIO connection test failed: {}", e.getMessage());
       return ConnectionStatus.fail(e.getMessage());
+    }
+  }
+
+  // ── Protected helpers (available to concrete subclasses) ─────────────────
+
+  protected static void requireField(JsonNode config, String key) throws InvalidConfigException {
+    if (cfgStr(config, key) == null) {
+      throw new InvalidConfigException("Storage config missing required field: " + key);
     }
   }
 

@@ -14,10 +14,8 @@ import com.github.farzadsedaghatbin.shipflow.service.storage.provider.AwsS3BaseS
 import com.github.farzadsedaghatbin.shipflow.service.storage.provider.MinioStorageProvider;
 import com.github.farzadsedaghatbin.shipflow.service.storage.provider.S3StorageProvider;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -158,8 +156,6 @@ class S3StorageProviderTest {
     GetObjectResponse meta =
         GetObjectResponse.builder().contentType("application/octet-stream").contentLength((long) payload.length).build();
 
-    InputStream wrappedStream =
-        AbortableInputStream.create(new ByteArrayInputStream(payload));
     ResponseInputStream<GetObjectResponse> responseStream =
         new ResponseInputStream<>(meta, AbortableInputStream.create(new ByteArrayInputStream(payload)));
 
