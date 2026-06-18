@@ -4,6 +4,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.feedback.RiskFeedbackDTO.Feedba
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.*;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -68,12 +69,18 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final IdentityProviderRepository identityProviderRepository;
   private final WorkflowAutomationRepository workflowAutomationRepository;
   private final WorkflowAutomationTemplateRepository workflowAutomationTemplateRepository;
+  private final WikiSpaceRepository wikiSpaceRepository;
+  private final WikiPageRepository wikiPageRepository;
+  private final StorageConfigRepository storageConfigRepository;
 
   @Override
   @Transactional
   public void run(String... args) {
     // Always ensure a safe OrganizationSettings row exists (idempotent).
     seedOrganizationSettingsIfAbsent();
+
+    // Always ensure a default LOCAL_FS StorageConfig row exists (idempotent).
+    seedStorageConfigIfAbsent();
 
     // Always seed the Scrum demo project independently so it appears even when
     // the rest of the sample data was already seeded by an older version.
@@ -942,6 +949,9 @@ public class SampleDataInitializer implements CommandLineRunner {
     }
 
     createWorkflowAutomationSampleData(bankingProject);
+
+    // ── Demo Wiki Space + Pages ───────────────────────────────────────────────
+    seedDemoWikiSpaceIfAbsent(bankingProject.getId(), adminUser);
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
@@ -1922,5 +1932,139 @@ public class SampleDataInitializer implements CommandLineRunner {
         .build());
 
     log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
+  }
+
+  /**
+   * Seeds a default LOCAL_FS StorageConfig row if none exists yet. Idempotent — skipped when the
+   * Flyway migration (V2026_06_18_0005) already inserted the row in real DBs.
+   */
+  private void seedStorageConfigIfAbsent() {
+    if (storageConfigRepository.findFirstByDeletedAtIsNullOrderByIdAsc().isPresent()) {
+      log.info("StorageConfig already exists — skipping seed");
+      return;
+    }
+    storageConfigRepository.save(
+        StorageConfig.builder()
+            .activeProvider(StorageProviderType.LOCAL_FS)
+            .config("{}")
+            .build());
+    log.info("StorageConfig seeded with LOCAL_FS defaults");
+  }
+
+  /**
+   * Seeds a demo wiki space ("DOCS") with a small nested page tree. Idempotent — guarded by
+   * spaceKey lookup so repeated startups never duplicate rows.
+   */
+  private void seedDemoWikiSpaceIfAbsent(Long projectId, User createdByUser) {
+    if (wikiSpaceRepository.findBySpaceKeyAndDeletedAtIsNull("DOCS").isPresent()) {
+      log.info("Demo wiki space (DOCS) already exists — skipping seed");
+      return;
+    }
+
+    long createdById = createdByUser != null ? createdByUser.getId() : 1L;
+
+    WikiSpace docsSpace =
+        WikiSpace.builder()
+            .name("Product Docs")
+            .spaceKey("DOCS")
+            .description(
+                "Central documentation space for the Mobile Banking App — architecture decisions, "
+                    + "team handbook, and onboarding guides.")
+            .projectId(projectId)
+            .createdBy(createdById)
+            .build();
+    wikiSpaceRepository.save(docsSpace);
+    Long spaceId = docsSpace.getId();
+
+    // ── Root page 1: Getting Started (position 0) ─────────────────────────────
+    WikiPage gettingStarted =
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(null)
+            .title("Getting Started")
+            .slug("getting-started")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Getting Started\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Welcome to ShipFlow Product Docs. This space contains everything "
+                    + "you need to contribute to the Mobile Banking App.\"}]}]")
+            .contentText(
+                "Getting Started Welcome to ShipFlow Product Docs. This space contains "
+                    + "everything you need to contribute to the Mobile Banking App.")
+            .position(0)
+            .createdBy(createdById)
+            .build();
+    wikiPageRepository.save(gettingStarted);
+
+    // Child 1.1: Installation (position 0 under Getting Started)
+    wikiPageRepository.save(
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(gettingStarted.getId())
+            .title("Installation")
+            .slug("installation")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Installation\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Prerequisites: Java 21, Node 18 LTS, Docker. "
+                    + "Run docker compose up -d to start PostgreSQL and Redis, "
+                    + "then ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev "
+                    + "for the backend and npm run dev for the frontend.\"}]}]")
+            .contentText(
+                "Installation Prerequisites: Java 21, Node 18 LTS, Docker. "
+                    + "Run docker compose up -d to start PostgreSQL and Redis, "
+                    + "then ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev "
+                    + "for the backend and npm run dev for the frontend.")
+            .position(0)
+            .createdBy(createdById)
+            .build());
+
+    // Child 1.2: Architecture Overview (position 1 under Getting Started)
+    wikiPageRepository.save(
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(gettingStarted.getId())
+            .title("Architecture Overview")
+            .slug("architecture-overview")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Architecture Overview\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"ShipFlow is a Spring Boot 3 + React 18 monorepo. "
+                    + "The backend follows a Controller → Service → Repository layering convention. "
+                    + "PostgreSQL is the primary store; Redis is used for caching and session data.\"}]}]")
+            .contentText(
+                "Architecture Overview ShipFlow is a Spring Boot 3 + React 18 monorepo. "
+                    + "The backend follows a Controller → Service → Repository layering convention. "
+                    + "PostgreSQL is the primary store; Redis is used for caching and session data.")
+            .position(1)
+            .createdBy(createdById)
+            .build());
+
+    // ── Root page 2: Team Handbook (position 1) ───────────────────────────────
+    wikiPageRepository.save(
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(null)
+            .title("Team Handbook")
+            .slug("team-handbook")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Team Handbook\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Our working agreements, code-review checklist, on-call rotation, "
+                    + "and communication norms. Keep this document up to date as the team evolves.\"}]}]")
+            .contentText(
+                "Team Handbook Our working agreements, code-review checklist, on-call rotation, "
+                    + "and communication norms. Keep this document up to date as the team evolves.")
+            .position(1)
+            .createdBy(createdById)
+            .build());
+
+    log.info(
+        "Demo wiki space seeded: space DOCS with 4 pages "
+            + "(Getting Started → Installation, Architecture Overview; Team Handbook)");
   }
 }
