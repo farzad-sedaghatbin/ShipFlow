@@ -63,8 +63,12 @@ export default function AutomationsPage() {
   const { t, i18n } = useTranslation();
   const { currentProject } = useProject();
   const { showSuccess, showError } = useToast();
-  const { hasPermissionSync } = usePermission();
-  const isManager = hasPermissionSync('PITCH', 'MANAGE');
+  const { hasPermission } = usePermission();
+  const [isManager, setIsManager] = useState(false);
+
+  useEffect(() => {
+    hasPermission('PITCH', 'MANAGE').then(setIsManager).catch(() => setIsManager(false));
+  }, [hasPermission]);
 
   const [automations, setAutomations] = useState<WorkflowAutomation[]>([]);
   const [templates, setTemplates] = useState<WorkflowAutomationTemplate[]>([]);
