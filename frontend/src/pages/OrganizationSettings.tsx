@@ -329,8 +329,8 @@ export default function OrganizationSettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Header — sticky so Save is always reachable while scrolled into a tab */}
+      <div className="sticky top-0 z-10 bg-background pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Settings className="h-6 w-6" />

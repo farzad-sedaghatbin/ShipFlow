@@ -3698,6 +3698,7 @@
     "bugTrackingDesc": "Configure bug statuses and severity levels",
     "bugStatuses": "Bug Statuses",
     "statusName": "Status Name",
+    "statusNameHint": "Must be UPPER_SNAKE_CASE (e.g. IN_PROGRESS)",
     "addStatus": "Add Status",
     "active": "Active",
     "closed": "Closed",

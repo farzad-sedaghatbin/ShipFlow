@@ -8,6 +8,17 @@ import { Switch } from '../ui/switch';
 import { Button } from '../ui/button';
 import { OrganizationSettings } from '../../types/organizationSettings';
 
+const UPPER_SNAKE_CASE_RE = /^[A-Z][A-Z0-9_]*$/;
+
+function toUpperSnakeCase(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^A-Z0-9_]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
 interface BugSettingsTabProps {
   formData: Partial<OrganizationSettings>;
   setFormData: (data: Partial<OrganizationSettings>) => void;
@@ -63,12 +74,15 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
                     value={status.name}
                     onChange={(e) => {
                       const updated = [...(formData.bugStatuses || [])];
-                      updated[index] = { ...updated[index], name: e.target.value };
+                      updated[index] = { ...updated[index], name: toUpperSnakeCase(e.target.value) };
                       setFormData({ ...formData, bugStatuses: updated });
                     }}
-                    className="font-medium"
-                    placeholder={t('organizationSettings.statusName')}
+                    className={`font-medium font-mono ${status.name && !UPPER_SNAKE_CASE_RE.test(status.name) ? 'border-destructive' : ''}`}
+                    placeholder="UPPER_SNAKE_CASE"
                   />
+                  {status.name && !UPPER_SNAKE_CASE_RE.test(status.name) && (
+                    <p className="text-xs text-destructive">{t('organizationSettings.statusNameHint')}</p>
+                  )}
                   <Input
                     value={status.description}
                     onChange={(e) => {
@@ -159,12 +173,15 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
                     value={severity.name}
                     onChange={(e) => {
                       const updated = [...(formData.severityLevels || [])];
-                      updated[index] = { ...updated[index], name: e.target.value };
+                      updated[index] = { ...updated[index], name: toUpperSnakeCase(e.target.value) };
                       setFormData({ ...formData, severityLevels: updated });
                     }}
-                    className="font-medium"
-                    placeholder={t('organizationSettings.severityName')}
+                    className={`font-medium font-mono ${severity.name && !UPPER_SNAKE_CASE_RE.test(severity.name) ? 'border-destructive' : ''}`}
+                    placeholder="UPPER_SNAKE_CASE"
                   />
+                  {severity.name && !UPPER_SNAKE_CASE_RE.test(severity.name) && (
+                    <p className="text-xs text-destructive">{t('organizationSettings.statusNameHint')}</p>
+                  )}
                   <Input
                     value={severity.description}
                     onChange={(e) => {
