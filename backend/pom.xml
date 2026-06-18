@@ -299,16 +299,18 @@
             <version>1.11.0</version>
         </dependency>
 
-        <!-- Apache Tika — text extraction for Knowledge Center file uploads -->
+        <!-- Apache Tika — text extraction for Knowledge Center file uploads.
+             Tika 3.x targets PDFBox 3.x; must stay aligned with the pdfbox 3.0.7
+             pin above (Tika 2.9.x calls the removed PDFBox 2.x PDDocument.load API). -->
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
-            <version>2.9.2</version>
+            <version>3.1.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-parsers-standard-package</artifactId>
-            <version>2.9.2</version>
+            <version>3.1.0</version>
         </dependency>
 
         <!-- Jsoup — HTML parsing for Knowledge Center URL provider -->
