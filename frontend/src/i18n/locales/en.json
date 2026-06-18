@@ -3840,6 +3840,7 @@
     "sectionNotifications": "Notifications",
     "sectionFeatures": "Features",
     "sectionEnterprise": "Enterprise",
+    "sectionInfrastructure": "Infrastructure",
     "sectionData": "Data"
   },
   "userManagement": {
@@ -8176,5 +8177,34 @@
     "close": "Close",
     "lastError": "Last error",
     "chunkPreview": "Chunks"
+  },
+  "storage": {
+    "tabLabel": "Storage",
+    "title": "Object Storage",
+    "subtitle": "Configure where uploaded files are stored",
+    "provider": "Storage Provider",
+    "providerLocal": "Local Filesystem",
+    "providerS3": "Amazon S3",
+    "providerMinio": "MinIO (S3-compatible)",
+    "localInfo": "Files are stored on the server filesystem. No additional configuration required.",
+    "bucket": "Bucket Name",
+    "endpoint": "Endpoint URL",
+    "region": "Region",
+    "accessKey": "Access Key ID",
+    "secretKey": "Secret Access Key",
+    "pathStyleAccess": "Path-Style Access",
+    "keyConfigured": "Configured — leave blank to keep",
+    "testConnection": "Test Connection",
+    "testing": "Testing…",
+    "testSuccess": "Connection successful",
+    "testFailed": "Connection test failed",
+    "migrateFiles": "Migrate Existing Files",
+    "migrateConfirmTitle": "Migrate Files to New Storage",
+    "migrateConfirm": "This will copy all existing uploads to the new storage backend. Existing files will not be deleted. Continue?",
+    "migrateResult": "Migration complete: {{migrated}} migrated, {{skipped}} skipped, {{failed}} failed ({{total}} total)",
+    "migrateFailed": "Migration failed",
+    "saveSuccess": "Storage settings saved",
+    "saveFailed": "Failed to save storage settings",
+    "loadFailed": "Failed to load storage settings"
   }
 }

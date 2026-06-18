@@ -3735,6 +3735,7 @@
     "sectionNotifications": "اعلان‌ها",
     "sectionFeatures": "ویژگی‌ها",
     "sectionEnterprise": "سازمانی",
+    "sectionInfrastructure": "زیرساخت",
     "sectionData": "داده"
   },
   "people": {
@@ -7212,5 +7213,34 @@
     "close": "بستن",
     "lastError": "آخرین خطا",
     "chunkPreview": "قطعات"
+  },
+  "storage": {
+    "tabLabel": "ذخیره‌سازی",
+    "title": "ذخیره‌سازی فایل",
+    "subtitle": "پیکربندی محل ذخیره فایل‌های آپلودشده",
+    "provider": "ارائه‌دهنده ذخیره‌سازی",
+    "providerLocal": "سیستم فایل محلی",
+    "providerS3": "Amazon S3",
+    "providerMinio": "MinIO (سازگار با S3)",
+    "localInfo": "فایل‌ها روی سیستم فایل سرور ذخیره می‌شوند. نیازی به پیکربندی اضافی نیست.",
+    "bucket": "نام Bucket",
+    "endpoint": "آدرس Endpoint",
+    "region": "منطقه",
+    "accessKey": "شناسه کلید دسترسی",
+    "secretKey": "کلید مخفی",
+    "pathStyleAccess": "دسترسی به سبک مسیر",
+    "keyConfigured": "پیکربندی شده — برای حفظ کلید، خالی بگذارید",
+    "testConnection": "آزمایش اتصال",
+    "testing": "در حال آزمایش…",
+    "testSuccess": "اتصال موفق",
+    "testFailed": "آزمایش اتصال ناموفق بود",
+    "migrateFiles": "انتقال فایل‌های موجود",
+    "migrateConfirmTitle": "انتقال فایل‌ها به ذخیره‌سازی جدید",
+    "migrateConfirm": "این عملیات تمام فایل‌های موجود را به backend ذخیره‌سازی جدید کپی می‌کند. فایل‌های موجود حذف نمی‌شوند. ادامه می‌دهید؟",
+    "migrateResult": "انتقال کامل: {{migrated}} منتقل شد، {{skipped}} رد شد، {{failed}} ناموفق ({{total}} کل)",
+    "migrateFailed": "انتقال ناموفق بود",
+    "saveSuccess": "تنظیمات ذخیره‌سازی ذخیره شد",
+    "saveFailed": "ذخیره تنظیمات ناموفق بود",
+    "loadFailed": "بارگذاری تنظیمات ناموفق بود"
   }
 }
