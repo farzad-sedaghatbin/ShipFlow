@@ -103,7 +103,7 @@ class RetroItemServiceTest {
 
       when(retroRepository.findById(1L)).thenReturn(Optional.of(testRetro));
       doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
-      when(retroItemRepository.findByRetrospectiveIdOrderByCreatedAtAsc(1L)).thenReturn(items);
+      when(retroItemRepository.findByRetrospectiveIdWithAuthorOrderByCreatedAtAsc(1L)).thenReturn(items);
       when(retroMapper.toItemDTOBatch(items, testUser)).thenReturn(Arrays.asList(dto1, dto2));
 
       List<RetroItemDTO> result = service.getItemsByRetro(1L);

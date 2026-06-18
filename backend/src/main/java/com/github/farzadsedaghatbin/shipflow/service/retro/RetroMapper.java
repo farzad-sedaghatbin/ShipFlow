@@ -125,8 +125,11 @@ public class RetroMapper {
 
     // Always include author fields (null for anonymous items)
     if (!isAnonymous && item.getAuthor() != null) {
-      builder.authorId(item.getAuthor().getId())
-          .authorName(item.getAuthor().getUsername());
+      User author = item.getAuthor();
+      String displayName = author.getPerson() != null && author.getPerson().getName() != null
+          ? author.getPerson().getName()
+          : author.getUsername();
+      builder.authorId(author.getId()).authorName(displayName);
     } else {
       builder.authorId(null).authorName(null);
     }
@@ -141,8 +144,11 @@ public class RetroMapper {
     builder.actedOnNotes(item.getActedOnNotes());
     builder.actedOnAt(item.getActedOnAt());
     if (item.getActedOnBy() != null) {
-      builder.actedOnById(item.getActedOnBy().getId());
-      builder.actedOnByName(item.getActedOnBy().getUsername());
+      User actedOnBy = item.getActedOnBy();
+      String actedOnByDisplayName = actedOnBy.getPerson() != null && actedOnBy.getPerson().getName() != null
+          ? actedOnBy.getPerson().getName()
+          : actedOnBy.getUsername();
+      builder.actedOnById(actedOnBy.getId()).actedOnByName(actedOnByDisplayName);
     }
 
     return builder.build();
