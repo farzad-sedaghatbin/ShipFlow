@@ -85,7 +85,29 @@ public class StorageMigrationService {
         att.setFilePath(ref.getKey());
         taskAttachmentRepository.save(att);
 
-        // 4. Best-effort delete of old object — AFTER row update succeeds
+        // 4. Verify the stored copy is readable before deleting the source
+        boolean verified = false;
+        try {
+          DownloadResource verify = objectStorageService.retrieve(active, ref.getKey());
+          verified = verify != null;
+        } catch (Exception verEx) {
+          log.error(
+              "Post-store verify failed for attachment id={} key={}: {}",
+              att.getId(),
+              ref.getKey(),
+              verEx.getMessage());
+        }
+
+        if (!verified) {
+          // Source is preserved; count this row as failed so the operator can retry
+          failed++;
+          log.error(
+              "Verification failed for attachment id={} — source NOT deleted, row marked failed",
+              att.getId());
+          continue;
+        }
+
+        // 5. Best-effort delete of old object — ONLY AFTER verify succeeds
         try {
           objectStorageService.delete(currentProvider, currentKey);
         } catch (Exception delEx) {
@@ -159,7 +181,28 @@ public class StorageMigrationService {
         att.setStorageKey(ref.getKey());
         wikiAttachmentRepository.save(att);
 
-        // 4. Best-effort delete of old object — AFTER row update succeeds
+        // 4. Verify the stored copy is readable before deleting the source
+        boolean verified = false;
+        try {
+          DownloadResource verify = objectStorageService.retrieve(active, ref.getKey());
+          verified = verify != null;
+        } catch (Exception verEx) {
+          log.error(
+              "Post-store verify failed for wiki attachment id={} key={}: {}",
+              att.getId(),
+              ref.getKey(),
+              verEx.getMessage());
+        }
+
+        if (!verified) {
+          failed++;
+          log.error(
+              "Verification failed for wiki attachment id={} — source NOT deleted, row marked failed",
+              att.getId());
+          continue;
+        }
+
+        // 5. Best-effort delete of old object — ONLY AFTER verify succeeds
         try {
           objectStorageService.delete(currentProvider, currentKey);
         } catch (Exception delEx) {

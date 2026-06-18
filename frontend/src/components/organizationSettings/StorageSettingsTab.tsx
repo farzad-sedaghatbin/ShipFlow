@@ -250,8 +250,9 @@ export function StorageSettingsTab() {
                 <Label htmlFor="storage-access-key">{t('storage.accessKey')}</Label>
                 <Input
                   id="storage-access-key"
+                  type="password"
                   {...register('accessKey')}
-                  autoComplete="off"
+                  autoComplete="new-password"
                 />
                 {storageConfig?.hasAccessKey && (
                   <p className="text-xs text-muted-foreground">{t('storage.keyConfigured')}</p>
@@ -300,8 +301,9 @@ export function StorageSettingsTab() {
                 <Label htmlFor="storage-access-key-minio">{t('storage.accessKey')}</Label>
                 <Input
                   id="storage-access-key-minio"
+                  type="password"
                   {...register('accessKey')}
-                  autoComplete="off"
+                  autoComplete="new-password"
                 />
                 {storageConfig?.hasAccessKey && (
                   <p className="text-xs text-muted-foreground">{t('storage.keyConfigured')}</p>

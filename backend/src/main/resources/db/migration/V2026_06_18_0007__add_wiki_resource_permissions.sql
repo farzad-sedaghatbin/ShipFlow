@@ -1,4 +1,4 @@
--- V112__add_wiki_resource_permissions.sql
+-- V2026_06_18_0007__add_wiki_resource_permissions.sql
 -- Seed WIKI resource permissions for all roles
 -- Pattern: mirrors V58__update_rbac_for_simplified_roles.sql
 -- Columns: role VARCHAR, resource_type VARCHAR, permission_type VARCHAR, description VARCHAR(500), created_at TIMESTAMP

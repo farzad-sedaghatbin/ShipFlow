@@ -112,6 +112,16 @@ class StorageMigrationServiceTest {
     when(objectStorageService.store(eq("tasks/42"), any(), any(), anyLong(), any()))
         .thenReturn(newRef);
 
+    // Stub the post-store verify retrieve (called on the ACTIVE provider with the NEW key)
+    DownloadResource verifyResource =
+        DownloadResource.builder()
+            .stream(new ByteArrayInputStream(new byte[0]))
+            .contentType("text/plain")
+            .sizeBytes(100L)
+            .filename("file.txt")
+            .build();
+    when(objectStorageService.retrieve(StorageProviderType.S3, "new-key")).thenReturn(verifyResource);
+
     MigrationResultDTO result = service.migrateToActiveBackend();
 
     assertThat(result.getMigrated()).isEqualTo(1);
@@ -123,10 +133,11 @@ class StorageMigrationServiceTest {
     assertThat(att.getStorageKey()).isEqualTo("new-key");
     assertThat(att.getFilePath()).isEqualTo("new-key");
 
-    // Verify order: store → save → delete
+    // Verify order: store → save → retrieve(verify) → delete
     InOrder order = inOrder(objectStorageService, taskAttachmentRepository);
     order.verify(objectStorageService).store(eq("tasks/42"), any(), any(), anyLong(), any());
     order.verify(taskAttachmentRepository).save(att);
+    order.verify(objectStorageService).retrieve(StorageProviderType.S3, "new-key");
     order.verify(objectStorageService).delete(StorageProviderType.LOCAL_FS, "old-key");
   }
 
@@ -154,6 +165,45 @@ class StorageMigrationServiceTest {
 
     assertThat(result.getFailed()).isEqualTo(1);
     assertThat(result.getMigrated()).isEqualTo(0);
+    verify(objectStorageService, never()).delete(any(), any());
+  }
+
+  @Test
+  @DisplayName("(c2) Post-store verify throws → row counted failed, OLD source NOT deleted")
+  void postStoreVerifyThrows_rowFailedSourceNotDeleted() {
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.S3);
+    Task task = makeTask(77L);
+    TaskAttachment att = makeAttachment(4L, StorageProviderType.LOCAL_FS, "src-key", task);
+    when(taskAttachmentRepository.findAll()).thenReturn(List.of(att));
+
+    DownloadResource fakeResource =
+        DownloadResource.builder()
+            .stream(new ByteArrayInputStream(new byte[0]))
+            .contentType("text/plain")
+            .sizeBytes(100L)
+            .filename("file.txt")
+            .build();
+    when(objectStorageService.retrieve(StorageProviderType.LOCAL_FS, "src-key"))
+        .thenReturn(fakeResource);
+
+    StoredObjectRef newRef =
+        StoredObjectRef.builder()
+            .key("dest-key")
+            .bucket("bucket")
+            .contentType("text/plain")
+            .sizeBytes(100L)
+            .build();
+    when(objectStorageService.store(any(), any(), any(), anyLong(), any())).thenReturn(newRef);
+
+    // Post-store verify throws — simulates destination unreadable
+    when(objectStorageService.retrieve(StorageProviderType.S3, "dest-key"))
+        .thenThrow(new RuntimeException("S3 read error after write"));
+
+    MigrationResultDTO result = service.migrateToActiveBackend();
+
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getMigrated()).isEqualTo(0);
+    // The OLD source object must NOT be deleted when verify fails
     verify(objectStorageService, never()).delete(any(), any());
   }
 
@@ -221,6 +271,17 @@ class StorageMigrationServiceTest {
     when(objectStorageService.store(eq("wiki/20"), any(), any(), anyLong(), any()))
         .thenReturn(newRef);
 
+    // Stub the post-store verify retrieve on the active provider
+    DownloadResource verifyResource =
+        DownloadResource.builder()
+            .stream(new ByteArrayInputStream(new byte[0]))
+            .contentType("image/png")
+            .sizeBytes(512L)
+            .filename("wiki-file.png")
+            .build();
+    when(objectStorageService.retrieve(StorageProviderType.S3, "wiki/20/wiki-file.png"))
+        .thenReturn(verifyResource);
+
     MigrationResultDTO result = service.migrateToActiveBackend();
 
     assertThat(result.getMigrated()).isEqualTo(1);
@@ -231,11 +292,53 @@ class StorageMigrationServiceTest {
     assertThat(att.getStorageProvider()).isEqualTo(StorageProviderType.S3);
     assertThat(att.getStorageKey()).isEqualTo("wiki/20/wiki-file.png");
 
-    // Verify copy-verify-before-delete order: store → save → delete
+    // Verify copy-verify-before-delete order: store → save → retrieve(verify) → delete
     InOrder order = inOrder(objectStorageService, wikiAttachmentRepository);
     order.verify(objectStorageService).store(eq("wiki/20"), any(), any(), anyLong(), any());
     order.verify(wikiAttachmentRepository).save(att);
+    order.verify(objectStorageService).retrieve(StorageProviderType.S3, "wiki/20/wiki-file.png");
     order.verify(objectStorageService).delete(StorageProviderType.LOCAL_FS, "old-wiki-key");
+  }
+
+  @Test
+  @DisplayName("(e2) Wiki: post-store verify throws → row counted failed, OLD source NOT deleted")
+  void wikiAttachment_postStoreVerifyThrows_rowFailedSourceNotDeleted() {
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.S3);
+    when(taskAttachmentRepository.findAll()).thenReturn(List.of());
+    WikiAttachment att =
+        makeWikiAttachment(12L, 30L, StorageProviderType.LOCAL_FS, "old-wiki-src-key");
+    when(wikiAttachmentRepository.findByDeletedAtIsNull()).thenReturn(List.of(att));
+
+    DownloadResource fakeResource =
+        DownloadResource.builder()
+            .stream(new ByteArrayInputStream(new byte[0]))
+            .contentType("image/png")
+            .sizeBytes(512L)
+            .filename("wiki-file.png")
+            .build();
+    when(objectStorageService.retrieve(StorageProviderType.LOCAL_FS, "old-wiki-src-key"))
+        .thenReturn(fakeResource);
+
+    StoredObjectRef newRef =
+        StoredObjectRef.builder()
+            .key("wiki/30/wiki-file.png")
+            .bucket("bucket")
+            .contentType("image/png")
+            .sizeBytes(512L)
+            .build();
+    when(objectStorageService.store(eq("wiki/30"), any(), any(), anyLong(), any()))
+        .thenReturn(newRef);
+
+    // Post-store verify throws — simulates destination unreadable after write
+    when(objectStorageService.retrieve(StorageProviderType.S3, "wiki/30/wiki-file.png"))
+        .thenThrow(new RuntimeException("MinIO read error after store"));
+
+    MigrationResultDTO result = service.migrateToActiveBackend();
+
+    assertThat(result.getFailed()).isEqualTo(1);
+    assertThat(result.getMigrated()).isEqualTo(0);
+    // The OLD source object must NOT be deleted when verify fails
+    verify(objectStorageService, never()).delete(any(), any());
   }
 
   @Test
