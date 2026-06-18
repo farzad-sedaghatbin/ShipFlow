@@ -491,4 +491,96 @@ class WikiServiceTest {
         .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Page not found");
   }
+
+  @Test
+  void deleteSpace_softDeletesSpaceAndCascadesToPagesAndPublishesDeletedEvents() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setName("DevDocs");
+    space.setSpaceKey("dev-docs");
+    space.setCreatedBy(userId);
+
+    WikiPage page1 = new WikiPage();
+    page1.setId(101L);
+    page1.setSpaceId(spaceId);
+    page1.setTitle("Page One");
+    page1.setSlug("page-one");
+
+    WikiPage page2 = new WikiPage();
+    page2.setId(102L);
+    page2.setSpaceId(spaceId);
+    page2.setTitle("Page Two");
+    page2.setSlug("page-two");
+
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    when(pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId))
+        .thenReturn(List.of(page1, page2));
+    when(pageRepository.save(any(WikiPage.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(spaceRepository.save(any(WikiSpace.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(knowledgeSourceRepository.findActiveByWikiSpaceId(spaceId))
+        .thenReturn(List.of());
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+
+    wikiService.deleteSpace(spaceId, userId);
+
+    // Space must be soft-deleted
+    assertThat(space.getDeletedAt()).isNotNull();
+
+    // Both pages must be soft-deleted
+    assertThat(page1.getDeletedAt()).isNotNull();
+    assertThat(page2.getDeletedAt()).isNotNull();
+
+    // A DELETED event must be published for each page
+    ArgumentCaptor<WikiPageChangedEvent> eventCaptor =
+        ArgumentCaptor.forClass(WikiPageChangedEvent.class);
+    verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture());
+
+    List<WikiPageChangedEvent> events = eventCaptor.getAllValues();
+    assertThat(events).hasSize(2);
+    assertThat(events).allMatch(e -> e.type() == WikiPageChangedEvent.ChangeType.DELETED);
+    assertThat(events.stream().map(WikiPageChangedEvent::pageId).toList())
+        .containsExactlyInAnyOrder(101L, 102L);
+  }
+
+  @Test
+  void deleteSpace_softDeletesBackingKnowledgeSource() {
+    Long userId = 1L;
+    Long spaceId = 55L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setName("Ops Wiki");
+    space.setSpaceKey("ops");
+    space.setCreatedBy(userId);
+
+    com.github.farzadsedaghatbin.shipflow.entity.KnowledgeSource ks =
+        com.github.farzadsedaghatbin.shipflow.entity.KnowledgeSource.builder()
+            .id(200L)
+            .name("Wiki: Ops Wiki")
+            .description("Auto-indexed wiki space")
+            .providerType(
+                com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeProviderType.WIKI)
+            .scope(
+                com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceScope.ORG)
+            .config("{\"spaceId\":" + spaceId + "}")
+            .status(
+                com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceStatus.READY)
+            .createdBy(userId)
+            .build();
+
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    when(pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId)).thenReturn(List.of());
+    when(spaceRepository.save(any(WikiSpace.class))).thenAnswer(inv -> inv.getArgument(0));
+    when(knowledgeSourceRepository.findActiveByWikiSpaceId(spaceId)).thenReturn(List.of(ks));
+    when(knowledgeSourceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+
+    wikiService.deleteSpace(spaceId, userId);
+
+    assertThat(ks.getDeletedAt()).isNotNull();
+    verify(knowledgeSourceRepository).save(ks);
+  }
 }

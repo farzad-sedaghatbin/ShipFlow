@@ -314,7 +314,27 @@ public class WikiService {
   public void deleteSpace(Long spaceId, Long userId) {
     WikiSpace space = requireSpace(spaceId);
     permissionService.requireWrite(userId, space);
-    space.setDeletedAt(OffsetDateTime.now());
+
+    OffsetDateTime now = OffsetDateTime.now();
+
+    // Cascade soft-delete to all non-deleted pages and remove their KC chunks via events
+    List<WikiPage> activePages = pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId);
+    for (WikiPage page : activePages) {
+      page.setDeletedAt(now);
+      pageRepository.save(page);
+      eventPublisher.publishEvent(
+          new WikiPageChangedEvent(
+              page.getId(), spaceId, WikiPageChangedEvent.ChangeType.DELETED));
+    }
+
+    // Soft-delete the backing KnowledgeSource for this space (if it exists)
+    List<KnowledgeSource> sources = knowledgeSourceRepository.findActiveByWikiSpaceId(spaceId);
+    for (KnowledgeSource ks : sources) {
+      ks.setDeletedAt(now);
+      knowledgeSourceRepository.save(ks);
+    }
+
+    space.setDeletedAt(now);
     spaceRepository.save(space);
   }
 

@@ -45,4 +45,13 @@ public interface KnowledgeSourceRepository extends JpaRepository<KnowledgeSource
           + "AND (s.lastIngestedAt IS NULL OR s.lastIngestedAt < :before)")
   List<KnowledgeSource> findRefreshCandidates(
       @Param("status") KnowledgeSourceStatus status, @Param("before") OffsetDateTime before);
+
+  /**
+   * Finds the active KnowledgeSource whose JSON config contains the given spaceId value.
+   * Used to locate the auto-created source when a wiki space is deleted.
+   */
+  @Query(
+      "SELECT s FROM KnowledgeSource s WHERE s.deletedAt IS NULL "
+          + "AND s.config LIKE CONCAT('%\"spaceId\":', :spaceId, '%')")
+  List<KnowledgeSource> findActiveByWikiSpaceId(@Param("spaceId") Long spaceId);
 }

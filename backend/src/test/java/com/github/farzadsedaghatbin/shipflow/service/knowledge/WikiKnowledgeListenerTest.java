@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.ObjectProvider;
 
 class WikiKnowledgeListenerTest {
 
@@ -33,7 +34,12 @@ class WikiKnowledgeListenerTest {
     spaceRepo = mock(WikiSpaceRepository.class);
     itemRepo = mock(KnowledgeItemRepository.class);
     ingestionService = mock(KnowledgeIngestionService.class);
-    listener = new WikiKnowledgeListener(pageRepo, spaceRepo, itemRepo, ingestionService);
+
+    @SuppressWarnings("unchecked")
+    ObjectProvider<KnowledgeIngestionService> provider = mock(ObjectProvider.class);
+    when(provider.getIfAvailable()).thenReturn(ingestionService);
+
+    listener = new WikiKnowledgeListener(pageRepo, spaceRepo, itemRepo, provider);
   }
 
   @Test
@@ -150,5 +156,50 @@ class WikiKnowledgeListenerTest {
             isNull(),
             eq(200L));
     assertThat(chunksCaptor.getValue()).isNotEmpty();
+  }
+
+  /**
+   * Fix 1: When KnowledgeIngestionService is absent (QA disabled), an UPDATED event must be
+   * handled without throwing and without attempting ingestion.
+   */
+  @Test
+  void onUpdated_absentIngestionService_noOpAndNoThrow() {
+    @SuppressWarnings("unchecked")
+    ObjectProvider<KnowledgeIngestionService> absentProvider = mock(ObjectProvider.class);
+    when(absentProvider.getIfAvailable()).thenReturn(null);
+
+    WikiKnowledgeListener listenerWithoutService =
+        new WikiKnowledgeListener(pageRepo, spaceRepo, itemRepo, absentProvider);
+
+    Long pageId = 5L;
+    Long spaceId = 20L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("qa-disabled");
+    space.setProjectId(300L);
+
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+    page.setTitle("Some Page");
+    page.setContentText("Content that would normally be ingested.");
+
+    when(pageRepo.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+
+    // Must not throw
+    assertThatCode(
+            () ->
+                listenerWithoutService.onWikiPageChanged(
+                    new WikiPageChangedEvent(
+                        pageId, spaceId, WikiPageChangedEvent.ChangeType.UPDATED)))
+        .doesNotThrowAnyException();
+
+    // Old items should still be cleaned from the DB index (uses KnowledgeItemRepository directly)
+    verify(itemRepo).deleteByEntityTypeAndEntityId(KnowledgeEntityType.WIKI_PAGE, pageId);
+
+    // But ingestion service must NOT have been called (it was absent)
+    verifyNoInteractions(ingestionService);
   }
 }

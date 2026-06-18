@@ -12,14 +12,13 @@ import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.RawChunk;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class WikiKnowledgeListener {
 
@@ -29,7 +28,18 @@ public class WikiKnowledgeListener {
   private final WikiPageRepository wikiPageRepository;
   private final WikiSpaceRepository wikiSpaceRepository;
   private final KnowledgeItemRepository knowledgeItemRepository;
-  private final KnowledgeIngestionService knowledgeIngestionService;
+  private final ObjectProvider<KnowledgeIngestionService> ingestionServiceProvider;
+
+  public WikiKnowledgeListener(
+      WikiPageRepository wikiPageRepository,
+      WikiSpaceRepository wikiSpaceRepository,
+      KnowledgeItemRepository knowledgeItemRepository,
+      ObjectProvider<KnowledgeIngestionService> ingestionServiceProvider) {
+    this.wikiPageRepository = wikiPageRepository;
+    this.wikiSpaceRepository = wikiSpaceRepository;
+    this.knowledgeItemRepository = knowledgeItemRepository;
+    this.ingestionServiceProvider = ingestionServiceProvider;
+  }
 
   @Async
   @EventListener
@@ -72,7 +82,14 @@ public class WikiKnowledgeListener {
     List<RawChunk> chunks = splitIntoChunks(text, page.getTitle(), sourceUrl);
     if (chunks.isEmpty()) return;
 
-    knowledgeIngestionService.ingestChunks(
+    KnowledgeIngestionService ingestionService = ingestionServiceProvider.getIfAvailable();
+    if (ingestionService == null) {
+      log.debug(
+          "KnowledgeIngestionService not available (QA disabled); skipping ingest for wiki page {}",
+          pageId);
+      return;
+    }
+    ingestionService.ingestChunks(
         chunks, KnowledgeEntityType.WIKI_PAGE, pageId, null, projectId);
     log.info(
         "Ingested {} chunks for wiki page {} (space {})", chunks.size(), pageId, spaceId);
