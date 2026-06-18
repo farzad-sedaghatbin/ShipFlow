@@ -6,6 +6,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.RawChunk;
@@ -28,16 +29,19 @@ public class WikiKnowledgeListener {
   private final WikiPageRepository wikiPageRepository;
   private final WikiSpaceRepository wikiSpaceRepository;
   private final KnowledgeItemRepository knowledgeItemRepository;
+  private final WikiSpacePermissionRepository wikiSpacePermissionRepository;
   private final ObjectProvider<KnowledgeIngestionService> ingestionServiceProvider;
 
   public WikiKnowledgeListener(
       WikiPageRepository wikiPageRepository,
       WikiSpaceRepository wikiSpaceRepository,
       KnowledgeItemRepository knowledgeItemRepository,
+      WikiSpacePermissionRepository wikiSpacePermissionRepository,
       ObjectProvider<KnowledgeIngestionService> ingestionServiceProvider) {
     this.wikiPageRepository = wikiPageRepository;
     this.wikiSpaceRepository = wikiSpaceRepository;
     this.knowledgeItemRepository = knowledgeItemRepository;
+    this.wikiSpacePermissionRepository = wikiSpacePermissionRepository;
     this.ingestionServiceProvider = ingestionServiceProvider;
   }
 
@@ -58,9 +62,22 @@ public class WikiKnowledgeListener {
     }
   }
 
+  // Heuristic mitigation: spaces with explicit per-user/role grants are treated as restricted and
+  // excluded from KC ingestion pending true ACL-aware retrieval support.
+  private boolean isRestricted(Long spaceId) {
+    return wikiSpacePermissionRepository.existsBySpaceId(spaceId);
+  }
+
   private void handleUpsert(Long pageId, Long spaceId) {
-    // Remove existing knowledge items for this page before re-ingesting
+    // Always purge any existing chunks — covers the case where a space becomes restricted after
+    // content was already indexed.
     knowledgeItemRepository.deleteByEntityTypeAndEntityId(KnowledgeEntityType.WIKI_PAGE, pageId);
+
+    if (isRestricted(spaceId)) {
+      log.debug(
+          "Wiki space {} is restricted; skipping KC ingest for page {}", spaceId, pageId);
+      return;
+    }
 
     WikiPage page = wikiPageRepository.findById(pageId).orElse(null);
     if (page == null || page.getDeletedAt() != null) {

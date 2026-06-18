@@ -10,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeProviderType;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.IngestionContext;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.IngestionResult;
@@ -25,6 +26,7 @@ class WikiProviderTest {
 
   private WikiSpaceRepository spaceRepo;
   private WikiPageRepository pageRepo;
+  private WikiSpacePermissionRepository permRepo;
   private WikiProvider provider;
   private final ObjectMapper json = new ObjectMapper();
 
@@ -32,7 +34,8 @@ class WikiProviderTest {
   void setUp() {
     spaceRepo = mock(WikiSpaceRepository.class);
     pageRepo = mock(WikiPageRepository.class);
-    provider = new WikiProvider(spaceRepo, pageRepo);
+    permRepo = mock(WikiSpacePermissionRepository.class);
+    provider = new WikiProvider(spaceRepo, pageRepo, permRepo);
   }
 
   @Test
@@ -97,6 +100,7 @@ class WikiProviderTest {
 
     when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
     when(pageRepo.findBySpaceIdAndDeletedAtIsNull(spaceId)).thenReturn(List.of(page1, page2));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
 
     KnowledgeSource source = new KnowledgeSource();
     source.setConfig("{\"spaceId\":" + spaceId + "}");
@@ -128,6 +132,7 @@ class WikiProviderTest {
 
     when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
     when(pageRepo.findBySpaceIdAndDeletedAtIsNull(spaceId)).thenReturn(List.of(page));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
 
     KnowledgeSource source = new KnowledgeSource();
     source.setConfig("{\"spaceId\":" + spaceId + "}");
@@ -135,5 +140,54 @@ class WikiProviderTest {
 
     IngestionResult result = provider.ingest(source, ctx);
     assertThat(result.getChunks()).isEmpty();
+  }
+
+  @Test
+  void ingest_restrictedSpace_returnsEmptyResult() throws Exception {
+    Long spaceId = 77L;
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("restricted");
+
+    when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(true);
+
+    KnowledgeSource source = new KnowledgeSource();
+    source.setConfig("{\"spaceId\":" + spaceId + "}");
+    IngestionContext ctx = IngestionContext.builder().currentUserId(1L).build();
+
+    IngestionResult result = provider.ingest(source, ctx);
+
+    assertThat(result.getChunks()).isEmpty();
+    // Page repo must not be consulted — restricted space is bailed out early
+    verifyNoInteractions(pageRepo);
+  }
+
+  @Test
+  void ingest_openSpace_producesChunks() throws Exception {
+    Long spaceId = 20L;
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("open");
+
+    WikiPage page = new WikiPage();
+    page.setId(3L);
+    page.setSpaceId(spaceId);
+    page.setTitle("Guide");
+    page.setContentText("Content to ingest for the open space knowledge center.");
+
+    when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+    when(pageRepo.findBySpaceIdAndDeletedAtIsNull(spaceId)).thenReturn(List.of(page));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
+
+    KnowledgeSource source = new KnowledgeSource();
+    source.setConfig("{\"spaceId\":" + spaceId + "}");
+    IngestionContext ctx = IngestionContext.builder().currentUserId(1L).build();
+
+    IngestionResult result = provider.ingest(source, ctx);
+
+    assertThat(result.getChunks()).isNotEmpty();
+    assertThat(result.getChunks().get(0).getTitle()).contains("Guide");
+    verify(pageRepo).findBySpaceIdAndDeletedAtIsNull(spaceId);
   }
 }

@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface WikiSpacePermissionRepository extends JpaRepository<WikiSpacePermission, Long> {
 
   List<WikiSpacePermission> findBySpaceId(Long spaceId);
+
+  boolean existsBySpaceId(Long spaceId);
 }

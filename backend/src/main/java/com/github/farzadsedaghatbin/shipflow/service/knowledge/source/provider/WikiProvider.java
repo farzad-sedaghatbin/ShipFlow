@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeProviderType;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.*;
 import java.security.MessageDigest;
@@ -25,6 +26,7 @@ public class WikiProvider implements KnowledgeSourceProvider {
 
   private final WikiSpaceRepository wikiSpaceRepository;
   private final WikiPageRepository wikiPageRepository;
+  private final WikiSpacePermissionRepository wikiSpacePermissionRepository;
 
   @Override
   public KnowledgeProviderType getType() {
@@ -57,6 +59,15 @@ public class WikiProvider implements KnowledgeSourceProvider {
           wikiSpaceRepository
               .findById(spaceId)
               .orElseThrow(() -> new InvalidConfigException("Wiki space not found: " + spaceId));
+
+      // Heuristic mitigation: restricted spaces (explicit per-space grants) are excluded from KC
+      // ingestion pending true ACL-aware retrieval support.
+      if (wikiSpacePermissionRepository.existsBySpaceId(spaceId)) {
+        return IngestionResult.builder()
+            .chunks(java.util.List.of())
+            .sourceMetadata(java.util.Map.of("spaceId", spaceId, "skipped", "restricted"))
+            .build();
+      }
 
       List<WikiPage> pages = wikiPageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId);
       List<RawChunk> chunks = new ArrayList<>();

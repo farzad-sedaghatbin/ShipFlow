@@ -10,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.RawChunk;
@@ -25,6 +26,7 @@ class WikiKnowledgeListenerTest {
   private WikiPageRepository pageRepo;
   private WikiSpaceRepository spaceRepo;
   private KnowledgeItemRepository itemRepo;
+  private WikiSpacePermissionRepository permRepo;
   private KnowledgeIngestionService ingestionService;
   private WikiKnowledgeListener listener;
 
@@ -33,13 +35,14 @@ class WikiKnowledgeListenerTest {
     pageRepo = mock(WikiPageRepository.class);
     spaceRepo = mock(WikiSpaceRepository.class);
     itemRepo = mock(KnowledgeItemRepository.class);
+    permRepo = mock(WikiSpacePermissionRepository.class);
     ingestionService = mock(KnowledgeIngestionService.class);
 
     @SuppressWarnings("unchecked")
     ObjectProvider<KnowledgeIngestionService> provider = mock(ObjectProvider.class);
     when(provider.getIfAvailable()).thenReturn(ingestionService);
 
-    listener = new WikiKnowledgeListener(pageRepo, spaceRepo, itemRepo, provider);
+    listener = new WikiKnowledgeListener(pageRepo, spaceRepo, itemRepo, permRepo, provider);
   }
 
   @Test
@@ -61,6 +64,7 @@ class WikiKnowledgeListenerTest {
 
     when(pageRepo.findById(pageId)).thenReturn(Optional.of(page));
     when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
 
     listener.onWikiPageChanged(
         new WikiPageChangedEvent(pageId, spaceId, WikiPageChangedEvent.ChangeType.UPDATED));
@@ -115,6 +119,7 @@ class WikiKnowledgeListenerTest {
 
     when(pageRepo.findById(pageId)).thenReturn(Optional.of(page));
     when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
 
     listener.onWikiPageChanged(
         new WikiPageChangedEvent(pageId, spaceId, WikiPageChangedEvent.ChangeType.UPDATED));
@@ -142,6 +147,7 @@ class WikiKnowledgeListenerTest {
 
     when(pageRepo.findById(pageId)).thenReturn(Optional.of(page));
     when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
 
     listener.onWikiPageChanged(
         new WikiPageChangedEvent(pageId, spaceId, WikiPageChangedEvent.ChangeType.CREATED));
@@ -169,7 +175,7 @@ class WikiKnowledgeListenerTest {
     when(absentProvider.getIfAvailable()).thenReturn(null);
 
     WikiKnowledgeListener listenerWithoutService =
-        new WikiKnowledgeListener(pageRepo, spaceRepo, itemRepo, absentProvider);
+        new WikiKnowledgeListener(pageRepo, spaceRepo, itemRepo, permRepo, absentProvider);
 
     Long pageId = 5L;
     Long spaceId = 20L;
@@ -187,6 +193,7 @@ class WikiKnowledgeListenerTest {
 
     when(pageRepo.findById(pageId)).thenReturn(Optional.of(page));
     when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
 
     // Must not throw
     assertThatCode(
@@ -201,5 +208,59 @@ class WikiKnowledgeListenerTest {
 
     // But ingestion service must NOT have been called (it was absent)
     verifyNoInteractions(ingestionService);
+  }
+
+  @Test
+  void onUpdated_restrictedSpace_removesChunksAndDoesNotIngest() {
+    Long pageId = 10L;
+    Long spaceId = 99L;
+
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(true);
+
+    listener.onWikiPageChanged(
+        new WikiPageChangedEvent(pageId, spaceId, WikiPageChangedEvent.ChangeType.UPDATED));
+
+    // Existing chunks must be purged even for restricted spaces
+    verify(itemRepo).deleteByEntityTypeAndEntityId(KnowledgeEntityType.WIKI_PAGE, pageId);
+    // No ingestion must happen
+    verifyNoInteractions(ingestionService);
+    // Page and space repos must NOT be consulted (early exit after permission check)
+    verifyNoInteractions(pageRepo);
+  }
+
+  @Test
+  void onUpdated_openSpace_ingestsChunks() {
+    Long pageId = 11L;
+    Long spaceId = 50L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("open");
+    space.setProjectId(500L);
+
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+    page.setTitle("Open Page");
+    page.setContentText("Content that should be ingested because the space is open to all.");
+
+    when(pageRepo.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepo.findById(spaceId)).thenReturn(Optional.of(space));
+    when(permRepo.existsBySpaceId(spaceId)).thenReturn(false);
+
+    listener.onWikiPageChanged(
+        new WikiPageChangedEvent(pageId, spaceId, WikiPageChangedEvent.ChangeType.UPDATED));
+
+    verify(itemRepo).deleteByEntityTypeAndEntityId(KnowledgeEntityType.WIKI_PAGE, pageId);
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<List<RawChunk>> chunksCaptor = ArgumentCaptor.forClass(List.class);
+    verify(ingestionService)
+        .ingestChunks(
+            chunksCaptor.capture(),
+            eq(KnowledgeEntityType.WIKI_PAGE),
+            eq(pageId),
+            isNull(),
+            eq(500L));
+    assertThat(chunksCaptor.getValue()).isNotEmpty();
   }
 }
