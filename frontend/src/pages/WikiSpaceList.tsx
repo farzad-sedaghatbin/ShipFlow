@@ -101,7 +101,7 @@ export default function WikiSpaceList() {
       )}
       {isError && (
         <div className="text-sm text-destructive py-4">
-          Failed to load spaces.
+          {t("wiki.loadSpacesError")}
         </div>
       )}
       {!isLoading && !isError && spaces && spaces.length === 0 && (

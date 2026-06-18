@@ -10,6 +10,7 @@ import WikiHistoryPanel from "../components/wiki/WikiHistoryPanel";
 import {
   wikiService,
   type WikiPageDTO,
+  type WikiTreeNodeDTO,
 } from "../services/wikiService";
 
 // BlockNote editor is lazy-loaded so tests can mock it and it doesn't bloat the initial bundle
@@ -109,11 +110,44 @@ export default function WikiPage() {
 
   // ── Ancestry computation (flat walk from tree) ─────────────────────────────
 
-  // For brevity: we rely on page.parentId chain; a full tree walk would need
-  // the full page entity per ancestor. The server would need to expose an
-  // ancestors endpoint for a complete breadcrumb trail.
   function findAncestors(): WikiPageDTO[] {
-    return [];
+    if (!tree || !numPageId) return [];
+
+    // Walk the tree depth-first; collect the path from root to the target node.
+    // WikiTreeNodeDTO carries id + title — enough to build breadcrumb links.
+    // We cast to WikiPageDTO for the ancestors prop type (only id + title used).
+    function walk(
+      nodes: WikiTreeNodeDTO[],
+      targetId: number,
+      path: WikiTreeNodeDTO[]
+    ): WikiTreeNodeDTO[] | null {
+      for (const node of nodes) {
+        const current = [...path, node];
+        if (node.id === targetId) return current;
+        if (node.children.length > 0) {
+          const found = walk(node.children, targetId, current);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+
+    const fullPath = walk(tree, numPageId, []);
+    if (!fullPath || fullPath.length <= 1) return [];
+    // Drop the last element (current page itself); return the ancestor chain.
+    return fullPath.slice(0, -1).map((n) => ({
+      id: n.id,
+      title: n.title,
+      slug: n.slug,
+      spaceId: numSpaceId,
+      parentId: null,
+      content: null,
+      contentText: null,
+      position: n.position,
+      createdBy: 0,
+      createdAt: "",
+      updatedAt: "",
+    }));
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────

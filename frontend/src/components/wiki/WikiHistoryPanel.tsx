@@ -37,7 +37,7 @@ export default function WikiHistoryPanel({ pageId }: WikiHistoryPanelProps) {
   if (isError) {
     return (
       <div className="text-sm text-destructive px-2 py-2">
-        Failed to load history.
+        {t("wiki.loadHistoryError")}
       </div>
     );
   }

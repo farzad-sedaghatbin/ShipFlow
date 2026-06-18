@@ -8244,6 +8244,8 @@
     "deleteSpaceConfirm": "Are you sure you want to delete this space?",
     "deletePageConfirm": "Are you sure you want to delete this page?",
     "searchPlaceholder": "Search pages…",
-    "noResults": "No results found."
+    "noResults": "No results found.",
+    "loadHistoryError": "Failed to load history.",
+    "loadSpacesError": "Failed to load spaces."
   }
 }

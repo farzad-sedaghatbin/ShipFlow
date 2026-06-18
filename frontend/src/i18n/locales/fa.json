@@ -7280,6 +7280,8 @@
     "deleteSpaceConfirm": "آیا مطمئن هستید که می‌خواهید این فضا را حذف کنید؟",
     "deletePageConfirm": "آیا مطمئن هستید که می‌خواهید این صفحه را حذف کنید؟",
     "searchPlaceholder": "جستجوی صفحات…",
-    "noResults": "نتیجه‌ای یافت نشد."
+    "noResults": "نتیجه‌ای یافت نشد.",
+    "loadHistoryError": "خطا در بارگذاری تاریخچه.",
+    "loadSpacesError": "خطا در بارگذاری فضاها."
   }
 }
