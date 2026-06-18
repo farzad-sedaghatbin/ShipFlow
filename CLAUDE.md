@@ -365,6 +365,8 @@ See `PERMISSION_MATRIX.md` for the full matrix.
     e.g. `V1__init.sql`, `V99__add_index.sql`
   - **Date-based without underscores** (older files): `V{YYYYMMDD}{seq}__{description}.sql`
 - **Never edit an existing migration.** Always add a new file.
+- **Use the date-prefixed format for new migrations — NOT bare sequential `V{N}`.** Flyway parses the version numerically, so a sequential `V110` sorts to `110`, which is *lower* than every date-prefixed `V2026_*` migration (e.g. `V2026_03_30_0001` that creates `task_attachments`). On a **fresh** database Flyway applies in version order, so a `V110` that alters a table created by a later-sorting `V2026_*` migration fails. `spring.flyway.out-of-order=true` rescues already-migrated DBs but **not** fresh installs. The legacy `V{N}__` files exist for history only.
+- **Tests don't run Flyway** (H2 schema is generated from entities via create-drop), so a broken migration *order* or PostgreSQL-only DDL passes `./mvnw verify` and only fails at real startup — verify new migrations against PostgreSQL.
 - H2 is used for tests; PostgreSQL for dev/prod.
 
 ---
