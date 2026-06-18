@@ -3699,6 +3699,7 @@
     "slackNotifications": "اعلان‌های Slack",
     "slackWorkspace": "فضای کاری Slack",
     "statusName": "نام وضعیت",
+    "statusNameHint": "باید به فرمت UPPER_SNAKE_CASE باشد (مثال: IN_PROGRESS)",
     "addStatus": "افزودن وضعیت",
     "subtitle": "پیکربندی پیش‌فرض‌ها و ترجیحات سازمانی",
     "taskCategories": "دسته‌بندی وظایف",
