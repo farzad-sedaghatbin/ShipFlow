@@ -14,15 +14,21 @@ import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiRevisionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpacePermissionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiTreeNodeDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.KnowledgeSource;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpacePermission;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeProviderType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceScope;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceStatus;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeSourceRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.wiki.WikiHistoryReader;
+import lombok.extern.slf4j.Slf4j;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,6 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@Slf4j
 public class WikiService {
 
   private final WikiSpaceRepository spaceRepository;
@@ -46,6 +53,7 @@ public class WikiService {
   private final WikiHistoryReader historyReader;
   private final ApplicationEventPublisher eventPublisher;
   private final ObjectMapper objectMapper;
+  private final KnowledgeSourceRepository knowledgeSourceRepository;
 
   public WikiService(
       WikiSpaceRepository spaceRepository,
@@ -54,7 +62,8 @@ public class WikiService {
       WikiPermissionService permissionService,
       WikiHistoryReader historyReader,
       ApplicationEventPublisher eventPublisher,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      KnowledgeSourceRepository knowledgeSourceRepository) {
     this.spaceRepository = spaceRepository;
     this.pageRepository = pageRepository;
     this.permissionRepository = permissionRepository;
@@ -62,6 +71,7 @@ public class WikiService {
     this.historyReader = historyReader;
     this.eventPublisher = eventPublisher;
     this.objectMapper = objectMapper;
+    this.knowledgeSourceRepository = knowledgeSourceRepository;
   }
 
   // --- Space operations ---
@@ -74,6 +84,28 @@ public class WikiService {
     space.setDescription(req.description());
     space.setCreatedBy(userId);
     space = spaceRepository.save(space);
+
+    // Auto-register the wiki space as a Knowledge Center source
+    try {
+      KnowledgeSource ks =
+          KnowledgeSource.builder()
+              .name("Wiki: " + space.getName())
+              .description("Auto-indexed wiki space")
+              .providerType(KnowledgeProviderType.WIKI)
+              .scope(KnowledgeSourceScope.ORG)
+              .projectId(space.getProjectId())
+              .config("{\"spaceId\":" + space.getId() + "}")
+              .status(KnowledgeSourceStatus.PENDING)
+              .createdBy(userId)
+              .build();
+      knowledgeSourceRepository.save(ks);
+    } catch (Exception e) {
+      log.warn(
+          "Could not auto-create KnowledgeSource for wiki space {}: {}",
+          space.getId(),
+          e.getMessage());
+    }
+
     return toSpaceDTO(space);
   }
 

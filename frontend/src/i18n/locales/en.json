@@ -8162,7 +8162,8 @@
       "GITHUB": "GitHub",
       "CONFLUENCE": "Confluence",
       "NOTION": "Notion",
-      "GOOGLE_DRIVE": "Google Drive"
+      "GOOGLE_DRIVE": "Google Drive",
+      "WIKI": "Wiki"
     },
     "status": {
       "READY": "Ready",

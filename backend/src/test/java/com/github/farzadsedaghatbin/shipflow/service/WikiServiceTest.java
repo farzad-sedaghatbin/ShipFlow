@@ -13,6 +13,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
+import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeSourceRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
@@ -38,6 +39,7 @@ class WikiServiceTest {
   private WikiPermissionService permissionService;
   private WikiHistoryReader historyReader;
   private ApplicationEventPublisher eventPublisher;
+  private KnowledgeSourceRepository knowledgeSourceRepository;
   private WikiService wikiService;
 
   @BeforeEach
@@ -48,6 +50,7 @@ class WikiServiceTest {
     permissionService = mock(WikiPermissionService.class);
     historyReader = mock(WikiHistoryReader.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
+    knowledgeSourceRepository = mock(KnowledgeSourceRepository.class);
     wikiService =
         new WikiService(
             spaceRepository,
@@ -56,7 +59,8 @@ class WikiServiceTest {
             permissionService,
             historyReader,
             eventPublisher,
-            new ObjectMapper());
+            new ObjectMapper(),
+            knowledgeSourceRepository);
   }
 
   @Test
