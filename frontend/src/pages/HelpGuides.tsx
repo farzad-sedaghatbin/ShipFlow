@@ -176,6 +176,13 @@ export default function HelpGuides() {
             color: 'text-violet-600',
         },
         {
+            title: t('helpGuides.workflowAutomations'),
+            description: t('helpGuides.workflowAutomationsDesc'),
+            icon: Zap,
+            path: '/help/automations',
+            color: 'text-primary',
+        },
+        {
             title: t('helpGuides.migration'),
             description: t('helpGuides.migrationDesc'),
             icon: GitMerge,

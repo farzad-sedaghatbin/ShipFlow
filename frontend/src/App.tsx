@@ -143,6 +143,7 @@ const IdeaToRoadmapGuide = lazy(() => import('./pages/guides/IdeaToRoadmapGuide'
 const ImportGuide = lazy(() => import('./pages/guides/ImportGuide'));
 const ScrumModeGuide = lazy(() => import('./pages/guides/ScrumModeGuide'));
 const MigrationGuide = lazy(() => import('./pages/guides/MigrationGuide'));
+const WorkflowAutomationsGuide = lazy(() => import('./pages/guides/WorkflowAutomationsGuide'));
 
 // ── Suspense fallback ─────────────────────────────────────────────────────────
 function PageLoader() {
@@ -369,6 +370,7 @@ function App() {
                       <Route path="help/import" element={<ImportGuide />} />
                       <Route path="help/scrum-mode" element={<ScrumModeGuide />} />
                       <Route path="help/migration" element={<MigrationGuide />} />
+                      <Route path="help/automations" element={<WorkflowAutomationsGuide />} />
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />

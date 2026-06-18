@@ -1585,6 +1585,8 @@
     "importDataDesc": "Bring your existing work from Jira, Linear, or Asana using CSV upload or direct API import.",
     "scrumMode": "Scrum Mode",
     "scrumModeDesc": "Learn how to run Scrum sprints, track story points, view velocity, and manage sprint planning in ShipFlow.",
+    "workflowAutomations": "Workflow Automations",
+    "workflowAutomationsDesc": "Create trigger-based rules that automatically react to project events — notify teams, send webhooks, add comments, and more.",
     "migration": "Migrating to ShipFlow",
     "migrationDesc": "Step-by-step guide for moving your team from Jira, Linear, or Asana to ShipFlow.",
     "searchPlaceholder": "Ask how to do something in ShipFlow…",
