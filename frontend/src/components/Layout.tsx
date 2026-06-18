@@ -42,6 +42,7 @@ import {
   Workflow,
   KeyRound,
   Zap,
+  BookOpenText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -109,6 +110,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/roadmap': 'Roadmap',
   '/sprint-planning': 'Sprint Planning',
   '/ai-features': 'AI Features',
+  '/wiki': 'Wiki',
 };
 
 function getPageTitle(pathname: string): string {
@@ -445,6 +447,13 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           <NavItem
             item={{ textKey: 'nav.knowledge', icon: BookOpen, path: '/knowledge', tourId: 'knowledge-link' }}
             isActive={currentPath.startsWith('/knowledge')}
+            onClick={onItemClick}
+          />
+
+          {/* Wiki */}
+          <NavItem
+            item={{ textKey: 'nav.wiki', icon: BookOpenText, path: '/wiki', tourId: 'wiki-link' }}
+            isActive={currentPath.startsWith('/wiki')}
             onClick={onItemClick}
           />
 

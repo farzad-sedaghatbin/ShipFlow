@@ -124,6 +124,11 @@ const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter'));
 // Workflow Automations
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
 
+// Wiki
+const WikiSpaceList = lazy(() => import('./pages/WikiSpaceList'));
+const WikiSpace = lazy(() => import('./pages/WikiSpace'));
+const WikiPage = lazy(() => import('./pages/WikiPage'));
+
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
 const GettingStartedGuide = lazy(() => import('./pages/guides/GettingStartedGuide'));
@@ -350,6 +355,11 @@ function App() {
 
                       {/* Knowledge Center */}
                       <Route path="knowledge" element={<KnowledgeCenter />} />
+
+                      {/* Wiki */}
+                      <Route path="wiki" element={<WikiSpaceList />} />
+                      <Route path="wiki/:spaceId" element={<WikiSpace />} />
+                      <Route path="wiki/:spaceId/:pageId" element={<WikiPage />} />
 
                       {/* Help & Guides */}
                       <Route path="help" element={<HelpGuides />} />
