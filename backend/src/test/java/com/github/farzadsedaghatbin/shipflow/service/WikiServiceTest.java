@@ -21,7 +21,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
@@ -453,7 +453,7 @@ class WikiServiceTest {
   void getPage_notFound_throwsNoSuchElement() {
     when(pageRepository.findById(999L)).thenReturn(Optional.empty());
     assertThatThrownBy(() -> wikiService.getPage(999L, 1L))
-        .isInstanceOf(NoSuchElementException.class);
+        .isInstanceOf(ResourceNotFoundException.class);
   }
 
   @Test
@@ -484,7 +484,7 @@ class WikiServiceTest {
     when(pageRepository.findById(1L)).thenReturn(Optional.of(deleted));
 
     assertThatThrownBy(() -> wikiService.getPage(1L, 1L))
-        .isInstanceOf(NoSuchElementException.class)
+        .isInstanceOf(ResourceNotFoundException.class)
         .hasMessageContaining("Page not found");
   }
 }

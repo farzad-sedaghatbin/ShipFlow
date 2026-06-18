@@ -4,15 +4,21 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.CreateWikiPageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.CreateWikiSpaceRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.GrantPermissionRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.MovePageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.UpdateWikiPageRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.UpdateWikiSpaceRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageSearchDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiRevisionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpacePermissionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiTreeNodeDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
+import com.github.farzadsedaghatbin.shipflow.entity.WikiSpacePermission;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
+import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
@@ -22,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -88,7 +93,7 @@ public class WikiService {
     WikiSpace space =
         spaceRepository
             .findById(spaceId)
-            .orElseThrow(() -> new NoSuchElementException("Space not found: " + spaceId));
+            .orElseThrow(() -> new ResourceNotFoundException("Space not found: " + spaceId));
     permissionService.requireRead(userId, space);
 
     List<WikiPage> allPages = pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId);
@@ -242,7 +247,7 @@ public class WikiService {
     WikiPage historicPage =
         historyReader
             .revision(pageId, revision)
-            .orElseThrow(() -> new NoSuchElementException("Revision not found: " + revision));
+            .orElseThrow(() -> new ResourceNotFoundException("Revision not found: " + revision));
 
     page.setTitle(historicPage.getTitle());
     page.setContent(historicPage.getContent());
@@ -256,19 +261,99 @@ public class WikiService {
     return toPageDTO(page);
   }
 
+  // --- Additional space operations ---
+
+  @Transactional(readOnly = true)
+  public WikiSpaceDTO getSpace(Long spaceId, Long userId) {
+    WikiSpace space = requireSpace(spaceId);
+    permissionService.requireRead(userId, space);
+    return toSpaceDTO(space);
+  }
+
+  public WikiSpaceDTO updateSpace(Long spaceId, UpdateWikiSpaceRequest req, Long userId) {
+    WikiSpace space = requireSpace(spaceId);
+    permissionService.requireWrite(userId, space);
+    if (req.name() != null) space.setName(req.name());
+    if (req.description() != null) space.setDescription(req.description());
+    space = spaceRepository.save(space);
+    return toSpaceDTO(space);
+  }
+
+  public void deleteSpace(Long spaceId, Long userId) {
+    WikiSpace space = requireSpace(spaceId);
+    permissionService.requireWrite(userId, space);
+    space.setDeletedAt(OffsetDateTime.now());
+    spaceRepository.save(space);
+  }
+
+  // --- Space permission management ---
+
+  public WikiSpacePermissionDTO grantPermission(
+      Long spaceId, GrantPermissionRequest req, Long userId) {
+    WikiSpace space = requireSpace(spaceId);
+    permissionService.requireWrite(userId, space);
+    WikiSpacePermission perm = new WikiSpacePermission();
+    perm.setSpaceId(spaceId);
+    perm.setGranteeType(req.granteeType());
+    perm.setGranteeRef(req.granteeRef());
+    perm.setLevel(req.level());
+    perm = permissionRepository.save(perm);
+    return toPermissionDTO(perm);
+  }
+
+  @Transactional(readOnly = true)
+  public List<WikiSpacePermissionDTO> listPermissions(Long spaceId, Long userId) {
+    WikiSpace space = requireSpace(spaceId);
+    permissionService.requireRead(userId, space);
+    return permissionRepository.findBySpaceId(spaceId).stream()
+        .map(this::toPermissionDTO)
+        .collect(Collectors.toList());
+  }
+
+  public void revokePermission(Long permId, Long userId) {
+    WikiSpacePermission perm =
+        permissionRepository
+            .findById(permId)
+            .orElseThrow(() -> new ResourceNotFoundException("Permission not found: " + permId));
+    WikiSpace space = requireSpace(perm.getSpaceId());
+    permissionService.requireWrite(userId, space);
+    permissionRepository.delete(perm);
+  }
+
+  // --- Search ---
+
+  @Transactional(readOnly = true)
+  public List<WikiPageSearchDTO> searchPages(String q, Long spaceId, Long userId) {
+    List<WikiSpace> accessibleSpaces =
+        spaceRepository.findByDeletedAtIsNullOrderByNameAsc().stream()
+            .filter(s -> permissionService.canRead(userId, s))
+            .collect(Collectors.toList());
+
+    if (accessibleSpaces.isEmpty()) return List.of();
+
+    String lowerQ = q == null ? "" : q.toLowerCase();
+
+    return accessibleSpaces.stream()
+        .filter(s -> spaceId == null || s.getId().equals(spaceId))
+        .flatMap(s -> pageRepository.findBySpaceIdAndDeletedAtIsNull(s.getId()).stream())
+        .filter(p -> p.getTitle() != null && p.getTitle().toLowerCase().contains(lowerQ))
+        .map(p -> new WikiPageSearchDTO(p.getId(), p.getTitle(), p.getSlug()))
+        .collect(Collectors.toList());
+  }
+
   // --- Helpers ---
 
   private WikiPage requirePage(Long pageId) {
     return pageRepository
         .findById(pageId)
         .filter(p -> p.getDeletedAt() == null)
-        .orElseThrow(() -> new NoSuchElementException("Page not found: " + pageId));
+        .orElseThrow(() -> new ResourceNotFoundException("Page not found: " + pageId));
   }
 
   private WikiSpace requireSpace(Long spaceId) {
     return spaceRepository
         .findById(spaceId)
-        .orElseThrow(() -> new NoSuchElementException("Space not found: " + spaceId));
+        .orElseThrow(() -> new ResourceNotFoundException("Space not found: " + spaceId));
   }
 
   private int nextPosition(Long spaceId, Long parentId) {
@@ -378,6 +463,15 @@ public class WikiService {
         space.getCreatedBy(),
         space.getCreatedAt(),
         space.getUpdatedAt());
+  }
+
+  private WikiSpacePermissionDTO toPermissionDTO(WikiSpacePermission perm) {
+    return new WikiSpacePermissionDTO(
+        perm.getId(),
+        perm.getSpaceId(),
+        perm.getGranteeType(),
+        perm.getGranteeRef(),
+        perm.getLevel());
   }
 
   private WikiPageDTO toPageDTO(WikiPage page) {
