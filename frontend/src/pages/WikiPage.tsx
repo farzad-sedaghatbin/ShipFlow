@@ -1,5 +1,5 @@
 import { lazy, Suspense, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Edit2, Paperclip, Download, Trash2, ChevronDown, ChevronUp } from "lucide-react";
@@ -21,6 +21,7 @@ const WikiEditor = lazy(() => import("../components/wiki/WikiEditor"));
 export default function WikiPage() {
   const { spaceId, pageId } = useParams<{ spaceId: string; pageId: string }>();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const numSpaceId = Number(spaceId);
@@ -29,6 +30,9 @@ export default function WikiPage() {
   const [editMode, setEditMode] = useState(false);
   const [draftContent, setDraftContent] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // Add-subpage dialog: null = closed; a number = creating a child of that page.
+  const [childParent, setChildParent] = useState<number | null>(null);
+  const [childTitle, setChildTitle] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,6 +92,21 @@ export default function WikiPage() {
     mutationFn: (attId: number) => wikiService.deleteAttachment(attId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wiki-attachments", numPageId] });
+    },
+  });
+
+  const createChildMutation = useMutation({
+    mutationFn: (title: string) =>
+      wikiService.createPage({
+        spaceId: numSpaceId,
+        title,
+        parentId: childParent ?? undefined,
+      }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["wiki-tree", numSpaceId] });
+      setChildParent(null);
+      setChildTitle("");
+      navigate(`/wiki/${numSpaceId}/${res.data.id}`);
     },
   });
 
@@ -176,6 +195,10 @@ export default function WikiPage() {
             spaceId={numSpaceId}
             nodes={tree ?? []}
             currentPageId={numPageId}
+            onAddChild={(pid) => {
+              setChildParent(pid);
+              setChildTitle("");
+            }}
           />
         </aside>
       )}
@@ -356,6 +379,56 @@ export default function WikiPage() {
           <WikiTableOfContents content={displayContent} />
         </aside>
       </div>
+
+      {/* Add Subpage dialog */}
+      {childParent !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-background rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <h2 className="text-lg font-semibold">{t("wiki.addSubpage")}</h2>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (childTitle.trim()) createChildMutation.mutate(childTitle.trim());
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  {t("wiki.pageTitle")} *
+                </label>
+                <input
+                  value={childTitle}
+                  onChange={(e) => setChildTitle(e.target.value)}
+                  autoFocus
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="Getting Started"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChildParent(null);
+                    setChildTitle("");
+                  }}
+                  className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
+                >
+                  {t("wiki.cancel")}
+                </button>
+                <button
+                  type="submit"
+                  disabled={!childTitle.trim() || createChildMutation.isPending}
+                  className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {createChildMutation.isPending
+                    ? t("wiki.saving")
+                    : t("wiki.addSubpage")}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

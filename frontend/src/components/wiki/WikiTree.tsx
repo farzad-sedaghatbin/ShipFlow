@@ -114,7 +114,7 @@ function WikiTreeNode({
               e.stopPropagation();
               onAddChild(node.id);
             }}
-            className="ml-auto flex-none w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+            className="ml-auto flex-none w-4 h-4 flex items-center justify-center text-muted-foreground hover:text-primary opacity-70 hover:opacity-100 transition-opacity"
             aria-label="Add subpage"
             title="Add subpage"
           >
