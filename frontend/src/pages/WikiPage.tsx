@@ -121,16 +121,67 @@ export default function WikiPage() {
   }
 
   function handleExportPdf() {
-    // Print just the page content (see the @media print rules in index.css) and
-    // let the user Save as PDF. Use the page title as the default PDF filename.
-    const previousTitle = document.title;
-    if (page) document.title = page.title;
-    const restore = () => {
-      document.title = previousTitle;
-      window.removeEventListener("afterprint", restore);
-    };
-    window.addEventListener("afterprint", restore);
-    window.print();
+    // Render the page content into an isolated window and print THAT, rather than
+    // toggling visibility on the live app (which is fragile: app scroll/overflow
+    // containers can clip the print area, leaving an empty preview). This builds
+    // a clean standalone document with the app's styles inlined, so the print →
+    // Save as PDF preview always shows the real content with selectable text.
+    const src = document.getElementById("wiki-print-area");
+    if (!src) {
+      window.print();
+      return;
+    }
+
+    // Clone the content, drop anything marked no-print, and force the editor to
+    // a light color scheme so the PDF is readable regardless of the app theme.
+    const clone = src.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll(".no-print").forEach((el) => el.remove());
+    clone.querySelectorAll(".bn-container").forEach((el) => {
+      el.classList.remove("dark");
+      el.classList.add("light");
+      el.setAttribute("data-color-scheme", "light");
+    });
+
+    // Inline all same-origin stylesheet rules (Tailwind + BlockNote) so the
+    // isolated window renders with the same styling.
+    let css = "";
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        for (const rule of Array.from(sheet.cssRules)) css += rule.cssText + "\n";
+      } catch {
+        // Cross-origin stylesheet (e.g. fonts) — not readable, skip it.
+      }
+    }
+
+    const title = (page?.title ?? "Wiki").replace(/[<>&]/g, (c) =>
+      c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&amp;"
+    );
+    const win = window.open("", "_blank", "width=900,height=1200");
+    if (!win) {
+      // Popup blocked — fall back to printing the page in place.
+      window.print();
+      return;
+    }
+    win.document.open();
+    win.document.write(
+      `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>` +
+        `<style>${css}\n` +
+        `html,body{background:#fff;color:#111;margin:0;padding:32px;}` +
+        `*{color:#111 !important;background-color:transparent !important;box-shadow:none !important;}` +
+        `body{background:#fff !important;}` +
+        // The inlined app CSS carries the wiki @media print rule that hides
+        // everything except #wiki-print-area (which doesn't exist here); undo it
+        // so the isolated document is fully visible when printed.
+        `@media print{body,body *{visibility:visible !important;}}` +
+        `@page{margin:0.75in;}</style></head>` +
+        `<body>${clone.innerHTML}</body></html>`
+    );
+    win.document.close();
+    win.focus();
+    // Give the cloned content + fonts a moment to lay out, then print.
+    setTimeout(() => {
+      win.print();
+    }, 400);
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
