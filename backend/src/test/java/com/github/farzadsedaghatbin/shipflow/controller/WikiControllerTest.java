@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.*;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
@@ -53,6 +55,7 @@ class WikiControllerTest {
   @Autowired private WikiPageRepository wikiPageRepository;
   @Autowired private WikiAttachmentRepository wikiAttachmentRepository;
   @Autowired private WikiSpacePermissionRepository wikiSpacePermissionRepository;
+  @Autowired private PermissionRepository permissionRepository;
 
   @MockBean private ObjectStorageService objectStorageService;
 
@@ -331,6 +334,68 @@ class WikiControllerTest {
         .andExpect(
             header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("report.pdf")))
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PDF));
+  }
+
+  /**
+   * End-to-end 403: an authenticated user whose role has no WIKI READ permission in the global RBAC
+   * table, and who has no explicit WikiSpacePermission grant, must receive HTTP 403 when accessing
+   * a wiki page.
+   *
+   * <p>Deny-path guarantee: within this transaction we delete the {@code READONLY/WIKI/READ} row
+   * from the permissions table, so the RBAC fallback in {@link
+   * com.github.farzadsedaghatbin.shipflow.service.WikiPermissionService} returns false → {@code
+   * requireRead} throws {@link org.springframework.security.access.AccessDeniedException} → {@link
+   * com.github.farzadsedaghatbin.shipflow.exception.GlobalExceptionHandler} maps it to HTTP 403.
+   * The {@code @Transactional} rollback restores the row after the test.
+   */
+  @Test
+  @WithMockUser(username = "noaccess_user", roles = {"READONLY"})
+  void authenticatedUserWithoutSpaceAccess_getPage_returns403() throws Exception {
+    // Remove the global WIKI READ for READONLY so the RBAC fallback denies access.
+    // (No explicit WikiSpacePermission grant will exist for this space/user either.)
+    permissionRepository
+        .findByRoleAndResourceTypeAndPermissionType(
+            UserRole.READONLY, ResourceType.WIKI, PermissionType.READ)
+        .ifPresent(permissionRepository::delete);
+    permissionRepository.flush(); // ensure deletion is visible within same transaction
+
+    // Seed the no-access user; must exist in DB so currentUserId() can resolve it.
+    User noAccessUser =
+        User.builder()
+            .username("noaccess_user")
+            .email("noaccess@test.com")
+            .password("password")
+            .role(UserRole.READONLY)
+            .isActive(true)
+            .build();
+    userRepository.save(noAccessUser);
+
+    // Space owned by admin — no WikiSpacePermission for noAccessUser.
+    WikiSpace space =
+        WikiSpace.builder()
+            .name("Restricted Space")
+            .spaceKey("RST1")
+            .createdBy(adminUser.getId())
+            .build();
+    space = wikiSpaceRepository.save(space);
+
+    WikiPage page =
+        WikiPage.builder()
+            .spaceId(space.getId())
+            .title("Secret Page")
+            .slug("secret-page")
+            .content("{}")
+            .contentText("secret")
+            .position(0)
+            .createdBy(adminUser.getId())
+            .build();
+    page = wikiPageRepository.save(page);
+
+    // No WikiSpacePermission row for noAccessUser / space — intentionally omitted.
+
+    mockMvc
+        .perform(get("/api/wiki/pages/{id}", page.getId()))
+        .andExpect(status().isForbidden());
   }
 
   @Test
