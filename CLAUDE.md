@@ -443,6 +443,16 @@ The Knowledge Center exposes a `KnowledgeSourceProvider` SPI in `service/knowled
 4. Override `supportsRefresh()` if the source can be re-fetched on a schedule (URL-like sources usually yes; one-shot uploads no).
 5. No other wiring needed — Spring auto-registers it via `KnowledgeSourceRegistry`. Add a `frontend/src/i18n/.../provider.MY_TYPE` label in `en.json` + `fa.json` so the UI renders the provider name.
 
+### Add a new object-storage provider
+
+Object storage uses the same provider-SPI shape as the Knowledge Center. The `ObjectStorageProvider` SPI lives in `service/storage/` so a new backend (Azure Blob, GCS, etc.) is a single Spring bean. **No controller or service may call a storage SDK directly — everything routes through `ObjectStorageService`** (same discipline as the LLM/vector-store abstractions).
+
+1. Add the enum value in `service/storage/StorageProviderType.java`.
+2. Create `service/storage/provider/MyProvider.java` implementing `ObjectStorageProvider` (`getType()`, `validateConfig(JsonNode)`, `store/retrieve/delete`, optional `testConnection`/`presignUrl`). S3-compatible backends can extend the shared AWS-SDK base provider.
+3. Reuse `StorageKeyGenerator` for object keys — never inline key logic.
+4. No other wiring — Spring auto-registers it via `ObjectStorageRegistry`. Add a `provider.MY_TYPE` i18n label and surface it in the Storage tab of Org Settings.
+5. Connection secrets follow the existing integration-secret convention (see the Architectural Decisions Log): stored write-only (never returned in a DTO, never logged); a future `AttributeConverter` can encrypt the isolated secret columns without a schema change.
+
 ### Debug an AI feature
 
 - Check `application-dev.properties` for active LLM provider
@@ -486,6 +496,8 @@ Key product/architecture decisions recorded here so future Claude Code sessions 
 |------|----------|-----------|
 | 2026-04-05 | Competitor migration tools ship in **v1.2.0**, after Scrum mode (v1.1.0) | 90% of Jira/Linear users work in Sprints. Without Scrum mode, imported sprint history would be dropped or wrongly mapped to Shape Up cycles. Once v1.1 ships, the mapping is clean: Sprint→Sprint, Epic→Pitch, Issue→Task. Migration sequence: CSV import → Linear API → Jira API. Always import into Kanban project by default; teams adopt Shape Up/Scrum at their own pace. |
 | 2026-06-05 | v1.4.0 merges original v1.4 (Enterprise Auth) + v1.5 (UX Depth) into one milestone | SSO and UX polish are both table-stakes before the AI/automation sprint; combining keeps the release train moving without fragmenting small polish fixes into a separate patch version. |
+| 2026-06-18 | v1.9.0 attachments go through a pluggable **object-storage SPI** (`service/storage/`, backends LOCAL_FS/S3/MinIO); LOCAL_FS stays the default so nothing breaks out of the box | Self-hosters need S3/MinIO without code changes. Mirrors the Knowledge Center provider pattern (registry over `List<Provider>`). All attachment I/O routes through `ObjectStorageService`; existing local files keep working and are migrated on backend switch (`StorageMigrationService`, copy-verified before source untouched). |
+| 2026-06-18 | Storage connection **credentials stored as plaintext TEXT**, consistent with existing integration secrets (Figma/GitHub/Notion/SMTP), rather than introducing at-rest encryption now | Consistency with the current codebase (no encryption subsystem exists yet) per product decision. Compensating controls: secrets never returned in any DTO (`hasSecretKey` boolean only), never logged. Secret columns are isolated so a future AES-GCM `AttributeConverter` can be dropped in with no schema change. |
 
 ---
 
