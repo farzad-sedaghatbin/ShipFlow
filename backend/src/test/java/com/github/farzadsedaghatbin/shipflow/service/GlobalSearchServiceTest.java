@@ -210,4 +210,47 @@ class GlobalSearchServiceTest {
     assertThat(sql).contains("p.deleted_at IS NULL");
     assertThat(sql).contains("e.deleted_at IS NULL");
   }
+
+  @Test
+  void search_SqlQueryShouldContainWikiBranch() {
+    when(nativeQuery.getResultList()).thenReturn(List.of());
+
+    globalSearchService.search("test", 1L, 10);
+
+    var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(entityManager).createNativeQuery(sqlCaptor.capture());
+    String sql = sqlCaptor.getValue();
+
+    assertThat(sql).contains("wiki_pages");
+    assertThat(sql).contains("wiki_spaces");
+    assertThat(sql).contains("WIKI_PAGE");
+    assertThat(sql).contains("/wiki/");
+    assertThat(sql).contains("content_text");
+    assertThat(sql).contains("ws.project_id = :projectId");
+    assertThat(sql).contains("wp.deleted_at IS NULL");
+    assertThat(sql).contains("ws.deleted_at IS NULL");
+  }
+
+  @Test
+  void search_WithWikiPageResult_ShouldMapCorrectly() {
+    Object[] wikiRow =
+        new Object[] {
+          "WIKI_PAGE", 7L, "Getting Started", "Engineering", "/wiki/eng/7", 0.72, "LIKE_TITLE"
+        };
+    List<Object[]> rows = new ArrayList<>();
+    rows.add(wikiRow);
+    when(nativeQuery.getResultList()).thenReturn(rows);
+
+    List<GlobalSearchResultDTO> results = globalSearchService.search("started", 3L, 10);
+
+    assertThat(results).hasSize(1);
+    GlobalSearchResultDTO dto = results.get(0);
+    assertThat(dto.getEntityType()).isEqualTo("WIKI_PAGE");
+    assertThat(dto.getEntityId()).isEqualTo(7L);
+    assertThat(dto.getTitle()).isEqualTo("Getting Started");
+    assertThat(dto.getSubtitle()).isEqualTo("Engineering");
+    assertThat(dto.getRoute()).isEqualTo("/wiki/eng/7");
+    assertThat(dto.getScore()).isEqualTo(0.72);
+    assertThat(dto.getMatchedBy()).isEqualTo("LIKE_TITLE");
+  }
 }

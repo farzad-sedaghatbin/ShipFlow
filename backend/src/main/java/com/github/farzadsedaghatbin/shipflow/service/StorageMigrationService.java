@@ -2,7 +2,9 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.storage.MigrationResultDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.TaskAttachment;
+import com.github.farzadsedaghatbin.shipflow.entity.WikiAttachment;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
 import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
 import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
@@ -19,16 +21,21 @@ public class StorageMigrationService {
 
   private final ObjectStorageService objectStorageService;
   private final TaskAttachmentRepository taskAttachmentRepository;
+  private final WikiAttachmentRepository wikiAttachmentRepository;
 
   /**
-   * Migrates all attachments to the currently active storage backend.
-   * Extension point: add migrateWikiAttachments() in Task 14 and sum its results here.
+   * Migrates all attachments (tasks + wiki) to the currently active storage backend.
+   * Totals are the sum of all per-entity-type migration passes.
    */
   public MigrationResultDTO migrateToActiveBackend() {
     MigrationResultDTO taskResult = migrateTaskAttachments();
-    // Future: MigrationResultDTO wikiResult = migrateWikiAttachments();
-    // Return sum of all entity-type migrations when wiki is added.
-    return taskResult;
+    MigrationResultDTO wikiResult = migrateWikiAttachments();
+    return MigrationResultDTO.builder()
+        .migrated(taskResult.getMigrated() + wikiResult.getMigrated())
+        .skipped(taskResult.getSkipped() + wikiResult.getSkipped())
+        .failed(taskResult.getFailed() + wikiResult.getFailed())
+        .total(taskResult.getTotal() + wikiResult.getTotal())
+        .build();
   }
 
   // ── Per-entity migration methods ──────────────────────────────────────────
@@ -98,6 +105,79 @@ public class StorageMigrationService {
         // NEVER log secrets — only ids/provider
         log.error(
             "Failed to migrate attachment id={} from provider={}: {}",
+            att.getId(),
+            currentProvider,
+            ex.getMessage());
+      }
+    }
+
+    return MigrationResultDTO.builder()
+        .migrated(migrated)
+        .skipped(skipped)
+        .failed(failed)
+        .total(all.size())
+        .build();
+  }
+
+  MigrationResultDTO migrateWikiAttachments() {
+    List<WikiAttachment> all = wikiAttachmentRepository.findByDeletedAtIsNull();
+    StorageProviderType active = objectStorageService.activeProvider();
+    int migrated = 0, skipped = 0, failed = 0;
+
+    for (WikiAttachment att : all) {
+      StorageProviderType currentProvider =
+          att.getStorageProvider() != null ? att.getStorageProvider() : StorageProviderType.LOCAL_FS;
+      String currentKey =
+          (att.getStorageKey() != null && !att.getStorageKey().isBlank())
+              ? att.getStorageKey()
+              : att.getFileName();
+
+      // Idempotent: skip rows already on the active provider
+      if (currentProvider == active) {
+        log.debug(
+            "WikiAttachment {} already on active provider {}, skipping", att.getId(), active);
+        skipped++;
+        continue;
+      }
+
+      try {
+        // 1. Retrieve from current backend
+        DownloadResource resource = objectStorageService.retrieve(currentProvider, currentKey);
+
+        // 2. Store to active backend
+        String keyHint = "wiki/" + att.getPageId();
+        StoredObjectRef ref =
+            objectStorageService.store(
+                keyHint,
+                att.getFileName(),
+                att.getContentType(),
+                att.getFileSize(),
+                resource.getStream());
+
+        // 3. Update row — only AFTER store succeeds
+        att.setStorageProvider(active);
+        att.setStorageKey(ref.getKey());
+        wikiAttachmentRepository.save(att);
+
+        // 4. Best-effort delete of old object — AFTER row update succeeds
+        try {
+          objectStorageService.delete(currentProvider, currentKey);
+        } catch (Exception delEx) {
+          log.warn(
+              "Best-effort delete failed for wiki attachment id={} provider={}: {}",
+              att.getId(),
+              currentProvider,
+              delEx.getMessage());
+        }
+
+        migrated++;
+        log.info(
+            "Migrated wiki attachment id={} from {} to {}", att.getId(), currentProvider, active);
+
+      } catch (Exception ex) {
+        failed++;
+        log.error(
+            "Failed to migrate wiki attachment id={} from provider={}: {}",
             att.getId(),
             currentProvider,
             ex.getMessage());

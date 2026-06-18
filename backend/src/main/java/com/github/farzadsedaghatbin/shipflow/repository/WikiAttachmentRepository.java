@@ -9,4 +9,7 @@ import org.springframework.stereotype.Repository;
 public interface WikiAttachmentRepository extends JpaRepository<WikiAttachment, Long> {
 
   List<WikiAttachment> findByPageIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long pageId);
+
+  /** Returns all non-deleted wiki attachments — used by StorageMigrationService. */
+  List<WikiAttachment> findByDeletedAtIsNull();
 }

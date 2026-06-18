@@ -177,6 +177,38 @@ public class GlobalSearchService {
               similarity(e.name, :query) > 0.1
               OR LOWER(e.name) LIKE LOWER(:queryPattern) ESCAPE '!'
             )
+
+          UNION ALL
+
+          -- Wiki Pages
+          -- TODO: org-global spaces (project_id IS NULL) and per-space ACL filtering
+          --       are not yet reflected here; this scope covers only project-owned spaces.
+          SELECT
+            'WIKI_PAGE' AS entity_type,
+            wp.id AS entity_id,
+            wp.title AS title,
+            ws.name AS subtitle,
+            CONCAT('/wiki/', ws.space_key, '/', wp.id) AS route,
+            GREATEST(
+              similarity(wp.title, :query),
+              CASE WHEN LOWER(wp.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.6 ELSE 0.0 END,
+              CASE WHEN LOWER(wp.content_text) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.4 ELSE 0.0 END
+            ) AS score,
+            CASE
+              WHEN LOWER(wp.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_TITLE'
+              WHEN LOWER(wp.content_text) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_BODY'
+              ELSE 'TRIGRAM'
+            END AS matched_by
+          FROM wiki_pages wp
+            JOIN wiki_spaces ws ON wp.space_id = ws.id
+          WHERE ws.project_id = :projectId
+            AND ws.deleted_at IS NULL
+            AND wp.deleted_at IS NULL
+            AND (
+              similarity(wp.title, :query) > 0.1
+              OR LOWER(wp.title) LIKE LOWER(:queryPattern) ESCAPE '!'
+              OR LOWER(wp.content_text) LIKE LOWER(:queryPattern) ESCAPE '!'
+            )
         )
         SELECT entity_type, entity_id, title, subtitle, route, score, matched_by
         FROM search_results
