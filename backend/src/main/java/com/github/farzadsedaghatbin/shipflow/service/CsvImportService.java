@@ -427,6 +427,7 @@ public class CsvImportService {
           .status(mapJiraBugStatus(safeGet(record, "Status")))
           .environment(safeGet(record, "Environment"))
           .tags(labels)
+          .reporter(currentUser)
           .assignee(assignee)
           .project(project)
           .cycle(cycle)
