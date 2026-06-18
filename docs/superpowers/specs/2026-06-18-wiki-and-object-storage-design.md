@@ -137,14 +137,25 @@ Controllers combine `@PreAuthorize` (coarse, e.g. authenticated + `WIKI` resourc
 - **Search**: extend `GlobalSearchService`'s native trigram + LIKE union with a wiki branch (trigram on `title` + `content_text`, scoped/filtered by space and permission), returning a `/wiki/{spaceKey}/{pageId}` route.
 - **Internal page links**: server provides a page-search endpoint for the editor's link autocomplete; links stored as BlockNote nodes referencing `pageId` (resolve to current slug on render).
 
-### Knowledge tie-in — `WikiProvider`
+### Knowledge tie-in — `WikiProvider` (automatic, per-page)
+
+**Requirement:** every wiki page is automatically a Knowledge Center source. Creating or editing a page immediately ingests/re-ingests it into the Knowledge Center (no manual "add source" step), so AI features (RAG Q&A, Wise Architecture, test-gen, risk analysis) always reflect the latest wiki content.
+
 - `service/knowledge/source/provider/WikiProvider.java implements KnowledgeSourceProvider`:
   - `getType() = KnowledgeProviderType.WIKI` (add enum value),
   - `validateConfig(JsonNode)` — validates the referenced space exists,
-  - `ingest(...)` — chunks each page's `content_text` (reuse the ~1200-char/150-overlap splitter pattern) into `RawChunk`s with page title + `/wiki/...` source URL,
-  - `supportsRefresh() = true` (re-ingest on page changes / scheduled refresh).
-- Chunks flow through `KnowledgeIngestionService.ingestChunks(...)` → embeddings → Q&A / Wise Architecture / test-gen / risk analysis, exactly like other sources.
+  - `ingest(...)` — walks all live pages of the space, chunks each page's `content_text` (reuse the ~1200-char / 150-overlap splitter) into `RawChunk`s carrying page title + `/wiki/{spaceKey}/{pageId}` source URL. Used for the initial bulk ingest when a space is first indexed.
+  - `supportsRefresh() = true`.
+- **Auto-registration of spaces as sources:** when a `WikiSpace` is created, a backing `KnowledgeSource` (type `WIKI`, scope = team/project, config referencing `spaceId`) is auto-created so the space is indexed without an admin manually adding it.
+- **Event-driven, page-granular sync:** page create / update / delete publishes a domain event (Spring `ApplicationEventPublisher`, same pattern as `KnowledgeSourceCreatedEvent` → `IngestionOrchestrator`). A `WikiKnowledgeListener` (`@Async @EventListener`) ingests **just that page** incrementally:
+  - chunks are keyed at **page granularity** — add a `WIKI_PAGE` value to `KnowledgeEntityType` and ingest each page's chunks under `(entityType=WIKI_PAGE, entityId=pageId)`, so a single page edit only re-embeds that one page rather than re-walking the whole space;
+  - page **edit** → delete prior chunks for that `pageId`, re-ingest current `content_text`;
+  - page **soft-delete / restore** → remove / re-add that page's chunks (soft-delete discipline preserved);
+  - empty pages (no `content_text`) are skipped.
+- All chunks flow through `KnowledgeIngestionService.ingestChunks(...)` → embeddings, exactly like other sources. Permission note: wiki chunks inherit the space's read scope so RAG answers respect `WikiSpacePermission`.
 - Add i18n label `provider.WIKI` to `en.json` + `fa.json`.
+
+**Wiki document attachments (extension):** uploaded attachments of parseable types (PDF / DOCX / TXT / MD) can additionally be ingested via the existing Tika-based extraction (as `FileUploadProvider` does) and keyed under their own entity id. Marked as an extension — include if it fits the session; pages are the firm requirement.
 
 ### Frontend
 - **`WikiTree`** sidebar component — the spaces→folders→pages tree with **drag-to-reorder / reparent** (optimistic + React Query mutation to the move endpoint).
