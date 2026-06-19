@@ -810,8 +810,10 @@ export default function Layout({ children }: LayoutProps) {
       {/* Global Search Command Palette */}
       <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
-      {/* Q&A Floating Button - Available on all pages */}
-      <QAFloatingButton contextType="cycle" contextName="your active cycles" />
+      {/* Q&A Floating Button - Available on all pages. Scoped to the whole Knowledge
+          Center (wiki + pitches + docs…), not the active cycle, so general questions
+          retrieve across all ingested content without entity filtering. */}
+      <QAFloatingButton contextType="knowledge" />
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
