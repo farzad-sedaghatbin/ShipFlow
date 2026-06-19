@@ -371,8 +371,9 @@ public class BettingTableService {
     List<BettingSlotDTO> slotDTOs = slots.stream().sorted(Comparator.comparing(BettingSlot::getPosition))
         .map(this::toDTO).collect(Collectors.toList());
 
+    double workingDaysPerWeek = capacityConfigService.getEffectiveWorkingDaysPerWeek(team).value();
     int usedWeeks = slots.stream().filter(s -> s.getPitch() != null)
-        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / 7.0)).sum();
+        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / workingDaysPerWeek)).sum();
 
     return BettingTableDTO.TeamTrackDTO.builder().teamId(team.getId()).teamName(team.getName()).slots(slotDTOs)
         .totalCapacityWeeks(cycleDurationWeeks).usedCapacityWeeks(usedWeeks)
@@ -610,13 +611,14 @@ public class BettingTableService {
     // Get current slots for this team
     List<BettingSlot> teamSlots = bettingSlotRepository.findByCycleIdAndTeamId(cycle.getId(), team.getId());
 
+    double workingDaysPerWeek = capacityConfigService.getEffectiveWorkingDaysPerWeek(team).value();
     int usedWeeks = teamSlots.stream().filter(s -> s.getPitch() != null)
-        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / 7.0)).sum();
+        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / workingDaysPerWeek)).sum();
 
     long cycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
     int totalWeeks = (int) Math.ceil(cycleDays / 7.0);
     int availableWeeks = totalWeeks - usedWeeks;
-    int pitchWeeks = (int) Math.ceil(pitch.getAppetiteDays() / 7.0);
+    int pitchWeeks = (int) Math.ceil(pitch.getAppetiteDays() / workingDaysPerWeek);
 
     boolean canFit = availableWeeks >= pitchWeeks;
     String capacityStatus;
