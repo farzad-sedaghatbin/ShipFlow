@@ -323,7 +323,7 @@ npm run storybook              # component explorer
 - **Layering**: Controller → Service → Repository. Never skip layers.
 - **DTOs**: Always use DTOs at the controller boundary. Never expose entities directly.
 - **Caching**: Use `@Cacheable` / `@CacheEvict` from Spring Cache. Redis is the production store.
-- **Events**: Use Spring `ApplicationEventPublisher` for cross-cutting side effects.
+- **Events**: Use Spring `ApplicationEventPublisher` for cross-cutting side effects. **A listener that reads an entity the publisher just created/updated MUST use `@TransactionalEventListener(phase = AFTER_COMMIT)` + `@Transactional(propagation = REQUIRES_NEW)`, never a plain `@EventListener`.** Publishers fire events *inside* their `@Transactional` method, so an `@Async @EventListener` runs before the row commits and its `findById` returns empty — the work is silently skipped (see the wiki-page-not-ingested bug). AFTER_COMMIT guarantees the row is visible; because there is no transaction to join after commit, the listener must open its own (`REQUIRES_NEW`) — a plain `@Transactional` fails at startup. Reference: `WikiKnowledgeListener` and `ScopeProgressListener`.
 - **Soft delete**: Use logical deletion (`deletedAt` timestamp). Never hard-delete user data.
 - **Auditing**: Hibernate Envers is enabled. Entity changes are versioned automatically.
 - **LLM calls**: Route through the pluggable LLM provider system in `service/llm/`. Never call HTTP directly.

@@ -14,12 +14,16 @@ import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepos
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.RawChunk;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.event.EventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 class WikiKnowledgeListenerTest {
 
@@ -88,6 +92,31 @@ class WikiKnowledgeListenerTest {
     assertThat(entityTypeCaptor.getValue()).isEqualTo(KnowledgeEntityType.WIKI_PAGE);
     assertThat(entityIdCaptor.getValue()).isEqualTo(pageId);
     assertThat(chunksCaptor.getValue()).isNotEmpty();
+  }
+
+  /**
+   * Regression guard for the create-time ingestion race. {@code WikiService.createPage} publishes
+   * {@link WikiPageChangedEvent} <em>inside</em> its transaction. A bare {@code @Async @EventListener}
+   * fires on a separate thread before that transaction commits, so {@code findById} returns empty and
+   * the new page is silently skipped (never ingested → AI Q&A can't answer about it). The listener
+   * must therefore fire <em>after</em> commit. This pins the fix: the handler is a
+   * {@code @TransactionalEventListener(AFTER_COMMIT)} and not a plain {@code @EventListener}.
+   */
+  @Test
+  void handler_firesAfterCommit_notBeforeViaPlainEventListener() throws NoSuchMethodException {
+    Method handler =
+        WikiKnowledgeListener.class.getMethod("onWikiPageChanged", WikiPageChangedEvent.class);
+
+    TransactionalEventListener txListener =
+        handler.getAnnotation(TransactionalEventListener.class);
+    assertThat(txListener)
+        .as("listener must be @TransactionalEventListener so it reads committed data")
+        .isNotNull();
+    assertThat(txListener.phase()).isEqualTo(TransactionPhase.AFTER_COMMIT);
+
+    assertThat(handler.getAnnotation(EventListener.class))
+        .as("must not use the bare @EventListener that races the publishing transaction")
+        .isNull();
   }
 
   @Test

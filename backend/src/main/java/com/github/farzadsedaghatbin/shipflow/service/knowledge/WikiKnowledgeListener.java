@@ -15,9 +15,12 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @Slf4j
@@ -45,8 +48,22 @@ public class WikiKnowledgeListener {
     this.ingestionServiceProvider = ingestionServiceProvider;
   }
 
+  /**
+   * Ingests wiki page content into the Knowledge Center for AI Q&A.
+   *
+   * <p>Runs <em>after</em> the publishing transaction commits ({@link TransactionPhase#AFTER_COMMIT}).
+   * {@code WikiService.createPage}/{@code updatePage} publish {@link WikiPageChangedEvent} while still
+   * inside their transaction; the previous {@code @Async @EventListener} fired on a separate thread
+   * before that commit, so {@code findById} saw no row on CREATE and the page was silently skipped —
+   * never ingested, so AI Q&A could not answer about newly created pages. Firing after commit
+   * guarantees the row is visible. {@code @Async} keeps the (potentially slow) embedding off the
+   * request thread; because there is no transaction to join after commit, the handler opens its own
+   * with {@code REQUIRES_NEW} (a plain {@code @Transactional} fails at startup for an AFTER_COMMIT
+   * listener). Mirrors {@code ScopeProgressListener}.
+   */
   @Async
-  @EventListener
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void onWikiPageChanged(WikiPageChangedEvent event) {
     try {
       Long pageId = event.pageId();
