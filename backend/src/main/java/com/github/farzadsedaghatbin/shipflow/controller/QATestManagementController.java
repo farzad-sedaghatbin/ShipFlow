@@ -173,6 +173,7 @@ public class QATestManagementController {
       @RequestParam(required = false) List<BugSeverity> severities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude,
+      @RequestParam(required = false) String search,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
@@ -180,7 +181,7 @@ public class QATestManagementController {
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     return ResponseEntity.ok(bugReportService.getBugReportsWithFilters(projectId, cycleId, pitchId, statuses,
-        severities, assigneeIds, exclude, pageable));
+        severities, assigneeIds, exclude, search, pageable));
   }
 
   @GetMapping("/bug-reports/{id}")
@@ -391,6 +392,14 @@ public class QATestManagementController {
     User user = userRepository.findByUsername(userDetails.getUsername())
         .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
     return user.getId();
+  }
+
+  @PatchMapping("/bug-reports/{id}/move-to-project/{projectId}")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Move a bug report to a different project (admin only)")
+  public ResponseEntity<BugReportDTO> moveBugReportToProject(@PathVariable Long id, @PathVariable Long projectId) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(bugReportService.moveBugReportToProject(id, projectId));
   }
 
   private void checkFeatureEnabled() {

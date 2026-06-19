@@ -293,6 +293,7 @@ public class McpToolDispatcher {
       // Bug reports
       case BugReportMcpTools.TOOL_GET_BUG_REPORTS -> bugReportTools.getBugReports(args);
       case BugReportMcpTools.TOOL_GET_BUG_REPORT -> bugReportTools.getBugReport(args);
+      case BugReportMcpTools.TOOL_GET_BUG_ATTACHMENTS -> bugReportTools.getBugAttachments(args);
       case BugReportMcpTools.TOOL_UPDATE_BUG_STATUS -> bugReportTools.updateBugStatus(args, auth);
 
       default -> throw new McpToolException("Unknown tool: " + name);
@@ -322,7 +323,8 @@ public class McpToolDispatcher {
         TestCaseMcpTools.getTestCaseDefinition(),
         TestCaseMcpTools.getTestRunsDefinition(),
         BugReportMcpTools.getBugReportsDefinition(),
-        BugReportMcpTools.getBugReportDefinition());
+        BugReportMcpTools.getBugReportDefinition(),
+        BugReportMcpTools.getBugAttachmentsDefinition());
   }
 
   /**

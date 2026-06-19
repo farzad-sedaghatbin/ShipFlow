@@ -10,6 +10,7 @@ import {
   Sparkles,
   ChevronRight,
 } from 'lucide-react';
+import { Markdown } from './ui/markdown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -165,9 +166,7 @@ export function DashboardInsightsPanel({
                   <Sparkles className="h-3 w-3 text-primary" />
                   <span className="text-xs font-medium">{t('dashboardInsights.aiSummary')}</span>
                 </div>
-                <p className="text-xs text-muted-foreground italic leading-relaxed">
-                  {data.aiSummary}
-                </p>
+                <Markdown content={data.aiSummary} className="text-xs text-muted-foreground leading-relaxed prose-p:my-0" />
               </div>
             )}
 
