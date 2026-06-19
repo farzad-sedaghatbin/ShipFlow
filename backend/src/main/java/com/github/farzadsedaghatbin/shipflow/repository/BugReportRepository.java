@@ -94,11 +94,12 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
       + "AND (:cycleId IS NULL OR c.id = :cycleId) " + "AND (:pitchId IS NULL OR p.id = :pitchId) "
       + "AND (:statuses IS NULL OR br.status IN :statuses) "
       + "AND (:severities IS NULL OR br.severity IN :severities) "
-      + "AND (:assigneeIds IS NULL OR a.id IN :assigneeIds)")
+      + "AND (:assigneeIds IS NULL OR a.id IN :assigneeIds) "
+      + "AND (:search IS NULL OR LOWER(br.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.description) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.bugKey) LIKE LOWER(CONCAT('%', :search, '%')))")
   Page<BugReport> findWithFilters(@Param("projectId") Long projectId, @Param("cycleId") Long cycleId,
       @Param("pitchId") Long pitchId, @Param("statuses") List<BugStatus> statuses,
       @Param("severities") List<BugSeverity> severities, @Param("assigneeIds") List<Long> assigneeIds,
-      Pageable pageable);
+      @Param("search") String search, Pageable pageable);
 
   @Query("SELECT br FROM BugReport br " + "LEFT JOIN br.cycle c " + "LEFT JOIN br.pitch p "
       + "LEFT JOIN br.assignee a " + "WHERE 1=1 "
@@ -106,11 +107,12 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
       + "AND (:cycleId IS NULL OR c.id = :cycleId) " + "AND (:pitchId IS NULL OR p.id = :pitchId) "
       + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
       + "AND (:severities IS NULL OR br.severity NOT IN :severities) "
-      + "AND (:assigneeIds IS NULL OR a.id NOT IN :assigneeIds)")
+      + "AND (:assigneeIds IS NULL OR a.id NOT IN :assigneeIds) "
+      + "AND (:search IS NULL OR LOWER(br.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.description) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.bugKey) LIKE LOWER(CONCAT('%', :search, '%')))")
   Page<BugReport> findWithExclusionFilters(@Param("projectId") Long projectId, @Param("cycleId") Long cycleId,
       @Param("pitchId") Long pitchId, @Param("statuses") List<BugStatus> statuses,
       @Param("severities") List<BugSeverity> severities, @Param("assigneeIds") List<Long> assigneeIds,
-      Pageable pageable);
+      @Param("search") String search, Pageable pageable);
 
   // Direct project queries
   List<BugReport> findByProjectId(Long projectId);

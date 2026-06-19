@@ -336,13 +336,13 @@ public class BugReportService {
   /** Get bug reports with multi-selection filters. */
   @Transactional(readOnly = true)
   public Page<BugReportDTO> getBugReportsWithFilters(Long projectId, Long cycleId, Long pitchId,
-      List<BugStatus> statuses, List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude,
+      List<BugStatus> statuses, List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude, String search,
       Pageable pageable) {
     checkFeatureEnabled();
 
     log.info(
-        "getBugReportsWithFilters called - projectId: {}, cycleId: {}, pitchId: {}, statuses: {}, severities: {}, assigneeIds: {}, exclude: {}, page: {}, size: {}",
-        projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, pageable.getPageNumber(),
+        "getBugReportsWithFilters called - projectId: {}, cycleId: {}, pitchId: {}, statuses: {}, severities: {}, assigneeIds: {}, exclude: {}, search: {}, page: {}, size: {}",
+        projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, search, pageable.getPageNumber(),
         pageable.getPageSize());
 
     // Convert empty lists to null for the query
@@ -362,15 +362,17 @@ public class BugReportService {
     log.debug("Converted filters - statusList: {}, severityList: {}, assigneeList: {}", statusList, severityList,
         assigneeList);
 
+    String searchParam = (search != null && !search.isBlank()) ? search.trim() : null;
+
     Page<BugReport> result;
     if (exclude != null && exclude) {
       log.debug("Using exclusion filters query");
       result = bugReportRepository.findWithExclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
-          assigneeList, pageable);
+          assigneeList, searchParam, pageable);
     } else {
       log.debug("Using inclusion filters query");
       result = bugReportRepository.findWithFilters(projectId, cycleId, pitchId, statusList, severityList,
-          assigneeList, pageable);
+          assigneeList, searchParam, pageable);
     }
 
     log.info(
@@ -457,5 +459,24 @@ public class BugReportService {
         .fixedInReleaseVersion(bugReport.getFixedInRelease() != null ? bugReport.getFixedInRelease().getVersion() : null)
         .isSlipped(isSlipped)
         .build();
+  }
+
+  /** Move a bug report to a different project. Clears cycle and pitch cross-references. */
+  public BugReportDTO moveBugReportToProject(Long bugId, Long targetProjectId) {
+    BugReport bug = bugReportRepository.findById(bugId)
+        .orElseThrow(() -> new com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException("BugReport not found with id: " + bugId));
+    com.github.farzadsedaghatbin.shipflow.entity.Project target = projectRepository.findById(targetProjectId)
+        .orElseThrow(() -> new com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException("Project not found with id: " + targetProjectId));
+
+    if (bug.getProject() != null && targetProjectId.equals(bug.getProject().getId())) {
+      throw new IllegalArgumentException("Bug report is already in the target project");
+    }
+
+    bug.setProject(target);
+    bug.setCycle(null);
+    bug.setPitch(null);
+    bug.setTask(null);
+    bug.setUpdatedAt(java.time.LocalDateTime.now());
+    return toDTO(bugReportRepository.save(bug));
   }
 }

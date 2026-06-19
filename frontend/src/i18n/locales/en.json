@@ -8120,5 +8120,20 @@
     "builtinNote": "These are SDK reference implementations included with ShipFlow. They demonstrate the plugin extension API — replace them with your own plugins to customize behavior.",
     "builtinDeadlinePressureDesc": "Scores pitches by the gap between time consumed and task completion. Use as a template for custom risk calculators.",
     "builtinCycleHealthDesc": "Produces a plain-text cycle health summary. Override with your own report format via the Plugin SDK."
+  },
+  "moveToProject": {
+    "title": "Move {{type}} to another project",
+    "description": "\"{{entity}}\" will be moved to the selected project. This action is logged and reversible.",
+    "selectProject": "Target project",
+    "selectPlaceholder": "Select a project…",
+    "entityTask": "task",
+    "entityPitch": "pitch",
+    "entityBug": "bug report",
+    "confirm": "Move",
+    "success": "\"{{entity}}\" moved to {{project}}",
+    "failed": "Failed to move. Please try again.",
+    "loadProjectsFailed": "Could not load projects.",
+    "taskNote": "All subtasks will be moved with this task. Cycle and pitch associations will be cleared.",
+    "pitchNote": "The pitch will be moved to the backlog of the target project. Cycle assignment will be cleared."
   }
 }
