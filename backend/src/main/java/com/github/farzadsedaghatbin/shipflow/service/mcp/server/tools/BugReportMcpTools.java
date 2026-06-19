@@ -3,10 +3,13 @@ package com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools;
 import com.github.farzadsedaghatbin.shipflow.dto.mcp.McpBugReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.UpdateBugReportRequest;
+import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.BugReportService;
+import com.github.farzadsedaghatbin.shipflow.service.DocumentService;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +31,11 @@ public class BugReportMcpTools {
 
   public static final String TOOL_GET_BUG_REPORTS = "get_bug_reports";
   public static final String TOOL_GET_BUG_REPORT = "get_bug_report";
+  public static final String TOOL_GET_BUG_ATTACHMENTS = "get_bug_attachments";
   public static final String TOOL_UPDATE_BUG_STATUS = "update_bug_status";
 
   private final BugReportService bugReportService;
+  private final DocumentService documentService;
   private final UserRepository userRepository;
 
   // ── Tool definitions ──────────────────────────────────────────────────────
@@ -68,6 +73,24 @@ public class BugReportMcpTools {
     return Map.of(
         "name", TOOL_GET_BUG_REPORT,
         "description", "Get full details of a single bug report by ID.",
+        "inputSchema",
+            Map.of(
+                "type", "object",
+                "properties",
+                    Map.of(
+                        "bugReportId",
+                        Map.of("type", "integer", "description", "Numeric bug report ID")),
+                "required", List.of("bugReportId")));
+  }
+
+  public static Map<String, Object> getBugAttachmentsDefinition() {
+    return Map.of(
+        "name", TOOL_GET_BUG_ATTACHMENTS,
+        "description",
+            "List attachments for a bug report. Returns fileName, fileType, fileSize, uploadedBy, "
+                + "uploadedAt, and extractedText (text content extracted from PDFs, docs, and "
+                + "plain-text files — empty for images and videos). Use this to read log files, "
+                + "crash dumps, or any text-based evidence attached to a bug.",
         "inputSchema",
             Map.of(
                 "type", "object",
@@ -160,6 +183,22 @@ public class BugReportMcpTools {
   public McpBugReportDTO getBugReport(Map<String, Object> args) {
     long id = toLong(args.get("bugReportId"), "bugReportId");
     return McpBugReportDTO.from(bugReportService.getBugReportById(id));
+  }
+
+  public List<Map<String, Object>> getBugAttachments(Map<String, Object> args) {
+    long bugId = toLong(args.get("bugReportId"), "bugReportId");
+    List<UploadedDocument> docs = documentService.getDocumentsByEntity("BUG_REPORT", bugId);
+    return docs.stream().map(d -> {
+      Map<String, Object> m = new LinkedHashMap<>();
+      m.put("id", d.getId());
+      m.put("fileName", d.getOriginalFileName());
+      m.put("fileType", d.getFileType());
+      m.put("fileSizeBytes", d.getFileSize());
+      m.put("uploadedBy", d.getUploaderUsername());
+      m.put("uploadedAt", d.getCreatedAt() != null ? d.getCreatedAt().toString() : null);
+      m.put("extractedText", d.getExtractedText() != null ? d.getExtractedText() : "");
+      return m;
+    }).toList();
   }
 
   public McpBugReportDTO updateBugStatus(Map<String, Object> args, Authentication auth) {
