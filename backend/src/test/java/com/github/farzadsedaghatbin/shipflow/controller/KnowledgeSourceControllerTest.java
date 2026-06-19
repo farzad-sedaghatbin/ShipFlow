@@ -13,15 +13,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.CreateKnowledgeSourceRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.UserDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.KnowledgeSourceResponse;
-import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeProviderType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceScope;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceStatus;
-import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.service.UserService;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.KnowledgeSourceService;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,14 +41,12 @@ class KnowledgeSourceControllerTest {
   @Autowired private ObjectMapper objectMapper;
 
   @MockBean private KnowledgeSourceService svc;
-  @MockBean private UserRepository users;
+  @MockBean private UserService userService;
 
   @BeforeEach
   void setUp() {
-    User u = new User();
-    u.setId(1L);
-    u.setUsername("user");
-    when(users.findByUsername("user")).thenReturn(Optional.of(u));
+    UserDTO u = UserDTO.builder().id(1L).username("user").build();
+    when(userService.findByUsername("user")).thenReturn(u);
   }
 
   private KnowledgeSourceResponse sampleResponse(long id) {
