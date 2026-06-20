@@ -1874,3 +1874,67 @@ export interface JiraProject {
   name: string;
   description: string | null;
 }
+
+// ── Custom Fields (v1.8.0) ─────────────────────────────────────────────────
+
+export type CustomFieldType =
+  | 'TEXT'
+  | 'NUMBER'
+  | 'DATE'
+  | 'SELECT'
+  | 'MULTISELECT'
+  | 'CHECKBOX'
+  | 'URL';
+
+export type CustomFieldEntityType = 'TASK' | 'PITCH' | 'BUG';
+
+export interface CustomFieldDefinition {
+  id: number;
+  name: string;
+  description?: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  projectId?: number;
+  projectName?: string;
+  required: boolean;
+  sortOrder: number;
+  options?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomFieldValue {
+  definitionId: number;
+  definitionName: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  entityId: number;
+  value?: string;
+  updatedByUsername?: string;
+  updatedAt: string;
+}
+
+export interface CreateCustomFieldDefinitionRequest {
+  name: string;
+  description?: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  projectId?: number;
+  required?: boolean;
+  sortOrder?: number;
+  options?: string[];
+}
+
+export interface UpdateCustomFieldDefinitionRequest {
+  name?: string;
+  description?: string;
+  required?: boolean;
+  sortOrder?: number;
+  options?: string[];
+}
+
+export interface BulkUpsertCustomFieldValuesRequest {
+  entityType: CustomFieldEntityType;
+  entityId: number;
+  values: Record<number, string>;
+}

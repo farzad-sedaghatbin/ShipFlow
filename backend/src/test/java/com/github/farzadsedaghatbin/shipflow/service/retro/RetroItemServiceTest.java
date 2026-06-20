@@ -45,6 +45,7 @@ class RetroItemServiceTest {
   @Mock private MessageService messageService;
   @Mock private RetroMapper retroMapper;
   @Mock private RetroCrudService retroCrudService;
+  @Mock private RetroSseService retroSseService;
 
   @InjectMocks private RetroItemService service;
 

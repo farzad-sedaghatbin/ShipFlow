@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { detectTextDirection } from '../utils/rtlDetection';
@@ -86,6 +87,7 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -696,7 +698,7 @@ const BugReportsPage: React.FC = () => {
                   ],
                   actions: (
                     <>
-                      <Button variant="ghost" size="icon-sm" onClick={() => openDetailModal(bug)}>
+                      <Button variant="ghost" size="icon-sm" title={t('common.openFullPage', 'Open full page')} onClick={() => navigate(`/qa/bug-reports/${bug.id}`)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(bug)}>
@@ -914,12 +916,12 @@ const BugReportsPage: React.FC = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => openDetailModal(bug)}
+                              onClick={() => navigate(`/qa/bug-reports/${bug.id}`)}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>{t('bugReports.actions.viewDetails')}</TooltipContent>
+                          <TooltipContent>{t('bugReports.actions.openFullPage', 'Open full page')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -1050,6 +1052,10 @@ const BugReportsPage: React.FC = () => {
         bug={selectedBug}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
+        onEdit={(bug) => {
+          setDetailModalOpen(false);
+          openEditModal(bug);
+        }}
       />
 
       {/* Delete Confirmation Dialog */}

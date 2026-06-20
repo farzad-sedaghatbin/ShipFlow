@@ -15,10 +15,11 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import qaTestManagementService from '../services/qaTestManagementService';
-import { TestCase, TestRun, BugReport, TestCoverage, GenerateTestCasesRequest, TestCaseSuggestion, CreateTestCaseRequest } from '../types';
+import { TestCase, TestRun, BugReport, TestCoverage, GenerateTestCasesRequest, TestCaseSuggestion, CreateTestCaseRequest, CreateBugReportRequest, UpdateBugReportRequest } from '../types';
 import TestCoverageBar from '../components/TestCoverageBar';
 import TestExecutionPanel from '../components/TestExecutionPanel';
 import AISuggestionPanel from '../components/AISuggestionPanel';
+import BugReportModal from '../components/BugReportModal';
 import { safeParseId } from '../utils/validation';
 
 const PitchTestPage: React.FC = () => {
@@ -33,6 +34,7 @@ const PitchTestPage: React.FC = () => {
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [coverage, setCoverage] = useState<TestCoverage | null>(null);
+  const [bugModalOpen, setBugModalOpen] = useState(false);
 
   useEffect(() => {
     if (pitchId) {
@@ -83,6 +85,13 @@ const PitchTestPage: React.FC = () => {
   const handleGenerateTestCases = async (request: GenerateTestCasesRequest) => {
     const response = await qaTestManagementService.generateTestCases(request);
     return response.data;
+  };
+
+  const handleCreateBug = async (data: CreateBugReportRequest | UpdateBugReportRequest) => {
+    const res = await qaTestManagementService.createBugReport(data as CreateBugReportRequest);
+    setBugReports((prev) => [res.data, ...prev]);
+    setBugModalOpen(false);
+    return res.data;
   };
 
   const handleAcceptSuggestion = async (suggestion: TestCaseSuggestion) => {
@@ -137,7 +146,7 @@ const PitchTestPage: React.FC = () => {
             <Plus className="mr-2 h-4 w-4" />
             {t('pitchTest.addTestCase')}
           </Button>
-          <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => navigate(`/qa/bugs/new?pitchId=${pitchId}`)}>
+          <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setBugModalOpen(true)}>
             <Bug className="mr-2 h-4 w-4" />
             {t('pitchTest.reportBug')}
           </Button>
@@ -323,7 +332,7 @@ const PitchTestPage: React.FC = () => {
                 </p>
                 <Button
                   variant="destructive"
-                  onClick={() => navigate(`/qa/bugs/new?pitchId=${pitchId}`)}
+                  onClick={() => setBugModalOpen(true)}
                 >
                   <Bug className="mr-2 h-4 w-4" />
                   {t('pitchTest.reportBug')}
@@ -397,6 +406,13 @@ const PitchTestPage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </Card>
+
+      <BugReportModal
+        open={bugModalOpen}
+        onClose={() => setBugModalOpen(false)}
+        onSubmit={handleCreateBug}
+        pitchId={pitchId}
+      />
     </div>
   );
 };

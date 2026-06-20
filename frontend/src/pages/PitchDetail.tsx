@@ -12,6 +12,7 @@ import { documentService, UploadedDocument } from '../services/documentService';
 import { organizationSettingsService } from '../services/organizationSettingsService';
 import { Pitch, Epic, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task, WorkLogPersonSummary } from '../types';
 import { MeetingTypeConfig } from '../types/organizationSettings';
+import { CustomFieldsSection } from '../components/CustomFieldsSection';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
 import { PitchDetailSkeleton } from '../components/Skeletons';
@@ -565,6 +566,12 @@ export default function PitchDetail() {
           documents={documents}
           onDocumentDeleted={handleDocumentDeleted}
           onUploadComplete={() => loadData(pitch.id)}
+        />
+
+        <CustomFieldsSection
+          entityType="PITCH"
+          entityId={pitch.id}
+          projectId={pitch.projectId}
         />
 
         <NotesList

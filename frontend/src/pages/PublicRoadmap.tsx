@@ -257,15 +257,6 @@ export default function PublicRoadmap() {
       items: [
         { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
         { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
-      ],
-    },
-    {
-      version: 'v1.8.0',
-      theme: t('publicRoadmap.phase180Theme'),
-      status: 'planned',
-      items: [
-        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
         { icon: <Layout className="h-5 w-5" />, title: t('publicRoadmap.phase180Item2Title'), description: t('publicRoadmap.phase180Item2Desc') },
       ],
     },

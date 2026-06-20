@@ -66,6 +66,8 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final IdentityProviderRepository identityProviderRepository;
   private final WorkflowAutomationRepository workflowAutomationRepository;
   private final WorkflowAutomationTemplateRepository workflowAutomationTemplateRepository;
+  private final CustomFieldDefinitionRepository customFieldDefinitionRepository;
+  private final CustomFieldValueRepository customFieldValueRepository;
 
   @Override
   @Transactional
@@ -935,6 +937,7 @@ public class SampleDataInitializer implements CommandLineRunner {
     }
 
     createWorkflowAutomationSampleData(bankingProject);
+    createCustomFieldSampleData(bankingProject);
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
@@ -1883,5 +1886,74 @@ public class SampleDataInitializer implements CommandLineRunner {
         .build());
 
     log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
+  }
+
+  private void createCustomFieldSampleData(Project project) {
+    // Org-wide TEXT field applicable to all tasks
+    CustomFieldDefinition sprintNotes =
+        customFieldDefinitionRepository.save(
+            CustomFieldDefinition.builder()
+                .name("Sprint Notes")
+                .description("Free-form notes for the current sprint")
+                .fieldType(CustomFieldType.TEXT)
+                .entityType(CustomFieldEntityType.TASK)
+                .required(false)
+                .sortOrder(0)
+                .build());
+
+    // Project-scoped SELECT field for tasks
+    CustomFieldDefinition priorityTier =
+        customFieldDefinitionRepository.save(
+            CustomFieldDefinition.builder()
+                .name("Priority Tier")
+                .description("Business priority tier for planning")
+                .fieldType(CustomFieldType.SELECT)
+                .entityType(CustomFieldEntityType.TASK)
+                .project(project)
+                .required(false)
+                .sortOrder(1)
+                .options("[\"P1 - Critical\",\"P2 - High\",\"P3 - Medium\",\"P4 - Low\"]")
+                .build());
+
+    // Org-wide DATE field for bug reports
+    CustomFieldDefinition targetQaDate =
+        customFieldDefinitionRepository.save(
+            CustomFieldDefinition.builder()
+                .name("Target QA Date")
+                .description("Expected date for QA sign-off")
+                .fieldType(CustomFieldType.DATE)
+                .entityType(CustomFieldEntityType.BUG)
+                .required(false)
+                .sortOrder(0)
+                .build());
+
+    // Seed a few values against the first available task and bug
+    taskRepository.findAll().stream().findFirst().ifPresent(task -> {
+      customFieldValueRepository.save(
+          CustomFieldValue.builder()
+              .definition(sprintNotes)
+              .entityType(CustomFieldEntityType.TASK)
+              .entityId(task.getId())
+              .value("Reviewed in sprint planning, carry-over from last cycle")
+              .build());
+      customFieldValueRepository.save(
+          CustomFieldValue.builder()
+              .definition(priorityTier)
+              .entityType(CustomFieldEntityType.TASK)
+              .entityId(task.getId())
+              .value("P2 - High")
+              .build());
+    });
+
+    bugReportRepository.findAll().stream().findFirst().ifPresent(bug ->
+        customFieldValueRepository.save(
+            CustomFieldValue.builder()
+                .definition(targetQaDate)
+                .entityType(CustomFieldEntityType.BUG)
+                .entityId(bug.getId())
+                .value("2026-07-15")
+                .build()));
+
+    log.info("Custom field sample data created: 3 definitions, demo values");
   }
 }

@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  GripVertical, 
-  MoreVertical, 
-  Eye, 
-  Pencil, 
+import {
+  GripVertical,
+  MoreVertical,
+  Eye,
+  ExternalLink,
+  Pencil,
   Trash2,
   MessageSquare,
   Bug,
@@ -79,8 +81,10 @@ interface BugKanbanColumnProps {
   updatingBugId?: number | null;
 }
 
+
 function BugKanbanCard({ bug, onViewBug, onEditBug, onDeleteBug, dragging, updating }: BugKanbanCardProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('bugId', bug.id.toString());
@@ -114,7 +118,11 @@ function BugKanbanCard({ bug, onViewBug, onEditBug, onDeleteBug, dragging, updat
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onViewBug(bug)}>
                 <Eye className="h-4 w-4 mr-2" />
-                {t('common.view')}
+                {t('common.preview', 'Preview')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/qa/bug-reports/${bug.id}`)}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                {t('common.openFullPage', 'Open full page')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEditBug(bug)}>
                 <Pencil className="h-4 w-4 mr-2" />

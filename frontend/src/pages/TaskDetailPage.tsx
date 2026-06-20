@@ -32,6 +32,7 @@ import timerService, { WorkLogTimer } from '../services/timerService';
 import { workLogService } from '../services/workLogService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskAttachments from '../components/TaskAttachments';
+import { CustomFieldsSection } from '../components/CustomFieldsSection';
 import TaskDependencies from '../components/TaskDependencies';
 import Comments from '../components/Comments';
 import TaskWorkLogsSection from '../components/TaskWorkLogsSection';
@@ -551,6 +552,13 @@ export default function TaskDetailPage() {
 
       {/* File Attachments */}
       <TaskAttachments taskId={task.id} />
+
+      {/* Custom Fields */}
+      <CustomFieldsSection
+        entityType="TASK"
+        entityId={task.id}
+        projectId={task.projectId}
+      />
 
       {/* GitHub Integration */}
       <GitHubLinksCard taskId={task.id} />
