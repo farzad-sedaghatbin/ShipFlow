@@ -81,6 +81,7 @@ public class TaskService {
   private final PermissionService permissionService;
   private final ProjectService projectService;
   private final ScopeProgressService scopeProgressService;
+  private final ProjectPermissionService projectPermissionService;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -148,6 +149,7 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByProjectId(Long projectId) {
+    projectPermissionService.requireProjectAccess(projectId);
     return taskRepository.findByProjectIdNotDeleted(projectId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 

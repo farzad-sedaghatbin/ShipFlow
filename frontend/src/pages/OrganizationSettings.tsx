@@ -21,6 +21,7 @@ import {
   Upload,
   Scale,
   Puzzle,
+  Sliders,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useToast } from '../contexts';
@@ -44,6 +45,7 @@ import {
   SsoSettingsTab,
   ScimSettingsTab,
   PluginsSettingsTab,
+  CustomFieldsSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -70,7 +72,8 @@ type SectionId =
   | 'plugins'
   | 'sso'
   | 'scim'
-  | 'import';
+  | 'import'
+  | 'customFields';
 
 interface SidebarItem {
   id: SectionId;
@@ -96,6 +99,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
       { id: 'cycles', labelKey: 'organizationSettings.cycles', icon: Calendar },
       { id: 'categories', labelKey: 'organizationSettings.categories', icon: Tags },
       { id: 'meetings', labelKey: 'organizationSettings.meetingTypes', icon: CalendarClock },
+      { id: 'customFields', labelKey: 'customFields.navLabel', icon: Sliders },
     ],
   },
   {
@@ -303,6 +307,8 @@ export default function OrganizationSettingsPage() {
         return <EmailSettingsTab formData={formData} setFormData={setFormData} />;
       case 'features':
         return <FeaturesSettingsTab formData={formData} setFormData={setFormData} settings={settings} />;
+      case 'customFields':
+        return <CustomFieldsSettingsTab />;
       case 'plugins':
         return <PluginsSettingsTab />;
       case 'sso':

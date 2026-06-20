@@ -11,3 +11,4 @@ export { EmailSettingsTab } from './EmailSettingsTab';
 export { SsoSettingsTab } from './SsoSettingsTab';
 export { ScimSettingsTab } from './ScimSettingsTab';
 export { PluginsSettingsTab } from './PluginsSettingsTab';
+export { CustomFieldsSettingsTab } from './CustomFieldsSettingsTab';

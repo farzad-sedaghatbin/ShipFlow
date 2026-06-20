@@ -37,6 +37,7 @@ import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import Comments from './Comments';
+import { CustomFieldsSection } from './CustomFieldsSection';
 import { Markdown } from './ui/markdown';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { documentService, UploadedDocument } from '../services/documentService';
@@ -48,6 +49,7 @@ interface BugViewDialogProps {
   bug: BugReport | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: (bug: BugReport) => void;
   onMoved?: () => void;
 }
 
@@ -70,7 +72,7 @@ const statusConfig: Record<BugStatus, { labelKey: string; variant: 'default' | '
   DUPLICATE: { labelKey: 'bugs.status.duplicate', variant: 'secondary' },
 };
 
-export function BugViewDialog({ bug, open, onOpenChange, onMoved }: BugViewDialogProps) {
+export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugViewDialogProps) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const isAdmin = useMemo(() => user?.role === 'ADMIN', [user]);
@@ -393,11 +395,24 @@ export function BugViewDialog({ bug, open, onOpenChange, onMoved }: BugViewDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader className="shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <Bug className="h-5 w-5 text-destructive" />
-            <Badge variant="outline" className="font-mono">{bug.bugKey}</Badge>
-            <span className="truncate">{bug.title}</span>
-          </DialogTitle>
+          <div className="flex items-start justify-between gap-2">
+            <DialogTitle className="flex items-center gap-2 min-w-0">
+              <Bug className="h-5 w-5 text-destructive shrink-0" />
+              <Badge variant="outline" className="font-mono shrink-0">{bug.bugKey}</Badge>
+              <span className="truncate">{bug.title}</span>
+            </DialogTitle>
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1.5"
+                onClick={() => onEdit(bug)}
+              >
+                <Edit className="h-3.5 w-3.5" />
+                {t('common.edit', 'Edit')}
+              </Button>
+            )}
+          </div>
           {/* Status and Severity badges + admin actions */}
           <div className="flex flex-wrap items-center gap-2 pt-2">
             <Badge variant={statusConfig[bug.status]?.variant || 'default'}>
@@ -639,6 +654,13 @@ export function BugViewDialog({ bug, open, onOpenChange, onMoved }: BugViewDialo
                       <p className="text-sm text-muted-foreground py-2">{t('bugAttachments.noAttachments')}</p>
                     )}
                   </div>
+
+                  {/* Custom Fields */}
+                  <CustomFieldsSection
+                    entityType="BUG"
+                    entityId={bug.id}
+                    projectId={bug.projectId}
+                  />
 
                   {/* Resolution */}
                   {bug.resolution && (

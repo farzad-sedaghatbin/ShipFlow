@@ -72,5 +72,8 @@ public enum ResourceType {
   INTEGRATION,
 
   /** WISE architecture / R&D resource */
-  WISE_ARCHITECTURE
+  WISE_ARCHITECTURE,
+
+  /** Custom field definition and value management resource */
+  CUSTOM_FIELD
 }

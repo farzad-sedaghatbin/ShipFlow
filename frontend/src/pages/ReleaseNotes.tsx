@@ -111,8 +111,8 @@ const releases: Release[] = [
     highlights: [
       {
         icon: <Sliders className="h-5 w-5" />,
-        title: 'Custom Fields on Tasks & Pitches',
-        description: 'Add your own fields — text, number, date, single-select, multi-select — to tasks and pitches. Fields are configured per project and appear everywhere the entity appears.',
+        title: 'Custom Fields on Tasks, Pitches & Bugs',
+        description: 'Add your own fields — text, number, date, URL, checkbox, single-select, multi-select — to tasks, pitches, and bug reports. Define fields org-wide or per-project. Values appear on every detail page.',
       },
       {
         icon: <Shield className="h-5 w-5" />,
@@ -121,8 +121,8 @@ const releases: Release[] = [
       },
       {
         icon: <Layout className="h-5 w-5" />,
-        title: 'Field Visibility Rules',
-        description: 'Show or hide custom fields based on role, project type, or cycle phase.',
+        title: 'Custom Fields Settings',
+        description: 'Manage field definitions in Organization Settings → Custom Fields. Separate tabs for Tasks, Pitches, and Bug Reports. Create and edit fields via a guided dialog.',
       },
     ],
   },

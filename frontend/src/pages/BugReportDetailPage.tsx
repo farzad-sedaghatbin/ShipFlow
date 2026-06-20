@@ -3,15 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import BugViewDialog from '../components/BugViewDialog';
+import { BugViewDialog } from '../components/BugViewDialog';
+import BugReportModal from '../components/BugReportModal';
 import qaTestManagementService from '../services/qaTestManagementService';
-import { BugReport } from '../types';
+import { BugReport, CreateBugReportRequest, UpdateBugReportRequest } from '../types';
 
-/**
- * Standalone page for viewing a bug report by ID.
- * Renders the existing BugViewDialog as a full-screen modal.
- * Used for deep-linking from global search and external references.
- */
 export default function BugReportDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -19,8 +15,9 @@ export default function BugReportDetailPage() {
   const [bug, setBug] = useState<BugReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     if (!id) return;
     setLoading(true);
     setError(null);
@@ -28,7 +25,16 @@ export default function BugReportDetailPage() {
       .then((res) => setBug(res.data))
       .catch(() => setError(t('globalSearch.bugNotFound', 'Bug report not found')))
       .finally(() => setLoading(false));
-  }, [id, t]);
+  };
+
+  useEffect(() => { load(); }, [id]);
+
+  const handleUpdate = async (data: CreateBugReportRequest | UpdateBugReportRequest) => {
+    if (!bug) return;
+    const res = await qaTestManagementService.updateBugReport(bug.id, data as UpdateBugReportRequest);
+    setBug(res.data);
+    setEditOpen(false);
+  };
 
   if (loading) {
     return (
@@ -51,14 +57,19 @@ export default function BugReportDetailPage() {
   }
 
   return (
-    <BugViewDialog
-      bug={bug}
-      open={true}
-      onOpenChange={(open) => {
-        if (!open) {
-          navigate('/qa/bug-reports');
-        }
-      }}
-    />
+    <>
+      <BugViewDialog
+        bug={bug}
+        open={true}
+        onOpenChange={(open) => { if (!open) navigate('/qa/bug-reports'); }}
+        onEdit={() => setEditOpen(true)}
+      />
+      <BugReportModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSubmit={handleUpdate}
+        bugReport={bug}
+      />
+    </>
   );
 }

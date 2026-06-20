@@ -5281,12 +5281,12 @@
     "phase170Item2Title": "20 Automation Templates",
     "phase170Item2Desc": "Pre-built templates for common workflows: on-call rotation, sprint kickoff checklists, bug triage, and release day runbooks.",
     "phase180Theme": "Custom Fields & Advanced RBAC",
-    "phase180Item0Title": "Custom Fields on Tasks & Pitches",
-    "phase180Item0Desc": "Add your own fields — text, number, date, single-select, multi-select — to tasks and pitches. Fields are configured per project and appear everywhere the entity appears: backlog, detail view, CSV export.",
+    "phase180Item0Title": "Custom Fields on Tasks, Pitches & Bugs",
+    "phase180Item0Desc": "Add your own fields — text, number, date, URL, checkbox, single-select, multi-select — to tasks, pitches, and bug reports. Define fields org-wide or per-project. Values appear on every detail page.",
     "phase180Item1Title": "Project-Level Permissions",
     "phase180Item1Desc": "Grant access at the project level, not just the organization. Give a contractor read access to one project, a QA team write access to bugs only — without touching global roles.",
-    "phase180Item2Title": "Field Visibility Rules",
-    "phase180Item2Desc": "Show or hide custom fields based on role, project type, or cycle phase. Keep forms clean for developers while product managers see the full picture.",
+    "phase180Item2Title": "Custom Fields Settings",
+    "phase180Item2Desc": "Manage field definitions in Organization Settings → Custom Fields. Separate tabs for Tasks, Pitches, and Bug Reports. Create and edit fields via a guided dialog with options tag-chip input.",
     "phase190Theme": "Wiki / Docs Space",
     "phase190Item0Title": "Built-In Team Wiki",
     "phase190Item0Desc": "Write, organize, and search documentation without leaving ShipFlow. Pages live next to the pitches and tasks they describe — no more context-switching to Confluence or Notion.",
@@ -8113,6 +8113,39 @@
     "templateGalleryDesc": "Pick a template to get started quickly. You can customise it after adding.",
     "noResults": "No templates match your search."
   },
+  "customFields": {
+    "navLabel": "Custom Fields",
+    "title": "Custom Fields",
+    "subtitle": "Define extra metadata fields for Tasks, Pitches, and Bug Reports",
+    "noFields": "No custom fields defined yet",
+    "createField": "Create Field",
+    "editField": "Edit Field",
+    "deleteField": "Delete Field",
+    "deleteConfirm": "Delete \"{{name}}\"? All saved values for this field will be permanently removed.",
+    "fieldName": "Field Name",
+    "fieldType": "Field Type",
+    "entityType": "Applies To",
+    "projectScope": "Project Scope",
+    "orgWide": "Org-wide (all projects)",
+    "required": "Required",
+    "sortOrder": "Sort Order",
+    "options": "Options",
+    "optionsHint": "Type an option and press Enter",
+    "saveFields": "Save",
+    "saveSuccess": "Custom field values saved",
+    "saveFailed": "Failed to save custom field values",
+    "entityType.TASK": "Tasks",
+    "entityType.PITCH": "Pitches",
+    "entityType.BUG": "Bug Reports",
+    "fieldType.TEXT": "Text",
+    "fieldType.NUMBER": "Number",
+    "fieldType.DATE": "Date",
+    "fieldType.SELECT": "Single Select",
+    "fieldType.MULTISELECT": "Multi-Select",
+    "fieldType.CHECKBOX": "Checkbox",
+    "fieldType.URL": "URL",
+    "required.error": "{{name}} is required"
+  },
   "pluginSettings": {
     "navLabel": "Plugins",
     "title": "Plugin Extensions",
@@ -8132,6 +8165,30 @@
     "builtinNote": "These are SDK reference implementations included with ShipFlow. They demonstrate the plugin extension API — replace them with your own plugins to customize behavior.",
     "builtinDeadlinePressureDesc": "Scores pitches by the gap between time consumed and task completion. Use as a template for custom risk calculators.",
     "builtinCycleHealthDesc": "Produces a plain-text cycle health summary. Override with your own report format via the Plugin SDK."
+  },
+  "projectSettings": {
+    "title": "Project Settings",
+    "members": "Members",
+    "membersDesc": "Manage who can access this project and what they can do.",
+    "customFields": "Custom Fields",
+    "addMember": "Add Member",
+    "removeMember": "Remove Member",
+    "removeConfirm": "Remove {{username}} from this project?",
+    "grantedAt": "Granted",
+    "grantedBy": "Granted by",
+    "owner": "Owner",
+    "noMembers": "No members yet.",
+    "noAccess": "You do not have access to this project.",
+    "role": {
+      "VIEWER": "Viewer",
+      "CONTRIBUTOR": "Contributor",
+      "MANAGER": "Manager"
+    },
+    "roleDesc": {
+      "VIEWER": "Read-only access",
+      "CONTRIBUTOR": "Can create and edit tasks, pitches, and bugs",
+      "MANAGER": "Full project access including member management"
+    }
   },
   "knowledgeCenter": {
     "title": "Knowledge Center",
@@ -8179,7 +8236,7 @@
     "close": "Close",
     "lastError": "Last error",
     "chunkPreview": "Chunks"
-
+  },
   "moveToProject": {
     "title": "Move {{type}} to another project",
     "description": "\"{{entity}}\" will be moved to the selected project. This action is logged and reversible.",

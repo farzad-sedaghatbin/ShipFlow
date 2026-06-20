@@ -4,6 +4,66 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — Custom Fields (v1.8.0 S48 backend)
+
+#### Custom Field Definitions
+- New `custom_field_definitions` table: org-wide or project-scoped metadata fields on Tasks, Pitches, and Bug Reports.
+- Seven field types: `TEXT`, `NUMBER`, `DATE`, `SELECT`, `MULTISELECT`, `CHECKBOX`, `URL`.
+- ADMIN can create org-wide fields (no `projectId`). MANAGER can create project-scoped fields. MEMBER can read and set values.
+- `CustomFieldDefinition` entity with Hibernate Envers auditing; `CustomFieldValue` entity (not audited — high-frequency writes).
+- On soft-delete of a definition, all its values are cascade-hard-deleted immediately.
+
+#### Custom Field Values
+- Single `value TEXT` column with type-appropriate encoding (number as `"42.5"`, date as `"2026-06-20"`, MULTISELECT as JSON array, CHECKBOX as `"true"`/`"false"`).
+- Upsert (create-or-update) semantics; bulk upsert endpoint for saving an entire entity's field set in one call.
+- Server-side validation: NUMBER parses as double, DATE parses as `LocalDate`, CHECKBOX must be `"true"`/`"false"`, SELECT/MULTISELECT values must be in the definition's allowed options set.
+
+#### REST API
+- `GET /api/custom-fields/definitions?entityType=&projectId=` — list applicable definitions.
+- `POST /api/custom-fields/definitions` — create definition.
+- `PUT /api/custom-fields/definitions/{id}` — update (fieldType and entityType immutable).
+- `DELETE /api/custom-fields/definitions/{id}` — soft-delete + cascade value delete.
+- `GET /api/custom-fields/values?entityType=&entityId=` — get values for an entity.
+- `PUT /api/custom-fields/values` — upsert single value.
+- `PUT /api/custom-fields/values/bulk` — bulk upsert.
+
+#### Permissions & Sample Data
+- `CUSTOM_FIELD` added to `ResourceType` enum; permission rows seeded for ADMIN/MANAGER/MEMBER/READONLY.
+- Help guide added: `14-custom-fields.md` (auto-loaded by `HelpGuideAIService`).
+- Sample data: 3 demo definitions (org-wide Sprint Notes, project-scoped Priority Tier, BUG-scoped Target QA Date) with seeded values.
+
+### Added — Advanced RBAC (v1.8.0 S50)
+
+#### Backend
+- `ProjectPermissionService` (`bean "projectPermissionService"`) — evaluates project-level role membership; `ADMIN` bypasses all checks, project owner is treated as `MANAGER`.
+- `requireProjectAccess`, `requireContributor`, `requireManager` guard methods throw `AccessDeniedException` for unauthorized callers.
+- `ProjectController`: member-management endpoints (`POST/DELETE /{projectId}/members/{userId}`) now require `MANAGER` role via SpEL `@PreAuthorize`. New `GET /{projectId}/my-role` endpoint returns the caller's `ProjectRole`.
+- `TaskService.getTasksByProjectId`, `PitchService.getIdeasByProjectId`, `BugReportService.getBugReportsWithFilters` all call `projectPermissionService.requireProjectAccess` before querying.
+- `ProjectPermissionServiceTest` — 10 tests covering ADMIN bypass, owner-as-MANAGER, contributor/viewer role checks, and guard throwing.
+
+#### Frontend
+- `useProjectRole(projectId)` hook — fetches `GET /projects/:id/my-role`; ADMIN short-circuits to `MANAGER` without API call. Returns `{ role, isManager, isContributor, isViewer, loading }`.
+- `ProjectMembersTab` — member list with role selector (managers) / static badge (viewers), Add Member dialog (user search + role picker), Remove confirmation.
+- `ProjectSettingsPage` at `/projects/:projectId/settings` — two tabs: Members | Custom Fields. Settings link visible to managers.
+- Added `projectService.getMyRole(projectId)` and wired project service to new `GET /{projectId}/my-role` endpoint.
+- i18n keys: `"projectSettings"` added to `en.json` and `fa.json`.
+
+### Added — Custom Fields UI (v1.8.0 S49 frontend)
+
+#### Organization Settings — Custom Fields Tab
+- New **Custom Fields** tab in Organization Settings sidebar (Work Management section) with Tasks / Pitches / Bug Reports entity-type tabs.
+- Create, edit, and delete field definitions via a dialog form (React Hook Form + Zod). Field type and entity type are immutable after creation.
+- Options tag-chip editor for SELECT and MULTISELECT fields — type a value, press Enter or click + to add, click × to remove.
+- ADMIN sees all definitions; MANAGER sees project-scoped and org-wide definitions for their projects.
+
+#### Custom Fields on Task, Pitch, and Bug Detail Pages
+- `CustomFieldsSection` component renders applicable fields as type-appropriate inputs: TEXT/NUMBER/URL → `<Input>`, DATE → `<input type="date">`, CHECKBOX → `<Switch>`, SELECT → dropdown, MULTISELECT → multi-chip toggle.
+- Collapsible card (chevron toggle) to minimize noise on detail pages.
+- Dirty-tracking: "Save" button only enabled when values have changed; bulk-saves all pending changes in one API call.
+- Required field validation: asterisk asterisk indicator; inline error message on save if blank.
+- URL fields show an external-link icon that opens the URL in a new tab.
+- Wired into `TaskDetailPage` (after attachments), `PitchDetail` (after documents), and `BugViewDialog` (before resolution).
+
 ### Added — Knowledge Center
 - Knowledge Center: upload docs and add URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis. Scoped Org / Team / Project. Pluggable provider SPI; GitHub / Confluence / Notion / Drive integrations queued as follow-ups.
 - Migrations: `V2026_06_18_0002__add_knowledge_sources.sql` (knowledge sources table), `V2026_06_18_0003__knowledge_items_deleted_at.sql` (soft-delete column).

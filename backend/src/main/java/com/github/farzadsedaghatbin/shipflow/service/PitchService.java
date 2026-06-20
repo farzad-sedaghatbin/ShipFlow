@@ -53,6 +53,7 @@ public class PitchService {
   private final TeamRepository teamRepository;
   private final WorkLogRepository workLogRepository;
   private final UserRepository userRepository;
+  private final ProjectPermissionService projectPermissionService;
   private final EpicRepository epicRepository;
   private final ReleaseRepository releaseRepository;
   private final ProjectRepository projectRepository;
@@ -422,6 +423,7 @@ public class PitchService {
 
   /** Get ideas for a specific project. */
   public List<PitchDTO> getIdeasByProjectId(Long projectId) {
+    projectPermissionService.requireProjectAccess(projectId);
     return toDTOList(pitchRepository.findIdeasByProjectId(projectId));
   }
 

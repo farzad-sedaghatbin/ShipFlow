@@ -33,6 +33,7 @@ public class BugReportService {
   private final TaskRepository taskRepository;
   private final ProjectRepository projectRepository;
   private final ReleaseRepository releaseRepository;
+  private final ProjectPermissionService projectPermissionService;
 
   @Value("${app.qa.test-management.enabled:true}")
   private boolean testManagementEnabled;
@@ -338,6 +339,9 @@ public class BugReportService {
   public Page<BugReportDTO> getBugReportsWithFilters(Long projectId, Long cycleId, Long pitchId,
       List<BugStatus> statuses, List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude, String search,
       Pageable pageable) {
+    if (projectId != null) {
+      projectPermissionService.requireProjectAccess(projectId);
+    }
     checkFeatureEnabled();
 
     log.info(
