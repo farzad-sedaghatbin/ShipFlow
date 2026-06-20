@@ -3699,6 +3699,7 @@
     "bugTrackingDesc": "Configure bug statuses and severity levels",
     "bugStatuses": "Bug Statuses",
     "statusName": "Status Name",
+    "statusNameHint": "Must be UPPER_SNAKE_CASE (e.g. IN_PROGRESS)",
     "addStatus": "Add Status",
     "active": "Active",
     "closed": "Closed",
@@ -8178,5 +8179,20 @@
     "close": "Close",
     "lastError": "Last error",
     "chunkPreview": "Chunks"
+
+  "moveToProject": {
+    "title": "Move {{type}} to another project",
+    "description": "\"{{entity}}\" will be moved to the selected project. This action is logged and reversible.",
+    "selectProject": "Target project",
+    "selectPlaceholder": "Select a project…",
+    "entityTask": "task",
+    "entityPitch": "pitch",
+    "entityBug": "bug report",
+    "confirm": "Move",
+    "success": "\"{{entity}}\" moved to {{project}}",
+    "failed": "Failed to move. Please try again.",
+    "loadProjectsFailed": "Could not load projects.",
+    "taskNote": "All subtasks will be moved with this task. Cycle and pitch associations will be cleared.",
+    "pitchNote": "The pitch will be moved to the backlog of the target project. Cycle assignment will be cleared."
   }
 }

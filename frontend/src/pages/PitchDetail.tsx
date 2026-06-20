@@ -18,9 +18,11 @@ import { PitchDetailSkeleton } from '../components/Skeletons';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
-import { useToast, useProject } from '../contexts';
+import { useToast, useProject, useAuth } from '../contexts';
+import { MoveToProjectDialog } from '../components/MoveToProjectDialog';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { Button } from '../components/ui/button';
+import { FolderInput } from 'lucide-react';
 import {
   PitchHeader,
   PitchStatsRow,
@@ -39,6 +41,9 @@ export default function PitchDetail() {
   const id = safeParseId(idParam);
   const { showSuccess, showError } = useToast();
   const { currentProject } = useProject();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [epics, setEpics] = useState<Epic[]>([]);
   const [workLogPersonSummaries, setWorkLogPersonSummaries] = useState<WorkLogPersonSummary[]>([]);
@@ -524,6 +529,15 @@ export default function PitchDetail() {
         onEpicChange={handleEpicChange}
       />
 
+      {isAdmin && (
+        <div className="flex justify-end mb-2">
+          <Button variant="outline" size="sm" onClick={() => setMoveDialogOpen(true)}>
+            <FolderInput className="h-4 w-4 mr-2" />
+            {t('moveToProject.confirm')}
+          </Button>
+        </div>
+      )}
+
       <PitchStatsRow
         pitch={pitch}
         totalHours={totalHours}
@@ -644,6 +658,18 @@ export default function PitchDetail() {
         cycleId={pitch.cycleId}
         teamId={pitch.teamId}
       />
+
+      {isAdmin && (
+        <MoveToProjectDialog
+          open={moveDialogOpen}
+          onOpenChange={setMoveDialogOpen}
+          entityType="pitch"
+          entityId={pitch.id}
+          entityTitle={pitch.title}
+          currentProjectId={pitch.projectId ?? undefined}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
     </div>
   );
 }

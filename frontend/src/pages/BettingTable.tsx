@@ -164,7 +164,6 @@ function DroppableSlot({
     data: { slot, type: 'slot' },
   });
 
-  const slotDays = slot.durationWeeks ? slot.durationWeeks * 7 : 0;
   const isOccupied = !!slot.pitchId;
 
   // Calculate visual width as percentage of cycle
@@ -172,7 +171,7 @@ function DroppableSlot({
   const cycleEnd = new Date(cycleEndDate);
   const slotStart = new Date(slot.startDate);
   const slotEnd = new Date(slot.endDate);
-  
+
   const cycleDays = Math.ceil((cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24));
   const slotStartOffset = Math.ceil((slotStart.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24));
   const slotDuration = Math.ceil((slotEnd.getTime() - slotStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -218,7 +217,7 @@ function DroppableSlot({
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
             <p className="text-xs">{t('bettingTablePage.dropPitchHere')}</p>
-            <p className="text-xs opacity-60">{t('bettingTablePage.daysAvailable', { days: slotDays })}</p>
+            <p className="text-xs opacity-60">{t('bettingTablePage.daysAvailable', { days: slotDuration })}</p>
           </div>
         )}
       </div>

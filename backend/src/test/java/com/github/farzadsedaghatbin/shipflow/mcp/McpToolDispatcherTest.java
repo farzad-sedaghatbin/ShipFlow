@@ -83,6 +83,7 @@ class McpToolDispatcherTest {
   @Mock private TestCaseService testCaseService;
   @Mock private TestRunService testRunService;
   @Mock private BugReportService bugReportService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.DocumentService documentService;
 
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
@@ -109,7 +110,7 @@ class McpToolDispatcherTest {
     WorklogMcpTools worklogTools = new WorklogMcpTools(workLogService, userRepository);
     IdentityMcpTools identityTools = new IdentityMcpTools(userRepository);
     TestCaseMcpTools testCaseTools = new TestCaseMcpTools(testCaseService, testRunService, userRepository);
-    BugReportMcpTools bugReportTools = new BugReportMcpTools(bugReportService, userRepository);
+    BugReportMcpTools bugReportTools = new BugReportMcpTools(bugReportService, documentService, userRepository);
 
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,

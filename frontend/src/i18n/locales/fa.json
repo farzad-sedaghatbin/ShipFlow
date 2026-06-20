@@ -3700,6 +3700,7 @@
     "slackNotifications": "اعلان‌های Slack",
     "slackWorkspace": "فضای کاری Slack",
     "statusName": "نام وضعیت",
+    "statusNameHint": "باید به فرمت UPPER_SNAKE_CASE باشد (مثال: IN_PROGRESS)",
     "addStatus": "افزودن وضعیت",
     "subtitle": "پیکربندی پیش‌فرض‌ها و ترجیحات سازمانی",
     "taskCategories": "دسته‌بندی وظایف",
@@ -7214,5 +7215,20 @@
     "close": "بستن",
     "lastError": "آخرین خطا",
     "chunkPreview": "قطعات"
+
+  "moveToProject": {
+    "title": "انتقال {{type}} به پروژه دیگر",
+    "description": "«{{entity}}» به پروژه انتخابی منتقل خواهد شد. این عمل ثبت می‌شود و قابل بازگشت است.",
+    "selectProject": "پروژه مقصد",
+    "selectPlaceholder": "انتخاب پروژه…",
+    "entityTask": "وظیفه",
+    "entityPitch": "پیچ",
+    "entityBug": "گزارش باگ",
+    "confirm": "انتقال",
+    "success": "«{{entity}}» به {{project}} منتقل شد",
+    "failed": "انتقال ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "loadProjectsFailed": "بارگذاری پروژه‌ها ناموفق بود.",
+    "taskNote": "تمام زیروظایف نیز منتقل می‌شوند. ارتباط با سیکل و پیچ حذف خواهد شد.",
+    "pitchNote": "پیچ به بک‌لاگ پروژه مقصد منتقل می‌شود. انتساب سیکل حذف خواهد شد."
   }
 }

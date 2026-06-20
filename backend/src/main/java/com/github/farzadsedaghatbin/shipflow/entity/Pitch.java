@@ -71,6 +71,13 @@ public class Pitch {
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "pitches", "teams", "retrospectives", "project"})
   private Cycle cycle;
 
+  /** Direct project association — canonical for pre-cycle pitches and for admin move-to-project. */
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project_id", nullable = true)
+  @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+  private Project project;
+
   @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "team_id")
