@@ -94,6 +94,7 @@ const BugReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<BugStatus[]>([]);
   const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(undefined);
@@ -141,8 +142,16 @@ const BugReportsPage: React.FC = () => {
   }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, currentProject?.id, isAllProjectsSelected]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, currentProject?.id, isAllProjectsSelected, debouncedSearch]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -196,7 +205,8 @@ const BugReportsPage: React.FC = () => {
         effectivePage,
         effectiveSize,
         sortBy,
-        sortOrder
+        sortOrder,
+        debouncedSearch || undefined
       );
       
       let bugData = response.data.content;

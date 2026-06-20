@@ -46,6 +46,7 @@ docker compose up -d
 | **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
 | **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
+| **Knowledge Center** | Upload docs and paste URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis — scoped Org / Team / Project, pluggable provider SPI |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
 | **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
 | **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
@@ -525,6 +526,7 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Circuit Breaker** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A multi-turn memory** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Unified Knowledge Center wired into all AI features** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Interactive onboarding tour** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global Search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |

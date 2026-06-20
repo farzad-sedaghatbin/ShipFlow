@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Send,
   MessageCircle,
@@ -15,6 +16,7 @@ import {
   Loader2,
   AlertCircle,
   Info,
+  BookOpen,
 } from 'lucide-react';
 import { qaService, QAResponse, QAFeedbackType, SourceCitation } from '../services/qaService';
 import { Button } from './ui/button';
@@ -338,18 +340,32 @@ export const QAPanel: React.FC<QAPanelProps> = ({
                               <CollapsibleContent>
                                 <div className="mt-2 p-2 bg-muted rounded-lg break-words">
                                   <span className="text-xs font-semibold">Sources:</span>
-                                  {msg.sources?.map((source, sIdx) => (
-                                    <div key={sIdx} className="mt-1">
-                                      <span className="text-xs text-primary break-words">
-                                        • {source.title || source.entityType}
-                                      </span>
-                                      {source.snippet && (
-                                        <p className="text-xs text-muted-foreground pl-3 italic break-words whitespace-normal">
-                                          "{source.snippet}"
-                                        </p>
-                                      )}
-                                    </div>
-                                  ))}
+                                  {msg.sources?.map((source, sIdx) => {
+                                    const isKnowledgeSource =
+                                      source.entityType === 'KNOWLEDGE_SOURCE';
+                                    return (
+                                      <div key={sIdx} className="mt-1">
+                                        {isKnowledgeSource && source.entityId ? (
+                                          <Link
+                                            to={`/knowledge?focus=${source.entityId}`}
+                                            className="text-xs text-purple-700 dark:text-purple-400 break-words inline-flex items-center gap-1 hover:underline"
+                                          >
+                                            <BookOpen className="h-3 w-3 shrink-0" />
+                                            {source.title || source.entityType}
+                                          </Link>
+                                        ) : (
+                                          <span className="text-xs text-primary break-words">
+                                            • {source.title || source.entityType}
+                                          </span>
+                                        )}
+                                        {source.snippet && (
+                                          <p className="text-xs text-muted-foreground pl-3 italic break-words whitespace-normal">
+                                            "{source.snippet}"
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>

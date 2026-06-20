@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
-import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, Square, Clock, Link2 } from 'lucide-react';
+import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, Square, Clock, Link2, FolderInput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,8 @@ import TaskWorkLogsSection from '../components/TaskWorkLogsSection';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { ActivityTimeline } from '../components/ActivityTimeline';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { useAuth } from '../contexts';
+import { MoveToProjectDialog } from '../components/MoveToProjectDialog';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
   { value: 'BACKLOG', label: 'Backlog', variant: 'secondary' },
@@ -58,6 +60,8 @@ const priorityOptions: { value: TaskPriority; label: string; variant: 'default' 
 ];
 
 export default function TaskDetailPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const { t } = useTranslation();
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
@@ -96,6 +100,7 @@ export default function TaskDetailPage() {
   const [dueDate, setDueDate] = useState<Dayjs | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   useEffect(() => {
     if (taskId) {
@@ -490,8 +495,14 @@ export default function TaskDetailPage() {
             {task.projectName && (
               <div>
                 <Label className="text-xs text-muted-foreground">{t('common.project')}</Label>
-                <div className="mt-1 font-medium">
-                  {task.projectName}
+                <div className="mt-1 flex items-center gap-2">
+                  <span className="font-medium">{task.projectName}</span>
+                  {isAdmin && (
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground" onClick={() => setMoveDialogOpen(true)}>
+                      <FolderInput className="h-3 w-3 mr-1" />
+                      {t('moveToProject.confirm')}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -965,6 +976,18 @@ export default function TaskDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {isAdmin && task && (
+        <MoveToProjectDialog
+          open={moveDialogOpen}
+          onOpenChange={setMoveDialogOpen}
+          entityType="task"
+          entityId={task.id}
+          entityTitle={task.title}
+          currentProjectId={task.projectId}
+          onSuccess={() => navigate(-1)}
+        />
+      )}
     </div>
   );
 }

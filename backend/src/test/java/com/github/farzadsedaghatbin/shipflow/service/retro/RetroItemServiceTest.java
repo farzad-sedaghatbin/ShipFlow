@@ -12,11 +12,13 @@ import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroColumnType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
 import org.springframework.security.access.AccessDeniedException;
+import com.github.farzadsedaghatbin.shipflow.repository.RetroItemDislikeVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroRepository;
 import com.github.farzadsedaghatbin.shipflow.service.LocalizationService;
 import com.github.farzadsedaghatbin.shipflow.service.MessageService;
+import com.github.farzadsedaghatbin.shipflow.service.retro.RetroSseService;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +43,7 @@ class RetroItemServiceTest {
   @Mock private RetroRepository retroRepository;
   @Mock private RetroItemRepository retroItemRepository;
   @Mock private RetroItemVoteRepository retroItemVoteRepository;
+  @Mock private RetroItemDislikeVoteRepository retroItemDislikeVoteRepository;
   @Mock private LocalizationService localizationService;
   @Mock private MessageService messageService;
   @Mock private RetroMapper retroMapper;
@@ -100,7 +103,7 @@ class RetroItemServiceTest {
 
       when(retroRepository.findById(1L)).thenReturn(Optional.of(testRetro));
       doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
-      when(retroItemRepository.findByRetrospectiveIdOrderByCreatedAtAsc(1L)).thenReturn(items);
+      when(retroItemRepository.findByRetrospectiveIdWithAuthorOrderByCreatedAtAsc(1L)).thenReturn(items);
       when(retroMapper.toItemDTOBatch(items, testUser)).thenReturn(Arrays.asList(dto1, dto2));
 
       List<RetroItemDTO> result = service.getItemsByRetro(1L);

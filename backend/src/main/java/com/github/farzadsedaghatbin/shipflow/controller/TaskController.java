@@ -508,4 +508,11 @@ public class TaskController {
     attachmentService.deleteAttachment(id, attachmentId);
     return ResponseEntity.noContent().build();
   }
+
+  @PatchMapping("/{id}/move-to-project/{projectId}")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Move a task (and its subtasks) to a different project (admin only)")
+  public ResponseEntity<TaskDTO> moveTaskToProject(@PathVariable Long id, @PathVariable Long projectId) {
+    return ResponseEntity.ok(taskService.moveTaskToProject(id, projectId));
+  }
 }

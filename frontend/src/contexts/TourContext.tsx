@@ -278,6 +278,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       route: '/sprint-planning',
     },
     {
+      element: '[data-tour="knowledge-add-source"]',
+      popover: {
+        title: t('tour.knowledgeCenter.title'),
+        description: t('tour.knowledgeCenter.description'),
+        side: 'bottom',
+      },
+      route: '/knowledge',
+    },
+    {
       element: '[data-tour="project-selector"]',
       popover: {
         title: '🎯 Project Selector',

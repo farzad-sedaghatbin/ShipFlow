@@ -65,4 +65,7 @@ export const pitchService = {
   // ===== Prioritization & Reordering =====
   /** Batch update sort order for pitches */
   reorder: (data: ReorderRequest) => api.patch<void>('/pitches/reorder', data),
+
+  moveToProject: (id: number, projectId: number) =>
+    api.patch<Pitch>(`/pitches/${id}/move-to-project/${projectId}`),
 };

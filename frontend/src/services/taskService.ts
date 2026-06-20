@@ -219,6 +219,9 @@ export const taskService = {
   reorderTasks: (items: { id: number; sortOrder: number }[]) =>
     api.patch<void>('/tasks/reorder', { items }),
 
+  moveToProject: (id: number, projectId: number) =>
+    api.patch<Task>(`/tasks/${id}/move-to-project/${projectId}`),
+
   // CSV Export — pass exactly one of projectId or cycleId
   exportTasks: (params: {
     projectId?: number;

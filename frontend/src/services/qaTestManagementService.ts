@@ -93,7 +93,8 @@ export const qaTestManagementService = {
     page: number = 0,
     size: number = 10,
     sortBy: string = 'createdAt',
-    sortOrder: string = 'desc'
+    sortOrder: string = 'desc',
+    search?: string
   ) => {
     const params: any = { page, size, sortBy, sortOrder };
     if (projectId !== undefined) params.projectId = projectId;
@@ -103,7 +104,8 @@ export const qaTestManagementService = {
     if (severities && severities.length > 0) params.severities = severities.join(',');
     if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
     if (exclude !== undefined) params.exclude = exclude;
-    
+    if (search && search.trim()) params.search = search.trim();
+
     return api.get<Page<BugReport>>('/qa/bug-reports/filter', { params });
   },
 
@@ -194,6 +196,9 @@ export const qaTestManagementService = {
         size: size ?? 20,
       },
     }),
+
+  moveBugToProject: (id: number, projectId: number) =>
+    api.patch<BugReport>(`/qa/bug-reports/${id}/move-to-project/${projectId}`),
 };
 
 export default qaTestManagementService;

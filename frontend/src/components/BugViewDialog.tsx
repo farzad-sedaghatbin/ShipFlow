@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
   Bug, 
@@ -21,7 +21,8 @@ import {
   Video,
   Paperclip,
   Download,
-  Eye
+  Eye,
+  FolderInput,
 } from 'lucide-react';
 import {
   Dialog,
@@ -41,12 +42,15 @@ import { Markdown } from './ui/markdown';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { documentService, UploadedDocument } from '../services/documentService';
 import { BugReport, BugStatus, BugSeverity, EntityHistory, RevisionType } from '../types';
+import { useAuth } from '../contexts';
+import { MoveToProjectDialog } from './MoveToProjectDialog';
 
 interface BugViewDialogProps {
   bug: BugReport | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit?: (bug: BugReport) => void;
+  onMoved?: () => void;
 }
 
 const severityConfig: Record<BugSeverity, { labelKey: string; variant: 'default' | 'secondary' | 'info' | 'warning' | 'destructive' }> = {
@@ -68,8 +72,10 @@ const statusConfig: Record<BugStatus, { labelKey: string; variant: 'default' | '
   DUPLICATE: { labelKey: 'bugs.status.duplicate', variant: 'secondary' },
 };
 
-export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialogProps) {
+export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugViewDialogProps) {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
+  const isAdmin = useMemo(() => user?.role === 'ADMIN', [user]);
   const [activeTab, setActiveTab] = useState('details');
   const [history, setHistory] = useState<EntityHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -82,6 +88,9 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<UploadedDocument | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // Authenticated blob URLs keyed by attachment ID (avoids auth header issues with <img>/<video> src)
+  const [blobUrls, setBlobUrls] = useState<Record<number, string>>({});
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   const pageSize = 20;
   
@@ -90,7 +99,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
   const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
   const isImageFile = (fileType: string) => IMAGE_EXTENSIONS.includes(fileType?.toLowerCase() || '');
   const isVideoFile = (fileType: string) => VIDEO_EXTENSIONS.includes(fileType?.toLowerCase() || '');
-  const getAttachmentUrl = (attachment: UploadedDocument) => `/api/documents/${attachment.id}/download`;
+  const getAttachmentUrl = (attachment: UploadedDocument) => blobUrls[attachment.id] ?? '';
 
   // Field name translations mapping
   const fieldNameKeys: Record<string, string> = {
@@ -155,13 +164,26 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
     }
   }, [open, bug, activeTab, loadHistory]);
 
-  // Load attachments when dialog opens
+  // Load attachments when dialog opens, then fetch authenticated blob URLs
   const loadAttachments = useCallback(async () => {
     if (!bug) return;
     setAttachmentsLoading(true);
     try {
       const response = await documentService.getBugAttachments(bug.id);
-      setAttachments(response.data || []);
+      const list = response.data || [];
+      setAttachments(list);
+      // Fetch blob URLs via axios so the Authorization header is included
+      const entries = await Promise.all(
+        list.map(async (a) => {
+          try {
+            const url = await documentService.fetchAttachmentBlobUrl(a.id);
+            return [a.id, url] as [number, string];
+          } catch {
+            return null;
+          }
+        })
+      );
+      setBlobUrls(Object.fromEntries(entries.filter((e): e is [number, string] => e !== null)));
     } catch (err) {
       console.error('Failed to load attachments:', err);
       setAttachments([]);
@@ -176,7 +198,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
     }
   }, [open, bug, loadAttachments]);
 
-  // Reset state when dialog closes or bug changes
+  // Reset state when dialog closes or bug changes; revoke blob URLs to free memory
   useEffect(() => {
     if (!open) {
       setActiveTab('details');
@@ -184,6 +206,10 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
       setHistoryPage(0);
       setAttachments([]);
       setPreviewAttachment(null);
+      setBlobUrls((prev) => {
+        Object.values(prev).forEach(URL.revokeObjectURL);
+        return {};
+      });
     }
   }, [open]);
 
@@ -387,7 +413,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
               </Button>
             )}
           </div>
-          {/* Status and Severity badges */}
+          {/* Status and Severity badges + admin actions */}
           <div className="flex flex-wrap items-center gap-2 pt-2">
             <Badge variant={statusConfig[bug.status]?.variant || 'default'}>
               {t(statusConfig[bug.status]?.labelKey || bug.status)}
@@ -395,6 +421,17 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
             <Badge variant={severityConfig[bug.severity]?.variant || 'default'}>
               {t(severityConfig[bug.severity]?.labelKey || bug.severity)}
             </Badge>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto h-6 text-xs"
+                onClick={() => setMoveDialogOpen(true)}
+              >
+                <FolderInput className="h-3 w-3 mr-1" />
+                {t('moveToProject.confirm')}
+              </Button>
+            )}
           </div>
         </DialogHeader>
 
@@ -702,11 +739,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
               size="sm"
               onClick={() => {
                 if (previewAttachment) {
-                  // Trigger download
-                  const link = document.createElement('a');
-                  link.href = getAttachmentUrl(previewAttachment);
-                  link.download = previewAttachment.originalFileName;
-                  link.click();
+                  documentService.downloadAttachment(previewAttachment.id, previewAttachment.originalFileName);
                 }
               }}
             >
@@ -716,8 +749,21 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit }: BugViewDialog
           </div>
         </DialogContent>
       </Dialog>
+
+      {isAdmin && bug && (
+        <MoveToProjectDialog
+          open={moveDialogOpen}
+          onOpenChange={setMoveDialogOpen}
+          entityType="bug"
+          entityId={bug.id}
+          entityTitle={bug.title}
+          currentProjectId={bug.projectId}
+          onSuccess={() => { onOpenChange(false); onMoved?.(); }}
+        />
+      )}
     </Dialog>
   );
 }
 
+// Re-export with move dialog wired; callers that already use BugViewDialog get the move button for free.
 export default BugViewDialog;

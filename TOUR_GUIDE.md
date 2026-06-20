@@ -76,8 +76,9 @@ Each step has a `data-tour` attribute on its target element. The table below is 
 | 21 | Task Backlog | `backlog-board` | `BacklogPage.tsx` (outer container div) | `/backlog` |
 | 22 | Reports & Analytics | `reports-overview` | `Reports.tsx` (outer container div) | `/reports` |
 | 23 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` — **Conditional: only included in the tour when the active project has `projectType === 'SCRUM'`**. `getTourSteps()` in `TourContext.tsx` filters this step out for non-SCRUM projects (which would otherwise be redirected to `/backlog`, breaking the tour). |
-| 24 | Project Selector | `project-selector` | `Layout.tsx:537` | `/health` |
-| 25 | You're All Set! | `user-menu` | `Layout.tsx:639` | `/health` |
+| 24 | Knowledge Center | `knowledge-add-source` | `KnowledgeCenter.tsx` (Add source button) | `/knowledge` |
+| 25 | Project Selector | `project-selector` | `Layout.tsx:537` | `/health` |
+| 26 | You're All Set! | `user-menu` | `Layout.tsx:639` | `/health` |
 
 ### How `navItem` tourIds work
 

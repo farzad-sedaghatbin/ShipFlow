@@ -64,6 +64,10 @@ All notable changes to this project will be documented in this file.
 - URL fields show an external-link icon that opens the URL in a new tab.
 - Wired into `TaskDetailPage` (after attachments), `PitchDetail` (after documents), and `BugViewDialog` (before resolution).
 
+### Added — Knowledge Center
+- Knowledge Center: upload docs and add URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis. Scoped Org / Team / Project. Pluggable provider SPI; GitHub / Confluence / Notion / Drive integrations queued as follow-ups.
+- Migrations: `V2026_06_18_0002__add_knowledge_sources.sql` (knowledge sources table), `V2026_06_18_0003__knowledge_items_deleted_at.sql` (soft-delete column).
+
 ### Added — Retro Board Live Collaboration & UX Hardening
 
 #### Live Reactions & Discuss Timer

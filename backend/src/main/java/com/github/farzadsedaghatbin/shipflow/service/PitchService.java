@@ -16,10 +16,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.event.PitchStatusChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -54,6 +56,7 @@ public class PitchService {
   private final ProjectPermissionService projectPermissionService;
   private final EpicRepository epicRepository;
   private final ReleaseRepository releaseRepository;
+  private final ProjectRepository projectRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final AICacheService cacheService;
   private final CapacityConfigService capacityConfigService;
@@ -851,6 +854,10 @@ public class PitchService {
       projectId = pitch.getCycle().getProject().getId();
       projectName = pitch.getCycle().getProject().getName();
       projectKey = pitch.getCycle().getProject().getProjectKey();
+    } else if (pitch.getProject() != null) {
+      projectId = pitch.getProject().getId();
+      projectName = pitch.getProject().getName();
+      projectKey = pitch.getProject().getProjectKey();
     }
 
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())
@@ -888,5 +895,32 @@ public class PitchService {
         .blockingPitches(blockingPitches)
         .blockedByPitches(blockedByPitches)
         .build();
+  }
+
+  /** Move a pitch to a different project. Clears the cycle so the pitch lands in the target project backlog. */
+  public PitchDTO movePitchToProject(Long pitchId, Long targetProjectId) {
+    Pitch pitch = pitchRepository.findById(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    Project target = projectRepository.findById(targetProjectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + targetProjectId));
+
+    Long currentProjectId = pitch.getCycle() != null && pitch.getCycle().getProject() != null
+        ? pitch.getCycle().getProject().getId()
+        : (pitch.getProject() != null ? pitch.getProject().getId() : null);
+    if (targetProjectId.equals(currentProjectId)) {
+      throw new BadRequestException("Pitch is already in the target project");
+    }
+
+    if (pitch.getCycle() != null) {
+      cacheService.invalidateCycleRiskCache(pitch.getCycle().getId());
+      pitch.setCycle(null);
+    }
+    pitch.setProject(target);
+    // Reset betting-stage status back to SHAPED so the pitch can be re-assigned in the new project
+    if (pitch.getStatus() == PitchStatus.PENDING || pitch.getStatus() == PitchStatus.IN_PROGRESS) {
+      pitch.setStatus(PitchStatus.SHAPED);
+    }
+    pitch.setUpdatedAt(LocalDateTime.now());
+    return toDTO(pitchRepository.save(pitch));
   }
 }

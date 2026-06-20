@@ -1292,4 +1292,32 @@ public class TaskService {
         .map(HillChartPoint::getId)
         .orElse(null);
   }
+
+  /** Move a task (and all its subtasks) to a different project, landing in the backlog. */
+  public TaskDTO moveTaskToProject(Long taskId, Long targetProjectId) {
+    Task task = taskRepository.findById(taskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
+    Project target = projectRepository.findById(targetProjectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + targetProjectId));
+
+    if (task.getProject() != null && targetProjectId.equals(task.getProject().getId())) {
+      throw new BadRequestException("Task is already in the target project");
+    }
+
+    moveTaskAndSubtasks(task, target);
+    return toDTO(taskRepository.findById(taskId).orElseThrow());
+  }
+
+  private void moveTaskAndSubtasks(Task task, Project target) {
+    task.setProject(target);
+    task.setCycle(null);
+    task.setPitch(null);
+    task.setScope(null);
+    task.setParentTask(null);
+    task.setUpdatedAt(java.time.LocalDateTime.now());
+    taskRepository.save(task);
+    for (Task child : taskRepository.findByParentTaskId(task.getId())) {
+      moveTaskAndSubtasks(child, target);
+    }
+  }
 }

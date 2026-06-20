@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +63,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final RetroItemRepository retroItemRepository;
   private final SavedViewRepository savedViewRepository;
   private final ImportJobRepository importJobRepository;
+  private final KnowledgeSourceRepository knowledgeSourceRepository;
   private final OrganizationSettingsRepository organizationSettingsRepository;
   private final IdentityProviderRepository identityProviderRepository;
   private final WorkflowAutomationRepository workflowAutomationRepository;
@@ -936,11 +938,48 @@ public class SampleDataInitializer implements CommandLineRunner {
       createSampleImportJobs(adminUser, saraUser);
     }
 
+    // ── Knowledge Center demo sources ─────────────────────────────────────────
+    if (adminUser != null) {
+      seedKnowledgeSources(adminUser);
+    }
+
     createWorkflowAutomationSampleData(bankingProject);
     createCustomFieldSampleData(bankingProject);
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
+  }
+
+  private void seedKnowledgeSources(User adminUser) {
+    if (knowledgeSourceRepository.count() > 0) {
+      return;
+    }
+
+    knowledgeSourceRepository.save(
+        KnowledgeSource.builder()
+            .name("Engineering Handbook (demo)")
+            .description("Internal coding standards and architecture playbook.")
+            .providerType(KnowledgeProviderType.URL)
+            .scope(KnowledgeSourceScope.ORG)
+            .config("{\"url\":\"https://shipflow.dev/demo/handbook\"}")
+            .status(KnowledgeSourceStatus.READY)
+            .lastIngestedAt(OffsetDateTime.now())
+            .createdBy(adminUser.getId())
+            .build());
+
+    knowledgeSourceRepository.save(
+        KnowledgeSource.builder()
+            .name("Shape Up — playbook")
+            .description("Reference material on the Shape Up methodology.")
+            .providerType(KnowledgeProviderType.URL)
+            .scope(KnowledgeSourceScope.ORG)
+            .config("{\"url\":\"https://basecamp.com/shapeup\"}")
+            .status(KnowledgeSourceStatus.READY)
+            .lastIngestedAt(OffsetDateTime.now())
+            .createdBy(adminUser.getId())
+            .build());
+
+    log.info("Seeded 2 demo Knowledge Sources");
   }
 
   /**

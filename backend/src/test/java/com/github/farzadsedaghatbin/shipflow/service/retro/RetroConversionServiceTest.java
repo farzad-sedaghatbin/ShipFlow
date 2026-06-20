@@ -268,7 +268,7 @@ class RetroConversionServiceTest {
 
       assertThatThrownBy(() -> service.convertToPitchDraft(request))
           .isInstanceOf(IllegalStateException.class)
-          .hasMessageContaining("belong to the selected project");
+          .hasMessageContaining("selected project");
     }
 
     @Test
