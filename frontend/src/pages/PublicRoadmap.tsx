@@ -40,9 +40,11 @@ import {
   Upload,
   FileSpreadsheet,
   FolderInput,
+  BookOpen,
+  Link2,
+  Building2,
   Key,
   Wand2,
-  BookOpen,
   Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -252,15 +254,16 @@ export default function PublicRoadmap() {
   const upcomingPhases: RoadmapPhase[] = [
     {
       version: 'v1.8.0',
-      theme: t('publicRoadmap.phase180Theme'),
+      theme: t('publicRoadmap.phaseKcTheme'),
       status: 'in-progress',
       items: [
-        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
+        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.phaseKcItem0Title'), description: t('publicRoadmap.phaseKcItem0Desc') },
+        { icon: <Building2 className="h-5 w-5" />, title: t('publicRoadmap.phaseKcItem1Title'), description: t('publicRoadmap.phaseKcItem1Desc') },
+        { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.phaseKcItem2Title'), description: t('publicRoadmap.phaseKcItem2Desc') },
       ],
     },
     {
-      version: 'v1.8.0',
+      version: 'v1.9.0',
       theme: t('publicRoadmap.phase180Theme'),
       status: 'planned',
       items: [
@@ -270,7 +273,7 @@ export default function PublicRoadmap() {
       ],
     },
     {
-      version: 'v1.9.0',
+      version: 'v1.10.0',
       theme: t('publicRoadmap.phase190Theme'),
       status: 'planned',
       items: [

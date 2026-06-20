@@ -153,6 +153,7 @@
     "sprintPlanning": "Sprint Planning",
     "sprints": "Sprints",
     "importData": "Import Data",
+    "knowledge": "Knowledge",
     "automations": "Automations",
     "sections": {
       "overview": "Overview",
@@ -4992,6 +4993,13 @@
     "wiseArchitectureDesc": "AI-powered architecture advisor that analyzes codebases, team skills, and Figma designs to recommend optimal implementation strategies."
   },
   "publicRoadmap": {
+    "phaseKcTheme": "Knowledge Center",
+    "phaseKcItem0Title": "Upload docs and add URLs",
+    "phaseKcItem0Desc": "Upload PDFs, DOCX, and Markdown files or paste URLs that feed Q&A, AI test generation, Wise Architecture, and risk analysis — one knowledge layer shared across every AI surface.",
+    "phaseKcItem1Title": "Org / Team / Project scope",
+    "phaseKcItem1Desc": "Every knowledge source is scoped to an organization, team, or project so AI answers stay grounded in the right context, with citation chips linking back to the source.",
+    "phaseKcItem2Title": "Pluggable provider SPI",
+    "phaseKcItem2Desc": "File upload and URL providers ship today; GitHub, Confluence, Notion, and Drive integrations are queued as follow-ups via a single Spring-bean provider interface.",
     "badge": "Built in public. Shipped iteratively.",
     "heroTitle": "ShipFlow Roadmap",
     "heroSubtitle": "Methodology-agnostic, AI-native project management — from Shape Up to Scrum and beyond. Follow our journey to v1.0.0.",
@@ -7173,6 +7181,10 @@
     "reportsOverview": {
       "title": "Reports & Analytics",
       "description": "Track cycle velocity, task completion rates, and team performance. Export reports for stakeholder updates."
+    },
+    "knowledgeCenter": {
+      "title": "Knowledge Center",
+      "description": "Upload docs or paste links here — they feed every AI feature."
     }
   },
   "aria": {
@@ -8121,6 +8133,53 @@
     "builtinDeadlinePressureDesc": "Scores pitches by the gap between time consumed and task completion. Use as a template for custom risk calculators.",
     "builtinCycleHealthDesc": "Produces a plain-text cycle health summary. Override with your own report format via the Plugin SDK."
   },
+  "knowledgeCenter": {
+    "title": "Knowledge Center",
+    "subtitle": "Sources the AI uses for Q&A, test generation, architecture, and risk advice.",
+    "nav": "Knowledge",
+    "addSource": "+ Add source",
+    "empty": "Nothing here yet. Add docs or links — GitHub / Confluence / Notion / Drive coming soon.",
+    "chunks": "chunks",
+    "synced": "synced {{when}}",
+    "namePlaceholder": "Source name (e.g. Engineering Handbook)",
+    "descriptionPlaceholder": "Optional description",
+    "fileRequired": "Please choose a file",
+    "noChunks": "No chunks yet.",
+    "reIngest": "Re-ingest",
+    "sourceDetail": "Source",
+    "comingSoon": "Coming soon",
+    "name": "Name",
+    "description": "Description",
+    "url": "URL",
+    "file": "File",
+    "providerType": "Provider",
+    "scope": {
+      "org": "Org-wide",
+      "team": "Team",
+      "project": "Project"
+    },
+    "provider": {
+      "FILE_UPLOAD": "File upload",
+      "URL": "URL",
+      "GITHUB": "GitHub",
+      "CONFLUENCE": "Confluence",
+      "NOTION": "Notion",
+      "GOOGLE_DRIVE": "Google Drive"
+    },
+    "status": {
+      "READY": "Ready",
+      "INGESTING": "Ingesting",
+      "PENDING": "Pending",
+      "STALE": "Stale",
+      "FAILED": "Failed"
+    },
+    "cancel": "Cancel",
+    "create": "Create",
+    "delete": "Delete",
+    "close": "Close",
+    "lastError": "Last error",
+    "chunkPreview": "Chunks"
+
   "moveToProject": {
     "title": "Move {{type}} to another project",
     "description": "\"{{entity}}\" will be moved to the selected project. This action is logged and reversible.",

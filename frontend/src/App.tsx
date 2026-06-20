@@ -118,6 +118,9 @@ const ReleaseFormPage = lazy(() => import('./pages/ReleaseFormPage'));
 // Import
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 
+// Knowledge Center
+const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter'));
+
 // Workflow Automations
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
 
@@ -344,6 +347,9 @@ function App() {
 
                       {/* Import */}
                       <Route path="import" element={<ImportPage />} />
+
+                      {/* Knowledge Center */}
+                      <Route path="knowledge" element={<KnowledgeCenter />} />
 
                       {/* Help & Guides */}
                       <Route path="help" element={<HelpGuides />} />

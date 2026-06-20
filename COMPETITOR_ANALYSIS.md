@@ -62,6 +62,7 @@ ShipFlow targets teams that:
 | **No-code workflow automations (trigger/action engine)** | ✅ (v1.7.0) | ✅ | ✅ (Automation for Jira) | ✅ | ✅ | ❌ | Partial |
 | **Shape Up–aware automation triggers (hill chart, appetite, betting table)** | ✅ (v1.7.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Automation execution log (per-run status, payload, result)** | ✅ (v1.7.0) | Partial | Partial | ❌ | Partial | ❌ | ❌ |
+| **Unified Knowledge Center wired into AI features** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
@@ -149,6 +150,25 @@ Atlassian launched their "Teamwork Graph CLI" for Claude Code in 2026, which ind
 ### Why competitors haven't matched this yet
 
 MCP is an emerging standard (2024). Most PM tools are building AI features **inside** their UI (AI-assisted summaries, auto-prioritization). Atlassian's Teamwork Graph is the first serious competitor move into editor-native context — but it requires Jira + Confluence + Bitbucket. ShipFlow's bet is that the most valuable AI surface is **the developer's editor**, and the full relationship graph should be a single tool call, not a product suite.
+
+---
+
+## 4b. The Knowledge Center Differentiator
+
+ShipFlow's Knowledge Center gives teams a single place to upload docs and paste URLs that the AI uses everywhere — Q&A, AI test generation, Wise Architecture, and risk analysis all draw from the same indexed corpus. Sources are scoped at the Org, Team, or Project level, and a pluggable provider SPI ships file-upload + URL today with GitHub / Confluence / Notion / Drive integrations queued as follow-ups.
+
+| Capability | ShipFlow | Linear | Jira + Confluence | Asana | Monday.com |
+|------------|:--------:|:------:|:-----------------:|:-----:|:----------:|
+| Upload docs that feed AI features | ✅ | ❌ | Partial¹ | ❌ | ❌ |
+| Paste URLs as live AI knowledge sources | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Org / Team / Project scope for every source | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Single corpus reused across Q&A, test gen, Wise Architecture, risk | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Pluggable provider SPI (open source, extend in-tree) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Citation chips link AI answers back to the source | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+¹ Confluence indexes pages for Atlassian Intelligence search, but the corpus is not exposed as a unified knowledge layer to other AI features (Jira AI, Compass, Rovo each maintain separate indexes).
+
+**Why this matters**: every competitor's AI is locked to whatever data already lives inside their product. ShipFlow lets teams point the AI at their actual source-of-truth docs (PRDs in Notion, architecture in Confluence, runbooks in Drive) and reuse that knowledge across every AI surface.
 
 ---
 

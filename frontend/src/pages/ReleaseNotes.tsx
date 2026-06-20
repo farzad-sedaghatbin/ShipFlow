@@ -53,8 +53,10 @@ import {
   Upload,
   FileSpreadsheet,
   FolderInput,
-  Wand2,
   BookOpen,
+  Link2,
+  Building2,
+  Wand2,
   Sliders,
   Zap,
 } from 'lucide-react';
@@ -77,6 +79,32 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.8.0',
+    date: 'In Development',
+    title: 'Knowledge Center',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Upload Docs & Add URLs',
+        description:
+          'Upload PDFs, DOCX, and Markdown files or paste URLs that ShipFlow indexes and feeds into Q&A, AI test generation, Wise Architecture, and risk analysis — one knowledge layer reused across every AI surface.',
+      },
+      {
+        icon: <Building2 className="h-5 w-5" />,
+        title: 'Org / Team / Project Scope',
+        description:
+          'Every source belongs to an Org, Team, or Project scope so AI answers stay grounded in the right context. Citation chips on AI answers link back to the original source.',
+      },
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Pluggable Provider SPI',
+        description:
+          'File upload and URL providers ship today. The provider SPI lets you drop in a new source type (GitHub, Confluence, Notion, Drive) by implementing a single Spring bean — Spring auto-registers it via KnowledgeSourceRegistry.',
+      },
+    ],
+  },
+  {
+    version: '1.9.0',
     date: 'Coming soon',
     title: 'Custom Fields & Advanced RBAC',
     upcoming: true,

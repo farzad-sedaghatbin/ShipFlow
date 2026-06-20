@@ -441,6 +441,13 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           )}
 
+          {/* Knowledge Center */}
+          <NavItem
+            item={{ textKey: 'nav.knowledge', icon: BookOpen, path: '/knowledge', tourId: 'knowledge-link' }}
+            isActive={currentPath.startsWith('/knowledge')}
+            onClick={onItemClick}
+          />
+
           {/* Meetings */}
           {meetingsItems.map((item) => (
             <NavItem
