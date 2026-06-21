@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Bug status / severity name input now accepts underscore characters while typing (`READY_TO_TEST` previously got the trailing `_` stripped on every keystroke)
+- Merged "People & Teams" Organization section into a single "People & Access" group under Administration for admin users, reducing sidebar clutter
+
 ### Added — Custom Fields (v1.8.0 S48 backend)
 
 #### Custom Field Definitions
