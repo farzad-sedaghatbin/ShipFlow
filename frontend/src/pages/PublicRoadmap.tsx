@@ -41,8 +41,6 @@ import {
   FileSpreadsheet,
   FolderInput,
   BookOpen,
-  Link2,
-  Building2,
   Key,
   Wand2,
   Zap,
