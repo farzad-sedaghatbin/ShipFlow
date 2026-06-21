@@ -19,6 +19,15 @@ function toUpperSnakeCase(value: string): string {
     .replace(/^_+|_+$/g, '');
 }
 
+function normalizeWhileTyping(value: string): string {
+  return value
+    .toUpperCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^A-Z0-9_]/g, '')
+    .replace(/_+/g, '_')
+    .replace(/^_+/, '');
+}
+
 interface BugSettingsTabProps {
   formData: Partial<OrganizationSettings>;
   setFormData: (data: Partial<OrganizationSettings>) => void;
@@ -73,6 +82,11 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
                   <Input
                     value={status.name}
                     onChange={(e) => {
+                      const updated = [...(formData.bugStatuses || [])];
+                      updated[index] = { ...updated[index], name: normalizeWhileTyping(e.target.value) };
+                      setFormData({ ...formData, bugStatuses: updated });
+                    }}
+                    onBlur={(e) => {
                       const updated = [...(formData.bugStatuses || [])];
                       updated[index] = { ...updated[index], name: toUpperSnakeCase(e.target.value) };
                       setFormData({ ...formData, bugStatuses: updated });
@@ -172,6 +186,11 @@ export function BugSettingsTab({ formData, setFormData }: BugSettingsTabProps) {
                   <Input
                     value={severity.name}
                     onChange={(e) => {
+                      const updated = [...(formData.severityLevels || [])];
+                      updated[index] = { ...updated[index], name: normalizeWhileTyping(e.target.value) };
+                      setFormData({ ...formData, severityLevels: updated });
+                    }}
+                    onBlur={(e) => {
                       const updated = [...(formData.severityLevels || [])];
                       updated[index] = { ...updated[index], name: toUpperSnakeCase(e.target.value) };
                       setFormData({ ...formData, severityLevels: updated });
