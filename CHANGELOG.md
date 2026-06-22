@@ -4,9 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — MCP Usage Report (admin)
+
+- **Per-user MCP/API usage tracking**: every `tools/call` invocation is recorded in `mcp_usage_log` (tool name, success/failure, duration, API key prefix, user, timestamp).
+- **Admin dashboard at `/app/integrations/mcp-usage`**: four tabs — 30-day area-chart timeline, per-user table, per-tool bar chart + table, recent-log feed with error messages and duration.
+- Six summary cards: total calls, success rate, failures, active users (last 30 days), unique tools used, successful calls.
+- `GET /api/admin/mcp/usage/summary|by-user|by-tool|timeline|recent` — all require `ADMIN` role.
+- Usage recording is async (fire-and-forget) so it adds zero latency to MCP tool responses.
+- "View Usage Report" button added to the MCP Server tab in Integrations → MCP (admin only).
+- New Flyway migration `V2026_06_22_0001__create_mcp_usage_log.sql`.
+- `McpUsageReportServiceTest` — 8 unit tests covering all service methods.
+
 ### Fixed
+- Jira CSV import: fixed `null value in column "source_format"` DB error — the `ImportJob` was saved before the format was detected; now parses the file and resolves the format before the first `save()` so the `NOT NULL` constraint is never violated
+- Risk history endpoint: fixed `LazyInitializationException` on `GET /api/risk/pitch/{id}/history` — Jackson was serialising `pitch.project` as a Hibernate proxy after the transaction closed; added `"project"` to `@JsonIgnoreProperties` on `PitchRiskHistory.pitch`
+- MCP Usage Report: "View Usage Report" button now navigates to `/integrations/mcp-usage` instead of the non-existent `/app/integrations/mcp-usage` path (was silently redirecting to dashboard)
+- MCP Usage Report: API calls no longer produce a double `/api/api/` prefix (service paths incorrectly included `/api` while the axios instance already sets `baseURL: '/api'`)
+- MCP Usage Report: all endpoints now accept a `?days=N` parameter (1–365) so summary, by-user, by-tool, and timeline data are all scoped to the selected period
+- i18n: removed duplicate `publicRoadmap.phase180*` keys in `en.json` and `fa.json` (stale shorter entries from an earlier edit were left alongside the newer detailed entries)
 - Bug status / severity name input now accepts underscore characters while typing (`READY_TO_TEST` previously got the trailing `_` stripped on every keystroke)
 - Merged "People & Teams" Organization section into a single "People & Access" group under Administration for admin users, reducing sidebar clutter
+- Betting table slot capacity now correctly converts pitch appetite from working days to calendar days when assigning a pitch, so the remaining-slot "X days available" label reflects actual working-day capacity instead of the raw calendar-day difference
+- AI Insights no longer flags future cycles as "at risk" — cycles that have not yet started are excluded from the AT_RISK_CYCLE check
+- Work-log task dropdown no longer loads tasks from all projects when "All Projects" context is active; user must select a cycle first
+- MEMBER role users can now delete their own work logs from the Pitch Detail page (frontend now routes to the owner-only endpoint instead of the admin endpoint)
 
 ### Added — Custom Fields (v1.8.0 S48 backend)
 

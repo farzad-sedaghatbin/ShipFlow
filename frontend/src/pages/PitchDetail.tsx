@@ -341,10 +341,15 @@ export default function PitchDetail() {
     }
   };
 
-  const handleDeleteWorkLog = async (workLogId: number) => {
+  const handleDeleteWorkLog = async (workLogId: number, ownerPersonId: number) => {
     if (!pitch) return;
     try {
-      await workLogService.delete(workLogId);
+      const isOwn = user?.personId != null && user.personId === ownerPersonId;
+      if (isOwn) {
+        await workLogService.deleteMy(workLogId);
+      } else {
+        await workLogService.delete(workLogId);
+      }
       showSuccess(t('pitchDetailPage.workLogDeleted'));
       loadData(pitch.id);
       loadWorkLogs(pitch.id);

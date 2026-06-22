@@ -33,6 +33,12 @@ import { Textarea } from './ui/textarea';
 import { Combobox } from './ui/combobox';
 import MarkdownEditor from './MarkdownEditor';
 import { Badge } from './ui/badge';
+import { Checkbox } from './ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
 import { Alert, AlertDescription } from './ui/alert';
 
 interface BugReportModalProps {
@@ -87,6 +93,14 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
   const [formData, setFormData] = useState<Partial<CreateBugReportRequest>>({});
+  // Parsed multi-component list (stored as comma-separated in formData.component)
+  const selectedComponents: string[] = (formData.component || '').split(',').map(s => s.trim()).filter(Boolean);
+  const toggleComponent = (c: string) => {
+    const next = selectedComponents.includes(c)
+      ? selectedComponents.filter(s => s !== c)
+      : [...selectedComponents, c];
+    handleChange('component', next.join(',') || undefined);
+  };
 
   // Reset form data when modal opens or bug report changes
   useEffect(() => {
@@ -312,17 +326,34 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
             )}
 
             <div className="space-y-1">
-              <Label htmlFor="bug-component">{t('bugReports.component', 'Component')}</Label>
-              <Combobox
-                options={[
-                  { value: '', label: t('bugReports.noComponent', 'No component') },
-                  ...COMPONENT_OPTIONS.map(c => ({ value: c, label: c })),
-                ]}
-                value={formData.component || ''}
-                onValueChange={(value) => handleChange('component', value || undefined)}
-                placeholder={t('bugReports.selectComponent', 'Select component')}
-                searchPlaceholder={t('bugReports.searchComponent', 'Search or type...')}
-              />
+              <Label>{t('bugReports.component', 'Component')}</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-full min-h-[2.25rem] flex flex-wrap gap-1 items-center px-3 py-1.5 text-sm border rounded-md bg-background hover:bg-accent/30 text-left"
+                  >
+                    {selectedComponents.length === 0 ? (
+                      <span className="text-muted-foreground">{t('bugReports.selectComponent', 'Select component(s)')}</span>
+                    ) : selectedComponents.map(c => (
+                      <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
+                    ))}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-2" align="start">
+                  <div className="space-y-1">
+                    {COMPONENT_OPTIONS.map(c => (
+                      <label key={c} className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent/40 text-sm">
+                        <Checkbox
+                          checked={selectedComponents.includes(c)}
+                          onCheckedChange={() => toggleComponent(c)}
+                        />
+                        {c}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

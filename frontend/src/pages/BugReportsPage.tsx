@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { detectTextDirection } from '../utils/rtlDetection';
@@ -21,6 +21,7 @@ import {
   Kanban,
   Check,
   Info,
+  Link,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -60,11 +61,13 @@ import { pitchService } from '../services/pitchService';
 import { releaseService } from '../services/releaseService';
 import { personService } from '../services/personService';
 import { useProject } from '../contexts';
-import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release, Person, getPageTotal } from '../types';
+import { BugReport, BugStats, BugStatus, BugSeverity, Cycle, Pitch, Release, Person, getPageTotal } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
 import { BugReportsSkeleton } from '../components/Skeletons';
+
+const FILTER_KEYS = ['q', 'status', 'severity', 'assignee', 'cycle', 'pitch', 'release', 'exclude', 'sortBy', 'sortOrder', 'page', 'size'];
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -100,28 +103,54 @@ function readSavedBugFilter<T>(key: string, fallback: T): T {
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
+  const [bugStats, setBugStats] = useState<BugStats>({ total: 0, open: 0, inProgress: 0, resolved: 0, critical: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>(() => readSavedBugFilter('searchQuery', ''));
-  const [debouncedSearch, setDebouncedSearch] = useState<string>(() => readSavedBugFilter('searchQuery', ''));
-  const [statusFilter, setStatusFilter] = useState<BugStatus[]>(() => readSavedBugFilter('statusFilter', []));
-  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() => readSavedBugFilter('severityFilter', []));
-  const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(() => readSavedBugFilter('assigneeFilter', undefined));
-  const [cycleFilter, setCycleFilter] = useState<number | undefined>(undefined);
-  const [pitchFilter, setPitchFilter] = useState<number | undefined>(undefined);
-  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
+
+  // Filter state — URL params are the primary source of truth (shareable, back-button safe).
+  // When there are no URL params (fresh navigation or new session), fall back to localStorage
+  // so the user's last view is restored automatically.
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
+  const [statusFilter, setStatusFilter] = useState<BugStatus[]>(() =>
+    searchParams.getAll('status').length > 0 ? searchParams.getAll('status') as BugStatus[] : readSavedBugFilter('statusFilter', [])
+  );
+  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() =>
+    searchParams.getAll('severity').length > 0 ? searchParams.getAll('severity') as BugSeverity[] : readSavedBugFilter('severityFilter', [])
+  );
+  const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(() => {
+    const v = searchParams.get('assignee'); return v ? parseInt(v) : readSavedBugFilter('assigneeFilter', undefined);
+  });
+  const [cycleFilter, setCycleFilter] = useState<number | undefined>(() => {
+    const v = searchParams.get('cycle'); return v ? parseInt(v) : undefined;
+  });
+  const [pitchFilter, setPitchFilter] = useState<number | undefined>(() => {
+    const v = searchParams.get('pitch'); return v ? parseInt(v) : undefined;
+  });
+  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(() => {
+    const v = searchParams.get('release'); return v ? parseInt(v) : undefined;
+  });
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [excludeMode, setExcludeMode] = useState<boolean>(() => readSavedBugFilter('excludeMode', false));
-  const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>(() => readSavedBugFilter('sortBy', 'createdAt'));
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => readSavedBugFilter('sortOrder', 'desc'));
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(() => readSavedBugFilter('rowsPerPage', 10));
+  const [excludeMode, setExcludeMode] = useState(() =>
+    searchParams.has('exclude') ? searchParams.get('exclude') === 'true' : readSavedBugFilter('excludeMode', false)
+  );
+  const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>(
+    () => (searchParams.get('sortBy') as 'createdAt' | 'severity' | 'status' | 'title') ?? readSavedBugFilter('sortBy', 'createdAt')
+  );
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    () => (searchParams.get('sortOrder') as 'asc' | 'desc') ?? readSavedBugFilter('sortOrder', 'desc')
+  );
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '0'));
+  const [rowsPerPage, setRowsPerPage] = useState(() =>
+    parseInt(searchParams.get('size') ?? String(readSavedBugFilter('rowsPerPage', 10)))
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBug, setSelectedBug] = useState<BugReport | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -145,12 +174,36 @@ const BugReportsPage: React.FC = () => {
     return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
+  // Keep URL in sync with filter state so the address bar is always shareable
+  // and browser Back/Forward restores the exact filter view.
+  useEffect(() => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams();
+      // Carry through non-filter params that may be set by other code
+      prev.forEach((v, k) => { if (!FILTER_KEYS.includes(k)) next.set(k, v); });
+      if (searchQuery) next.set('q', searchQuery);
+      statusFilter.forEach(s => next.append('status', s));
+      severityFilter.forEach(s => next.append('severity', s));
+      if (assigneeFilter !== undefined) next.set('assignee', String(assigneeFilter));
+      if (cycleFilter !== undefined) next.set('cycle', String(cycleFilter));
+      if (pitchFilter !== undefined) next.set('pitch', String(pitchFilter));
+      if (releaseFilter !== undefined) next.set('release', String(releaseFilter));
+      if (excludeMode) next.set('exclude', 'true');
+      if (sortBy !== 'createdAt') next.set('sortBy', sortBy);
+      if (sortOrder !== 'desc') next.set('sortOrder', sortOrder);
+      if (page > 0) next.set('page', String(page));
+      if (rowsPerPage !== 10) next.set('size', String(rowsPerPage));
+      return next;
+    }, { replace: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, severityFilter, assigneeFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
+
   // Reset cycle and pitch filters when project changes to ensure clean filtering
   useEffect(() => {
     setCycleFilter(undefined);
     setPitchFilter(undefined);
     setReleaseFilter(undefined);
-    setPage(0); // Reset to first page when project changes
+    setPage(0);
   }, [currentProject?.id, isAllProjectsSelected]);
 
   // Persist user-level filters across page navigations
@@ -214,39 +267,39 @@ const BugReportsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      let response;
-      // Always use the filter endpoint for consistent server-side filtering
       const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
-      
+      const activeStatuses = statusFilter.length > 0 ? statusFilter : undefined;
+      const activeSeverities = severityFilter.length > 0 ? severityFilter : undefined;
+      const activeAssignees = assigneeFilter !== undefined ? [assigneeFilter] : undefined;
+
       // When release filter is active, fetch a large page so client-side
       // filtering covers all records (no reliable backend support yet).
       const effectivePage = releaseFilter !== undefined ? 0 : page;
       const effectiveSize = releaseFilter !== undefined ? 1000 : rowsPerPage;
 
-      response = await qaTestManagementService.getBugReportsWithFilters(
-        projectId,
-        cycleFilter,
-        pitchFilter,
-        statusFilter.length > 0 ? statusFilter : undefined,
-        severityFilter.length > 0 ? severityFilter : undefined,
-        assigneeFilter !== undefined ? [assigneeFilter] : undefined,
-        excludeMode,
-        effectivePage,
-        effectiveSize,
-        sortBy,
-        sortOrder,
-        debouncedSearch || undefined
-      );
-      
+      // Fire page data and aggregate stats in parallel
+      const [response, statsResponse] = await Promise.all([
+        qaTestManagementService.getBugReportsWithFilters(
+          projectId, cycleFilter, pitchFilter,
+          activeStatuses, activeSeverities, activeAssignees,
+          excludeMode, effectivePage, effectiveSize,
+          sortBy, sortOrder, debouncedSearch || undefined
+        ),
+        qaTestManagementService.getBugStats(
+          projectId, cycleFilter, pitchFilter,
+          activeStatuses, activeSeverities, activeAssignees,
+          excludeMode, debouncedSearch || undefined
+        ),
+      ]);
+
       let bugData = response.data.content;
-      
-      // Client-side filter by release (not yet supported by backend filter endpoint)
       if (releaseFilter !== undefined) {
         bugData = bugData.filter(bug => bug.targetReleaseId === releaseFilter);
       }
-      
+
       setBugReports(bugData);
       setTotalElements(releaseFilter !== undefined ? bugData.length : getPageTotal(response.data));
+      setBugStats(statsResponse.data);
     } catch (err) {
       setError(t('bugReports.loadFailed'));
       console.error(err);
@@ -336,12 +389,14 @@ const BugReportsPage: React.FC = () => {
     setStatusFilter((prev) =>
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
+    setPage(0);
   };
 
   const toggleSeverityFilter = (severity: BugSeverity) => {
     setSeverityFilter((prev) =>
       prev.includes(severity) ? prev.filter((s) => s !== severity) : [...prev, severity]
     );
+    setPage(0);
   };
 
   // Inline update for status/severity
@@ -368,15 +423,7 @@ const BugReportsPage: React.FC = () => {
     }
   };
 
-  const getStatCounts = () => ({
-    total: totalElements,
-    open: bugReports.filter((b) => b.status === 'OPEN').length,
-    inProgress: bugReports.filter((b) => b.status === 'IN_PROGRESS').length,
-    resolved: bugReports.filter((b) => ['RESOLVED', 'VERIFIED', 'CLOSED'].includes(b.status)).length,
-    critical: bugReports.filter((b) => ['CRITICAL', 'BLOCKER'].includes(b.severity)).length,
-  });
-
-  const stats = getStatCounts();
+  const stats = bugStats;
   const totalPages = Math.ceil(totalElements / rowsPerPage);
 
   if (loading || isSwitchingProject) {
@@ -424,13 +471,26 @@ const BugReportsPage: React.FC = () => {
             </TooltipProvider>
           </div>
 
+          {/* Copy shareable link */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9"
+                  onClick={() => { navigator.clipboard.writeText(window.location.href); }}>
+                  <Link className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('bugReports.copyLink', 'Copy shareable link')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           {/* Add New Bug Button */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
-                  <Button 
-                    onClick={openCreateModal} 
+                  <Button
+                    onClick={openCreateModal}
                     disabled={isAllProjectsSelected}
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -1095,6 +1155,11 @@ const BugReportsPage: React.FC = () => {
           setDetailModalOpen(false);
           openEditModal(bug);
         }}
+        onOpenFullPage={(bug) => {
+          setDetailModalOpen(false);
+          navigate(`/qa/bug-reports/${bug.id}`);
+        }}
+        onUpdate={(updated) => setSelectedBug(updated)}
       />
 
       {/* Delete Confirmation Dialog */}

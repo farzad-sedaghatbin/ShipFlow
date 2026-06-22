@@ -72,11 +72,11 @@ public class BettingSlot {
     return (int) Math.ceil(days / 7.0);
   }
 
-  /** Check if a pitch with given appetite (in days) fits in this slot */
-  public boolean canFitPitch(int appetiteDays) {
+  /** Check if a pitch fits in this slot; calendarDays is the pitch appetite already converted to calendar days */
+  public boolean canFitPitch(int calendarDays) {
     if (startDate == null || endDate == null)
       return false;
     long slotDays = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate);
-    return appetiteDays <= slotDays;
+    return calendarDays <= slotDays;
   }
 }

@@ -23,6 +23,7 @@ import {
   Download,
   Eye,
   FolderInput,
+  AlertCircle,
   ExternalLink,
 } from 'lucide-react';
 import {
@@ -31,6 +32,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from './ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -42,7 +50,8 @@ import { CustomFieldsSection } from './CustomFieldsSection';
 import { Markdown } from './ui/markdown';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { documentService, UploadedDocument } from '../services/documentService';
-import { BugReport, BugStatus, BugSeverity, EntityHistory, RevisionType } from '../types';
+import projectService from '../services/projectService';
+import { BugReport, BugStatus, BugSeverity, EntityHistory, RevisionType, UpdateBugReportRequest, ProjectMember } from '../types';
 import { useAuth } from '../contexts';
 import { MoveToProjectDialog } from './MoveToProjectDialog';
 
@@ -51,6 +60,8 @@ interface BugViewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit?: (bug: BugReport) => void;
+  onOpenFullPage?: (bug: BugReport) => void;
+  onUpdate?: (bug: BugReport) => void;
   onMoved?: () => void;
 }
 
@@ -73,10 +84,14 @@ const statusConfig: Record<BugStatus, { labelKey: string; variant: 'default' | '
   DUPLICATE: { labelKey: 'bugs.status.duplicate', variant: 'secondary' },
 };
 
-export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugViewDialogProps) {
+export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMoved }: BugViewDialogProps) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const isAdmin = useMemo(() => user?.role === 'ADMIN', [user]);
+  // Local copy of bug for optimistic inline-field updates
+  const [localBug, setLocalBug] = useState<BugReport | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [members, setMembers] = useState<ProjectMember[]>([]);
   const [activeTab, setActiveTab] = useState('details');
   const [history, setHistory] = useState<EntityHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -91,6 +106,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
   const [previewOpen, setPreviewOpen] = useState(false);
   // Authenticated blob URLs keyed by attachment ID (avoids auth header issues with <img>/<video> src)
   const [blobUrls, setBlobUrls] = useState<Record<number, string>>({});
+  const [failedAttachments, setFailedAttachments] = useState<Set<number>>(new Set());
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
 
   const pageSize = 20;
@@ -174,17 +190,20 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
       const list = response.data || [];
       setAttachments(list);
       // Fetch blob URLs via axios so the Authorization header is included
+      const failed = new Set<number>();
       const entries = await Promise.all(
         list.map(async (a) => {
           try {
             const url = await documentService.fetchAttachmentBlobUrl(a.id);
             return [a.id, url] as [number, string];
           } catch {
+            failed.add(a.id);
             return null;
           }
         })
       );
       setBlobUrls(Object.fromEntries(entries.filter((e): e is [number, string] => e !== null)));
+      setFailedAttachments(failed);
     } catch (err) {
       console.error('Failed to load attachments:', err);
       setAttachments([]);
@@ -207,6 +226,8 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
       setHistoryPage(0);
       setAttachments([]);
       setPreviewAttachment(null);
+      setFailedAttachments(new Set());
+      setMembers([]);
       setBlobUrls((prev) => {
         Object.values(prev).forEach(URL.revokeObjectURL);
         return {};
@@ -214,7 +235,42 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
     }
   }, [open]);
 
+  // Keep localBug in sync with incoming prop
+  useEffect(() => { setLocalBug(bug); }, [bug]);
+
+  // Fetch project members for assignee picker
+  useEffect(() => {
+    if (open && bug?.projectId) {
+      projectService.getMembers(bug.projectId)
+        .then(data => setMembers(data))
+        .catch(() => {});
+    }
+  }, [open, bug?.projectId]);
+
   if (!bug) return null;
+  // The effective bug merges prop + local optimistic state
+  const effectiveBug = localBug ?? bug;
+
+  // Reporter check (by userId or username – reporterId may not always be populated)
+  const isReporter = useMemo(
+    () => !!user && (user.userId === bug.reporterId || user.username === bug.reporterName),
+    [user, bug]
+  );
+  const canEditDetails = isAdmin || isReporter;
+
+  const handleInlineUpdate = useCallback(async (patch: UpdateBugReportRequest) => {
+    setIsSaving(true);
+    try {
+      const res = await qaTestManagementService.updateBugReport(effectiveBug.id, patch);
+      setLocalBug(res.data);
+      onUpdate?.(res.data);
+    } catch {
+      // silently revert – effectiveBug snaps back to last saved
+      setLocalBug(bug);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [effectiveBug.id, bug, onUpdate]);
 
   const formatDateTime = (dateTime: string) => {
     const d = new Date(dateTime);
@@ -396,54 +452,93 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader className="shrink-0">
-          <div className="flex items-start justify-between gap-2">
-            <DialogTitle className="flex items-center gap-2 min-w-0">
+          {/* Title row — pr-10 avoids Radix close button overlap */}
+          <DialogTitle className="pr-10">
+            <div className="flex items-center gap-2 min-w-0">
               <Bug className="h-5 w-5 text-destructive shrink-0" />
-              <Badge variant="outline" className="font-mono shrink-0">{bug.bugKey}</Badge>
-              <span className="truncate">{bug.title}</span>
-            </DialogTitle>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
+              <Badge variant="outline" className="font-mono shrink-0">{effectiveBug.bugKey}</Badge>
+              <span className="truncate flex-1">{effectiveBug.title}</span>
+              <button
+                type="button"
                 title={t('common.openInNewTab', 'Open in new tab')}
-                onClick={() => window.open(`/qa/bug-reports/${bug.id}`, '_blank')}
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.id}`, '_blank')}
               >
-                <ExternalLink className="h-3.5 w-3.5" />
-              </Button>
-              {onEdit && (
+                <ExternalLink className="h-4 w-4" />
+              </button>
+            </div>
+          </DialogTitle>
+
+          {/* Action row — inline selects + Edit (reporter/admin) + Move (admin) */}
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            {/* Inline status select */}
+            <Select
+              value={effectiveBug.status}
+              onValueChange={(v) => handleInlineUpdate({ status: v as BugStatus })}
+              disabled={isSaving}
+            >
+              <SelectTrigger className="h-6 w-auto min-w-[7rem] text-xs border-0 px-2 py-0 bg-transparent focus:ring-0">
+                <Badge variant={statusConfig[effectiveBug.status]?.variant || 'default'} className="pointer-events-none">
+                  {t(statusConfig[effectiveBug.status]?.labelKey || effectiveBug.status)}
+                </Badge>
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(statusConfig) as BugStatus[]).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    <Badge variant={statusConfig[s].variant} className="text-xs">
+                      {t(statusConfig[s].labelKey)}
+                    </Badge>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Inline severity select */}
+            <Select
+              value={effectiveBug.severity}
+              onValueChange={(v) => handleInlineUpdate({ severity: v as BugSeverity })}
+              disabled={isSaving}
+            >
+              <SelectTrigger className="h-6 w-auto min-w-[6rem] text-xs border-0 px-2 py-0 bg-transparent focus:ring-0">
+                <Badge variant={severityConfig[effectiveBug.severity]?.variant || 'default'} className="pointer-events-none">
+                  {t(severityConfig[effectiveBug.severity]?.labelKey || effectiveBug.severity)}
+                </Badge>
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(severityConfig) as BugSeverity[]).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    <Badge variant={severityConfig[s].variant} className="text-xs">
+                      {t(severityConfig[s].labelKey)}
+                    </Badge>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2 ml-auto">
+              {isAdmin && (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5"
-                  onClick={() => onEdit(bug)}
+                  className="h-6 text-xs"
+                  onClick={() => setMoveDialogOpen(true)}
                 >
-                  <Edit className="h-3.5 w-3.5" />
+                  <FolderInput className="h-3 w-3 mr-1" />
+                  {t('moveToProject.confirm')}
+                </Button>
+              )}
+              {canEditDetails && onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 text-xs gap-1"
+                  onClick={() => onEdit(effectiveBug)}
+                >
+                  <Edit className="h-3 w-3" />
                   {t('common.edit', 'Edit')}
                 </Button>
               )}
             </div>
-          </div>
-          {/* Status and Severity badges + admin actions */}
-          <div className="flex flex-wrap items-center gap-2 pt-2">
-            <Badge variant={statusConfig[bug.status]?.variant || 'default'}>
-              {t(statusConfig[bug.status]?.labelKey || bug.status)}
-            </Badge>
-            <Badge variant={severityConfig[bug.severity]?.variant || 'default'}>
-              {t(severityConfig[bug.severity]?.labelKey || bug.severity)}
-            </Badge>
-            {isAdmin && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-auto h-6 text-xs"
-                onClick={() => setMoveDialogOpen(true)}
-              >
-                <FolderInput className="h-3 w-3 mr-1" />
-                {t('moveToProject.confirm')}
-              </Button>
-            )}
           </div>
         </DialogHeader>
 
@@ -474,28 +569,50 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
                         <User className="h-3 w-3" />
                         {t('bugs.reporter')}
                       </Label>
-                      <div className="font-medium">{bug.reporterName || t('common.unknown')}</div>
+                      <div className="font-medium">{effectiveBug.reporterName || t('common.unknown')}</div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <User className="h-3 w-3" />
                         {t('bugs.assignee')}
                       </Label>
-                      <div className="font-medium">{bug.assigneeName || t('common.unassigned')}</div>
+                      {members.length > 0 ? (
+                        <Select
+                          value={effectiveBug.assigneeId?.toString() ?? '__none__'}
+                          onValueChange={(v) =>
+                            handleInlineUpdate({ assigneeId: v === '__none__' ? undefined : Number(v) })
+                          }
+                          disabled={isSaving}
+                        >
+                          <SelectTrigger className="h-7 text-sm font-medium border-0 px-0 shadow-none focus:ring-0 -ml-0.5 w-full">
+                            <SelectValue placeholder={t('common.unassigned')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
+                            {members.filter(m => m.personId != null).map((m) => (
+                              <SelectItem key={m.userId} value={m.personId!.toString()}>
+                                {m.username}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="font-medium">{effectiveBug.assigneeName || t('common.unassigned')}</div>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {t('common.createdAt')}
                       </Label>
-                      <div className="font-medium">{formatDateTime(bug.createdAt)}</div>
+                      <div className="font-medium">{formatDateTime(effectiveBug.createdAt)}</div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {t('common.updatedAt')}
                       </Label>
-                      <div className="font-medium">{formatDateTime(bug.updatedAt)}</div>
+                      <div className="font-medium">{formatDateTime(effectiveBug.updatedAt)}</div>
                     </div>
                   </div>
 
@@ -628,11 +745,18 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
                             key={attachment.id}
                             className="relative group rounded-lg overflow-hidden border bg-muted/30 cursor-pointer hover:ring-2 hover:ring-ring focus:outline-none focus:ring-2 focus:ring-ring w-full"
                             onClick={() => {
-                              setPreviewAttachment(attachment);
-                              setPreviewOpen(true);
+                              if (!failedAttachments.has(attachment.id)) {
+                                setPreviewAttachment(attachment);
+                                setPreviewOpen(true);
+                              }
                             }}
                           >
-                            {isImageFile(attachment.fileType) ? (
+                            {failedAttachments.has(attachment.id) ? (
+                              <div className="w-full h-20 flex flex-col items-center justify-center bg-muted/50 gap-1">
+                                <AlertCircle className="h-6 w-6 text-muted-foreground" />
+                                <span className="text-[10px] text-muted-foreground">{t('bugAttachments.unavailable', 'Unavailable')}</span>
+                              </div>
+                            ) : isImageFile(attachment.fileType) ? (
                               <img
                                 src={getAttachmentUrl(attachment)}
                                 alt={attachment.originalFileName}

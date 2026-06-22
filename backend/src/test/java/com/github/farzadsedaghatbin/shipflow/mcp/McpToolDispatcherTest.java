@@ -84,6 +84,7 @@ class McpToolDispatcherTest {
   @Mock private TestRunService testRunService;
   @Mock private BugReportService bugReportService;
   @Mock private com.github.farzadsedaghatbin.shipflow.service.DocumentService documentService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.mcp.McpUsageReportService usageReportService;
 
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
@@ -117,6 +118,7 @@ class McpToolDispatcherTest {
         projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools,
         workContextTools, taskContextTools, worklogTools,
         identityTools, testCaseTools, bugReportTools);
+    dispatcher.setUsageReportService(usageReportService);
 
     McpSession session = new McpSession(
         SESSION_ID,

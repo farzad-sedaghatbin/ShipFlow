@@ -115,6 +115,7 @@ export interface Project {
  */
 export interface ProjectMember {
   userId: number;
+  personId?: number;
   username: string;
   email?: string;
   projectRole: ProjectRole;
@@ -1200,6 +1201,14 @@ export interface UpdateBugReportRequest {
   fixedInReleaseId?: number;
 }
 
+export interface BugStats {
+  total: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  critical: number;
+}
+
 export interface TestRun {
   id: number;
   testCaseId: number;
@@ -1368,6 +1377,7 @@ export interface TeamTrack {
   totalCapacityWeeks: number;
   usedCapacityWeeks: number;
   availableCapacityWeeks: number;
+  workingDaysPerWeek?: number;
 }
 
 export interface BettingTable {
