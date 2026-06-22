@@ -2476,7 +2476,18 @@
     "reporter": "Reporter",
     "severity": "Severity",
     "statusLabel": "Status",
-    "updateSuccess": "[Translation needed: باگ با موفقیت به‌روزرسانی شد]"
+    "updateSuccess": "[Translation needed: باگ با موفقیت به‌روزرسانی شد]",
+    "linkCopied": "Link copied to clipboard",
+    "copyLink": "Copy shareable link",
+    "savedFilters": {
+      "title": "Saved filters",
+      "saveCurrent": "Save current filters",
+      "namePlaceholder": "Filter name...",
+      "saved": "Filter saved",
+      "none": "No saved filters yet",
+      "apply": "Apply",
+      "delete": "Delete"
+    }
   },
   "roadmap": {
     "title": "Roadmap",
