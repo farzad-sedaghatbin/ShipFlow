@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { detectTextDirection } from '../utils/rtlDetection';
@@ -16,6 +16,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   MessageSquare,
   LayoutList,
   Kanban,
@@ -93,6 +95,33 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 
 const BUG_FILTER_KEY = 'shipflow.bugFilters';
 const NAMED_BUG_FILTERS_KEY = 'shipflow.namedBugFilters';
+
+// Derive overview stats from a bug list, mirroring the backend's BugReportService.getBugStats
+// semantics exactly. Used when a filter (e.g. release) is applied client-side and the server
+// stats endpoint can't see it — keeps the overview cards in sync with the visible table.
+function computeBugStats(bugs: BugReport[]): BugStats {
+  return {
+    total: bugs.length,
+    open: bugs.filter((b) => b.status === 'OPEN').length,
+    inProgress: bugs.filter((b) => b.status === 'IN_PROGRESS').length,
+    resolved: bugs.filter((b) => b.status === 'RESOLVED' || b.status === 'VERIFIED' || b.status === 'CLOSED').length,
+    critical: bugs.filter((b) => b.severity === 'CRITICAL' || b.severity === 'BLOCKER').length,
+  };
+}
+
+// Build a compact list of 0-indexed page numbers to render, inserting 'gap' markers
+// for elided ranges. Always shows the first and last page plus the current ±1.
+function buildPageList(current: number, totalPages: number): (number | 'gap')[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i);
+  const pages: (number | 'gap')[] = [0];
+  const start = Math.max(1, current - 1);
+  const end = Math.min(totalPages - 2, current + 1);
+  if (start > 1) pages.push('gap');
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < totalPages - 2) pages.push('gap');
+  pages.push(totalPages - 1);
+  return pages;
+}
 
 function readSavedBugFilter<T>(key: string, fallback: T): T {
   try {
@@ -338,7 +367,9 @@ const BugReportsPage: React.FC = () => {
 
       setBugReports(bugData);
       setTotalElements(releaseFilter !== undefined ? bugData.length : getPageTotal(response.data));
-      setBugStats(statsResponse.data);
+      // The release filter is applied client-side, so the server stats endpoint can't account
+      // for it — recompute the overview cards from the filtered set to keep them in sync.
+      setBugStats(releaseFilter !== undefined ? computeBugStats(bugData) : statsResponse.data);
     } catch (err) {
       setError(t('bugReports.loadFailed'));
       console.error(err);
@@ -960,8 +991,10 @@ const BugReportsPage: React.FC = () => {
                   ],
                   actions: (
                     <>
-                      <Button variant="ghost" size="icon-sm" title={t('common.openFullPage', 'Open full page')} onClick={() => navigate(`/qa/bug-reports/${bug.id}`)}>
-                        <Eye className="h-4 w-4" />
+                      <Button asChild variant="ghost" size="icon-sm" title={t('bugReports.actions.openFullPage', 'Open full page')}>
+                        <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </RouterLink>
                       </Button>
                       <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(bug)}>
                         <Pencil className="h-4 w-4" />
@@ -1175,12 +1208,14 @@ const BugReportsPage: React.FC = () => {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              asChild
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => navigate(`/qa/bug-reports/${bug.id}`)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                                <Eye className="h-4 w-4" />
+                              </RouterLink>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('bugReports.actions.openFullPage', 'Open full page')}</TooltipContent>
@@ -1252,32 +1287,77 @@ const BugReportsPage: React.FC = () => {
               triggerClassName="w-[70px] h-8"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
-              {t('bugReports.pagination.rangeText', { 
-                start: page * rowsPerPage + 1, 
-                end: Math.min((page + 1) * rowsPerPage, totalElements), 
-                total: totalElements 
-              })}
+              {totalElements === 0
+                ? t('bugReports.pagination.empty', 'No results')
+                : t('bugReports.pagination.rangeText', {
+                    start: page * rowsPerPage + 1,
+                    end: Math.min((page + 1) * rowsPerPage, totalElements),
+                    total: totalElements,
+                  })}
             </span>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleChangePage(0)}
+                disabled={page === 0}
+                aria-label={t('bugReports.pagination.first', 'First page')}
+                title={t('bugReports.pagination.first', 'First page')}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => handleChangePage(page - 1)}
                 disabled={page === 0}
+                aria-label={t('bugReports.pagination.previous', 'Previous page')}
+                title={t('bugReports.pagination.previous', 'Previous page')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
+              {totalPages > 1 && buildPageList(page, totalPages).map((item, idx) =>
+                item === 'gap' ? (
+                  <span key={`gap-${idx}`} className="px-1 text-sm text-muted-foreground select-none">…</span>
+                ) : (
+                  <Button
+                    key={item}
+                    variant={item === page ? 'default' : 'outline'}
+                    size="icon"
+                    className="h-8 w-8 text-xs"
+                    onClick={() => handleChangePage(item)}
+                    aria-label={t('bugReports.pagination.goToPage', 'Go to page {{page}}', { page: item + 1 })}
+                    aria-current={item === page ? 'page' : undefined}
+                  >
+                    {item + 1}
+                  </Button>
+                )
+              )}
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => handleChangePage(page + 1)}
                 disabled={page >= totalPages - 1}
+                aria-label={t('bugReports.pagination.next', 'Next page')}
+                title={t('bugReports.pagination.next', 'Next page')}
               >
                 <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleChangePage(totalPages - 1)}
+                disabled={page >= totalPages - 1}
+                aria-label={t('bugReports.pagination.last', 'Last page')}
+                title={t('bugReports.pagination.last', 'Last page')}
+              >
+                <ChevronsRight className="h-4 w-4" />
               </Button>
             </div>
           </div>

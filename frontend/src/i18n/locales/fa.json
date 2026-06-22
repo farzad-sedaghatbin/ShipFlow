@@ -553,7 +553,8 @@
       "export": "خروجی گرفتن",
       "import": "وارد کردن",
       "refresh": "بازنشانی",
-      "viewDetails": "مشاهده جزئیات"
+      "viewDetails": "مشاهده جزئیات",
+      "openFullPage": "باز کردن صفحه کامل"
     },
     "assignee": "مسئول",
     "bugReport": "گزارش باگ",
@@ -620,7 +621,13 @@
       "itemsPerPage": "آیتم‌ها در هر صفحه",
       "rangeText": "{{start}}-{{end}} از {{total}}",
       "rowsPerPage": "ردیف در هر صفحه:",
-      "showing": "نمایش {{start}}-{{end}} از {{total}}"
+      "showing": "نمایش {{start}}-{{end}} از {{total}}",
+      "empty": "نتیجه‌ای یافت نشد",
+      "first": "صفحه اول",
+      "previous": "صفحه قبل",
+      "next": "صفحه بعد",
+      "last": "صفحه آخر",
+      "goToPage": "رفتن به صفحه {{page}}"
     },
     "viewMode": {
       "list": "نمای لیست",
