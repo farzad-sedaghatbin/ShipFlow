@@ -171,7 +171,6 @@ public class ProjectController {
   @AllArgsConstructor
   public static class ProjectMemberDTO {
     private Long userId;
-    private Long personId;
     private String username;
     private String email;
     private Long personId;
