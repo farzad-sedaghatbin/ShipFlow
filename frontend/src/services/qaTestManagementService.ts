@@ -6,6 +6,7 @@ import {
   CreateTestCaseRequest,
   UpdateTestCaseRequest,
   BugReport,
+  BugStats,
   CreateBugReportRequest,
   UpdateBugReportRequest,
   TestRun,
@@ -109,7 +110,29 @@ export const qaTestManagementService = {
     return api.get<Page<BugReport>>('/qa/bug-reports/filter', { params });
   },
 
-  getBugReportById: (id: number) => 
+  getBugStats: (
+    projectId?: number,
+    cycleId?: number,
+    pitchId?: number,
+    statuses?: BugStatus[],
+    severities?: BugSeverity[],
+    assigneeIds?: number[],
+    exclude?: boolean,
+    search?: string
+  ) => {
+    const params: any = {};
+    if (projectId !== undefined) params.projectId = projectId;
+    if (cycleId !== undefined) params.cycleId = cycleId;
+    if (pitchId !== undefined) params.pitchId = pitchId;
+    if (statuses && statuses.length > 0) params.statuses = statuses.join(',');
+    if (severities && severities.length > 0) params.severities = severities.join(',');
+    if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
+    if (exclude !== undefined) params.exclude = exclude;
+    if (search && search.trim()) params.search = search.trim();
+    return api.get<BugStats>('/qa/bug-reports/stats', { params });
+  },
+
+  getBugReportById: (id: number) =>
     api.get<BugReport>(`/qa/bug-reports/${id}`),
 
   getBugReportByKey: (key: string) => 

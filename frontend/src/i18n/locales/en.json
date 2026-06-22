@@ -2839,6 +2839,7 @@
     "attached": "{{count}} attachment(s)",
     "pendingUpload": "{{count}} file(s) ready to upload",
     "noAttachments": "No attachments",
+    "unavailable": "Unavailable",
     "videoNotSupported": "Your browser does not support video playback"
   },
   "chartConfig": {

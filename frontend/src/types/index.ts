@@ -115,6 +115,7 @@ export interface Project {
  */
 export interface ProjectMember {
   userId: number;
+  personId?: number;
   username: string;
   email?: string;
   projectRole: ProjectRole;
@@ -1198,6 +1199,14 @@ export interface UpdateBugReportRequest {
   resolution?: string;
   targetReleaseId?: number;
   fixedInReleaseId?: number;
+}
+
+export interface BugStats {
+  total: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  critical: number;
 }
 
 export interface TestRun {
