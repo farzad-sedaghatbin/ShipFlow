@@ -95,7 +95,7 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
       + "AND (:statuses IS NULL OR br.status IN :statuses) "
       + "AND (:severities IS NULL OR br.severity IN :severities) "
       + "AND (:assigneeIds IS NULL OR a.id IN :assigneeIds) "
-      + "AND (:search IS NULL OR LOWER(br.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.description) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.bugKey) LIKE LOWER(CONCAT('%', :search, '%')))")
+      + "AND (:search IS NULL OR LOWER(br.title) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')) OR LOWER(br.description) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')) OR LOWER(br.bugKey) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')))")
   Page<BugReport> findWithFilters(@Param("projectId") Long projectId, @Param("cycleId") Long cycleId,
       @Param("pitchId") Long pitchId, @Param("statuses") List<BugStatus> statuses,
       @Param("severities") List<BugSeverity> severities, @Param("assigneeIds") List<Long> assigneeIds,
@@ -108,7 +108,7 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long> {
       + "AND (:statuses IS NULL OR br.status NOT IN :statuses) "
       + "AND (:severities IS NULL OR br.severity NOT IN :severities) "
       + "AND (:assigneeIds IS NULL OR a.id NOT IN :assigneeIds) "
-      + "AND (:search IS NULL OR LOWER(br.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.description) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(br.bugKey) LIKE LOWER(CONCAT('%', :search, '%')))")
+      + "AND (:search IS NULL OR LOWER(br.title) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')) OR LOWER(br.description) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')) OR LOWER(br.bugKey) LIKE LOWER(CONCAT('%', CAST(:search AS String), '%')))")
   Page<BugReport> findWithExclusionFilters(@Param("projectId") Long projectId, @Param("cycleId") Long cycleId,
       @Param("pitchId") Long pitchId, @Param("statuses") List<BugStatus> statuses,
       @Param("severities") List<BugSeverity> severities, @Param("assigneeIds") List<Long> assigneeIds,
