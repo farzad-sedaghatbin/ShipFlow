@@ -84,7 +84,7 @@ const statusConfig: Record<BugStatus, { labelKey: string; variant: 'default' | '
   DUPLICATE: { labelKey: 'bugs.status.duplicate', variant: 'secondary' },
 };
 
-export function BugViewDialog({ bug, open, onOpenChange, onEdit, onOpenFullPage, onUpdate, onMoved }: BugViewDialogProps) {
+export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMoved }: BugViewDialogProps) {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const isAdmin = useMemo(() => user?.role === 'ADMIN', [user]);
@@ -458,16 +458,14 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onOpenFullPage,
               <Bug className="h-5 w-5 text-destructive shrink-0" />
               <Badge variant="outline" className="font-mono shrink-0">{effectiveBug.bugKey}</Badge>
               <span className="truncate flex-1">{effectiveBug.title}</span>
-              {onOpenFullPage && (
-                <button
-                  type="button"
-                  title={t('common.openFullPage', 'Open full page')}
-                  className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => onOpenFullPage(effectiveBug)}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </button>
-              )}
+              <button
+                type="button"
+                title={t('common.openInNewTab', 'Open in new tab')}
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.id}`, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4" />
+              </button>
             </div>
           </DialogTitle>
 

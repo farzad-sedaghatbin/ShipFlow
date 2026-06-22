@@ -88,6 +88,18 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
   DUPLICATE: 'secondary',
 };
 
+const BUG_FILTER_KEY = 'shipflow.bugFilters';
+
+function readSavedBugFilter<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(BUG_FILTER_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed?.[key] ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -99,14 +111,19 @@ const BugReportsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter state — initialised from URL search params so the URL is the source of truth.
-  // Sharing the URL or pressing the browser Back button restores the exact view.
-  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');
-  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('q') ?? '');
-  const [statusFilter, setStatusFilter] = useState<BugStatus[]>(() => searchParams.getAll('status') as BugStatus[]);
-  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() => searchParams.getAll('severity') as BugSeverity[]);
+  // Filter state — URL params are the primary source of truth (shareable, back-button safe).
+  // When there are no URL params (fresh navigation or new session), fall back to localStorage
+  // so the user's last view is restored automatically.
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
+  const [statusFilter, setStatusFilter] = useState<BugStatus[]>(() =>
+    searchParams.getAll('status').length > 0 ? searchParams.getAll('status') as BugStatus[] : readSavedBugFilter('statusFilter', [])
+  );
+  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() =>
+    searchParams.getAll('severity').length > 0 ? searchParams.getAll('severity') as BugSeverity[] : readSavedBugFilter('severityFilter', [])
+  );
   const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(() => {
-    const v = searchParams.get('assignee'); return v ? parseInt(v) : undefined;
+    const v = searchParams.get('assignee'); return v ? parseInt(v) : readSavedBugFilter('assigneeFilter', undefined);
   });
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(() => {
     const v = searchParams.get('cycle'); return v ? parseInt(v) : undefined;
@@ -121,21 +138,25 @@ const BugReportsPage: React.FC = () => {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [excludeMode, setExcludeMode] = useState(() => searchParams.get('exclude') === 'true');
+  const [excludeMode, setExcludeMode] = useState(() =>
+    searchParams.has('exclude') ? searchParams.get('exclude') === 'true' : readSavedBugFilter('excludeMode', false)
+  );
   const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>(
-    () => (searchParams.get('sortBy') as 'createdAt' | 'severity' | 'status' | 'title') ?? 'createdAt'
+    () => (searchParams.get('sortBy') as 'createdAt' | 'severity' | 'status' | 'title') ?? readSavedBugFilter('sortBy', 'createdAt')
   );
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
-    () => (searchParams.get('sortOrder') as 'asc' | 'desc') ?? 'desc'
+    () => (searchParams.get('sortOrder') as 'asc' | 'desc') ?? readSavedBugFilter('sortOrder', 'desc')
   );
   const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '0'));
-  const [rowsPerPage, setRowsPerPage] = useState(() => parseInt(searchParams.get('size') ?? '10'));
+  const [rowsPerPage, setRowsPerPage] = useState(() =>
+    parseInt(searchParams.get('size') ?? String(readSavedBugFilter('rowsPerPage', 10)))
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBug, setSelectedBug] = useState<BugReport | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>(() => readSavedBugFilter('viewMode', 'list'));
   const [updatingBugId, setUpdatingBugId] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [bugToDelete, setBugToDelete] = useState<number | null>(null);
@@ -184,6 +205,23 @@ const BugReportsPage: React.FC = () => {
     setReleaseFilter(undefined);
     setPage(0);
   }, [currentProject?.id, isAllProjectsSelected]);
+
+  // Persist user-level filters across page navigations
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUG_FILTER_KEY, JSON.stringify({
+        searchQuery,
+        statusFilter,
+        severityFilter,
+        assigneeFilter,
+        excludeMode,
+        sortBy,
+        sortOrder,
+        rowsPerPage,
+        viewMode,
+      }));
+    } catch { /* quota exceeded — ignore */ }
+  }, [searchQuery, statusFilter, severityFilter, assigneeFilter, excludeMode, sortBy, sortOrder, rowsPerPage, viewMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

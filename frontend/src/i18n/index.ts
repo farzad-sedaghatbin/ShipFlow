@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import HttpBackend from 'i18next-http-backend';
 
 // Import translation files
 import enTranslations from './locales/en.json';
@@ -29,7 +28,6 @@ export function usesJalaliCalendar(lang: string): boolean {
 }
 
 i18n
-  .use(HttpBackend)
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -38,12 +36,25 @@ i18n
       fa: { translation: faTranslations },
     },
     fallbackLng: 'en',
+    // Map region variants (e.g. en-US) to their base language so translations
+    // are always found in the bundled resources without triggering async loading.
+    load: 'languageOnly',
+    // Translations are bundled inline — initialise synchronously so every
+    // component renders with ready=true on the first pass.  Without this,
+    // react-i18next v16 uses useSuspense:true by default, which throws a
+    // Promise mid-hook-chain and corrupts the work-in-progress fiber, causing
+    // React error #310 ("Rendered more hooks than during the previous render").
+    initImmediate: false,
     debug: process.env.NODE_ENV === 'development',
-    
+
     interpolation: {
-      escapeValue: false, // React already escapes values
+      escapeValue: false,
     },
-    
+
+    react: {
+      useSuspense: false,
+    },
+
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       lookupLocalStorage: 'shipflow-language',

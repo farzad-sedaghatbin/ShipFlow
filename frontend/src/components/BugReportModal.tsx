@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Paperclip } from 'lucide-react';
-import { useProject } from '../contexts';
+import { useProject, useAuth } from '../contexts';
 import { MediaAttachmentUpload } from './MediaAttachmentUpload';
 import {
   BugReport,
@@ -79,9 +79,11 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const { currentProject, isScrumProject } = useProject();
+  const { user } = useAuth();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [tagInput, setTagInput] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
@@ -132,12 +134,28 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     }
   }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
 
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [error]);
+
   const loadPeople = async () => {
     if (loadingPeople) return;
     setLoadingPeople(true);
     try {
       const response = await api.get<Person[]>('/persons');
-      setPeople(response.data.filter(person => person.isActive));
+      const active = response.data.filter(person => person.isActive);
+      // Pin the logged-in user's person to the top
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        active.sort((a, b) => {
+          if (a.id === currentPersonId) return -1;
+          if (b.id === currentPersonId) return 1;
+          return 0;
+        });
+      }
+      setPeople(active);
     } catch (err) {
       console.error('Failed to load people:', err);
     } finally {
@@ -265,9 +283,11 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 
         <div className="space-y-3 py-2">
           {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <div ref={errorRef}>
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            </div>
           )}
 
           {/* Title */}

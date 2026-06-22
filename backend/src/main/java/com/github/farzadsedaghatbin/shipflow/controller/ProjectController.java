@@ -159,8 +159,9 @@ public class ProjectController {
 
   private ProjectMemberDTO toMemberDTO(UserProject up) {
     return ProjectMemberDTO.builder().userId(up.getUser().getId()).username(up.getUser().getUsername())
-        .email(up.getUser().getEmail()).projectRole(up.getProjectRole()).grantedAt(up.getCreatedAt())
+        .email(up.getUser().getEmail())
         .personId(up.getUser().getPerson() != null ? up.getUser().getPerson().getId() : null)
+        .projectRole(up.getProjectRole()).grantedAt(up.getCreatedAt())
         .grantedByUsername(up.getGrantedBy() != null ? up.getGrantedBy().getUsername() : null).build();
   }
 
@@ -173,6 +174,7 @@ public class ProjectController {
     private Long personId;
     private String username;
     private String email;
+    private Long personId;
     private ProjectRole projectRole;
     private LocalDateTime grantedAt;
     private String grantedByUsername;

@@ -147,6 +147,10 @@ export function useBacklogPage() {
         : cycleService.getMyActiveCycles();
       const [cyclesRes, personsRes, teamsRes] = await Promise.all([cyclesPromise, personService.getAll(), teamService.getAll()]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsRes.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsRes);
       setTeams(teamsRes.data);
       if (currentProject) {

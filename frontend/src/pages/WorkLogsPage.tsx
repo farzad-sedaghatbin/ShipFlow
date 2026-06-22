@@ -190,6 +190,10 @@ export default function WorkLogsPage() {
         personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsRes.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsRes);
     } catch (error) { console.error('Failed to load data:', error); }
     finally { setLoading(false); }
