@@ -1368,6 +1368,7 @@ export interface TeamTrack {
   totalCapacityWeeks: number;
   usedCapacityWeeks: number;
   availableCapacityWeeks: number;
+  workingDaysPerWeek?: number;
 }
 
 export interface BettingTable {

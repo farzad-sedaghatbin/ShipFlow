@@ -18,6 +18,10 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Bug status / severity name input now accepts underscore characters while typing (`READY_TO_TEST` previously got the trailing `_` stripped on every keystroke)
 - Merged "People & Teams" Organization section into a single "People & Access" group under Administration for admin users, reducing sidebar clutter
+- Betting table slot capacity now correctly converts pitch appetite from working days to calendar days when assigning a pitch, so the remaining-slot "X days available" label reflects actual working-day capacity instead of the raw calendar-day difference
+- AI Insights no longer flags future cycles as "at risk" — cycles that have not yet started are excluded from the AT_RISK_CYCLE check
+- Work-log task dropdown no longer loads tasks from all projects when "All Projects" context is active; user must select a cycle first
+- MEMBER role users can now delete their own work logs from the Pitch Detail page (frontend now routes to the owner-only endpoint instead of the admin endpoint)
 
 ### Added — Custom Fields (v1.8.0 S48 backend)
 
