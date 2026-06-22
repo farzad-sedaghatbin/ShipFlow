@@ -5288,6 +5288,8 @@
     "phase180Item1Desc": "Grant access at the project level, not just the organization. Give a contractor read access to one project, a QA team write access to bugs only — without touching global roles.",
     "phase180Item2Title": "Custom Fields Settings",
     "phase180Item2Desc": "Manage field definitions in Organization Settings → Custom Fields. Separate tabs for Tasks, Pitches, and Bug Reports. Create and edit fields via a guided dialog with options tag-chip input.",
+    "phase180Item3Title": "MCP Usage Report",
+    "phase180Item3Desc": "Admin dashboard with per-user and per-tool MCP call analytics, 30-day timeline, success rate, and recent-log feed.",
     "phase190Theme": "Wiki / Docs Space",
     "phase190Item0Title": "Built-In Team Wiki",
     "phase190Item0Desc": "Write, organize, and search documentation without leaving ShipFlow. Pages live next to the pitches and tasks they describe — no more context-switching to Confluence or Notion.",
@@ -7483,6 +7485,7 @@
     "connectAuth": "Authentication",
     "connectKeyHint": "Create an API key in the API Keys tab and use it as the bearer token.",
     "connectNoRestart": "Changes take effect immediately — no server restart required.",
+    "viewUsageReport": "View Usage Report",
     "apiKeysTitle": "API Keys",
     "apiKeysDescription": "Generate keys to authenticate external MCP clients.",
     "createKey": "Create Key",
@@ -7720,6 +7723,58 @@
     "updatePitchStatus": "Update Pitch Status via MCP",
     "addComment": "Add Comment via MCP",
     "writeToolsEnabled": "Write tools enabled"
+  },
+  "mcpUsage": {
+    "title": "MCP Usage Report",
+    "subtitle": "Admin view of per-user MCP and API tool call activity",
+    "refresh": "Refresh",
+    "loadError": "Failed to load usage data. Please try again.",
+    "noData": "No data yet. Usage is recorded as MCP clients invoke tools.",
+    "summary": {
+      "totalCalls": "Total Calls",
+      "successRate": "Success Rate",
+      "failures": "Failures",
+      "activeUsers": "Active Users",
+      "last30Days": "last 30 days",
+      "uniqueTools": "Unique Tools",
+      "successCalls": "Successful Calls"
+    },
+    "tabs": {
+      "timeline": "Timeline",
+      "byUser": "By User",
+      "byTool": "By Tool",
+      "recent": "Recent Logs"
+    },
+    "timeline": {
+      "title": "Daily Call Volume (last 30 days)",
+      "totalCalls": "Total Calls",
+      "successCalls": "Successful"
+    },
+    "byUser": {
+      "title": "Usage by User",
+      "username": "Username",
+      "email": "Email",
+      "totalCalls": "Total Calls",
+      "successRate": "Success Rate",
+      "lastSeen": "Last Seen"
+    },
+    "byTool": {
+      "chartTitle": "Calls per Tool",
+      "tableTitle": "Tool Breakdown",
+      "toolName": "Tool",
+      "totalCalls": "Total Calls",
+      "successRate": "Success Rate",
+      "uniqueUsers": "Unique Users"
+    },
+    "recent": {
+      "title": "Recent Tool Calls (last 50)",
+      "calledAt": "Time",
+      "user": "User",
+      "toolName": "Tool",
+      "status": "Status",
+      "apiKey": "API Key",
+      "duration": "Duration"
+    }
   },
   "pitchDependencies": {
     "title": "Dependencies",

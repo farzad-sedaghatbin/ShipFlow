@@ -20,7 +20,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -113,7 +112,9 @@ public class McpAuthFilter extends OncePerRequestFilter {
 
     UsernamePasswordAuthenticationToken auth =
         new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
-    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+    // Store the ApiKey entity in details so downstream services (e.g. McpUsageReportService)
+    // can record which key was used without an extra DB look-up.
+    auth.setDetails(apiKey);
     SecurityContextHolder.getContext().setAuthentication(auth);
 
     filterChain.doFilter(request, response);

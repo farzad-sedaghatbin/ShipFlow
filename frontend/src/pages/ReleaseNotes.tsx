@@ -124,6 +124,11 @@ const releases: Release[] = [
         title: 'Custom Fields Settings',
         description: 'Manage field definitions in Organization Settings → Custom Fields. Separate tabs for Tasks, Pitches, and Bug Reports. Create and edit fields via a guided dialog.',
       },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'MCP Usage Report',
+        description: 'Admin dashboard showing per-user and per-tool MCP call analytics — 30-day timeline, success rate, failure breakdown, and a recent-log feed. Accessible from Integrations → MCP → View Usage Report.',
+      },
     ],
   },
   {

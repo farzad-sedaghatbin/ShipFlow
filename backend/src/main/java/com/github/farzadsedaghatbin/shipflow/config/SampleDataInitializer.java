@@ -70,6 +70,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final WorkflowAutomationTemplateRepository workflowAutomationTemplateRepository;
   private final CustomFieldDefinitionRepository customFieldDefinitionRepository;
   private final CustomFieldValueRepository customFieldValueRepository;
+  private final McpUsageLogRepository mcpUsageLogRepository;
 
   @Override
   @Transactional
@@ -945,6 +946,9 @@ public class SampleDataInitializer implements CommandLineRunner {
 
     createWorkflowAutomationSampleData(bankingProject);
     createCustomFieldSampleData(bankingProject);
+    if (adminUser != null) {
+      createMcpUsageSampleData(adminUser);
+    }
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
@@ -1994,5 +1998,38 @@ public class SampleDataInitializer implements CommandLineRunner {
                 .build()));
 
     log.info("Custom field sample data created: 3 definitions, demo values");
+  }
+
+  private void createMcpUsageSampleData(User adminUser) {
+    if (mcpUsageLogRepository.count() > 0) {
+      return;
+    }
+    String[] tools = {
+      "list_projects", "get_tasks", "get_pitches", "get_work_context",
+      "create_task", "update_task_status", "get_cycle", "get_pitch_detail"
+    };
+    User[] users = userRepository.findByIsActiveTrue().stream()
+        .limit(3).toArray(User[]::new);
+    if (users.length == 0) {
+      users = new User[]{adminUser};
+    }
+    LocalDateTime base = LocalDateTime.now().minusDays(28);
+    for (int day = 0; day < 28; day++) {
+      int callsToday = 5 + (day % 7);
+      for (int c = 0; c < callsToday; c++) {
+        String tool = tools[(day * 3 + c) % tools.length];
+        User user = users[c % users.length];
+        boolean success = (day + c) % 10 != 0;
+        mcpUsageLogRepository.save(McpUsageLog.builder()
+            .user(user)
+            .toolName(tool)
+            .success(success)
+            .errorMessage(success ? null : "Simulated error for demo purposes")
+            .durationMs((long) (50 + (day * 7 + c * 13) % 200))
+            .calledAt(base.plusDays(day).plusHours(c % 8).plusMinutes(c * 7L % 60))
+            .build());
+      }
+    }
+    log.info("MCP usage sample data created: 28 days of simulated tool calls");
   }
 }
