@@ -55,9 +55,21 @@ public class CsvImportService {
   public ImportJobDTO importCsv(
       MultipartFile file, String projectName, String formatHint, User currentUser) {
 
+    // Parse and detect format first so sourceFormat (NOT NULL) is known before the first save.
+    List<CSVRecord> records;
+    ImportSourceFormat format;
+    try {
+      records = parseRecords(file);
+      String[] headers = records.isEmpty() ? new String[0] : extractHeaders(records);
+      format = records.isEmpty() ? ImportSourceFormat.GENERIC_CSV : resolveFormat(formatHint, headers);
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to parse CSV file: " + e.getMessage(), e);
+    }
+
     ImportJob job =
         ImportJob.builder()
             .fileName(file.getOriginalFilename())
+            .sourceFormat(format)
             .status(ImportJobStatus.PENDING)
             .createdBy(currentUser)
             .createdAt(LocalDateTime.now())
@@ -68,16 +80,12 @@ public class CsvImportService {
       job.setStatus(ImportJobStatus.PARSING);
       importJobRepository.save(job);
 
-      List<CSVRecord> records = parseRecords(file);
       if (records.isEmpty()) {
         job.setStatus(ImportJobStatus.COMPLETED);
         job.setCompletedAt(LocalDateTime.now());
         return toDTO(importJobRepository.save(job));
       }
 
-      String[] headers = extractHeaders(records);
-      ImportSourceFormat format = resolveFormat(formatHint, headers);
-      job.setSourceFormat(format);
       job.setTotalRows(records.size());
 
       // Create Kanban project

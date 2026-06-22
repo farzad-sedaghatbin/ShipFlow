@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 - `McpUsageReportServiceTest` — 8 unit tests covering all service methods.
 
 ### Fixed
+- Jira CSV import: fixed `null value in column "source_format"` DB error — the `ImportJob` was saved before the format was detected; now parses the file and resolves the format before the first `save()` so the `NOT NULL` constraint is never violated
+- Risk history endpoint: fixed `LazyInitializationException` on `GET /api/risk/pitch/{id}/history` — Jackson was serialising `pitch.project` as a Hibernate proxy after the transaction closed; added `"project"` to `@JsonIgnoreProperties` on `PitchRiskHistory.pitch`
 - MCP Usage Report: "View Usage Report" button now navigates to `/integrations/mcp-usage` instead of the non-existent `/app/integrations/mcp-usage` path (was silently redirecting to dashboard)
 - MCP Usage Report: API calls no longer produce a double `/api/api/` prefix (service paths incorrectly included `/api` while the axios instance already sets `baseURL: '/api'`)
 - MCP Usage Report: all endpoints now accept a `?days=N` parameter (1–365) so summary, by-user, by-tool, and timeline data are all scoped to the selected period
