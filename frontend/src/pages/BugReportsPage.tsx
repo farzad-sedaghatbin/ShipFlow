@@ -85,6 +85,18 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
   DUPLICATE: 'secondary',
 };
 
+const BUG_FILTER_KEY = 'shipflow.bugFilters';
+
+function readSavedBugFilter<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(BUG_FILTER_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed?.[key] ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -93,11 +105,11 @@ const BugReportsPage: React.FC = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<BugStatus[]>([]);
-  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>([]);
-  const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(undefined);
+  const [searchQuery, setSearchQuery] = useState<string>(() => readSavedBugFilter('searchQuery', ''));
+  const [debouncedSearch, setDebouncedSearch] = useState<string>(() => readSavedBugFilter('searchQuery', ''));
+  const [statusFilter, setStatusFilter] = useState<BugStatus[]>(() => readSavedBugFilter('statusFilter', []));
+  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() => readSavedBugFilter('severityFilter', []));
+  const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(() => readSavedBugFilter('assigneeFilter', undefined));
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(undefined);
   const [pitchFilter, setPitchFilter] = useState<number | undefined>(undefined);
   const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
@@ -105,17 +117,17 @@ const BugReportsPage: React.FC = () => {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
-  const [excludeMode, setExcludeMode] = useState(false);
-  const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [excludeMode, setExcludeMode] = useState<boolean>(() => readSavedBugFilter('excludeMode', false));
+  const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>(() => readSavedBugFilter('sortBy', 'createdAt'));
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => readSavedBugFilter('sortOrder', 'desc'));
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(() => readSavedBugFilter('rowsPerPage', 10));
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBug, setSelectedBug] = useState<BugReport | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>(() => readSavedBugFilter('viewMode', 'list'));
   const [updatingBugId, setUpdatingBugId] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [bugToDelete, setBugToDelete] = useState<number | null>(null);
@@ -140,6 +152,23 @@ const BugReportsPage: React.FC = () => {
     setReleaseFilter(undefined);
     setPage(0); // Reset to first page when project changes
   }, [currentProject?.id, isAllProjectsSelected]);
+
+  // Persist user-level filters across page navigations
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUG_FILTER_KEY, JSON.stringify({
+        searchQuery,
+        statusFilter,
+        severityFilter,
+        assigneeFilter,
+        excludeMode,
+        sortBy,
+        sortOrder,
+        rowsPerPage,
+        viewMode,
+      }));
+    } catch { /* quota exceeded — ignore */ }
+  }, [searchQuery, statusFilter, severityFilter, assigneeFilter, excludeMode, sortBy, sortOrder, rowsPerPage, viewMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

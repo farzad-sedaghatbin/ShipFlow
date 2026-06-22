@@ -127,6 +127,10 @@ export default function TaskDetailPage() {
         teamService.getAll(),
       ]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsRes.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsRes);
       setTeams(teamsRes.data);
     } catch (error) {

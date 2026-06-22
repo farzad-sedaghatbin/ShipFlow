@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  Bug, 
-  Calendar, 
-  User, 
+import {
+  Bug,
+  Calendar,
+  User,
   Target,
   FileText,
   Monitor,
@@ -23,6 +23,7 @@ import {
   Download,
   Eye,
   FolderInput,
+  ExternalLink,
 } from 'lucide-react';
 import {
   Dialog,
@@ -401,17 +402,28 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onMoved }: BugV
               <Badge variant="outline" className="font-mono shrink-0">{bug.bugKey}</Badge>
               <span className="truncate">{bug.title}</span>
             </DialogTitle>
-            {onEdit && (
+            <div className="flex items-center gap-1.5 shrink-0">
               <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0 gap-1.5"
-                onClick={() => onEdit(bug)}
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                title={t('common.openInNewTab', 'Open in new tab')}
+                onClick={() => window.open(`/qa/bug-reports/${bug.id}`, '_blank')}
               >
-                <Edit className="h-3.5 w-3.5" />
-                {t('common.edit', 'Edit')}
+                <ExternalLink className="h-3.5 w-3.5" />
               </Button>
-            )}
+              {onEdit && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => onEdit(bug)}
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                  {t('common.edit', 'Edit')}
+                </Button>
+              )}
+            </div>
           </div>
           {/* Status and Severity badges + admin actions */}
           <div className="flex flex-wrap items-center gap-2 pt-2">
