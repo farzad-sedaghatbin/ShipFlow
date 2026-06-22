@@ -66,6 +66,7 @@ import { pitchService } from '../services/pitchService';
 import { releaseService } from '../services/releaseService';
 import { personService } from '../services/personService';
 import { useProject, useAuth, useToast } from '../contexts';
+import { useListLoader } from '../hooks';
 import { BugReport, BugStats, BugStatus, BugSeverity, Cycle, Pitch, Release, Person, getPageTotal } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
@@ -170,7 +171,7 @@ const BugReportsPage: React.FC = () => {
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [bugStats, setBugStats] = useState<BugStats>({ total: 0, open: 0, inProgress: 0, resolved: 0, critical: 0 });
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, startLoad, finishLoad, resetInitial } = useListLoader();
   const [error, setError] = useState<string | null>(null);
 
   // Filter state — URL params are the primary source of truth (shareable, back-button safe).
@@ -268,6 +269,7 @@ const BugReportsPage: React.FC = () => {
 
   // Reset cycle and pitch filters when project changes to ensure clean filtering
   useEffect(() => {
+    resetInitial(); // force full skeleton on next project load
     setCycleFilter(undefined);
     setPitchFilter(undefined);
     setReleaseFilter(undefined);
@@ -332,7 +334,7 @@ const BugReportsPage: React.FC = () => {
   };
 
   const loadBugReports = async () => {
-    setLoading(true);
+    startLoad();
     setError(null);
     try {
       const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
@@ -374,7 +376,7 @@ const BugReportsPage: React.FC = () => {
       setError(t('bugReports.loadFailed'));
       console.error(err);
     } finally {
-      setLoading(false);
+      finishLoad();
       notifyProjectSwitchComplete();
     }
   };
@@ -554,6 +556,11 @@ const BugReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Thin refresh progress bar — no page blink, just a subtle indicator */}
+      <div className={`fixed top-0 left-0 right-0 z-50 h-0.5 overflow-hidden transition-opacity duration-300 ${refreshing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`h-full w-full bg-primary ${refreshing ? 'animate-page-progress' : ''}`} />
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t('bugReports.title')}</h1>
@@ -956,7 +963,7 @@ const BugReportsPage: React.FC = () => {
 
       {/* Bug Reports - List View */}
       {viewMode === 'list' && (
-        <Card>
+        <Card className={`transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
           <ResponsiveTable
             mobileContent={
               <MobileCardView
@@ -1367,18 +1374,20 @@ const BugReportsPage: React.FC = () => {
 
       {/* Bug Reports - Kanban View */}
       {viewMode === 'kanban' && (
-        <BugKanbanBoard
-          bugs={bugReports}
-          onStatusChange={(bugId, newStatus) => handleInlineUpdate(bugId, 'status', newStatus)}
-          onViewBug={openDetailModal}
-          onEditBug={(bug) => {
-            setSelectedBug(bug);
-            setModalOpen(true);
-          }}
-          onDeleteBug={handleDelete}
-          loading={loading}
-          updatingBugId={updatingBugId}
-        />
+        <div className={`transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
+          <BugKanbanBoard
+            bugs={bugReports}
+            onStatusChange={(bugId, newStatus) => handleInlineUpdate(bugId, 'status', newStatus)}
+            onViewBug={openDetailModal}
+            onEditBug={(bug) => {
+              setSelectedBug(bug);
+              setModalOpen(true);
+            }}
+            onDeleteBug={handleDelete}
+            loading={loading}
+            updatingBugId={updatingBugId}
+          />
+        </div>
       )}
 
       {/* Create/Edit Modal */}
