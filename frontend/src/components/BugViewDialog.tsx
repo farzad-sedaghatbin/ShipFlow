@@ -247,30 +247,31 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
     }
   }, [open, bug?.projectId]);
 
-  if (!bug) return null;
-  // The effective bug merges prop + local optimistic state
-  const effectiveBug = localBug ?? bug;
-
-  // Reporter check (by userId or username – reporterId may not always be populated)
+  // Hooks must be called unconditionally — keep all of these above the early return.
   const isReporter = useMemo(
-    () => !!user && (user.userId === bug.reporterId || user.username === bug.reporterName),
+    () => !!user && !!bug && (user.userId === bug.reporterId || user.username === bug.reporterName),
     [user, bug]
   );
   const canEditDetails = isAdmin || isReporter;
 
   const handleInlineUpdate = useCallback(async (patch: UpdateBugReportRequest) => {
+    const current = localBug ?? bug;
+    if (!current) return;
     setIsSaving(true);
     try {
-      const res = await qaTestManagementService.updateBugReport(effectiveBug.id, patch);
+      const res = await qaTestManagementService.updateBugReport(current.id, patch);
       setLocalBug(res.data);
       onUpdate?.(res.data);
     } catch {
-      // silently revert – effectiveBug snaps back to last saved
       setLocalBug(bug);
     } finally {
       setIsSaving(false);
     }
-  }, [effectiveBug.id, bug, onUpdate]);
+  }, [localBug, bug, onUpdate]);
+
+  if (!bug) return null;
+  // After the guard, bug is non-null so effectiveBug is also non-null.
+  const effectiveBug = localBug ?? bug;
 
   const formatDateTime = (dateTime: string) => {
     const d = new Date(dateTime);

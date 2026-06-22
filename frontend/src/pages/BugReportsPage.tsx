@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -22,6 +22,9 @@ import {
   Check,
   Info,
   Link,
+  BookmarkPlus,
+  Bookmark,
+  BookmarkX,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -60,7 +63,7 @@ import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { releaseService } from '../services/releaseService';
 import { personService } from '../services/personService';
-import { useProject } from '../contexts';
+import { useProject, useAuth, useToast } from '../contexts';
 import { BugReport, BugStats, BugStatus, BugSeverity, Cycle, Pitch, Release, Person, getPageTotal } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
@@ -89,6 +92,7 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
 };
 
 const BUG_FILTER_KEY = 'shipflow.bugFilters';
+const NAMED_BUG_FILTERS_KEY = 'shipflow.namedBugFilters';
 
 function readSavedBugFilter<T>(key: string, fallback: T): T {
   try {
@@ -100,11 +104,40 @@ function readSavedBugFilter<T>(key: string, fallback: T): T {
   }
 }
 
+type SavedBugFilter = {
+  id: string;
+  name: string;
+  searchQuery: string;
+  statusFilter: BugStatus[];
+  severityFilter: BugSeverity[];
+  assigneeFilter?: number;
+  excludeMode: boolean;
+  sortBy: 'createdAt' | 'severity' | 'status' | 'title';
+  sortOrder: 'asc' | 'desc';
+};
+
+function loadNamedFilters(userId: number | undefined): SavedBugFilter[] {
+  try {
+    const raw = localStorage.getItem(`${NAMED_BUG_FILTERS_KEY}.${userId ?? 'guest'}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistNamedFilters(userId: number | undefined, filters: SavedBugFilter[]): void {
+  try {
+    localStorage.setItem(`${NAMED_BUG_FILTERS_KEY}.${userId ?? 'guest'}`, JSON.stringify(filters));
+  } catch {}
+}
+
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [bugStats, setBugStats] = useState<BugStats>({ total: 0, open: 0, inProgress: 0, resolved: 0, critical: 0 });
@@ -160,6 +193,12 @@ const BugReportsPage: React.FC = () => {
   const [updatingBugId, setUpdatingBugId] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [bugToDelete, setBugToDelete] = useState<number | null>(null);
+
+  // Saved named filters (per user, stored in localStorage)
+  const [savedFilters, setSavedFilters] = useState<SavedBugFilter[]>(() => loadNamedFilters(user?.userId));
+  const [savedFilterPanelOpen, setSavedFilterPanelOpen] = useState(false);
+  const [savedFilterName, setSavedFilterName] = useState('');
+  const savedFilterPanelRef = useRef<HTMLDivElement>(null);
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -307,6 +346,58 @@ const BugReportsPage: React.FC = () => {
       setLoading(false);
       notifyProjectSwitchComplete();
     }
+  };
+
+  // Close saved-filter panel on outside click
+  useEffect(() => {
+    if (!savedFilterPanelOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (savedFilterPanelRef.current && !savedFilterPanelRef.current.contains(e.target as Node)) {
+        setSavedFilterPanelOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [savedFilterPanelOpen]);
+
+  const handleSaveFilter = () => {
+    const name = savedFilterName.trim();
+    if (!name) return;
+    const entry: SavedBugFilter = {
+      id: String(Date.now()),
+      name,
+      searchQuery,
+      statusFilter,
+      severityFilter,
+      assigneeFilter,
+      excludeMode,
+      sortBy,
+      sortOrder,
+    };
+    const next = [entry, ...savedFilters];
+    setSavedFilters(next);
+    persistNamedFilters(user?.userId, next);
+    setSavedFilterName('');
+    showToast(t('bugReports.savedFilters.saved', 'Filter saved'), 'success');
+  };
+
+  const handleApplyFilter = (f: SavedBugFilter) => {
+    setSearchQuery(f.searchQuery);
+    setDebouncedSearch(f.searchQuery);
+    setStatusFilter(f.statusFilter);
+    setSeverityFilter(f.severityFilter);
+    setAssigneeFilter(f.assigneeFilter);
+    setExcludeMode(f.excludeMode);
+    setSortBy(f.sortBy);
+    setSortOrder(f.sortOrder);
+    setPage(0);
+    setSavedFilterPanelOpen(false);
+  };
+
+  const handleDeleteSavedFilter = (id: string) => {
+    const next = savedFilters.filter(f => f.id !== id);
+    setSavedFilters(next);
+    persistNamedFilters(user?.userId, next);
   };
 
   const openDeleteConfirm = (id: number) => {
@@ -476,13 +567,85 @@ const BugReportsPage: React.FC = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="icon" className="h-9 w-9"
-                  onClick={() => { navigator.clipboard.writeText(window.location.href); }}>
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
+                  }}>
                   <Link className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('bugReports.copyLink', 'Copy shareable link')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
+
+          {/* Save / load named filters */}
+          <div className="relative" ref={savedFilterPanelRef}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => setSavedFilterPanelOpen(v => !v)}
+                  >
+                    <Bookmark className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('bugReports.savedFilters.title', 'Saved filters')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {savedFilterPanelOpen && (
+              <div className="absolute right-0 top-full mt-1 z-50 w-72 bg-popover border rounded-md shadow-lg p-3 space-y-3">
+                {/* Save current filter */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">{t('bugReports.savedFilters.saveCurrent', 'Save current filters')}</p>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder={t('bugReports.savedFilters.namePlaceholder', 'Filter name...')}
+                      value={savedFilterName}
+                      onChange={e => setSavedFilterName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveFilter(); }}
+                    />
+                    <Button size="sm" className="h-8 px-2" onClick={handleSaveFilter} disabled={!savedFilterName.trim()}>
+                      <BookmarkPlus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Saved filters list */}
+                {savedFilters.length > 0 ? (
+                  <div className="space-y-1 border-t pt-2">
+                    <p className="text-xs font-medium text-muted-foreground">{t('bugReports.savedFilters.title', 'Saved filters')}</p>
+                    {savedFilters.map(f => (
+                      <div key={f.id} className="flex items-center gap-1 group">
+                        <button
+                          type="button"
+                          className="flex-1 text-left text-sm px-2 py-1 rounded hover:bg-accent truncate"
+                          onClick={() => handleApplyFilter(f)}
+                        >
+                          {f.name}
+                        </button>
+                        <button
+                          type="button"
+                          className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleDeleteSavedFilter(f.id)}
+                          title={t('common.delete', 'Delete')}
+                        >
+                          <BookmarkX className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground border-t pt-2">{t('bugReports.savedFilters.none', 'No saved filters yet')}</p>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Add New Bug Button */}
           <TooltipProvider>

@@ -721,6 +721,17 @@
       "linkedStory": "داستان / اپیک مرتبط",
       "selectStory": "انتخاب داستان یا اپیک",
       "editTitle": "ویرایش باگ"
+    },
+    "linkCopied": "لینک در کلیپ‌بورد کپی شد",
+    "copyLink": "کپی لینک قابل اشتراک‌گذاری",
+    "savedFilters": {
+      "title": "فیلترهای ذخیره‌شده",
+      "saveCurrent": "ذخیره فیلترهای فعلی",
+      "namePlaceholder": "نام فیلتر...",
+      "saved": "فیلتر ذخیره شد",
+      "none": "هنوز فیلتری ذخیره نشده",
+      "apply": "اعمال",
+      "delete": "حذف"
     }
   },
   "bugAttachments": {
