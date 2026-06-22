@@ -1073,7 +1073,7 @@ export default function McpIntegration() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => navigate('/app/integrations/mcp-usage')}
+                    onClick={() => navigate('/integrations/mcp-usage')}
                     className="gap-2"
                   >
                     <BarChart2 className="h-4 w-4" />

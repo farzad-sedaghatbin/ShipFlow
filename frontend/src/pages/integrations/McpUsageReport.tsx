@@ -58,10 +58,21 @@ function SuccessBadge({ success }: { success: boolean }) {
   );
 }
 
+const PERIOD_OPTIONS = [
+  { label: 'Today', value: 1 },
+  { label: '7d', value: 7 },
+  { label: '14d', value: 14 },
+  { label: '30d', value: 30 },
+  { label: '90d', value: 90 },
+];
+
+
 export default function McpUsageReport() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const [days, setDays] = useState(30);
+  const [customInput, setCustomInput] = useState('');
   const [summary, setSummary] = useState<McpUsageSummary | null>(null);
   const [userUsage, setUserUsage] = useState<McpUserUsage[]>([]);
   const [toolUsage, setToolUsage] = useState<McpToolUsage[]>([]);
@@ -70,15 +81,15 @@ export default function McpUsageReport() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (period: number) => {
     setLoading(true);
     setError(null);
     try {
       const [s, u, tl, tm, r] = await Promise.all([
-        getMcpUsageSummary(),
-        getMcpUserUsage(),
-        getMcpToolUsage(),
-        getMcpUsageTimeline(30),
+        getMcpUsageSummary(period),
+        getMcpUserUsage(period),
+        getMcpToolUsage(period),
+        getMcpUsageTimeline(period),
         getMcpRecentLogs(50),
       ]);
       setSummary(s);
@@ -93,7 +104,7 @@ export default function McpUsageReport() {
     }
   }, [t]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(days); }, [load, days]);
 
   return (
     <div className="space-y-6 p-6">
@@ -108,10 +119,55 @@ export default function McpUsageReport() {
             <p className="text-sm text-muted-foreground">{t('mcpUsage.subtitle')}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          {t('mcpUsage.refresh')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md border overflow-hidden">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { setDays(opt.value); setCustomInput(''); }}
+                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                  days === opt.value && !customInput
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={1}
+              max={365}
+              placeholder="Custom"
+              value={customInput}
+              onChange={(e) => setCustomInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const v = parseInt(customInput, 10);
+                  if (v >= 1 && v <= 365) setDays(v);
+                }
+              }}
+              className="w-20 rounded-md border px-2 py-1.5 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!customInput || loading}
+              onClick={() => {
+                const v = parseInt(customInput, 10);
+                if (v >= 1 && v <= 365) setDays(v);
+              }}
+            >
+              Go
+            </Button>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => load(days)} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {t('mcpUsage.refresh')}
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -206,7 +262,9 @@ export default function McpUsageReport() {
         <TabsContent value="timeline" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t('mcpUsage.timeline.title')}</CardTitle>
+              <CardTitle className="text-base">
+                {t('mcpUsage.timeline.title')} ({days === 1 ? 'Today' : `${days}d`})
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {timeline.length === 0 ? (

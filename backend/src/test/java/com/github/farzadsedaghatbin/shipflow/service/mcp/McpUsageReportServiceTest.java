@@ -40,12 +40,12 @@ class McpUsageReportServiceTest {
 
   @Test
   void getSummary_returnsAggregatedCounts() {
-    when(usageLogRepository.count()).thenReturn(100L);
-    when(usageLogRepository.countBySuccessTrue()).thenReturn(90L);
+    when(usageLogRepository.countByCalledAtAfter(any())).thenReturn(100L);
+    when(usageLogRepository.countBySuccessTrueAndCalledAtAfter(any())).thenReturn(90L);
     when(usageLogRepository.countDistinctUsersSince(any())).thenReturn(5L);
-    when(usageLogRepository.countDistinctTools()).thenReturn(12L);
+    when(usageLogRepository.countDistinctToolsSince(any())).thenReturn(12L);
 
-    McpUsageSummaryDto summary = service.getSummary();
+    McpUsageSummaryDto summary = service.getSummary(30);
 
     assertThat(summary.getTotalCalls()).isEqualTo(100L);
     assertThat(summary.getSuccessCalls()).isEqualTo(90L);
@@ -57,12 +57,12 @@ class McpUsageReportServiceTest {
 
   @Test
   void getSummary_zeroTotalCallsDoesNotDivideByZero() {
-    when(usageLogRepository.count()).thenReturn(0L);
-    when(usageLogRepository.countBySuccessTrue()).thenReturn(0L);
+    when(usageLogRepository.countByCalledAtAfter(any())).thenReturn(0L);
+    when(usageLogRepository.countBySuccessTrueAndCalledAtAfter(any())).thenReturn(0L);
     when(usageLogRepository.countDistinctUsersSince(any())).thenReturn(0L);
-    when(usageLogRepository.countDistinctTools()).thenReturn(0L);
+    when(usageLogRepository.countDistinctToolsSince(any())).thenReturn(0L);
 
-    McpUsageSummaryDto summary = service.getSummary();
+    McpUsageSummaryDto summary = service.getSummary(30);
     assertThat(summary.getSuccessRate()).isEqualTo(0.0);
   }
 
@@ -72,9 +72,9 @@ class McpUsageReportServiceTest {
     Object[] row = {"alice", "alice@example.com", 50L, 48L, lastSeen};
     List<Object[]> rows = new java.util.ArrayList<>();
     rows.add(row);
-    when(usageLogRepository.findUserUsageAggregates()).thenReturn(rows);
+    when(usageLogRepository.findUserUsageAggregatesSince(any())).thenReturn(rows);
 
-    List<McpUserUsageDto> result = service.getUserUsage();
+    List<McpUserUsageDto> result = service.getUserUsage(30);
 
     assertThat(result).hasSize(1);
     McpUserUsageDto dto = result.get(0);
@@ -90,9 +90,9 @@ class McpUsageReportServiceTest {
     Object[] row = {"list_projects", 30L, 30L, 3L};
     List<Object[]> rows = new java.util.ArrayList<>();
     rows.add(row);
-    when(usageLogRepository.findToolUsageAggregates()).thenReturn(rows);
+    when(usageLogRepository.findToolUsageAggregatesSince(any())).thenReturn(rows);
 
-    List<McpToolUsageDto> result = service.getToolUsage();
+    List<McpToolUsageDto> result = service.getToolUsage(30);
 
     assertThat(result).hasSize(1);
     McpToolUsageDto dto = result.get(0);
