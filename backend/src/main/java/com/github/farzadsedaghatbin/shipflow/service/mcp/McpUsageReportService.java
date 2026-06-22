@@ -60,14 +60,14 @@ public class McpUsageReportService {
   }
 
   @Transactional(readOnly = true)
-  public McpUsageSummaryDto getSummary() {
-    long total = usageLogRepository.count();
-    long success = usageLogRepository.countBySuccessTrue();
+  public McpUsageSummaryDto getSummary(int days) {
+    LocalDateTime since = LocalDateTime.now().minusDays(days);
+    long total = usageLogRepository.countByCalledAtAfter(since);
+    long success = usageLogRepository.countBySuccessTrueAndCalledAtAfter(since);
     long failures = total - success;
     double rate = total == 0 ? 0.0 : Math.round((success * 100.0 / total) * 10) / 10.0;
-    long activeUsers = usageLogRepository.countDistinctUsersSince(
-        LocalDateTime.now().minusDays(30));
-    long uniqueTools = usageLogRepository.countDistinctTools();
+    long activeUsers = usageLogRepository.countDistinctUsersSince(since);
+    long uniqueTools = usageLogRepository.countDistinctToolsSince(since);
 
     return McpUsageSummaryDto.builder()
         .totalCalls(total)
@@ -80,8 +80,9 @@ public class McpUsageReportService {
   }
 
   @Transactional(readOnly = true)
-  public List<McpUserUsageDto> getUserUsage() {
-    return usageLogRepository.findUserUsageAggregates().stream()
+  public List<McpUserUsageDto> getUserUsage(int days) {
+    LocalDateTime since = LocalDateTime.now().minusDays(days);
+    return usageLogRepository.findUserUsageAggregatesSince(since).stream()
         .map(row -> {
           long total = ((Number) row[2]).longValue();
           long successCalls = ((Number) row[3]).longValue();
@@ -98,8 +99,9 @@ public class McpUsageReportService {
   }
 
   @Transactional(readOnly = true)
-  public List<McpToolUsageDto> getToolUsage() {
-    return usageLogRepository.findToolUsageAggregates().stream()
+  public List<McpToolUsageDto> getToolUsage(int days) {
+    LocalDateTime since = LocalDateTime.now().minusDays(days);
+    return usageLogRepository.findToolUsageAggregatesSince(since).stream()
         .map(row -> {
           long total = ((Number) row[1]).longValue();
           long successCalls = ((Number) row[2]).longValue();

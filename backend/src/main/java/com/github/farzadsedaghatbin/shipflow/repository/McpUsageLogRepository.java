@@ -14,13 +14,13 @@ public interface McpUsageLogRepository extends JpaRepository<McpUsageLog, Long> 
 
   long countByCalledAtAfter(LocalDateTime since);
 
-  long countBySuccessTrue();
+  long countBySuccessTrueAndCalledAtAfter(LocalDateTime since);
 
   @Query("SELECT COUNT(DISTINCT l.user.id) FROM McpUsageLog l WHERE l.calledAt >= :since")
   long countDistinctUsersSince(@Param("since") LocalDateTime since);
 
-  @Query("SELECT COUNT(DISTINCT l.toolName) FROM McpUsageLog l")
-  long countDistinctTools();
+  @Query("SELECT COUNT(DISTINCT l.toolName) FROM McpUsageLog l WHERE l.calledAt >= :since")
+  long countDistinctToolsSince(@Param("since") LocalDateTime since);
 
   // Per-user aggregates: [username, email, totalCalls, successCalls, lastCalledAt]
   @Query(
@@ -29,10 +29,11 @@ public interface McpUsageLogRepository extends JpaRepository<McpUsageLog, Long> 
              COUNT(l.id), SUM(CASE WHEN l.success = TRUE THEN 1 ELSE 0 END),
              MAX(l.calledAt)
       FROM McpUsageLog l
+      WHERE l.calledAt >= :since
       GROUP BY l.user.id, l.user.username, l.user.email
       ORDER BY COUNT(l.id) DESC
       """)
-  List<Object[]> findUserUsageAggregates();
+  List<Object[]> findUserUsageAggregatesSince(@Param("since") LocalDateTime since);
 
   // Per-tool aggregates: [toolName, totalCalls, successCalls, distinctUsers]
   @Query(
@@ -41,10 +42,11 @@ public interface McpUsageLogRepository extends JpaRepository<McpUsageLog, Long> 
              COUNT(l.id), SUM(CASE WHEN l.success = TRUE THEN 1 ELSE 0 END),
              COUNT(DISTINCT l.user.id)
       FROM McpUsageLog l
+      WHERE l.calledAt >= :since
       GROUP BY l.toolName
       ORDER BY COUNT(l.id) DESC
       """)
-  List<Object[]> findToolUsageAggregates();
+  List<Object[]> findToolUsageAggregatesSince(@Param("since") LocalDateTime since);
 
   // Daily call counts: [date, totalCalls, successCalls]
   @Query(

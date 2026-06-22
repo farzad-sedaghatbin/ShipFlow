@@ -16,6 +16,10 @@ All notable changes to this project will be documented in this file.
 - `McpUsageReportServiceTest` — 8 unit tests covering all service methods.
 
 ### Fixed
+- MCP Usage Report: "View Usage Report" button now navigates to `/integrations/mcp-usage` instead of the non-existent `/app/integrations/mcp-usage` path (was silently redirecting to dashboard)
+- MCP Usage Report: API calls no longer produce a double `/api/api/` prefix (service paths incorrectly included `/api` while the axios instance already sets `baseURL: '/api'`)
+- MCP Usage Report: all endpoints now accept a `?days=N` parameter (1–365) so summary, by-user, by-tool, and timeline data are all scoped to the selected period
+- i18n: removed duplicate `publicRoadmap.phase180*` keys in `en.json` and `fa.json` (stale shorter entries from an earlier edit were left alongside the newer detailed entries)
 - Bug status / severity name input now accepts underscore characters while typing (`READY_TO_TEST` previously got the trailing `_` stripped on every keystroke)
 - Merged "People & Teams" Organization section into a single "People & Access" group under Administration for admin users, reducing sidebar clutter
 - Betting table slot capacity now correctly converts pitch appetite from working days to calendar days when assigning a pitch, so the remaining-slot "X days available" label reflects actual working-day capacity instead of the raw calendar-day difference

@@ -43,31 +43,31 @@ export interface McpUsageLogEntry {
   apiKeyPrefix: string | null;
 }
 
-export async function getMcpUsageSummary(): Promise<McpUsageSummary> {
-  const res = await api.get<McpUsageSummary>('/api/admin/mcp/usage/summary');
+export async function getMcpUsageSummary(days = 30): Promise<McpUsageSummary> {
+  const res = await api.get<McpUsageSummary>(`/admin/mcp/usage/summary?days=${days}`);
   return res.data;
 }
 
-export async function getMcpUserUsage(): Promise<McpUserUsage[]> {
-  const res = await api.get<McpUserUsage[]>('/api/admin/mcp/usage/by-user');
+export async function getMcpUserUsage(days = 30): Promise<McpUserUsage[]> {
+  const res = await api.get<McpUserUsage[]>(`/admin/mcp/usage/by-user?days=${days}`);
   return res.data;
 }
 
-export async function getMcpToolUsage(): Promise<McpToolUsage[]> {
-  const res = await api.get<McpToolUsage[]>('/api/admin/mcp/usage/by-tool');
+export async function getMcpToolUsage(days = 30): Promise<McpToolUsage[]> {
+  const res = await api.get<McpToolUsage[]>(`/admin/mcp/usage/by-tool?days=${days}`);
   return res.data;
 }
 
 export async function getMcpUsageTimeline(days = 30): Promise<McpUsageTimelinePoint[]> {
   const res = await api.get<McpUsageTimelinePoint[]>(
-    `/api/admin/mcp/usage/timeline?days=${days}`
+    `/admin/mcp/usage/timeline?days=${days}`
   );
   return res.data;
 }
 
 export async function getMcpRecentLogs(limit = 50): Promise<McpUsageLogEntry[]> {
   const res = await api.get<McpUsageLogEntry[]>(
-    `/api/admin/mcp/usage/recent?limit=${limit}`
+    `/admin/mcp/usage/recent?limit=${limit}`
   );
   return res.data;
 }

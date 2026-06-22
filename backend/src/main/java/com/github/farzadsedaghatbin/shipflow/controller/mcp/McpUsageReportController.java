@@ -28,24 +28,27 @@ public class McpUsageReportController {
   private final McpUsageReportService usageReportService;
 
   @GetMapping("/summary")
-  public ResponseEntity<McpUsageSummaryDto> summary() {
-    return ResponseEntity.ok(usageReportService.getSummary());
+  public ResponseEntity<McpUsageSummaryDto> summary(
+      @RequestParam(defaultValue = "30") int days) {
+    return ResponseEntity.ok(usageReportService.getSummary(Math.min(Math.max(days, 1), 365)));
   }
 
   @GetMapping("/by-user")
-  public ResponseEntity<List<McpUserUsageDto>> byUser() {
-    return ResponseEntity.ok(usageReportService.getUserUsage());
+  public ResponseEntity<List<McpUserUsageDto>> byUser(
+      @RequestParam(defaultValue = "30") int days) {
+    return ResponseEntity.ok(usageReportService.getUserUsage(Math.min(Math.max(days, 1), 365)));
   }
 
   @GetMapping("/by-tool")
-  public ResponseEntity<List<McpToolUsageDto>> byTool() {
-    return ResponseEntity.ok(usageReportService.getToolUsage());
+  public ResponseEntity<List<McpToolUsageDto>> byTool(
+      @RequestParam(defaultValue = "30") int days) {
+    return ResponseEntity.ok(usageReportService.getToolUsage(Math.min(Math.max(days, 1), 365)));
   }
 
   @GetMapping("/timeline")
   public ResponseEntity<List<McpUsageTimelinePointDto>> timeline(
       @RequestParam(defaultValue = "30") int days) {
-    return ResponseEntity.ok(usageReportService.getTimeline(Math.min(days, 90)));
+    return ResponseEntity.ok(usageReportService.getTimeline(Math.min(Math.max(days, 1), 365)));
   }
 
   @GetMapping("/recent")
