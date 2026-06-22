@@ -257,12 +257,13 @@ export function useBacklogPage() {
   };
 
   const loadStatistics = async () => {
-    if (isKanbanProject && currentProject) {
+    if (isKanbanProject || selectedCycle === 'all') {
+      if (!currentProject) { setStatistics(null); return; }
       try { const r = await taskService.getStatisticsByProjectId(currentProject.id); setStatistics(r.data); }
       catch (error) { console.error('Failed to load project statistics:', error); }
       return;
     }
-    if (!selectedCycle || selectedCycle === 'all') return;
+    if (!selectedCycle) { setStatistics(null); return; }
     try { const r = await taskService.getStatisticsByCycleId(selectedCycle); setStatistics(r.data); }
     catch (error) { console.error('Failed to load statistics:', error); }
   };

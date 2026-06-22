@@ -2,7 +2,10 @@ package com.github.farzadsedaghatbin.shipflow.service.mcp.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.config.mcp.McpServerProperties;
+import com.github.farzadsedaghatbin.shipflow.entity.ApiKey;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ApiKeyScope;
+import com.github.farzadsedaghatbin.shipflow.repository.ApiKeyRepository;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.McpUsageReportService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.BugReportMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
@@ -62,6 +65,14 @@ public class McpToolDispatcher {
    * setter so unit tests that construct this dispatcher directly fall back to {@link #properties}.
    */
   private McpServerSettingsService serverSettings;
+
+  /** Optional: injected in production, absent in unit tests that don't start Spring. */
+  private McpUsageReportService usageReportService;
+
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  public void setUsageReportService(McpUsageReportService usageReportService) {
+    this.usageReportService = usageReportService;
+  }
 
   @org.springframework.beans.factory.annotation.Autowired(required = false)
   public void setServerSettings(McpServerSettingsService serverSettings) {
@@ -209,17 +220,25 @@ public class McpToolDispatcher {
       }
     }
 
+    ApiKey apiKey = auth.getDetails() instanceof ApiKey ak ? ak : null;
+    String username = auth.getName();
+
     // Tools run on a virtual executor thread (dispatched from McpMessageController), so the
     // SecurityContext set by McpAuthFilter on the request thread is not visible here. Bind the
     // session's authenticated principal to this thread for the duration of the tool call so that
     // services reading SecurityContextHolder (e.g. ProjectService.getCurrentUser()) see the caller.
     Object result;
+    long startMs = System.currentTimeMillis();
     SecurityContext previousContext = SecurityContextHolder.getContext();
     try {
       SecurityContext toolContext = SecurityContextHolder.createEmptyContext();
       toolContext.setAuthentication(auth);
       SecurityContextHolder.setContext(toolContext);
       result = dispatchTool(toolName, args, auth);
+      recordUsage(username, apiKey, toolName, true, null, System.currentTimeMillis() - startMs);
+    } catch (Exception e) {
+      recordUsage(username, apiKey, toolName, false, e.getMessage(), System.currentTimeMillis() - startMs);
+      throw e;
     } finally {
       SecurityContextHolder.setContext(previousContext);
       SecurityContextHolder.clearContext();
@@ -235,6 +254,13 @@ public class McpToolDispatcher {
     return Map.of(
         "content", List.of(Map.of("type", "text", "text", json)),
         "isError", false);
+  }
+
+  private void recordUsage(String username, ApiKey apiKey, String toolName, boolean success,
+      String errorMessage, long durationMs) {
+    if (usageReportService != null) {
+      usageReportService.record(username, apiKey, toolName, success, errorMessage, durationMs);
+    }
   }
 
   // ── Tool dispatch ─────────────────────────────────────────────────────────

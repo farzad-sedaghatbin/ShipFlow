@@ -151,12 +151,14 @@ function DroppableSlot({
   onRemovePitch,
   cycleStartDate,
   cycleEndDate,
+  workingDaysPerWeek,
   t,
 }: {
   slot: BettingSlot;
   onRemovePitch: (slotId: number) => void;
   cycleStartDate: string;
   cycleEndDate: string;
+  workingDaysPerWeek: number;
   t: any;
 }) {
   const { isOver, setNodeRef } = useDroppable({
@@ -175,7 +177,9 @@ function DroppableSlot({
   const cycleDays = Math.ceil((cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24));
   const slotStartOffset = Math.ceil((slotStart.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24));
   const slotDuration = Math.ceil((slotEnd.getTime() - slotStart.getTime()) / (1000 * 60 * 60 * 24));
-  
+  // Convert calendar days to working days for display (appetite is always in working days)
+  const slotWorkingDays = Math.round(slotDuration * workingDaysPerWeek / 7);
+
   const leftPercent = (slotStartOffset / cycleDays) * 100;
   const widthPercent = (slotDuration / cycleDays) * 100;
 
@@ -217,7 +221,7 @@ function DroppableSlot({
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
             <p className="text-xs">{t('bettingTablePage.dropPitchHere')}</p>
-            <p className="text-xs opacity-60">{t('bettingTablePage.daysAvailable', { days: slotDuration })}</p>
+            <p className="text-xs opacity-60">{t('bettingTablePage.daysAvailable', { days: slotWorkingDays })}</p>
           </div>
         )}
       </div>
@@ -260,6 +264,7 @@ function TeamTrackRow({
               onRemovePitch={onRemovePitch}
               cycleStartDate={cycleStartDate}
               cycleEndDate={cycleEndDate}
+              workingDaysPerWeek={track.workingDaysPerWeek ?? 5}
               t={t}
             />
           ))
