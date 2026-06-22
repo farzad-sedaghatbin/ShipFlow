@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -349,63 +350,76 @@ public class BugReportService {
         projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, search, pageable.getPageNumber(),
         pageable.getPageSize());
 
-    // Convert empty lists to null for the query
+    // Normalise empty lists to null so the spec treats them as "no filter"
     List<BugStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
-    
-    // If no status filter provided and not in exclusion mode, exclude CLOSED bugs by default
+
+    // When no status filter is given and we are NOT in exclusion mode, hide CLOSED bugs by default
     if (statusList == null && (exclude == null || !exclude)) {
       statusList = Arrays.stream(BugStatus.values())
-          .filter(status -> status != BugStatus.CLOSED)
+          .filter(s -> s != BugStatus.CLOSED)
           .collect(Collectors.toList());
-      log.debug("No status filter provided - excluding CLOSED bugs by default");
+      log.debug("No status filter provided – excluding CLOSED by default");
     }
-    
+
     List<BugSeverity> severityList = (severities != null && !severities.isEmpty()) ? severities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
-
-    log.debug("Converted filters - statusList: {}, severityList: {}, assigneeList: {}", statusList, severityList,
-        assigneeList);
-
     String searchParam = (search != null && !search.isBlank()) ? search.trim() : null;
 
-    Page<BugReport> result;
-    if (exclude != null && exclude) {
-      log.debug("Using exclusion filters query");
-      result = bugReportRepository.findWithExclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
-          assigneeList, searchParam, pageable);
-    } else {
-      log.debug("Using inclusion filters query");
-      result = bugReportRepository.findWithFilters(projectId, cycleId, pitchId, statusList, severityList,
-          assigneeList, searchParam, pageable);
-    }
+    // Build a JPA Specification so both the data and count queries use the same predicates.
+    // This replaces the old JPQL approach where (:param IS NULL OR field IN :param) is
+    // unreliable for collection parameters in Hibernate 6.
+    Specification<BugReport> spec = Boolean.TRUE.equals(exclude)
+        ? BugReportSpecification.withExclusionFilters(
+            projectId, cycleId, pitchId, statusList, severityList, assigneeList, searchParam)
+        : BugReportSpecification.withInclusionFilters(
+            projectId, cycleId, pitchId, statusList, severityList, assigneeList, searchParam);
+
+    Page<BugReport> result = bugReportRepository.findAll(spec, pageable);
 
     log.info(
-        "getBugReportsWithFilters result - totalElements: {}, totalPages: {}, numberOfElements: {}, content size: {}",
-        result.getTotalElements(), result.getTotalPages(), result.getNumberOfElements(),
-        result.getContent().size());
-
-    if (result.getContent().isEmpty()) {
-      log.warn("No bug reports found with filters - projectId: {}, cycleId: {}, pitchId: {}", projectId, cycleId,
-          pitchId);
-      // Log total count in database for debugging
-      long totalCount = bugReportRepository.count();
-      log.warn("Total bug reports in database: {}", totalCount);
-      if (projectId != null) {
-        long projectCount = bugReportRepository.countByProjectId(projectId);
-        log.warn("Bug reports with direct project_id={}: {}", projectId, projectCount);
-      }
-    } else {
-      log.debug("First bug report in result - id: {}, bugKey: {}, projectId: {}, cycleId: {}",
-          result.getContent().get(0).getId(), result.getContent().get(0).getBugKey(),
-          result.getContent().get(0).getProject() != null
-              ? result.getContent().get(0).getProject().getId()
-              : null,
-          result.getContent().get(0).getCycle() != null
-              ? result.getContent().get(0).getCycle().getId()
-              : null);
-    }
+        "getBugReportsWithFilters result - totalElements: {}, totalPages: {}, content size: {}",
+        result.getTotalElements(), result.getTotalPages(), result.getContent().size());
 
     return result.map(this::toDTO);
+  }
+
+  /** Aggregate stat counts for the current filter context (used by overview stat cards). */
+  @Transactional(readOnly = true)
+  public BugStatsDTO getBugStats(Long projectId, Long cycleId, Long pitchId, List<BugStatus> statuses,
+      List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude, String search) {
+    if (projectId != null) {
+      projectPermissionService.requireProjectAccess(projectId);
+    }
+    checkFeatureEnabled();
+
+    List<BugStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
+    if (statusList == null && (exclude == null || !exclude)) {
+      statusList = Arrays.stream(BugStatus.values()).filter(s -> s != BugStatus.CLOSED).collect(Collectors.toList());
+    }
+    List<BugSeverity> severityList = (severities != null && !severities.isEmpty()) ? severities : null;
+    List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    String searchParam = (search != null && !search.isBlank()) ? search.trim() : null;
+
+    Specification<BugReport> base = Boolean.TRUE.equals(exclude)
+        ? BugReportSpecification.withExclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
+            assigneeList, searchParam)
+        : BugReportSpecification.withInclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
+            assigneeList, searchParam);
+
+    long total = bugReportRepository.count(base);
+    long open = bugReportRepository.count(
+        base.and((r, q, cb) -> cb.equal(r.get("status"), BugStatus.OPEN)));
+    long inProgress = bugReportRepository.count(
+        base.and((r, q, cb) -> cb.equal(r.get("status"), BugStatus.IN_PROGRESS)));
+    long resolved = bugReportRepository.count(
+        base.and((r, q, cb) -> r.get("status").in(
+            List.of(BugStatus.RESOLVED, BugStatus.VERIFIED, BugStatus.CLOSED))));
+    long critical = bugReportRepository.count(
+        base.and((r, q, cb) -> r.get("severity").in(
+            List.of(BugSeverity.CRITICAL, BugSeverity.BLOCKER))));
+
+    return BugStatsDTO.builder().total(total).open(open).inProgress(inProgress).resolved(resolved)
+        .critical(critical).build();
   }
 
   /** Generate unique bug key. */

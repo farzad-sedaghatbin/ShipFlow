@@ -734,6 +734,7 @@
     "attached": "{{count}} پیوست",
     "pendingUpload": "{{count}} فایل آماده آپلود",
     "noAttachments": "بدون پیوست",
+    "unavailable": "در دسترس نیست",
     "videoNotSupported": "مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند"
   },
   "roadmap": {

@@ -184,6 +184,21 @@ public class QATestManagementController {
         severities, assigneeIds, exclude, search, pageable));
   }
 
+  @GetMapping("/bug-reports/stats")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Get bug report aggregate stats", description = "Returns total/open/inProgress/resolved/critical counts for the current filter context")
+  public ResponseEntity<BugStatsDTO> getBugStats(@RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) Long cycleId, @RequestParam(required = false) Long pitchId,
+      @RequestParam(required = false) List<BugStatus> statuses,
+      @RequestParam(required = false) List<BugSeverity> severities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude,
+      @RequestParam(required = false) String search) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(
+        bugReportService.getBugStats(projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, search));
+  }
+
   @GetMapping("/bug-reports/{id}")
   @Operation(summary = "Get bug report by ID", description = "Returns a bug report by its ID")
   public ResponseEntity<BugReportDTO> getBugReportById(@PathVariable Long id) {

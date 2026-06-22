@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Upload,
@@ -59,6 +59,30 @@ export const MediaAttachmentUpload: React.FC<MediaAttachmentUploadProps> = ({
 
   const isImageFile = (fileType: string) => IMAGE_EXTENSIONS.includes(fileType.toLowerCase());
   const isVideoFile = (fileType: string) => VIDEO_EXTENSIONS.includes(fileType.toLowerCase());
+
+  // Authenticated blob URLs for existing attachments (avoid 401 on bare <img src>)
+  const [blobUrls, setBlobUrls] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const entries = await Promise.all(
+        existingAttachments.map(async (a) => {
+          try {
+            const url = await documentService.fetchAttachmentBlobUrl(a.id);
+            return [a.id, url] as [number, string];
+          } catch {
+            return null;
+          }
+        })
+      );
+      if (!cancelled) {
+        setBlobUrls(Object.fromEntries(entries.filter((e): e is [number, string] => e !== null)));
+      }
+    };
+    if (existingAttachments.length > 0) load();
+    return () => { cancelled = true; };
+  }, [existingAttachments]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -263,9 +287,7 @@ export const MediaAttachmentUpload: React.FC<MediaAttachmentUploadProps> = ({
     return <ImageIcon className="h-4 w-4" />;
   };
 
-  const getAttachmentUrl = (attachment: UploadedDocument) => {
-    return `/api/documents/${attachment.id}/download`;
-  };
+  const getAttachmentUrl = (attachment: UploadedDocument) => blobUrls[attachment.id] ?? '';
 
   return (
     <div className="space-y-3">
