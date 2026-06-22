@@ -2365,7 +2365,8 @@
       "export": "Export",
       "import": "Import",
       "refresh": "Refresh",
-      "bulkActions": "Bulk Actions"
+      "bulkActions": "Bulk Actions",
+      "openFullPage": "Open full page"
     },
     "emptyState": {
       "noBugs": "No bug reports yet",
@@ -2397,7 +2398,13 @@
       "rowsPerPage": "Rows per page",
       "rangeText": "{{start}}-{{end}} of {{total}}",
       "showing": "Showing {{start}}-{{end}} of {{total}}",
-      "itemsPerPage": "Items per page"
+      "itemsPerPage": "Items per page",
+      "empty": "No results",
+      "first": "First page",
+      "previous": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "goToPage": "Go to page {{page}}"
     },
     "detail": {
       "title": "Bug Report Details",
