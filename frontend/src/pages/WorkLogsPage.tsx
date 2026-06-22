@@ -263,8 +263,9 @@ export default function WorkLogsPage() {
         const response = await taskService.getByProjectIdPaged(currentProject.id, 0, 1000);
         setTasks(response.data.content || []);
       } else {
-        const response = await taskService.getAll(0, 1000);
-        setTasks(response.data.content || []);
+        // When all projects are selected and no cycle is chosen, don't load tasks across
+        // all projects — the dropdown would be unusable. User must pick a cycle first.
+        setTasks([]);
       }
     } catch (error) { console.error('Failed to load tasks:', error); }
   };
@@ -533,12 +534,15 @@ export default function WorkLogsPage() {
             ) : (
               <div className="space-y-2">
                 <Label>{t('workLogs.taskSubtask')} *</Label>
-                <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
-                  <SelectTrigger><SelectValue placeholder={t('workLogs.selectTask')} /></SelectTrigger>
+                <Select value={selectedTaskId} onValueChange={setSelectedTaskId} disabled={tasks.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={tasks.length === 0 ? t('workLogs.selectCycleFirst') : t('workLogs.selectTask')} /></SelectTrigger>
                   <SelectContent>
                     {tasks.map((tk) => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.parentTaskId && '└─ '}{tk.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {tasks.length === 0 && workLogType === 'task' && (
+                  <p className="text-xs text-muted-foreground">{t('workLogs.selectCycleToSeeTasks')}</p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
@@ -604,12 +608,15 @@ export default function WorkLogsPage() {
             ) : (
               <div className="space-y-2">
                 <Label>{t('workLogs.taskSubtask')} *</Label>
-                <Select value={teamSelectedTaskId} onValueChange={setTeamSelectedTaskId}>
-                  <SelectTrigger><SelectValue placeholder={t('workLogs.selectTask')} /></SelectTrigger>
+                <Select value={teamSelectedTaskId} onValueChange={setTeamSelectedTaskId} disabled={tasks.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={tasks.length === 0 ? t('workLogs.selectCycleFirst') : t('workLogs.selectTask')} /></SelectTrigger>
                   <SelectContent>
                     {tasks.map((tk) => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.parentTaskId && '└─ '}{tk.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {tasks.length === 0 && teamWorkLogType === 'task' && (
+                  <p className="text-xs text-muted-foreground">{t('workLogs.selectCycleToSeeTasks')}</p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">

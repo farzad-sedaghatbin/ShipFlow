@@ -2062,6 +2062,8 @@
     "pitchTask": "Pitch/Task",
     "selectPitch": "Select pitch",
     "selectTask": "Select task",
+    "selectCycleFirst": "Select a cycle first",
+    "selectCycleToSeeTasks": "Select a cycle above to see its tasks",
     "selectPerson": "Select person",
     "optionalNote": "Optional note",
     "logTime": "Log Time",

@@ -6124,6 +6124,8 @@
     "selectPerson": "انتخاب فرد",
     "selectPitch": "انتخاب پیچ",
     "selectTask": "انتخاب وظیفه",
+    "selectCycleFirst": "ابتدا یک چرخه انتخاب کنید",
+    "selectCycleToSeeTasks": "برای مشاهده وظایف، یک چرخه انتخاب کنید",
     "task": "وظیفه",
     "taskSubtask": "وظیفه/زیروظیفه",
     "teamLogs": "گزارش‌های تیم",
