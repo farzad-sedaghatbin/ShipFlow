@@ -101,13 +101,11 @@ export default function TaskWorkLogsSection({ taskId, onWorkLogsChanged }: TaskW
   const handleDelete = async (workLog: WorkLog) => {
     if (!window.confirm(t('taskWorkLogs.deleteConfirm'))) return;
     try {
-      // Only the worklog's owner is allowed to call /worklogs/my/{id};
-      // for everyone else we silently fall through to the admin endpoint,
-      // which the backend will gate via @PreAuthorize.
-      const isOwn = user?.personId && user.personId === workLog.personId;
+      const isOwn = user?.personId != null && user.personId === workLog.personId;
       if (isOwn) {
         await workLogService.deleteMy(workLog.id);
       } else {
+        // Falls through to the admin endpoint — backend gates this with @PreAuthorize.
         await workLogService.delete(workLog.id);
       }
       await load();
