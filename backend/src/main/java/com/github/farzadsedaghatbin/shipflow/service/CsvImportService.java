@@ -279,15 +279,22 @@ public class CsvImportService {
   // -------------------------------------------------------------------------
 
   private ImportSourceFormat resolveFormat(String hint, String[] headers) {
+    // Content-based detection is more reliable than the user's format hint.
+    // Try it first; only fall back to the hint when the file is ambiguous (GENERIC_CSV).
+    ImportSourceFormat detected = detectFormat(headers);
+    if (detected != ImportSourceFormat.GENERIC_CSV) {
+      return detected;
+    }
+    // File is ambiguous — honour the explicit hint if one was given.
     if (hint != null) {
       return switch (hint.trim().toLowerCase()) {
         case "jira" -> ImportSourceFormat.JIRA_CSV;
         case "linear" -> ImportSourceFormat.LINEAR_CSV;
         case "asana" -> ImportSourceFormat.ASANA_CSV;
-        default -> detectFormat(headers);
+        default -> ImportSourceFormat.GENERIC_CSV;
       };
     }
-    return detectFormat(headers);
+    return ImportSourceFormat.GENERIC_CSV;
   }
 
   /** Holds parsed CSV records and the header names captured before the parser closes. */
