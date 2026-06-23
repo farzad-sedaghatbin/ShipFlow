@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -290,18 +291,29 @@ public class CsvImportService {
   }
 
   private List<CSVRecord> parseRecords(MultipartFile file) throws IOException {
-    try (Reader reader =
-            new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
+    // Strip UTF-8 BOM (EF BB BF) if present so header names are clean
+    PushbackInputStream pis = new PushbackInputStream(file.getInputStream(), 3);
+    byte[] bom = new byte[3];
+    int read = pis.read(bom, 0, 3);
+    if (read < 3 || !(bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF)) {
+      if (read > 0) pis.unread(bom, 0, read);
+    }
+    try (Reader reader = new InputStreamReader(pis, StandardCharsets.UTF_8);
         CSVParser parser =
-            CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build().parse(reader)) {
+            CSVFormat.DEFAULT
+                .builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setIgnoreHeaderCase(true)
+                .setTrim(true)
+                .build()
+                .parse(reader)) {
       return parser.getRecords();
     }
   }
 
   private String[] extractHeaders(List<CSVRecord> records) {
     if (records.isEmpty()) return new String[0];
-    // CSVParser with setHeader() stores header names in the first record's parser
-    // We need to access them differently — use the record's toMap() keyset
     return records.get(0).toMap().keySet().toArray(new String[0]);
   }
 
