@@ -60,9 +60,9 @@ public class CsvImportService {
     List<CSVRecord> records;
     ImportSourceFormat format;
     try {
-      records = parseRecords(file);
-      String[] headers = records.isEmpty() ? new String[0] : extractHeaders(records);
-      format = records.isEmpty() ? ImportSourceFormat.GENERIC_CSV : resolveFormat(formatHint, headers);
+      ParsedCsv parsed = parseRecords(file);
+      records = parsed.records();
+      format = records.isEmpty() ? ImportSourceFormat.GENERIC_CSV : resolveFormat(formatHint, parsed.headers());
     } catch (IOException e) {
       throw new RuntimeException("Failed to parse CSV file: " + e.getMessage(), e);
     }
@@ -290,7 +290,10 @@ public class CsvImportService {
     return detectFormat(headers);
   }
 
-  private List<CSVRecord> parseRecords(MultipartFile file) throws IOException {
+  /** Holds parsed CSV records and the header names captured before the parser closes. */
+  private record ParsedCsv(List<CSVRecord> records, String[] headers) {}
+
+  private ParsedCsv parseRecords(MultipartFile file) throws IOException {
     // Strip UTF-8 BOM (EF BB BF) if present so header names are clean
     PushbackInputStream pis = new PushbackInputStream(file.getInputStream(), 3);
     byte[] bom = new byte[3];
@@ -308,13 +311,12 @@ public class CsvImportService {
                 .setTrim(true)
                 .build()
                 .parse(reader)) {
-      return parser.getRecords();
+      List<CSVRecord> records = parser.getRecords();
+      // Capture header names while the parser is still open — avoids duplicate-column
+      // issues that cause toMap().keySet() to silently drop headers after close.
+      String[] headers = parser.getHeaderNames().toArray(new String[0]);
+      return new ParsedCsv(records, headers);
     }
-  }
-
-  private String[] extractHeaders(List<CSVRecord> records) {
-    if (records.isEmpty()) return new String[0];
-    return records.get(0).toMap().keySet().toArray(new String[0]);
   }
 
   private Project createKanbanProject(String projectName, User owner) {
