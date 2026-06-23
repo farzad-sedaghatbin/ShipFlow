@@ -3312,6 +3312,8 @@
     "exportSuccess": "Tasks exported successfully",
     "statusUpdated": "Status updated successfully",
     "priorityUpdated": "Priority updated successfully",
+    "assigneeUpdated": "Assignee updated successfully",
+    "changeAssignee": "Change assignee",
     "editSubtask": "Edit Subtask",
     "editTask": "Edit Task",
     "createSubtask": "Create Subtask",

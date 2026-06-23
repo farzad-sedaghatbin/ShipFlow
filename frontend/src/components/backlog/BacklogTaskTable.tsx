@@ -93,6 +93,8 @@ interface SortableTaskRowProps {
   onStartTimer: (task: Task) => void;
   onQuickStatusChange: (taskId: number, status: TaskStatus) => void;
   onQuickPriorityChange: (taskId: number, priority: TaskPriority) => void;
+  onQuickAssigneeChange?: (taskId: number, assigneeId: number | null) => void;
+  persons?: Person[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: (key: string, options?: any) => string;
 }
@@ -110,6 +112,8 @@ function SortableTaskRow({
   onStartTimer,
   onQuickStatusChange,
   onQuickPriorityChange,
+  onQuickAssigneeChange,
+  persons = [],
   t,
 }: SortableTaskRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
@@ -314,7 +318,52 @@ function SortableTaskRow({
       </TableCell>
 
       <TableCell>
-        {task.assigneeName ? (
+        {onQuickAssigneeChange ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-auto p-1 -ml-1" title={t('backlogPage.changeAssignee')}>
+                {task.assigneeName ? (
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                      {task.assigneeAvatarUrl ? (
+                        <AvatarImage src={task.assigneeAvatarUrl} />
+                      ) : (
+                        <AvatarFallback className="text-xs">
+                          {task.assigneeName.charAt(0)}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <span className="text-sm">{task.assigneeName}</span>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground text-sm">{t('backlogPage.unassigned')}</span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+              <DropdownMenuItem onClick={() => onQuickAssigneeChange(task.id, null)}>
+                <span className="text-muted-foreground">{t('backlogPage.unassigned')}</span>
+                {task.assigneeId == null && <Check className="ml-auto h-4 w-4" />}
+              </DropdownMenuItem>
+              {persons.map((person) => (
+                <DropdownMenuItem
+                  key={person.id}
+                  onClick={() => onQuickAssigneeChange(task.id, person.id)}
+                >
+                  <Avatar className="h-5 w-5 mr-2">
+                    {person.avatarUrl ? (
+                      <AvatarImage src={person.avatarUrl} />
+                    ) : (
+                      <AvatarFallback className="text-[0.6rem]">{person.name.charAt(0)}</AvatarFallback>
+                    )}
+                  </Avatar>
+                  {person.name}
+                  {task.assigneeId === person.id && <Check className="ml-auto h-4 w-4" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : task.assigneeName ? (
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
               {task.assigneeAvatarUrl ? (
@@ -469,6 +518,7 @@ export interface BacklogTaskTableProps {
   onStartTimer: (task: Task) => void;
   onQuickStatusChange: (taskId: number, status: TaskStatus) => void;
   onQuickPriorityChange: (taskId: number, priority: TaskPriority) => void;
+  onQuickAssigneeChange?: (taskId: number, assigneeId: number | null) => void;
   onOpenDialog: () => void;
   onReorder?: (tasks: Task[]) => void;
 }
@@ -498,6 +548,7 @@ export function BacklogTaskTable({
   onStartTimer,
   onQuickStatusChange,
   onQuickPriorityChange,
+  onQuickAssigneeChange,
   onOpenDialog,
   onReorder,
 }: BacklogTaskTableProps) {
@@ -732,6 +783,8 @@ export function BacklogTaskTable({
                     onStartTimer={onStartTimer}
                     onQuickStatusChange={onQuickStatusChange}
                     onQuickPriorityChange={onQuickPriorityChange}
+                    onQuickAssigneeChange={onQuickAssigneeChange}
+                    persons={persons}
                     t={t}
                   />
                 ))}

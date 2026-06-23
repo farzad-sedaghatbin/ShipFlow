@@ -523,20 +523,23 @@ const BugReportsPage: React.FC = () => {
     setPage(0);
   };
 
-  // Inline update for status/severity
-  const handleInlineUpdate = async (bugId: number, field: 'status' | 'severity', value: string) => {
+  // Inline update for status/severity/assignee
+  const handleInlineUpdate = async (bugId: number, field: 'status' | 'severity' | 'assignee', value: string) => {
     setUpdatingBugId(bugId);
     try {
       const bug = bugReports.find(b => b.id === bugId);
       if (!bug) return;
-      
+
+      // The backend applies updates partially (only non-null fields), so we send the
+      // unchanged title/description/severity/status plus just the field being edited.
       const updateData = {
         title: bug.title,
         description: bug.description,
         severity: field === 'severity' ? value as BugSeverity : bug.severity,
         status: field === 'status' ? value as BugStatus : bug.status,
+        ...(field === 'assignee' ? { assigneeId: parseInt(value, 10) } : {}),
       };
-      
+
       const response = await qaTestManagementService.updateBugReport(bugId, updateData);
       setBugReports(bugReports.map(b => b.id === bugId ? response.data : b));
     } catch (err) {
@@ -1187,18 +1190,49 @@ const BugReportsPage: React.FC = () => {
                     <span className="text-muted-foreground">{bug.pitchTitle || '-'}</span>
                   </TableCell>
                   <TableCell>
-                    {bug.assigneeName ? (
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">
-                            {bug.assigneeName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{bug.assigneeName}</span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">{t('bugReports.unassigned')}</span>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-1 -ml-1"
+                          disabled={updatingBugId === bug.id}
+                          title={t('bugReports.changeAssignee', 'Change assignee')}
+                        >
+                          {updatingBugId === bug.id && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                          {bug.assigneeName ? (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-xs">
+                                  {bug.assigneeName.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm">{bug.assigneeName}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">{t('bugReports.unassigned')}</span>
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                        {persons.length === 0 ? (
+                          <DropdownMenuItem disabled>{t('bugReports.filters.searchAssignee', 'Search people...')}</DropdownMenuItem>
+                        ) : (
+                          persons.map((person) => (
+                            <DropdownMenuItem
+                              key={person.id}
+                              onClick={() => handleInlineUpdate(bug.id, 'assignee', String(person.id))}
+                            >
+                              <Avatar className="h-5 w-5 mr-2">
+                                <AvatarFallback className="text-[0.6rem]">{person.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              {person.name}
+                              {bug.assigneeId === person.id && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">{bug.reporterName || '-'}</span>

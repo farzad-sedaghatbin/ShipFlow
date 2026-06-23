@@ -449,6 +449,11 @@ export function useBacklogPage() {
     catch (error: any) { toast.error(getUserFriendlyError(error)); }
   };
 
+  const handleQuickAssigneeChange = async (taskId: number, assigneeId: number | null) => {
+    try { await taskService.updateAssignee(taskId, assigneeId); toast.success(t('backlogPage.assigneeUpdated')); loadTasks(); }
+    catch (error: any) { toast.error(getUserFriendlyError(error)); }
+  };
+
   /**
    * Optimistically update local task order after a drag-to-reorder.
    * Called by BacklogTaskTable before the API request is made.
@@ -565,6 +570,7 @@ export function useBacklogPage() {
     handleDeleteTask,
     handleQuickStatusChange,
     handleQuickPriorityChange,
+    handleQuickAssigneeChange,
     handleReorder,
     handleClearFilters,
     handleExportCsv,
