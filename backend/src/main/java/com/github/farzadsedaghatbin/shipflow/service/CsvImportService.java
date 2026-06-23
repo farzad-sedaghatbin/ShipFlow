@@ -426,7 +426,7 @@ public class CsvImportService {
     Integer storyPoints = parseIntSafe(storyPointsRaw);
     Person assignee = findPersonByName(assigneeName);
 
-    if ("Bug".equalsIgnoreCase(issueType)) {
+    if (isJiraBugType(issueType)) {
       BugReport bug = BugReport.builder()
           .bugKey(nextBugKey())
           .title(summary)
@@ -602,13 +602,33 @@ public class CsvImportService {
   // ---- Generic ----
 
   private boolean importGenericRow(CSVRecord record, Project project, User currentUser) {
-    String title = findColumnValue(record, "title", "name");
+    String title = findColumnValue(record, "title", "name", "summary");
     if (title == null || title.isBlank()) return false;
 
     String description = findColumnValue(record, "description", "notes");
     String statusRaw = findColumnValue(record, "status");
     String priorityRaw = findColumnValue(record, "priority");
     String assigneeName = findColumnValue(record, "assignee", "owner");
+    String issueType = findColumnValue(record, "issue type", "type", "issuetype");
+
+    // Promote bug-type issues to BugReport instead of Task
+    if (isJiraBugType(issueType)) {
+      Person assignee = findPersonByName(assigneeName);
+      BugReport bug = BugReport.builder()
+          .bugKey(nextBugKey())
+          .title(title)
+          .description(description != null ? description : "")
+          .severity(mapJiraSeverity(priorityRaw))
+          .status(mapJiraBugStatus(statusRaw))
+          .reporter(currentUser)
+          .assignee(assignee)
+          .project(project)
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+      bugReportRepository.save(bug);
+      return true;
+    }
 
     TaskStatus status = mapGenericStatus(statusRaw);
     TaskPriority priority = mapGenericPriority(priorityRaw);
@@ -627,6 +647,19 @@ public class CsvImportService {
 
     taskRepository.save(task);
     return true;
+  }
+
+  /** Returns true for Jira issue types that should be imported as BugReports. */
+  private boolean isJiraBugType(String issueType) {
+    if (issueType == null || issueType.isBlank()) return false;
+    String lower = issueType.trim().toLowerCase();
+    return lower.equals("bug")
+        || lower.equals("defect")
+        || lower.equals("error")
+        || lower.equals("problem")
+        || lower.equals("bug report")
+        || lower.equals("fault")
+        || lower.contains("bug");
   }
 
   // ---- Cycle de-duplication ----
