@@ -267,6 +267,8 @@
       "urgent": "فوری"
     },
     "priorityUpdated": "اولویت بروزرسانی شد",
+    "assigneeUpdated": "مسئول با موفقیت بروزرسانی شد",
+    "changeAssignee": "تغییر مسئول",
     "priorityUrgent": "فوری",
     "progress": "پیشرفت",
     "required": "الزامی",

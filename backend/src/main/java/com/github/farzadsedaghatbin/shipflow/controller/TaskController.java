@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateStoryPointsRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.UpdateTaskAssigneeRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
@@ -354,6 +355,18 @@ public class TaskController {
       @RequestBody Map<String, String> priorityUpdate) {
     TaskPriority priority = TaskPriority.valueOf(priorityUpdate.get("priority"));
     return ResponseEntity.ok(taskService.updateTaskPriority(id, priority));
+  }
+
+  @PatchMapping("/{id}/assignee")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(
+      summary = "Assign (or unassign) a task",
+      description =
+          "Lightweight PATCH that only changes the assignee. Pass a null assigneeId to unassign."
+              + " All other task fields are untouched.")
+  public ResponseEntity<TaskDTO> updateTaskAssignee(
+      @PathVariable Long id, @RequestBody UpdateTaskAssigneeRequest request) {
+    return ResponseEntity.ok(taskService.updateTaskAssignee(id, request.getAssigneeId()));
   }
 
   @DeleteMapping("/{id}")

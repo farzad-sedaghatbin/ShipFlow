@@ -177,6 +177,8 @@ export const taskService = {
     api.patch<Task>(`/tasks/${id}/status`, { status }),
   updatePriority: (id: number, priority: TaskPriority) =>
     api.patch<Task>(`/tasks/${id}/priority`, { priority }),
+  updateAssignee: (id: number, assigneeId: number | null) =>
+    api.patch<Task>(`/tasks/${id}/assignee`, { assigneeId }),
   updateStoryPoints: (id: number, storyPoints: number | null) =>
     api.patch<Task>(`/tasks/${id}/story-points`, { storyPoints }),
   delete: (id: number) => api.delete(`/tasks/${id}`),
