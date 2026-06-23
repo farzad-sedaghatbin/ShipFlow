@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -59,9 +60,9 @@ public class CsvImportService {
     List<CSVRecord> records;
     ImportSourceFormat format;
     try {
-      records = parseRecords(file);
-      String[] headers = records.isEmpty() ? new String[0] : extractHeaders(records);
-      format = records.isEmpty() ? ImportSourceFormat.GENERIC_CSV : resolveFormat(formatHint, headers);
+      ParsedCsv parsed = parseRecords(file);
+      records = parsed.records();
+      format = records.isEmpty() ? ImportSourceFormat.GENERIC_CSV : resolveFormat(formatHint, parsed.headers());
     } catch (IOException e) {
       throw new RuntimeException("Failed to parse CSV file: " + e.getMessage(), e);
     }
@@ -278,31 +279,51 @@ public class CsvImportService {
   // -------------------------------------------------------------------------
 
   private ImportSourceFormat resolveFormat(String hint, String[] headers) {
+    // Content-based detection is more reliable than the user's format hint.
+    // Try it first; only fall back to the hint when the file is ambiguous (GENERIC_CSV).
+    ImportSourceFormat detected = detectFormat(headers);
+    if (detected != ImportSourceFormat.GENERIC_CSV) {
+      return detected;
+    }
+    // File is ambiguous — honour the explicit hint if one was given.
     if (hint != null) {
       return switch (hint.trim().toLowerCase()) {
         case "jira" -> ImportSourceFormat.JIRA_CSV;
         case "linear" -> ImportSourceFormat.LINEAR_CSV;
         case "asana" -> ImportSourceFormat.ASANA_CSV;
-        default -> detectFormat(headers);
+        default -> ImportSourceFormat.GENERIC_CSV;
       };
     }
-    return detectFormat(headers);
+    return ImportSourceFormat.GENERIC_CSV;
   }
 
-  private List<CSVRecord> parseRecords(MultipartFile file) throws IOException {
-    try (Reader reader =
-            new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
-        CSVParser parser =
-            CSVFormat.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build().parse(reader)) {
-      return parser.getRecords();
+  /** Holds parsed CSV records and the header names captured before the parser closes. */
+  private record ParsedCsv(List<CSVRecord> records, String[] headers) {}
+
+  private ParsedCsv parseRecords(MultipartFile file) throws IOException {
+    // Strip UTF-8 BOM (EF BB BF) if present so header names are clean
+    PushbackInputStream pis = new PushbackInputStream(file.getInputStream(), 3);
+    byte[] bom = new byte[3];
+    int read = pis.read(bom, 0, 3);
+    if (read < 3 || !(bom[0] == (byte) 0xEF && bom[1] == (byte) 0xBB && bom[2] == (byte) 0xBF)) {
+      if (read > 0) pis.unread(bom, 0, read);
     }
-  }
-
-  private String[] extractHeaders(List<CSVRecord> records) {
-    if (records.isEmpty()) return new String[0];
-    // CSVParser with setHeader() stores header names in the first record's parser
-    // We need to access them differently — use the record's toMap() keyset
-    return records.get(0).toMap().keySet().toArray(new String[0]);
+    try (Reader reader = new InputStreamReader(pis, StandardCharsets.UTF_8);
+        CSVParser parser =
+            CSVFormat.DEFAULT
+                .builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .setIgnoreHeaderCase(true)
+                .setTrim(true)
+                .build()
+                .parse(reader)) {
+      List<CSVRecord> records = parser.getRecords();
+      // Capture header names while the parser is still open — avoids duplicate-column
+      // issues that cause toMap().keySet() to silently drop headers after close.
+      String[] headers = parser.getHeaderNames().toArray(new String[0]);
+      return new ParsedCsv(records, headers);
+    }
   }
 
   private Project createKanbanProject(String projectName, User owner) {
@@ -426,7 +447,7 @@ public class CsvImportService {
     Integer storyPoints = parseIntSafe(storyPointsRaw);
     Person assignee = findPersonByName(assigneeName);
 
-    if ("Bug".equalsIgnoreCase(issueType)) {
+    if (isJiraBugType(issueType)) {
       BugReport bug = BugReport.builder()
           .bugKey(nextBugKey())
           .title(summary)
@@ -602,13 +623,33 @@ public class CsvImportService {
   // ---- Generic ----
 
   private boolean importGenericRow(CSVRecord record, Project project, User currentUser) {
-    String title = findColumnValue(record, "title", "name");
+    String title = findColumnValue(record, "title", "name", "summary");
     if (title == null || title.isBlank()) return false;
 
     String description = findColumnValue(record, "description", "notes");
     String statusRaw = findColumnValue(record, "status");
     String priorityRaw = findColumnValue(record, "priority");
     String assigneeName = findColumnValue(record, "assignee", "owner");
+    String issueType = findColumnValue(record, "issue type", "type", "issuetype");
+
+    // Promote bug-type issues to BugReport instead of Task
+    if (isJiraBugType(issueType)) {
+      Person assignee = findPersonByName(assigneeName);
+      BugReport bug = BugReport.builder()
+          .bugKey(nextBugKey())
+          .title(title)
+          .description(description != null ? description : "")
+          .severity(mapJiraSeverity(priorityRaw))
+          .status(mapJiraBugStatus(statusRaw))
+          .reporter(currentUser)
+          .assignee(assignee)
+          .project(project)
+          .createdAt(LocalDateTime.now())
+          .updatedAt(LocalDateTime.now())
+          .build();
+      bugReportRepository.save(bug);
+      return true;
+    }
 
     TaskStatus status = mapGenericStatus(statusRaw);
     TaskPriority priority = mapGenericPriority(priorityRaw);
@@ -627,6 +668,19 @@ public class CsvImportService {
 
     taskRepository.save(task);
     return true;
+  }
+
+  /** Returns true for Jira issue types that should be imported as BugReports. */
+  private boolean isJiraBugType(String issueType) {
+    if (issueType == null || issueType.isBlank()) return false;
+    String lower = issueType.trim().toLowerCase();
+    return lower.equals("bug")
+        || lower.equals("defect")
+        || lower.equals("error")
+        || lower.equals("problem")
+        || lower.equals("bug report")
+        || lower.equals("fault")
+        || lower.contains("bug");
   }
 
   // ---- Cycle de-duplication ----

@@ -56,20 +56,31 @@ export const qaTestManagementService = {
     pitchId?: number,
     statuses?: TestCaseStatus[],
     types?: TestCaseType[],
-    priorities?: TestCasePriority[]
-  ) => 
-    api.get<TestCase[]>('/qa/test-cases/filter', {
+    priorities?: TestCasePriority[],
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = 'createdAt',
+    sortOrder: string = 'desc'
+  ) =>
+    api.get<Page<TestCase>>('/qa/test-cases/filter', {
       params: {
         cycleId,
         pitchId,
         statuses: statuses?.join(','),
         types: types?.join(','),
         priorities: priorities?.join(','),
+        page,
+        size,
+        sortBy,
+        sortOrder,
       },
     }),
 
-  createTestCase: (request: CreateTestCaseRequest) => 
+  createTestCase: (request: CreateTestCaseRequest) =>
     api.post<TestCase>('/qa/test-cases', request),
+
+  createTestCasesBulk: (requests: CreateTestCaseRequest[]) =>
+    api.post<TestCase[]>('/qa/test-cases/bulk', { testCases: requests }),
 
   updateTestCase: (id: number, request: UpdateTestCaseRequest) => 
     api.put<TestCase>(`/qa/test-cases/${id}`, request),

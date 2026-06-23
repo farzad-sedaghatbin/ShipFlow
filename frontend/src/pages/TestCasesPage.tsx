@@ -9,6 +9,10 @@ import {
   Eye,
   Sparkles,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -24,24 +28,19 @@ import {
   TableRow,
 } from '../components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '../components/ui/tooltip';
+import { Combobox } from '../components/ui/combobox';
 import { cn } from '../lib/utils';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { useProject } from '../contexts';
+import { useListLoader } from '../hooks';
 import { TestCasesSkeleton } from '../components/Skeletons';
 import {
   TestCase,
@@ -67,14 +66,32 @@ const statusVariants: Record<TestCaseStatus, string> = {
   ARCHIVED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
 };
 
+// Build a compact list of 0-indexed page numbers to render, inserting 'gap' markers
+// for elided ranges. Always shows the first and last page plus the current ±1.
+function buildPageList(current: number, totalPages: number): (number | 'gap')[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i);
+  const pages: (number | 'gap')[] = [0];
+  const start = Math.max(1, current - 1);
+  const end = Math.min(totalPages - 2, current + 1);
+  if (start > 1) pages.push('gap');
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < totalPages - 2) pages.push('gap');
+  pages.push(totalPages - 1);
+  return pages;
+}
+
 const TestCasesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
-  const [rawTestCases, setRawTestCases] = useState<TestCase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, startLoad, finishLoad, resetInitial } = useListLoader();
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TestCaseStatus | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<TestCaseType | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<TestCasePriority | 'all'>('all');
@@ -96,22 +113,28 @@ const TestCasesPage: React.FC = () => {
     return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
-  // Apply project-scoped filter reactively so it re-evaluates whenever cycles/pitches load
-  const testCases = useMemo(() => {
-    if (isAllProjectsSelected || !currentProject) return rawTestCases;
-    const projectPitchIds = new Set(filteredPitches.map(p => p.id));
-    return rawTestCases.filter(tc => !tc.pitchId || projectPitchIds.has(tc.pitchId));
-  }, [rawTestCases, filteredCycles, filteredPitches, currentProject, isAllProjectsSelected]);
+  const totalPages = Math.ceil(totalElements / rowsPerPage);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Reset cycle and pitch filters when project changes to ensure clean filtering
   useEffect(() => {
+    resetInitial();
     setCycleFilter('all');
     setPitchFilter('all');
+    setPage(0);
   }, [currentProject?.id, isAllProjectsSelected]);
 
   useEffect(() => {
     loadTestCases();
-  }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter, currentProject?.id]);
+  }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter, currentProject?.id, page, rowsPerPage, debouncedSearch]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -131,48 +154,57 @@ const TestCasesPage: React.FC = () => {
   };
 
   const loadTestCases = async () => {
-    setLoading(true);
+    startLoad();
     setError(null);
     try {
-      let response;
-      // Use filter endpoint if any filter is active
-      if (
-        statusFilter !== 'all' ||
-        typeFilter !== 'all' ||
-        priorityFilter !== 'all' ||
-        cycleFilter !== 'all' ||
-        pitchFilter !== 'all'
-      ) {
-        response = await qaTestManagementService.getTestCasesWithFilters(
-          cycleFilter !== 'all' ? cycleFilter : undefined,
-          pitchFilter !== 'all' ? pitchFilter : undefined,
-          statusFilter !== 'all' ? [statusFilter] : undefined,
-          typeFilter !== 'all' ? [typeFilter] : undefined,
-          priorityFilter !== 'all' ? [priorityFilter] : undefined
-        );
+      const response = await qaTestManagementService.getTestCasesWithFilters(
+        cycleFilter !== 'all' ? cycleFilter : undefined,
+        pitchFilter !== 'all' ? pitchFilter : undefined,
+        statusFilter !== 'all' ? [statusFilter] : undefined,
+        typeFilter !== 'all' ? [typeFilter] : undefined,
+        priorityFilter !== 'all' ? [priorityFilter] : undefined,
+        page,
+        rowsPerPage,
+        'createdAt',
+        'desc'
+      );
+
+      // Handle both paginated (Page<TestCase>) and plain array responses
+      const data = response.data;
+      if (data && typeof data === 'object' && 'content' in data) {
+        const pageData = data as { content: TestCase[]; totalElements: number };
+        setTestCases(pageData.content);
+        setTotalElements(pageData.totalElements);
       } else {
-        response = await qaTestManagementService.getAllTestCases();
+        // Fallback: plain array (shouldn't happen with updated service, but be safe)
+        const arr = data as unknown as TestCase[];
+        setTestCases(arr);
+        setTotalElements(arr.length);
       }
-      
-      setRawTestCases(response.data);
     } catch (err) {
       setError(t('testCases.loadFailed'));
       console.error(err);
     } finally {
-      setLoading(false);
+      finishLoad();
       notifyProjectSwitchComplete();
     }
   };
 
+  // Client-side search filtering on the current page
   const filteredTestCases = testCases.filter((tc) => {
-    // Only apply search query filter on client-side
-    const matchesSearch =
-      !searchQuery ||
-      tc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tc.testCaseKey.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tc.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    if (!debouncedSearch) return true;
+    const q = debouncedSearch.toLowerCase();
+    return (
+      tc.title.toLowerCase().includes(q) ||
+      tc.testCaseKey.toLowerCase().includes(q) ||
+      (tc.description?.toLowerCase().includes(q) ?? false)
+    );
   });
+
+  // Stats derived from current page
+  const approvedCount = testCases.filter((tc) => tc.status === 'APPROVED').length;
+  const readyCount = testCases.filter((tc) => tc.status === 'READY').length;
+  const aiGeneratedCount = testCases.filter((tc) => tc.aiGenerated).length;
 
   if (loading || isSwitchingProject) {
     return <TestCasesSkeleton />;
@@ -180,6 +212,11 @@ const TestCasesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Thin refresh progress bar */}
+      <div className={`fixed top-0 left-0 right-0 z-50 h-0.5 overflow-hidden transition-opacity duration-300 ${refreshing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`h-full w-full bg-primary ${refreshing ? 'animate-page-progress' : ''}`} />
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t('testCases.title')}</h1>
@@ -214,14 +251,14 @@ const TestCasesPage: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold">{testCases.length}</p>
+            <p className="text-3xl font-bold">{totalElements}</p>
             <p className="text-sm text-muted-foreground">{t('testCases.totalTestCases')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-              {testCases.filter((tc) => tc.status === 'APPROVED').length}
+              {approvedCount}
             </p>
             <p className="text-sm text-muted-foreground">{t('testCases.approved')}</p>
           </CardContent>
@@ -229,7 +266,7 @@ const TestCasesPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-              {testCases.filter((tc) => tc.status === 'READY').length}
+              {readyCount}
             </p>
             <p className="text-sm text-muted-foreground">{t('testCases.ready')}</p>
           </CardContent>
@@ -237,7 +274,7 @@ const TestCasesPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-3xl font-bold text-cyan-600 dark:text-cyan-400">
-              {testCases.filter((tc) => tc.aiGenerated).length}
+              {aiGeneratedCount}
             </p>
             <p className="text-sm text-muted-foreground">{t('testCases.aiGenerated')}</p>
           </CardContent>
@@ -259,95 +296,100 @@ const TestCasesPage: React.FC = () => {
             aria-label={t('testCases.searchLabel')}
           />
         </div>
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => setStatusFilter(value as TestCaseStatus | 'all')}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder={t('testCases.status')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('testCases.allStatus')}</SelectItem>
-            {['DRAFT', 'READY', 'APPROVED', 'DEPRECATED', 'ARCHIVED'].map((status) => (
-              <SelectItem key={status} value={status}>
-                {t(`testCases.statusValues.${status}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={typeFilter}
-          onValueChange={(value) => setTypeFilter(value as TestCaseType | 'all')}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder={t('testCases.type')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('testCases.allTypes')}</SelectItem>
-            {['FUNCTIONAL', 'INTEGRATION', 'UNIT', 'E2E', 'REGRESSION', 'SMOKE'].map((type) => (
-              <SelectItem key={type} value={type}>
-                {t(`testCases.typeValues.${type}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={priorityFilter}
-          onValueChange={(value) => setPriorityFilter(value as TestCasePriority | 'all')}
-        >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder={t('testCases.priority')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('testCases.allPriority')}</SelectItem>
-            {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((priority) => (
-              <SelectItem key={priority} value={priority}>
-                {t(`testCases.priorityValues.${priority}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        {/* Status Combobox */}
+        <div className="min-w-[140px]">
+          <Combobox
+            options={[
+              { value: 'all', label: t('testCases.allStatus') },
+              ...(['DRAFT', 'READY', 'APPROVED', 'DEPRECATED', 'ARCHIVED'] as TestCaseStatus[]).map((s) => ({
+                value: s,
+                label: t(`testCases.statusValues.${s}`),
+              })),
+            ]}
+            value={statusFilter}
+            onValueChange={(v) => { setStatusFilter(v as TestCaseStatus | 'all'); setPage(0); }}
+            placeholder={t('testCases.status')}
+            searchPlaceholder={t('testCases.searchStatus')}
+          />
+        </div>
+
+        {/* Type Combobox */}
+        <div className="min-w-[140px]">
+          <Combobox
+            options={[
+              { value: 'all', label: t('testCases.allTypes') },
+              ...(['FUNCTIONAL', 'INTEGRATION', 'UNIT', 'E2E', 'REGRESSION', 'SMOKE'] as TestCaseType[]).map((tp) => ({
+                value: tp,
+                label: t(`testCases.typeValues.${tp}`),
+              })),
+            ]}
+            value={typeFilter}
+            onValueChange={(v) => { setTypeFilter(v as TestCaseType | 'all'); setPage(0); }}
+            placeholder={t('testCases.type')}
+            searchPlaceholder={t('testCases.searchType')}
+          />
+        </div>
+
+        {/* Priority Combobox */}
+        <div className="min-w-[140px]">
+          <Combobox
+            options={[
+              { value: 'all', label: t('testCases.allPriority') },
+              ...(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as TestCasePriority[]).map((p) => ({
+                value: p,
+                label: t(`testCases.priorityValues.${p}`),
+              })),
+            ]}
+            value={priorityFilter}
+            onValueChange={(v) => { setPriorityFilter(v as TestCasePriority | 'all'); setPage(0); }}
+            placeholder={t('testCases.priority')}
+            searchPlaceholder={t('testCases.searchPriority')}
+          />
+        </div>
+
         {/* Hide cycle and pitch filters for Kanban projects - Shape Up concepts */}
         {!isKanbanProject && (
           <>
-            <Select
-              value={cycleFilter.toString()}
-              onValueChange={(value) => setCycleFilter(value === 'all' ? 'all' : parseInt(value))}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t('testCases.cycle')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('testCases.allCycles')}</SelectItem>
-                {filteredCycles.map((cycle) => (
-                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                    {cycle.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={pitchFilter.toString()}
-              onValueChange={(value) => setPitchFilter(value === 'all' ? 'all' : parseInt(value))}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={t('testCases.pitch')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('testCases.allPitches')}</SelectItem>
-                {filteredPitches.map((pitch) => (
-                  <SelectItem key={pitch.id} value={pitch.id.toString()}>
-                    {pitch.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Cycle Combobox */}
+            <div className="min-w-[180px]">
+              <Combobox
+                options={[
+                  { value: 'all', label: t('testCases.allCycles') },
+                  ...filteredCycles.map((cycle) => ({
+                    value: cycle.id.toString(),
+                    label: cycle.name,
+                  })),
+                ]}
+                value={cycleFilter.toString()}
+                onValueChange={(v) => { setCycleFilter(v === 'all' ? 'all' : parseInt(v)); setPage(0); }}
+                placeholder={t('testCases.cycle')}
+                searchPlaceholder={t('testCases.searchCycle')}
+              />
+            </div>
+
+            {/* Pitch Combobox */}
+            <div className="min-w-[180px]">
+              <Combobox
+                options={[
+                  { value: 'all', label: t('testCases.allPitches') },
+                  ...filteredPitches.map((pitch) => ({
+                    value: pitch.id.toString(),
+                    label: pitch.title,
+                  })),
+                ]}
+                value={pitchFilter.toString()}
+                onValueChange={(v) => { setPitchFilter(v === 'all' ? 'all' : parseInt(v)); setPage(0); }}
+                placeholder={t('testCases.pitch')}
+                searchPlaceholder={t('testCases.searchPitch')}
+              />
+            </div>
           </>
         )}
       </div>
 
       {/* Test Cases Table */}
-      <Card>
+      <Card className={`transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -464,7 +506,8 @@ const TestCasesPage: React.FC = () => {
                       entityId={tc.id}
                       entityTitle={tc.title}
                       onSuccess={() => {
-                        setRawTestCases(prev => prev.filter((testCase) => testCase.id !== tc.id));
+                        setTestCases(prev => prev.filter((testCase) => testCase.id !== tc.id));
+                        setTotalElements(prev => Math.max(0, prev - 1));
                       }}
                       variant="ghost"
                       size="sm"
@@ -486,6 +529,98 @@ const TestCasesPage: React.FC = () => {
             )}
           </TableBody>
         </Table>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{t('testCases.pagination.rowsPerPage')}</span>
+            <Combobox
+              options={[
+                { value: '5', label: '5' },
+                { value: '10', label: '10' },
+                { value: '25', label: '25' },
+                { value: '50', label: '50' },
+              ]}
+              value={rowsPerPage.toString()}
+              onValueChange={(v) => { setRowsPerPage(parseInt(v, 10)); setPage(0); }}
+              triggerClassName="w-[70px] h-8"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              {totalElements === 0
+                ? t('testCases.pagination.empty')
+                : t('testCases.pagination.rangeText', {
+                    start: page * rowsPerPage + 1,
+                    end: Math.min((page + 1) * rowsPerPage, totalElements),
+                    total: totalElements,
+                  })}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage(0)}
+                disabled={page === 0}
+                aria-label={t('testCases.pagination.first')}
+                title={t('testCases.pagination.first')}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                aria-label={t('testCases.pagination.previous')}
+                title={t('testCases.pagination.previous')}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {totalPages > 1 && buildPageList(page, totalPages).map((item, idx) =>
+                item === 'gap' ? (
+                  <span key={`gap-${idx}`} className="px-1 text-sm text-muted-foreground select-none">…</span>
+                ) : (
+                  <Button
+                    key={item}
+                    variant={item === page ? 'default' : 'outline'}
+                    size="icon"
+                    className="h-8 w-8 text-xs"
+                    onClick={() => setPage(item)}
+                    aria-label={t('testCases.pagination.goToPage', { page: item + 1 })}
+                    aria-current={item === page ? 'page' : undefined}
+                  >
+                    {item + 1}
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                aria-label={t('testCases.pagination.next')}
+                title={t('testCases.pagination.next')}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setPage(totalPages - 1)}
+                disabled={page >= totalPages - 1}
+                aria-label={t('testCases.pagination.last')}
+                title={t('testCases.pagination.last')}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   );

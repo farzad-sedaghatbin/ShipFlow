@@ -91,6 +91,17 @@ public class TestCaseService {
     return toDTO(testCase);
   }
 
+  /**
+   * Create multiple test cases in a single atomic transaction. If any item fails the whole batch
+   * rolls back.
+   */
+  @Transactional
+  public List<TestCaseDTO> createTestCasesBulk(BulkCreateTestCaseRequest request, Long userId) {
+    checkFeatureEnabled();
+    return request.getTestCases().stream().map(item -> createTestCase(item, userId))
+        .collect(Collectors.toList());
+  }
+
   /** Update an existing test case. */
   @Transactional
   public TestCaseDTO updateTestCase(Long id, UpdateTestCaseRequest request, Long userId) {
