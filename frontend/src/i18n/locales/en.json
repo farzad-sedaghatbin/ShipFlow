@@ -2289,7 +2289,22 @@
       "SMOKE": "Smoke",
       "UNIT": "Unit"
     },
-    "updateSuccess": "Test case updated successfully"
+    "updateSuccess": "Test case updated successfully",
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "rangeText": "{{start}}-{{end}} of {{total}}",
+      "empty": "No results",
+      "first": "First page",
+      "previous": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "goToPage": "Go to page {{page}}"
+    },
+    "searchStatus": "Search status...",
+    "searchType": "Search type...",
+    "searchPriority": "Search priority...",
+    "searchCycle": "Search cycles...",
+    "searchPitch": "Search pitches..."
   },
   "bugReports": {
     "title": "Bug Reports",
@@ -2329,7 +2344,9 @@
       "release": "Release",
       "allReleases": "All Releases",
       "allAssignees": "All Assignees",
-      "searchAssignee": "Search people..."
+      "searchAssignee": "Search people...",
+      "excludeLabel": "Exclude filters",
+      "excludeTooltip": "When ON, shows bugs that do NOT match the selected filters (inverts the filter)"
     },
     "sort": {
       "lastUpdated": "Last Updated",

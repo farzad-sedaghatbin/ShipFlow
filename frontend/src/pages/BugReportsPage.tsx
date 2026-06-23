@@ -932,16 +932,25 @@ const BugReportsPage: React.FC = () => {
 
           {/* Exclude + Clear — pushed to the end */}
           <div className="ml-auto flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <Switch
-                id="exclude-mode"
-                checked={excludeMode}
-                onCheckedChange={setExcludeMode}
-              />
-              <Label htmlFor="exclude-mode" className="text-sm cursor-pointer">
-                {t('bugReports.filters.exclude')}
-              </Label>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Switch
+                      id="exclude-mode"
+                      checked={excludeMode}
+                      onCheckedChange={setExcludeMode}
+                    />
+                    <Label htmlFor="exclude-mode" className="text-sm cursor-pointer">
+                      {t('bugReports.filters.excludeLabel')}
+                    </Label>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  {t('bugReports.filters.excludeTooltip')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button
               variant="outline"
               size="sm"

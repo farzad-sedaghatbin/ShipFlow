@@ -133,6 +133,17 @@ public class QATestManagementController {
     return ResponseEntity.ok(testCaseService.createTestCase(request, userId));
   }
 
+  @PostMapping("/test-cases/bulk")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Bulk create test cases", description = "Creates multiple test cases in a single atomic transaction")
+  public ResponseEntity<List<TestCaseDTO>> createTestCasesBulk(
+      @Valid @RequestBody BulkCreateTestCaseRequest request,
+      @AuthenticationPrincipal UserDetails userDetails) {
+    checkFeatureEnabled();
+    Long userId = getUserId(userDetails);
+    return ResponseEntity.ok(testCaseService.createTestCasesBulk(request, userId));
+  }
+
   @PutMapping("/test-cases/{id}")
   @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Update a test case", description = "Updates an existing test case")
