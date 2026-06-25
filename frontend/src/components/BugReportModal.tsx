@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Paperclip } from 'lucide-react';
-import { useProject } from '../contexts';
+import { useProject, useAuth } from '../contexts';
 import { MediaAttachmentUpload } from './MediaAttachmentUpload';
 import {
   BugReport,
@@ -33,6 +33,12 @@ import { Textarea } from './ui/textarea';
 import { Combobox } from './ui/combobox';
 import MarkdownEditor from './MarkdownEditor';
 import { Badge } from './ui/badge';
+import { Checkbox } from './ui/checkbox';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
 import { Alert, AlertDescription } from './ui/alert';
 
 interface BugReportModalProps {
@@ -73,9 +79,11 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const { currentProject, isScrumProject } = useProject();
+  const { user } = useAuth();
   const isEdit = !!bugReport;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const [tagInput, setTagInput] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
@@ -85,6 +93,14 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
 
   const [formData, setFormData] = useState<Partial<CreateBugReportRequest>>({});
+  // Parsed multi-component list (stored as comma-separated in formData.component)
+  const selectedComponents: string[] = (formData.component || '').split(',').map(s => s.trim()).filter(Boolean);
+  const toggleComponent = (c: string) => {
+    const next = selectedComponents.includes(c)
+      ? selectedComponents.filter(s => s !== c)
+      : [...selectedComponents, c];
+    handleChange('component', next.join(',') || undefined);
+  };
 
   // Reset form data when modal opens or bug report changes
   useEffect(() => {
@@ -106,6 +122,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         teamId: bugReport?.teamId || teamId,
         testRunId: bugReport?.testRunId || testRunId,
         assigneeId: bugReport?.assigneeId,
+        qaAssigneeId: bugReport?.qaAssigneeId,
         taskId: bugReport?.taskId,
         targetReleaseId: bugReport?.targetReleaseId,
       });
@@ -118,12 +135,28 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     }
   }, [open, bugReport, pitchId, cycleId, teamId, testRunId, currentProject?.id]);
 
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [error]);
+
   const loadPeople = async () => {
     if (loadingPeople) return;
     setLoadingPeople(true);
     try {
       const response = await api.get<Person[]>('/persons');
-      setPeople(response.data.filter(person => person.isActive));
+      const active = response.data.filter(person => person.isActive);
+      // Pin the logged-in user's person to the top
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        active.sort((a, b) => {
+          if (a.id === currentPersonId) return -1;
+          if (b.id === currentPersonId) return 1;
+          return 0;
+        });
+      }
+      setPeople(active);
     } catch (err) {
       console.error('Failed to load people:', err);
     } finally {
@@ -251,9 +284,11 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
 
         <div className="space-y-3 py-2">
           {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+            <div ref={errorRef}>
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            </div>
           )}
 
           {/* Title */}
@@ -292,17 +327,34 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
             )}
 
             <div className="space-y-1">
-              <Label htmlFor="bug-component">{t('bugReports.component', 'Component')}</Label>
-              <Combobox
-                options={[
-                  { value: '', label: t('bugReports.noComponent', 'No component') },
-                  ...COMPONENT_OPTIONS.map(c => ({ value: c, label: c })),
-                ]}
-                value={formData.component || ''}
-                onValueChange={(value) => handleChange('component', value || undefined)}
-                placeholder={t('bugReports.selectComponent', 'Select component')}
-                searchPlaceholder={t('bugReports.searchComponent', 'Search or type...')}
-              />
+              <Label>{t('bugReports.component', 'Component')}</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="w-full min-h-[2.25rem] flex flex-wrap gap-1 items-center px-3 py-1.5 text-sm border rounded-md bg-background hover:bg-accent/30 text-left"
+                  >
+                    {selectedComponents.length === 0 ? (
+                      <span className="text-muted-foreground">{t('bugReports.selectComponent', 'Select component(s)')}</span>
+                    ) : selectedComponents.map(c => (
+                      <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
+                    ))}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-2" align="start">
+                  <div className="space-y-1">
+                    {COMPONENT_OPTIONS.map(c => (
+                      <label key={c} className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent/40 text-sm">
+                        <Checkbox
+                          checked={selectedComponents.includes(c)}
+                          onCheckedChange={() => toggleComponent(c)}
+                        />
+                        {c}
+                      </label>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -318,6 +370,20 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                 value={formData.assigneeId?.toString() || 'unassigned'}
                 onValueChange={(value) => handleChange('assigneeId', value === 'unassigned' ? undefined : Number(value))}
                 placeholder={t('bugReports.selectAssignee', 'Select assignee')}
+                searchPlaceholder={t('bugReports.searchPerson', 'Search persons...')}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>{t('bugs.qaAssignee', 'QA Tester')}</Label>
+              <Combobox
+                options={[
+                  { value: 'unassigned', label: t('bugReports.unassigned', 'Unassigned') },
+                  ...people.map(p => ({ value: p.id.toString(), label: p.name })),
+                ]}
+                value={formData.qaAssigneeId?.toString() || 'unassigned'}
+                onValueChange={(value) => handleChange('qaAssigneeId', value === 'unassigned' ? undefined : Number(value))}
+                placeholder={t('bugReports.selectQaAssignee', 'Select QA tester')}
                 searchPlaceholder={t('bugReports.searchPerson', 'Search persons...')}
               />
             </div>

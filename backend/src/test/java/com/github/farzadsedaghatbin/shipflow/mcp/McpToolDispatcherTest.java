@@ -83,6 +83,8 @@ class McpToolDispatcherTest {
   @Mock private TestCaseService testCaseService;
   @Mock private TestRunService testRunService;
   @Mock private BugReportService bugReportService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.DocumentService documentService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.mcp.McpUsageReportService usageReportService;
 
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
@@ -109,13 +111,14 @@ class McpToolDispatcherTest {
     WorklogMcpTools worklogTools = new WorklogMcpTools(workLogService, userRepository);
     IdentityMcpTools identityTools = new IdentityMcpTools(userRepository);
     TestCaseMcpTools testCaseTools = new TestCaseMcpTools(testCaseService, testRunService, userRepository);
-    BugReportMcpTools bugReportTools = new BugReportMcpTools(bugReportService, userRepository);
+    BugReportMcpTools bugReportTools = new BugReportMcpTools(bugReportService, documentService, userRepository);
 
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
         projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools,
         workContextTools, taskContextTools, worklogTools,
         identityTools, testCaseTools, bugReportTools);
+    dispatcher.setUsageReportService(usageReportService);
 
     McpSession session = new McpSession(
         SESSION_ID,
@@ -1540,6 +1543,119 @@ class McpToolDispatcherTest {
     String text = (String) content.get(0).get("text");
     assertThat(text).contains("Click handler silently fails");
     assertThat(text).contains("MAJOR");
+  }
+
+  @Test
+  void toolsCall_downloadBugAttachment_returnsImageContentBlock() throws Exception {
+    com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument doc =
+        new com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument();
+    doc.setId(55L);
+    doc.setEntityType("BUG_REPORT");
+    doc.setOriginalFileName("final-design.png");
+    doc.setFileType("png");
+    doc.setFileSize(1234L);
+    when(documentService.getDocumentById(55L)).thenReturn(doc);
+    when(documentService.getContentType("png")).thenReturn("image/png");
+    byte[] pngBytes = new byte[] {(byte) 0x89, 0x50, 0x4E, 0x47};
+    when(documentService.getDocumentBytes(55L)).thenReturn(pngBytes);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "download_bug_attachment", "arguments", Map.of("attachmentId", 55)),
+        "id", 63);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    // text note + image block
+    Map<String, Object> imageBlock = content.stream()
+        .filter(c -> "image".equals(c.get("type"))).findFirst().orElseThrow();
+    assertThat(imageBlock.get("mimeType")).isEqualTo("image/png");
+    assertThat(imageBlock.get("data"))
+        .isEqualTo(java.util.Base64.getEncoder().encodeToString(pngBytes));
+  }
+
+  @Test
+  void toolsCall_downloadBugAttachment_rejectsNonImage() throws Exception {
+    com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument doc =
+        new com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument();
+    doc.setId(56L);
+    doc.setEntityType("BUG_REPORT");
+    doc.setOriginalFileName("trace.pdf");
+    doc.setFileType("pdf");
+    doc.setFileSize(999L);
+    when(documentService.getDocumentById(56L)).thenReturn(doc);
+    when(documentService.getContentType("pdf")).thenReturn("application/pdf");
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "download_bug_attachment", "arguments", Map.of("attachmentId", 56)),
+        "id", 64);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).contains("not an image");
+  }
+
+  @Test
+  void toolsCall_getBugReport_byBugKey_resolvesViaKey() throws Exception {
+    com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO bug =
+        com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO.builder()
+            .id(999L).bugKey("BUG-125").title("Convert money confirmation loops")
+            .severity(com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity.MAJOR)
+            .status(com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus.OPEN)
+            .build();
+    when(bugReportService.getBugReportByKey("BUG-125")).thenReturn(bug);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "get_bug_report", "arguments", Map.of("bugKey", "BUG-125")),
+        "id", 62);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("Convert money confirmation loops");
+    assertThat(text).contains("BUG-125");
+    org.mockito.Mockito.verify(bugReportService).getBugReportByKey("BUG-125");
+    org.mockito.Mockito.verify(bugReportService, org.mockito.Mockito.never())
+        .getBugReportById(org.mockito.ArgumentMatchers.anyLong());
   }
 
   @Test

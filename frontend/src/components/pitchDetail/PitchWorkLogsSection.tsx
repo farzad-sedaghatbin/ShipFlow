@@ -34,7 +34,7 @@ interface PitchWorkLogsSectionProps {
   language: string;
   onSetWorkLogDialog: (open: boolean) => void;
   onCreateWorkLog: () => void;
-  onDeleteWorkLog: (workLogId: number) => void;
+  onDeleteWorkLog: (workLogId: number, personId: number) => void;
   onNewWorkLogChange: (wl: CreateWorkLogForSelfRequest) => void;
   onWorkLogDateChange: (date: string) => void;
 }
@@ -91,7 +91,7 @@ export function PitchWorkLogsSection({
         entries: state.entries.filter(e => e.id !== workLogId),
       });
     });
-    onDeleteWorkLog(workLogId);
+    onDeleteWorkLog(workLogId, personId);
   }, [onDeleteWorkLog]);
 
   const totalEntryCount = personSummaries.reduce((sum, s) => sum + s.entryCount, 0);

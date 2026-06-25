@@ -44,6 +44,15 @@ class QATestManagementControllerIntegrationTest {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private PersonRepository personRepository;
+
+  @Autowired
+  private TestCaseRepository testCaseRepository;
+
+  @Autowired
+  private TestRunRepository testRunRepository;
+
   private Cycle testCycle;
   private User testUser;
   private BugReport testBugReport;
@@ -146,5 +155,91 @@ class QATestManagementControllerIntegrationTest {
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         .andExpect(jsonPath("$.title", is("New Bug"))).andExpect(jsonPath("$.severity", is("MAJOR")))
         .andExpect(jsonPath("$.status", is("OPEN")));
+  }
+
+  @Test
+  void recordTestRunsBulk_ShouldCreateOneRunPerTestCase() throws Exception {
+    TestCase tc1 = testCaseRepository.save(TestCase.builder().testCaseKey("TC-001").title("Login works")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.HIGH).status(TestCaseStatus.READY)
+        .aiGenerated(false).cycle(testCycle).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+    TestCase tc2 = testCaseRepository.save(TestCase.builder().testCaseKey("TC-002").title("Logout works")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.MEDIUM).status(TestCaseStatus.READY)
+        .aiGenerated(true).cycle(testCycle).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+
+    String body = "{\"testCaseIds\":[" + tc1.getId() + "," + tc2.getId()
+        + "],\"status\":\"PASSED\",\"environment\":\"Chrome / staging\"}";
+
+    mockMvc.perform(post("/api/qa/test-runs/bulk").contentType(MediaType.APPLICATION_JSON).content(body))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(2)))
+        .andExpect(jsonPath("$[0].status", is("PASSED")))
+        .andExpect(jsonPath("$[0].environment", is("Chrome / staging")));
+  }
+
+  @Test
+  void linkAndUnlinkDefect_ShouldAttachMultipleBugsToARun() throws Exception {
+    TestCase tc = testCaseRepository.save(TestCase.builder().testCaseKey("TC-100").title("Checkout")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.HIGH).status(TestCaseStatus.READY)
+        .aiGenerated(false).cycle(testCycle).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+    TestRun run = testRunRepository.save(TestRun.builder().testCase(tc).status(TestRunStatus.FAILED)
+        .executedBy(testUser).executedAt(LocalDateTime.now()).build());
+    BugReport bug1 = bugReportRepository.save(BugReport.builder().bugKey("BUG-201").title("Crash on pay")
+        .description("d").severity(BugSeverity.MAJOR).status(BugStatus.OPEN).reporter(testUser)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+    BugReport bug2 = bugReportRepository.save(BugReport.builder().bugKey("BUG-202").title("Wrong total")
+        .description("d").severity(BugSeverity.MINOR).status(BugStatus.OPEN).reporter(testUser)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+
+    mockMvc.perform(patch("/api/qa/test-runs/{runId}/defects/{bugId}", run.getId(), bug1.getId()))
+        .andExpect(status().isOk());
+    mockMvc.perform(patch("/api/qa/test-runs/{runId}/defects/{bugId}", run.getId(), bug2.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.linkedBugs", hasSize(2)));
+
+    // Unlink one — the other remains
+    mockMvc.perform(delete("/api/qa/test-runs/{runId}/defects/{bugId}", run.getId(), bug1.getId()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.linkedBugs", hasSize(1)))
+        .andExpect(jsonPath("$.linkedBugs[0].bugKey", is("BUG-202")));
+  }
+
+  @Test
+  void getTestCasesWithFilters_ByAiGenerated_ShouldReturnOnlyAiCases() throws Exception {
+    testCaseRepository.save(TestCase.builder().testCaseKey("TC-010").title("Manual case")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.LOW).status(TestCaseStatus.READY)
+        .aiGenerated(false).cycle(testCycle).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+    testCaseRepository.save(TestCase.builder().testCaseKey("TC-011").title("AI case")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.LOW).status(TestCaseStatus.READY)
+        .aiGenerated(true).cycle(testCycle).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+
+    mockMvc.perform(get("/api/qa/test-cases/filter").param("aiGenerated", "true"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[?(@.aiGenerated == true)]", hasSize(greaterThanOrEqualTo(1))))
+        .andExpect(jsonPath("$[?(@.aiGenerated == false)]", hasSize(0)));
+  }
+
+  @Test
+  void updateBugQaAssignee_ShouldAssignAndUnassignQaTester() throws Exception {
+    Person qaPerson = personRepository.save(Person.builder().name("Mina QA").email("mina-qa@example.com")
+        .isActive(true).createdAt(LocalDateTime.now()).build());
+
+    // Assign
+    mockMvc.perform(patch("/api/qa/bug-reports/{id}/qa-assignee", testBugReport.getId())
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"qaAssigneeId\":" + qaPerson.getId() + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.qaAssigneeId", is(qaPerson.getId().intValue())))
+        .andExpect(jsonPath("$.qaAssigneeName", is("Mina QA")));
+
+    // Unassign (null clears it)
+    mockMvc.perform(patch("/api/qa/bug-reports/{id}/qa-assignee", testBugReport.getId())
+        .contentType(MediaType.APPLICATION_JSON).content("{\"qaAssigneeId\":null}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.qaAssigneeId").doesNotExist());
   }
 }

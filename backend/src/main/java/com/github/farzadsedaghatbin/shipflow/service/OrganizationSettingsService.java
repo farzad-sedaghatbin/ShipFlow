@@ -15,6 +15,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -81,9 +82,13 @@ public class OrganizationSettingsService {
       settings.setColorsJson(toJson(request.getColors()));
     }
     if (request.getBugStatuses() != null) {
+      validateStatusNames("Bug status", request.getBugStatuses().stream()
+          .map(OrganizationSettingsDTO.BugStatusConfig::getName).toList());
       settings.setBugStatusesJson(toJson(request.getBugStatuses()));
     }
     if (request.getSeverityLevels() != null) {
+      validateStatusNames("Severity level", request.getSeverityLevels().stream()
+          .map(OrganizationSettingsDTO.SeverityLevelConfig::getName).toList());
       settings.setSeverityLevelsJson(toJson(request.getSeverityLevels()));
     }
     if (request.getMeetingTypes() != null) {
@@ -685,6 +690,20 @@ public class OrganizationSettingsService {
     return entity.getMcpServerWriteEnabled() != null
         ? entity.getMcpServerWriteEnabled()
         : mcpServerProperties.isWriteEnabled();
+  }
+
+  private static final Pattern UPPER_SNAKE_CASE = Pattern.compile("^[A-Z][A-Z0-9_]*$");
+
+  private void validateStatusNames(String kind, List<String> names) {
+    for (String name : names) {
+      if (name == null || name.isBlank()) {
+        throw new IllegalArgumentException(kind + " name must not be blank");
+      }
+      if (!UPPER_SNAKE_CASE.matcher(name).matches()) {
+        throw new IllegalArgumentException(
+            kind + " name \"" + name + "\" must be UPPER_SNAKE_CASE (e.g. IN_PROGRESS)");
+      }
+    }
   }
 
   /** Convert object to JSON string. */

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added — Wiki / Docs Space (v1.9.0)
+### Added — Wiki / Docs Space (v1.8.0)
 
 #### Built-in Wiki
 - **Hierarchical spaces → pages**: Create named spaces (e.g. "Engineering", "Product") and organize pages in a nested tree of any depth. Drag pages to reorganize.
@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file.
 - **Auto Knowledge Center ingestion**: `WikiPageChangedEvent` triggers `KnowledgeSourceService` to upsert a chunk keyed `(WIKI_PAGE, pageId)` on every save. AI Q&A, Wise Architecture, and risk analysis draw on wiki content automatically.
 - **Known follow-up**: wiki attachment text-extraction into the Knowledge Center is deferred (pages are ingested today; binary files are not yet parsed).
 
-### Added — Pluggable Object Storage (v1.9.0)
+### Added — Pluggable Object Storage (v1.8.0)
 - **`ObjectStorageFacade` SPI**: Single Spring-bean interface `store(ref, bytes)` / `retrieve(ref)` / `delete(ref)` / `testConnection()`. Implementations: `LocalFsStorageProvider`, `S3StorageProvider`, `MinioStorageProvider`.
 - **Org Settings → Storage tab**: Admin UI for selecting `LOCAL_FS`, `S3`, or `MinIO`; filling credentials; running a connection test; and triggering one-click migration between backends.
 - **Credential encryption**: Access keys / secrets stored via AES-GCM with the app encryption key; never returned in plain text after first save.
@@ -35,6 +35,126 @@ All notable changes to this project will be documented in this file.
 ### Known follow-ups
 - (a) Wiki attachment text-extraction into the Knowledge Center is deferred — page body content is ingested on every save; binary file content (PDF, DOCX) within wiki attachments is not yet extracted.
 - (b) Wiki global-search trigram index requires PostgreSQL (`pg_trgm` extension). The feature is verified manually against Postgres; H2 integration tests cover the SQL shape but not ranked relevance scoring.
+
+### Added — QA: test-case filters & bulk execution
+
+- **Test-case filters by source and creator**: the Test Cases page can now filter by source (**Manual** vs **AI-generated**) and by **creator**. Backend `GET /api/qa/test-cases/filter` accepts `aiGenerated` and `createdById` query params; the source filter is applied server-side and the creator filter client-side (stable dropdown derived from loaded cases).
+- **Bulk test execution (Zephyr-style)**: multi-select test cases on the Test Cases page and record the same run result (with an optional environment) against all of them at once. New `POST /api/qa/test-runs/bulk` (one run per case, atomic) and `PATCH /api/qa/test-runs/bulk/status` (bulk status update) endpoints.
+- **Multiple defects per test run**: a test execution can now link **multiple** bug reports (the ShipFlow-native equivalent of attaching defects to an execution — no external tracker). `TestRun.bugReport` (one) became `bugReports` (many) over the existing `bug_reports.test_run_id` FK (no migration); `TestRunDTO` gains a `linkedBugs` list (the legacy `bugReportId`/`bugReportKey` still return the first). New `PATCH /api/qa/test-runs/{runId}/defects/{bugId}` and `DELETE …/defects/{bugId}` endpoints; the execution panel renders all linked defects.
+
+### Added — Open a project in a new tab
+
+- The top-bar project selector now supports opening a project in a new browser tab — Cmd/Ctrl-click a project, or use the new "open in new tab" button on each row. New tabs deep-link via `?project=<id>`, which `ProjectContext` honors on load.
+
+### Changed — Hill chart dot color
+
+- Hill-chart progress indicators no longer turn **green at 75%** (which read as "done"). Green is now reserved for **100%/complete**; in-progress downhill work is blue and uphill is amber — position already conveys progress.
+
+### Fixed — Kanban worklog overview label
+
+- For Kanban projects the worklog overview summary card no longer says "This Cycle" (Kanban has no cycles) — it now shows "Total". `MyWorkLogs` likewise relabeled (the figure was an all-time total, not a cycle total).
+
+### Added — Bug Report QA Assignee & Sharing
+
+- **QA assignee on bug reports**: a bug can now have a dedicated *QA tester* (who verifies the fix), separate from the *assignee* (who fixes it). Set it inline from the bug detail dialog or in the create/edit form. New `qaAssignee` field (audited via Envers), `qaAssigneeId`/`qaAssigneeName` on the DTO, and a lightweight `PATCH /api/qa/bug-reports/{id}/qa-assignee` endpoint (pass `null` to unassign).
+- **Copy bug link**: a "Copy link" action on every bug card (kanban menu) and list-view row copies a direct `/qa/bug-reports/{id}` URL to the clipboard for sharing.
+- New Flyway migration `V2026_06_25_0001__add_qa_assignee_to_bug_reports.sql` (adds `qa_assignee_id` to `bug_reports` and `bug_reports_aud`).
+
+### Added — MCP can view bug image attachments
+
+- New **`download_bug_attachment`** MCP read tool returns an image attachment (PNG/JPEG/GIF/WebP) as a native MCP `image` content block, so AI clients (Claude Code, etc.) can actually *see* design mockups/screenshots attached to a bug — previously only metadata and extracted text were exposed. Scoped to bug attachments, image types only, 8 MB cap.
+- `get_bug_attachments` now includes an `isImage` flag per attachment to signal which ones can be downloaded for viewing.
+- MCP tool results can now carry native content blocks (e.g. images) via the new `McpContentResult` return type, instead of always being JSON-as-text.
+
+### Changed — MCP bug lookup by key
+
+- The `get_bug_report`, `get_bug_attachments`, and `update_bug_status` MCP tools now accept the human-facing **`bugKey`** (e.g. `"BUG-125"`) in addition to the numeric `bugReportId`. A key passed in the `bugReportId` slot is also resolved by key, so an agent asking for "bug 125" no longer fetches the wrong record by numeric ID.
+
+### Added — MCP Usage Report (admin)
+
+- **Per-user MCP/API usage tracking**: every `tools/call` invocation is recorded in `mcp_usage_log` (tool name, success/failure, duration, API key prefix, user, timestamp).
+- **Admin dashboard at `/app/integrations/mcp-usage`**: four tabs — 30-day area-chart timeline, per-user table, per-tool bar chart + table, recent-log feed with error messages and duration.
+- Six summary cards: total calls, success rate, failures, active users (last 30 days), unique tools used, successful calls.
+- `GET /api/admin/mcp/usage/summary|by-user|by-tool|timeline|recent` — all require `ADMIN` role.
+- Usage recording is async (fire-and-forget) so it adds zero latency to MCP tool responses.
+- "View Usage Report" button added to the MCP Server tab in Integrations → MCP (admin only).
+- New Flyway migration `V2026_06_22_0001__create_mcp_usage_log.sql`.
+- `McpUsageReportServiceTest` — 8 unit tests covering all service methods.
+
+### Fixed
+- Bug Reports kanban view now loads **all** matching bugs into the status columns instead of only the first page — the board fetches the full result set (page size is reserved for the paginated list view), and switching between list/kanban now re-fetches with the correct page size
+- Jira CSV import: fixed `null value in column "source_format"` DB error — the `ImportJob` was saved before the format was detected; now parses the file and resolves the format before the first `save()` so the `NOT NULL` constraint is never violated
+- Risk history endpoint: fixed `LazyInitializationException` on `GET /api/risk/pitch/{id}/history` — Jackson was serialising `pitch.project` as a Hibernate proxy after the transaction closed; added `"project"` to `@JsonIgnoreProperties` on `PitchRiskHistory.pitch`
+- MCP Usage Report: "View Usage Report" button now navigates to `/integrations/mcp-usage` instead of the non-existent `/app/integrations/mcp-usage` path (was silently redirecting to dashboard)
+- MCP Usage Report: API calls no longer produce a double `/api/api/` prefix (service paths incorrectly included `/api` while the axios instance already sets `baseURL: '/api'`)
+- MCP Usage Report: all endpoints now accept a `?days=N` parameter (1–365) so summary, by-user, by-tool, and timeline data are all scoped to the selected period
+- i18n: removed duplicate `publicRoadmap.phase180*` keys in `en.json` and `fa.json` (stale shorter entries from an earlier edit were left alongside the newer detailed entries)
+- Bug status / severity name input now accepts underscore characters while typing (`READY_TO_TEST` previously got the trailing `_` stripped on every keystroke)
+- Merged "People & Teams" Organization section into a single "People & Access" group under Administration for admin users, reducing sidebar clutter
+- Betting table slot capacity now correctly converts pitch appetite from working days to calendar days when assigning a pitch, so the remaining-slot "X days available" label reflects actual working-day capacity instead of the raw calendar-day difference
+- AI Insights no longer flags future cycles as "at risk" — cycles that have not yet started are excluded from the AT_RISK_CYCLE check
+- Work-log task dropdown no longer loads tasks from all projects when "All Projects" context is active; user must select a cycle first
+- MEMBER role users can now delete their own work logs from the Pitch Detail page (frontend now routes to the owner-only endpoint instead of the admin endpoint)
+
+### Added — Custom Fields (v1.8.0 S48 backend)
+
+#### Custom Field Definitions
+- New `custom_field_definitions` table: org-wide or project-scoped metadata fields on Tasks, Pitches, and Bug Reports.
+- Seven field types: `TEXT`, `NUMBER`, `DATE`, `SELECT`, `MULTISELECT`, `CHECKBOX`, `URL`.
+- ADMIN can create org-wide fields (no `projectId`). MANAGER can create project-scoped fields. MEMBER can read and set values.
+- `CustomFieldDefinition` entity with Hibernate Envers auditing; `CustomFieldValue` entity (not audited — high-frequency writes).
+- On soft-delete of a definition, all its values are cascade-hard-deleted immediately.
+
+#### Custom Field Values
+- Single `value TEXT` column with type-appropriate encoding (number as `"42.5"`, date as `"2026-06-20"`, MULTISELECT as JSON array, CHECKBOX as `"true"`/`"false"`).
+- Upsert (create-or-update) semantics; bulk upsert endpoint for saving an entire entity's field set in one call.
+- Server-side validation: NUMBER parses as double, DATE parses as `LocalDate`, CHECKBOX must be `"true"`/`"false"`, SELECT/MULTISELECT values must be in the definition's allowed options set.
+
+#### REST API
+- `GET /api/custom-fields/definitions?entityType=&projectId=` — list applicable definitions.
+- `POST /api/custom-fields/definitions` — create definition.
+- `PUT /api/custom-fields/definitions/{id}` — update (fieldType and entityType immutable).
+- `DELETE /api/custom-fields/definitions/{id}` — soft-delete + cascade value delete.
+- `GET /api/custom-fields/values?entityType=&entityId=` — get values for an entity.
+- `PUT /api/custom-fields/values` — upsert single value.
+- `PUT /api/custom-fields/values/bulk` — bulk upsert.
+
+#### Permissions & Sample Data
+- `CUSTOM_FIELD` added to `ResourceType` enum; permission rows seeded for ADMIN/MANAGER/MEMBER/READONLY.
+- Help guide added: `14-custom-fields.md` (auto-loaded by `HelpGuideAIService`).
+- Sample data: 3 demo definitions (org-wide Sprint Notes, project-scoped Priority Tier, BUG-scoped Target QA Date) with seeded values.
+
+### Added — Advanced RBAC (v1.8.0 S50)
+
+#### Backend
+- `ProjectPermissionService` (`bean "projectPermissionService"`) — evaluates project-level role membership; `ADMIN` bypasses all checks, project owner is treated as `MANAGER`.
+- `requireProjectAccess`, `requireContributor`, `requireManager` guard methods throw `AccessDeniedException` for unauthorized callers.
+- `ProjectController`: member-management endpoints (`POST/DELETE /{projectId}/members/{userId}`) now require `MANAGER` role via SpEL `@PreAuthorize`. New `GET /{projectId}/my-role` endpoint returns the caller's `ProjectRole`.
+- `TaskService.getTasksByProjectId`, `PitchService.getIdeasByProjectId`, `BugReportService.getBugReportsWithFilters` all call `projectPermissionService.requireProjectAccess` before querying.
+- `ProjectPermissionServiceTest` — 10 tests covering ADMIN bypass, owner-as-MANAGER, contributor/viewer role checks, and guard throwing.
+
+#### Frontend
+- `useProjectRole(projectId)` hook — fetches `GET /projects/:id/my-role`; ADMIN short-circuits to `MANAGER` without API call. Returns `{ role, isManager, isContributor, isViewer, loading }`.
+- `ProjectMembersTab` — member list with role selector (managers) / static badge (viewers), Add Member dialog (user search + role picker), Remove confirmation.
+- `ProjectSettingsPage` at `/projects/:projectId/settings` — two tabs: Members | Custom Fields. Settings link visible to managers.
+- Added `projectService.getMyRole(projectId)` and wired project service to new `GET /{projectId}/my-role` endpoint.
+- i18n keys: `"projectSettings"` added to `en.json` and `fa.json`.
+
+### Added — Custom Fields UI (v1.8.0 S49 frontend)
+
+#### Organization Settings — Custom Fields Tab
+- New **Custom Fields** tab in Organization Settings sidebar (Work Management section) with Tasks / Pitches / Bug Reports entity-type tabs.
+- Create, edit, and delete field definitions via a dialog form (React Hook Form + Zod). Field type and entity type are immutable after creation.
+- Options tag-chip editor for SELECT and MULTISELECT fields — type a value, press Enter or click + to add, click × to remove.
+- ADMIN sees all definitions; MANAGER sees project-scoped and org-wide definitions for their projects.
+
+#### Custom Fields on Task, Pitch, and Bug Detail Pages
+- `CustomFieldsSection` component renders applicable fields as type-appropriate inputs: TEXT/NUMBER/URL → `<Input>`, DATE → `<input type="date">`, CHECKBOX → `<Switch>`, SELECT → dropdown, MULTISELECT → multi-chip toggle.
+- Collapsible card (chevron toggle) to minimize noise on detail pages.
+- Dirty-tracking: "Save" button only enabled when values have changed; bulk-saves all pending changes in one API call.
+- Required field validation: asterisk asterisk indicator; inline error message on save if blank.
+- URL fields show an external-link icon that opens the URL in a new tab.
+- Wired into `TaskDetailPage` (after attachments), `PitchDetail` (after documents), and `BugViewDialog` (before resolution).
 
 ### Added — Knowledge Center
 - Knowledge Center: upload docs and add URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis. Scoped Org / Team / Project. Pluggable provider SPI; GitHub / Confluence / Notion / Drive integrations queued as follow-ups.

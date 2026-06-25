@@ -25,6 +25,7 @@ const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
+const ProjectSettingsPage = lazy(() => import('./pages/ProjectSettingsPage'));
 
 // Cycle pages
 const CycleList = lazy(() => import('./pages/CycleList'));
@@ -83,6 +84,7 @@ const SlackIntegration = lazy(() => import('./pages/SlackIntegration'));
 const GitHubIntegration = lazy(() => import('./pages/integrations/GitHubIntegration'));
 const TeamsIntegration = lazy(() => import('./pages/integrations/TeamsIntegration'));
 const McpIntegration = lazy(() => import('./pages/integrations/McpIntegration'));
+const McpUsageReport = lazy(() => import('./pages/integrations/McpUsageReport'));
 const ApiKeysPage = lazy(() => import('./pages/integrations/ApiKeysPage'));
 const InboundWebhooksIntegration = lazy(
   () => import('./pages/integrations/InboundWebhooksIntegration')
@@ -227,6 +229,7 @@ function App() {
                       <Route path="dashboard" element={<Dashboard />} />
                       <Route path="projects" element={<Projects />} />
                       <Route path="projects/:id" element={<ProjectDetail />} />
+                      <Route path="projects/:projectId/settings" element={<ProjectSettingsPage />} />
                       <Route path="cycles" element={<CycleList />} />
                       <Route path="cycles/new" element={<CycleForm />} />
                       <Route path="cycles/:id" element={<CycleDetail />} />
@@ -302,6 +305,7 @@ function App() {
                       <Route path="integrations/github" element={<GitHubIntegration />} />
                       <Route path="integrations/teams" element={<TeamsIntegration />} />
                       <Route path="integrations/mcp" element={<McpIntegration />} />
+                      <Route path="integrations/mcp-usage" element={<McpUsageReport />} />
                       <Route path="integrations/api-keys" element={<ApiKeysPage />} />
                       <Route
                         path="integrations/inbound-webhooks"

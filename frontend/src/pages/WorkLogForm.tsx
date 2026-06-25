@@ -31,10 +31,11 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { useToast } from '../contexts';
+import { useToast, useAuth } from '../contexts';
 
 export default function WorkLogForm() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
@@ -79,6 +80,10 @@ export default function WorkLogForm() {
         personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsData.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsData);
       if (cyclesRes.data.length > 0) {
         setSelectedCycle(cyclesRes.data[0].id);

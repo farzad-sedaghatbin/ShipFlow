@@ -188,7 +188,9 @@ Once connected, your AI assistant has access to these tools:
 | `get_test_case` | Single test case by ID |
 | `get_test_runs` | Execution history of a test case — status, notes, actualResult, linked bug |
 | `get_bug_reports` | Bug reports linked to a task, pitch, or cycle — severity, status, repro steps |
-| `get_bug_report` | Single bug report by ID |
+| `get_bug_report` | Single bug report by `bugKey` (e.g. `"BUG-125"`) or numeric `bugReportId` |
+| `get_bug_attachments` | List a bug's attachments — fileName, type, size, `isImage`, and `extractedText` (for PDFs/docs) |
+| `download_bug_attachment` | Download an image attachment (by its `attachmentId`) as a **viewable image** so you can see design mockups/screenshots |
 | `get_pitches` | Pitches for a project (filterable by status) |
 | `get_pitch_detail` | Full pitch: problem, solution, risks, no-gos, **Figma wireframe URLs** |
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
@@ -354,8 +356,17 @@ get_test_runs(testCaseId: 1)
 get_bug_reports(taskId: 8)
 # → [{ bugKey, title, severity, status, stepsToReproduce, expectedBehavior, actualBehavior, ... }]
 
+# Fetch one bug by its human-facing key (what the user sees in the UI) — NOT the numeric id
+get_bug_report(bugKey: "BUG-125")
+
+# "Align with final design" bug? List attachments, then view the design image inline
+get_bug_attachments(bugKey: "BUG-135")
+# → [{ id: 42, fileName: "final-design.png", isImage: true, ... }]
+download_bug_attachment(attachmentId: 42)   # returns the image so you can see it
+
 # After fixing, update status (the resolvedAt timestamp is stamped automatically for RESOLVED/VERIFIED/CLOSED)
-update_bug_status(bugReportId: 1, status: "RESOLVED", resolution: "Fixed in commit abc123")
+# Identify the bug by bugKey or numeric bugReportId
+update_bug_status(bugKey: "BUG-125", status: "RESOLVED", resolution: "Fixed in commit abc123")
 ```
 
 **Subtask workflow:**

@@ -367,6 +367,12 @@ html[dir="rtl"] ol {
   }
 }
 
+@keyframes page-progress {
+  0% { transform: translateX(-100%); }
+  60% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
 /* Animation utilities */
 .animate-shimmer {
   animation: shimmer 2s linear infinite;
@@ -403,6 +409,10 @@ html[dir="rtl"] ol {
 
 .animate-typing {
   animation: typing 1.4s ease-in-out infinite;
+}
+
+.animate-page-progress {
+  animation: page-progress 1.2s ease-in-out infinite;
 }
 
 /* Linear-style subtle gradient backgrounds */

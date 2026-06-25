@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.ChunkPreview;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.CreateKnowledgeSourceRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.knowledge.KnowledgeSourceResponse;
-import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.service.UserService;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.KnowledgeSourceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,7 +53,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class KnowledgeSourceController {
 
   private final KnowledgeSourceService svc;
-  private final UserRepository users;
+  private final UserService userService;
   private final ObjectMapper json;
 
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -137,9 +137,6 @@ public class KnowledgeSourceController {
 
   private Long currentUserId() {
     String username = SecurityContextHolder.getContext().getAuthentication().getName();
-    return users
-        .findByUsername(username)
-        .orElseThrow(() -> new IllegalStateException("Authenticated user not found: " + username))
-        .getId();
+    return userService.findByUsername(username).getId();
   }
 }

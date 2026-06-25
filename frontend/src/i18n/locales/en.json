@@ -31,6 +31,7 @@
     "copyLink": "Copy shareable link",
     "view": "View",
     "viewAll": "View All",
+    "openInNewTab": "Open in new tab",
     "details": "Details",
     "actions": "Actions",
     "status": "Status",
@@ -178,6 +179,7 @@
       "research": "Research",
       "planning": "Planning",
       "userAccess": "User & Access",
+      "peopleAccess": "People & Access",
       "integrations": "Integrations"
     }
   },
@@ -1405,6 +1407,7 @@
   "bugs": {
     "reporter": "Reporter",
     "assignee": "Assignee",
+    "qaAssignee": "QA Tester",
     "pitch": "Pitch",
     "cycle": "Cycle",
     "team": "Team",
@@ -2039,6 +2042,20 @@
       "loadFailed": "Failed to load meeting details"
     }
   },
+  "projectSelector": {
+    "openInNewTab": "Open in new tab"
+  },
+  "testRuns": {
+    "viewDefect": "View defect {{key}}",
+    "statusValues": {
+      "PENDING": "Pending",
+      "RUNNING": "Running",
+      "PASSED": "Passed",
+      "FAILED": "Failed",
+      "BLOCKED": "Blocked",
+      "SKIPPED": "Skipped"
+    }
+  },
   "workLogs": {
     "title": "Work Logs",
     "addWorkLog": "Add Work Log",
@@ -2050,6 +2067,7 @@
     "note": "Note",
     "description": "Description",
     "totalHours": "Total Hours",
+    "total": "Total",
     "thisCycle": "This Cycle",
     "today": "Today",
     "thisWeek": "This Week",
@@ -2062,6 +2080,8 @@
     "pitchTask": "Pitch/Task",
     "selectPitch": "Select pitch",
     "selectTask": "Select task",
+    "selectCycleFirst": "Select a cycle first",
+    "selectCycleToSeeTasks": "Select a cycle above to see its tasks",
     "selectPerson": "Select person",
     "optionalNote": "Optional note",
     "logTime": "Log Time",
@@ -2210,6 +2230,27 @@
     "noMatch": "No test cases match your search",
     "actions": "Actions",
     "aiGenerated": "AI Generated",
+    "source": "Source",
+    "allSources": "All sources",
+    "sourceManual": "Manual",
+    "sourceAi": "AI-generated",
+    "createdBy": "Created by",
+    "allCreators": "All creators",
+    "bulkRun": {
+      "title": "Record test runs",
+      "description": "Record the same result for {{count}} selected test case(s).",
+      "selectedCount": "{{count}} selected",
+      "selectAll": "Select all",
+      "selectOne": "Select test case",
+      "recordRuns": "Record runs",
+      "clear": "Clear",
+      "status": "Result",
+      "environment": "Environment (optional)",
+      "environmentPlaceholder": "e.g. Chrome / staging",
+      "recording": "Recording…",
+      "success": "Recorded {{count}} test run(s)",
+      "failed": "Failed to record test runs"
+    },
     "allCycles": "All Cycles",
     "allPitches": "All Pitches",
     "allPriorities": "All Priorities",
@@ -2286,7 +2327,22 @@
       "SMOKE": "Smoke",
       "UNIT": "Unit"
     },
-    "updateSuccess": "Test case updated successfully"
+    "updateSuccess": "Test case updated successfully",
+    "pagination": {
+      "rowsPerPage": "Rows per page",
+      "rangeText": "{{start}}-{{end}} of {{total}}",
+      "empty": "No results",
+      "first": "First page",
+      "previous": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "goToPage": "Go to page {{page}}"
+    },
+    "searchStatus": "Search status...",
+    "searchType": "Search type...",
+    "searchPriority": "Search priority...",
+    "searchCycle": "Search cycles...",
+    "searchPitch": "Search pitches..."
   },
   "bugReports": {
     "title": "Bug Reports",
@@ -2326,7 +2382,9 @@
       "release": "Release",
       "allReleases": "All Releases",
       "allAssignees": "All Assignees",
-      "searchAssignee": "Search people..."
+      "searchAssignee": "Search people...",
+      "excludeLabel": "Exclude filters",
+      "excludeTooltip": "When ON, shows bugs that do NOT match the selected filters (inverts the filter)"
     },
     "sort": {
       "lastUpdated": "Last Updated",
@@ -2362,7 +2420,8 @@
       "export": "Export",
       "import": "Import",
       "refresh": "Refresh",
-      "bulkActions": "Bulk Actions"
+      "bulkActions": "Bulk Actions",
+      "openFullPage": "Open full page"
     },
     "emptyState": {
       "noBugs": "No bug reports yet",
@@ -2394,7 +2453,13 @@
       "rowsPerPage": "Rows per page",
       "rangeText": "{{start}}-{{end}} of {{total}}",
       "showing": "Showing {{start}}-{{end}} of {{total}}",
-      "itemsPerPage": "Items per page"
+      "itemsPerPage": "Items per page",
+      "empty": "No results",
+      "first": "First page",
+      "previous": "Previous page",
+      "next": "Next page",
+      "last": "Last page",
+      "goToPage": "Go to page {{page}}"
     },
     "detail": {
       "title": "Bug Report Details",
@@ -2417,6 +2482,7 @@
     },
     "assignee": "Assignee",
     "selectAssignee": "Select assignee",
+    "selectQaAssignee": "Select QA tester",
     "searchPerson": "Search persons...",
     "component": "Component",
     "noComponent": "No component",
@@ -2473,7 +2539,19 @@
     "reporter": "Reporter",
     "severity": "Severity",
     "statusLabel": "Status",
-    "updateSuccess": "[Translation needed: باگ با موفقیت به‌روزرسانی شد]"
+    "updateSuccess": "[Translation needed: باگ با موفقیت به‌روزرسانی شد]",
+    "linkCopied": "Link copied to clipboard",
+    "copyLink": "Copy shareable link",
+    "copyBugLink": "Copy link",
+    "savedFilters": {
+      "title": "Saved filters",
+      "saveCurrent": "Save current filters",
+      "namePlaceholder": "Filter name...",
+      "saved": "Filter saved",
+      "none": "No saved filters yet",
+      "apply": "Apply",
+      "delete": "Delete"
+    }
   },
   "roadmap": {
     "title": "Roadmap",
@@ -2837,6 +2915,7 @@
     "attached": "{{count}} attachment(s)",
     "pendingUpload": "{{count}} file(s) ready to upload",
     "noAttachments": "No attachments",
+    "unavailable": "Unavailable",
     "videoNotSupported": "Your browser does not support video playback"
   },
   "chartConfig": {
@@ -3273,6 +3352,8 @@
     "exportSuccess": "Tasks exported successfully",
     "statusUpdated": "Status updated successfully",
     "priorityUpdated": "Priority updated successfully",
+    "assigneeUpdated": "Assignee updated successfully",
+    "changeAssignee": "Change assignee",
     "editSubtask": "Edit Subtask",
     "editTask": "Edit Task",
     "createSubtask": "Create Subtask",
@@ -3700,10 +3781,13 @@
     "bugTrackingDesc": "Configure bug statuses and severity levels",
     "bugStatuses": "Bug Statuses",
     "statusName": "Status Name",
+    "statusNameHint": "Must be UPPER_SNAKE_CASE (e.g. IN_PROGRESS)",
+    "addStatus": "Add Status",
     "active": "Active",
     "closed": "Closed",
     "severityLevels": "Severity Levels",
     "severityName": "Severity Name",
+    "addSeverity": "Add Severity",
     "priority": "Priority",
     "taskPitchCategories": "Task & Pitch Categories",
     "categoriesDesc": "Manage categories for tasks and pitches",
@@ -4992,7 +5076,7 @@
     "wiseArchitectureDesc": "AI-powered architecture advisor that analyzes codebases, team skills, and Figma designs to recommend optimal implementation strategies."
   },
   "publicRoadmap": {
-    "phaseKcTheme": "Knowledge Center",
+    "phaseKcTheme": "Knowledge Center & Wiki",
     "phaseKcItem0Title": "Upload docs and add URLs",
     "phaseKcItem0Desc": "Upload PDFs, DOCX, and Markdown files or paste URLs that feed Q&A, AI test generation, Wise Architecture, and risk analysis — one knowledge layer shared across every AI surface.",
     "phaseKcItem1Title": "Org / Team / Project scope",
@@ -5275,12 +5359,14 @@
     "phase170Item2Title": "20 Automation Templates",
     "phase170Item2Desc": "Pre-built templates for common workflows: on-call rotation, sprint kickoff checklists, bug triage, and release day runbooks.",
     "phase180Theme": "Custom Fields & Advanced RBAC",
-    "phase180Item0Title": "Custom Fields on Tasks & Pitches",
-    "phase180Item0Desc": "Add your own fields — text, number, date, single-select, multi-select — to tasks and pitches. Fields are configured per project and appear everywhere the entity appears: backlog, detail view, CSV export.",
+    "phase180Item0Title": "Custom Fields on Tasks, Pitches & Bugs",
+    "phase180Item0Desc": "Add your own fields — text, number, date, URL, checkbox, single-select, multi-select — to tasks, pitches, and bug reports. Define fields org-wide or per-project. Values appear on every detail page.",
     "phase180Item1Title": "Project-Level Permissions",
     "phase180Item1Desc": "Grant access at the project level, not just the organization. Give a contractor read access to one project, a QA team write access to bugs only — without touching global roles.",
-    "phase180Item2Title": "Field Visibility Rules",
-    "phase180Item2Desc": "Show or hide custom fields based on role, project type, or cycle phase. Keep forms clean for developers while product managers see the full picture.",
+    "phase180Item2Title": "Custom Fields Settings",
+    "phase180Item2Desc": "Manage field definitions in Organization Settings → Custom Fields. Separate tabs for Tasks, Pitches, and Bug Reports. Create and edit fields via a guided dialog with options tag-chip input.",
+    "phase180Item3Title": "MCP Usage Report",
+    "phase180Item3Desc": "Admin dashboard with per-user and per-tool MCP call analytics, 30-day timeline, success rate, and recent-log feed.",
     "phase190Theme": "Wiki / Docs Space",
     "phase190Item0Title": "Built-In Team Wiki",
     "phase190Item0Desc": "Write, organize, and search documentation without leaving ShipFlow. Pages live next to the pitches and tasks they describe — no more context-switching to Confluence or Notion.",
@@ -7489,6 +7575,7 @@
     "connectAuth": "Authentication",
     "connectKeyHint": "Create an API key in the API Keys tab and use it as the bearer token.",
     "connectNoRestart": "Changes take effect immediately — no server restart required.",
+    "viewUsageReport": "View Usage Report",
     "apiKeysTitle": "API Keys",
     "apiKeysDescription": "Generate keys to authenticate external MCP clients.",
     "createKey": "Create Key",
@@ -7729,6 +7816,58 @@
     "updatePitchStatus": "Update Pitch Status via MCP",
     "addComment": "Add Comment via MCP",
     "writeToolsEnabled": "Write tools enabled"
+  },
+  "mcpUsage": {
+    "title": "MCP Usage Report",
+    "subtitle": "Admin view of per-user MCP and API tool call activity",
+    "refresh": "Refresh",
+    "loadError": "Failed to load usage data. Please try again.",
+    "noData": "No data yet. Usage is recorded as MCP clients invoke tools.",
+    "summary": {
+      "totalCalls": "Total Calls",
+      "successRate": "Success Rate",
+      "failures": "Failures",
+      "activeUsers": "Active Users",
+      "last30Days": "last 30 days",
+      "uniqueTools": "Unique Tools",
+      "successCalls": "Successful Calls"
+    },
+    "tabs": {
+      "timeline": "Timeline",
+      "byUser": "By User",
+      "byTool": "By Tool",
+      "recent": "Recent Logs"
+    },
+    "timeline": {
+      "title": "Daily Call Volume (last 30 days)",
+      "totalCalls": "Total Calls",
+      "successCalls": "Successful"
+    },
+    "byUser": {
+      "title": "Usage by User",
+      "username": "Username",
+      "email": "Email",
+      "totalCalls": "Total Calls",
+      "successRate": "Success Rate",
+      "lastSeen": "Last Seen"
+    },
+    "byTool": {
+      "chartTitle": "Calls per Tool",
+      "tableTitle": "Tool Breakdown",
+      "toolName": "Tool",
+      "totalCalls": "Total Calls",
+      "successRate": "Success Rate",
+      "uniqueUsers": "Unique Users"
+    },
+    "recent": {
+      "title": "Recent Tool Calls (last 50)",
+      "calledAt": "Time",
+      "user": "User",
+      "toolName": "Tool",
+      "status": "Status",
+      "apiKey": "API Key",
+      "duration": "Duration"
+    }
   },
   "pitchDependencies": {
     "title": "Dependencies",
@@ -8123,6 +8262,39 @@
     "templateGalleryDesc": "Pick a template to get started quickly. You can customise it after adding.",
     "noResults": "No templates match your search."
   },
+  "customFields": {
+    "navLabel": "Custom Fields",
+    "title": "Custom Fields",
+    "subtitle": "Define extra metadata fields for Tasks, Pitches, and Bug Reports",
+    "noFields": "No custom fields defined yet",
+    "createField": "Create Field",
+    "editField": "Edit Field",
+    "deleteField": "Delete Field",
+    "deleteConfirm": "Delete \"{{name}}\"? All saved values for this field will be permanently removed.",
+    "fieldName": "Field Name",
+    "fieldType": "Field Type",
+    "entityType": "Applies To",
+    "projectScope": "Project Scope",
+    "orgWide": "Org-wide (all projects)",
+    "required": "Required",
+    "sortOrder": "Sort Order",
+    "options": "Options",
+    "optionsHint": "Type an option and press Enter",
+    "saveFields": "Save",
+    "saveSuccess": "Custom field values saved",
+    "saveFailed": "Failed to save custom field values",
+    "entityType.TASK": "Tasks",
+    "entityType.PITCH": "Pitches",
+    "entityType.BUG": "Bug Reports",
+    "fieldType.TEXT": "Text",
+    "fieldType.NUMBER": "Number",
+    "fieldType.DATE": "Date",
+    "fieldType.SELECT": "Single Select",
+    "fieldType.MULTISELECT": "Multi-Select",
+    "fieldType.CHECKBOX": "Checkbox",
+    "fieldType.URL": "URL",
+    "required.error": "{{name}} is required"
+  },
   "pluginSettings": {
     "navLabel": "Plugins",
     "title": "Plugin Extensions",
@@ -8142,6 +8314,30 @@
     "builtinNote": "These are SDK reference implementations included with ShipFlow. They demonstrate the plugin extension API — replace them with your own plugins to customize behavior.",
     "builtinDeadlinePressureDesc": "Scores pitches by the gap between time consumed and task completion. Use as a template for custom risk calculators.",
     "builtinCycleHealthDesc": "Produces a plain-text cycle health summary. Override with your own report format via the Plugin SDK."
+  },
+  "projectSettings": {
+    "title": "Project Settings",
+    "members": "Members",
+    "membersDesc": "Manage who can access this project and what they can do.",
+    "customFields": "Custom Fields",
+    "addMember": "Add Member",
+    "removeMember": "Remove Member",
+    "removeConfirm": "Remove {{username}} from this project?",
+    "grantedAt": "Granted",
+    "grantedBy": "Granted by",
+    "owner": "Owner",
+    "noMembers": "No members yet.",
+    "noAccess": "You do not have access to this project.",
+    "role": {
+      "VIEWER": "Viewer",
+      "CONTRIBUTOR": "Contributor",
+      "MANAGER": "Manager"
+    },
+    "roleDesc": {
+      "VIEWER": "Read-only access",
+      "CONTRIBUTOR": "Can create and edit tasks, pitches, and bugs",
+      "MANAGER": "Full project access including member management"
+    }
   },
   "knowledgeCenter": {
     "title": "Knowledge Center",
@@ -8260,5 +8456,20 @@
     "noResults": "No results found.",
     "loadHistoryError": "Failed to load history.",
     "loadSpacesError": "Failed to load spaces."
+  },
+  "moveToProject": {
+    "title": "Move {{type}} to another project",
+    "description": "\"{{entity}}\" will be moved to the selected project. This action is logged and reversible.",
+    "selectProject": "Target project",
+    "selectPlaceholder": "Select a project…",
+    "entityTask": "task",
+    "entityPitch": "pitch",
+    "entityBug": "bug report",
+    "confirm": "Move",
+    "success": "\"{{entity}}\" moved to {{project}}",
+    "failed": "Failed to move. Please try again.",
+    "loadProjectsFailed": "Could not load projects.",
+    "taskNote": "All subtasks will be moved with this task. Cycle and pitch associations will be cleared.",
+    "pitchNote": "The pitch will be moved to the backlog of the target project. Cycle assignment will be cleared."
   }
 }

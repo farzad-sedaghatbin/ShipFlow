@@ -147,6 +147,10 @@ export function useBacklogPage() {
         : cycleService.getMyActiveCycles();
       const [cyclesRes, personsRes, teamsRes] = await Promise.all([cyclesPromise, personService.getAll(), teamService.getAll()]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsRes.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsRes);
       setTeams(teamsRes.data);
       if (currentProject) {
@@ -257,12 +261,13 @@ export function useBacklogPage() {
   };
 
   const loadStatistics = async () => {
-    if (isKanbanProject && currentProject) {
+    if (isKanbanProject || selectedCycle === 'all') {
+      if (!currentProject) { setStatistics(null); return; }
       try { const r = await taskService.getStatisticsByProjectId(currentProject.id); setStatistics(r.data); }
       catch (error) { console.error('Failed to load project statistics:', error); }
       return;
     }
-    if (!selectedCycle || selectedCycle === 'all') return;
+    if (!selectedCycle) { setStatistics(null); return; }
     try { const r = await taskService.getStatisticsByCycleId(selectedCycle); setStatistics(r.data); }
     catch (error) { console.error('Failed to load statistics:', error); }
   };
@@ -444,6 +449,11 @@ export function useBacklogPage() {
     catch (error: any) { toast.error(getUserFriendlyError(error)); }
   };
 
+  const handleQuickAssigneeChange = async (taskId: number, assigneeId: number | null) => {
+    try { await taskService.updateAssignee(taskId, assigneeId); toast.success(t('backlogPage.assigneeUpdated')); loadTasks(); }
+    catch (error: any) { toast.error(getUserFriendlyError(error)); }
+  };
+
   /**
    * Optimistically update local task order after a drag-to-reorder.
    * Called by BacklogTaskTable before the API request is made.
@@ -560,6 +570,7 @@ export function useBacklogPage() {
     handleDeleteTask,
     handleQuickStatusChange,
     handleQuickPriorityChange,
+    handleQuickAssigneeChange,
     handleReorder,
     handleClearFilters,
     handleExportCsv,

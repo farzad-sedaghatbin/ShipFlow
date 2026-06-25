@@ -115,6 +115,7 @@ export interface Project {
  */
 export interface ProjectMember {
   userId: number;
+  personId?: number;
   username: string;
   email?: string;
   projectRole: ProjectRole;
@@ -1138,6 +1139,8 @@ export interface BugReport {
   reporterName?: string;
   assigneeId?: number;
   assigneeName?: string;
+  qaAssigneeId?: number;
+  qaAssigneeName?: string;
   resolution?: string;
   resolvedAt?: string;
   createdAt: string;
@@ -1174,6 +1177,7 @@ export interface CreateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   targetReleaseId?: number;
 }
 
@@ -1195,9 +1199,18 @@ export interface UpdateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   resolution?: string;
   targetReleaseId?: number;
   fixedInReleaseId?: number;
+}
+
+export interface BugStats {
+  total: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  critical: number;
 }
 
 export interface TestRun {
@@ -1221,7 +1234,16 @@ export interface TestRun {
   attachments?: string;
   bugReportId?: number;
   bugReportKey?: string;
+  /** All bug reports (defects) linked to this run. A failed execution may have several. */
+  linkedBugs?: LinkedBugReport[];
   createdAt: string;
+}
+
+export interface LinkedBugReport {
+  id: number;
+  bugKey: string;
+  title?: string;
+  status?: BugStatus;
 }
 
 export interface CreateTestRunRequest {
@@ -1368,6 +1390,7 @@ export interface TeamTrack {
   totalCapacityWeeks: number;
   usedCapacityWeeks: number;
   availableCapacityWeeks: number;
+  workingDaysPerWeek?: number;
 }
 
 export interface BettingTable {
@@ -1880,4 +1903,68 @@ export interface JiraProject {
   key: string;
   name: string;
   description: string | null;
+}
+
+// ── Custom Fields (v1.8.0) ─────────────────────────────────────────────────
+
+export type CustomFieldType =
+  | 'TEXT'
+  | 'NUMBER'
+  | 'DATE'
+  | 'SELECT'
+  | 'MULTISELECT'
+  | 'CHECKBOX'
+  | 'URL';
+
+export type CustomFieldEntityType = 'TASK' | 'PITCH' | 'BUG';
+
+export interface CustomFieldDefinition {
+  id: number;
+  name: string;
+  description?: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  projectId?: number;
+  projectName?: string;
+  required: boolean;
+  sortOrder: number;
+  options?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomFieldValue {
+  definitionId: number;
+  definitionName: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  entityId: number;
+  value?: string;
+  updatedByUsername?: string;
+  updatedAt: string;
+}
+
+export interface CreateCustomFieldDefinitionRequest {
+  name: string;
+  description?: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  projectId?: number;
+  required?: boolean;
+  sortOrder?: number;
+  options?: string[];
+}
+
+export interface UpdateCustomFieldDefinitionRequest {
+  name?: string;
+  description?: string;
+  required?: boolean;
+  sortOrder?: number;
+  options?: string[];
+}
+
+export interface BulkUpsertCustomFieldValuesRequest {
+  entityType: CustomFieldEntityType;
+  entityId: number;
+  values: Record<number, string>;
 }

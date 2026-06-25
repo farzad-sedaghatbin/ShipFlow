@@ -461,6 +461,38 @@ public class DocumentService {
   }
 
   /**
+   * Read the raw bytes of a stored document. Applies the same path-traversal guard as
+   * {@link #downloadDocument(Long)}. Used by non-HTTP consumers (e.g. the MCP server) that need the
+   * file content in-memory rather than as a streamed HTTP resource.
+   */
+  public byte[] getDocumentBytes(Long id) {
+    UploadedDocument document = getDocumentById(id);
+    Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+    Path filePath = uploadPath.resolve(document.getStoragePath()).normalize();
+    if (!filePath.startsWith(uploadPath)) {
+      log.error("Security violation: Attempted path traversal for document ID {}: {}", id,
+          document.getStoragePath());
+      throw new ResourceNotFoundException(
+          localizationService.getMessage("document.not.found", document.getOriginalFileName()));
+    }
+    try {
+      return Files.readAllBytes(filePath);
+    } catch (IOException e) {
+      throw new ResourceNotFoundException(
+          localizationService.getMessage("document.read.error", e.getMessage()), e);
+    }
+  }
+
+  /**
+   * Returns the MIME content type for a file extension (e.g. "png" → "image/png"), or
+   * "application/octet-stream" if unknown. Public so non-HTTP consumers (MCP server) can label
+   * binary content.
+   */
+  public String getContentType(String fileType) {
+    return determineContentType(fileType);
+  }
+
+  /**
    * Determines the MIME content type based on file extension.
    *
    * @param fileType

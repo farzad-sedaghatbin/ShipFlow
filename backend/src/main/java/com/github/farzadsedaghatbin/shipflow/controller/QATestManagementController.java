@@ -113,14 +113,16 @@ public class QATestManagementController {
   }
 
   @GetMapping("/test-cases/filter")
-  @Operation(summary = "Get test cases with multi-selection filters", description = "Filter test cases by cycle, pitch, statuses, types, and priorities")
+  @Operation(summary = "Get test cases with multi-selection filters", description = "Filter test cases by cycle, pitch, statuses, types, priorities, creator, and source (manual vs AI-generated)")
   public ResponseEntity<List<TestCaseDTO>> getTestCasesWithFilters(@RequestParam(required = false) Long cycleId,
       @RequestParam(required = false) Long pitchId, @RequestParam(required = false) List<TestCaseStatus> statuses,
       @RequestParam(required = false) List<TestCaseType> types,
-      @RequestParam(required = false) List<TestCasePriority> priorities) {
+      @RequestParam(required = false) List<TestCasePriority> priorities,
+      @RequestParam(required = false) Long createdById,
+      @RequestParam(required = false) Boolean aiGenerated) {
     checkFeatureEnabled();
-    return ResponseEntity
-        .ok(testCaseService.getTestCasesWithFilters(cycleId, pitchId, statuses, types, priorities));
+    return ResponseEntity.ok(testCaseService.getTestCasesWithFilters(cycleId, pitchId, statuses, types, priorities,
+        createdById, aiGenerated));
   }
 
   @PostMapping("/test-cases")
@@ -131,6 +133,17 @@ public class QATestManagementController {
     checkFeatureEnabled();
     Long userId = getUserId(userDetails);
     return ResponseEntity.ok(testCaseService.createTestCase(request, userId));
+  }
+
+  @PostMapping("/test-cases/bulk")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Bulk create test cases", description = "Creates multiple test cases in a single atomic transaction")
+  public ResponseEntity<List<TestCaseDTO>> createTestCasesBulk(
+      @Valid @RequestBody BulkCreateTestCaseRequest request,
+      @AuthenticationPrincipal UserDetails userDetails) {
+    checkFeatureEnabled();
+    Long userId = getUserId(userDetails);
+    return ResponseEntity.ok(testCaseService.createTestCasesBulk(request, userId));
   }
 
   @PutMapping("/test-cases/{id}")
@@ -173,6 +186,7 @@ public class QATestManagementController {
       @RequestParam(required = false) List<BugSeverity> severities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude,
+      @RequestParam(required = false) String search,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder) {
@@ -180,7 +194,22 @@ public class QATestManagementController {
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     return ResponseEntity.ok(bugReportService.getBugReportsWithFilters(projectId, cycleId, pitchId, statuses,
-        severities, assigneeIds, exclude, pageable));
+        severities, assigneeIds, exclude, search, pageable));
+  }
+
+  @GetMapping("/bug-reports/stats")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Get bug report aggregate stats", description = "Returns total/open/inProgress/resolved/critical counts for the current filter context")
+  public ResponseEntity<BugStatsDTO> getBugStats(@RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) Long cycleId, @RequestParam(required = false) Long pitchId,
+      @RequestParam(required = false) List<BugStatus> statuses,
+      @RequestParam(required = false) List<BugSeverity> severities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude,
+      @RequestParam(required = false) String search) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(
+        bugReportService.getBugStats(projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, search));
   }
 
   @GetMapping("/bug-reports/{id}")
@@ -276,6 +305,18 @@ public class QATestManagementController {
     return ResponseEntity.ok(bugReportService.updateBugReport(id, request, userId));
   }
 
+  @PatchMapping("/bug-reports/{id}/qa-assignee")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN')")
+  @Operation(
+      summary = "Assign (or unassign) the QA tester for a bug",
+      description = "Lightweight PATCH that only changes the QA assignee (who verifies the fix)."
+          + " Pass a null qaAssigneeId to unassign. All other bug fields are untouched.")
+  public ResponseEntity<BugReportDTO> updateBugQaAssignee(@PathVariable Long id,
+      @RequestBody UpdateBugQaAssigneeRequest request) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(bugReportService.updateBugReportQaAssignee(id, request.getQaAssigneeId()));
+  }
+
   @DeleteMapping("/bug-reports/{id}")
   @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
   @Operation(summary = "Delete a bug report", description = "Deletes a bug report")
@@ -340,6 +381,18 @@ public class QATestManagementController {
     return ResponseEntity.ok(testRunService.createTestRun(request, userId));
   }
 
+  @PostMapping("/test-runs/bulk")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Bulk record test runs",
+      description = "Records the same execution result against many test cases at once (Zephyr-style)")
+  public ResponseEntity<List<TestRunDTO>> recordTestRunsBulk(
+      @Valid @RequestBody BulkRecordTestRunsRequest request,
+      @AuthenticationPrincipal UserDetails userDetails) {
+    checkFeatureEnabled();
+    Long userId = getUserId(userDetails);
+    return ResponseEntity.ok(testRunService.recordTestRunsBulk(request, userId));
+  }
+
   @PatchMapping("/test-runs/{id}/status")
   @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
   @Operation(summary = "Update test run status", description = "Updates the status of a test run")
@@ -347,6 +400,33 @@ public class QATestManagementController {
       @RequestParam(required = false) String notes) {
     checkFeatureEnabled();
     return ResponseEntity.ok(testRunService.updateTestRunStatus(id, status, notes));
+  }
+
+  @PatchMapping("/test-runs/bulk/status")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Bulk update test run status",
+      description = "Updates the status of many test runs at once (Zephyr-style)")
+  public ResponseEntity<List<TestRunDTO>> updateTestRunStatusBulk(
+      @Valid @RequestBody BulkUpdateTestRunStatusRequest request) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(testRunService.updateTestRunStatusBulk(request));
+  }
+
+  @PatchMapping("/test-runs/{runId}/defects/{bugReportId}")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Link a defect to a test run",
+      description = "Links an existing bug report (defect) to a test run. A run can have several linked defects.")
+  public ResponseEntity<TestRunDTO> linkDefect(@PathVariable Long runId, @PathVariable Long bugReportId) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(testRunService.linkDefect(runId, bugReportId));
+  }
+
+  @DeleteMapping("/test-runs/{runId}/defects/{bugReportId}")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN', 'QA')")
+  @Operation(summary = "Unlink a defect from a test run", description = "Removes a bug report link from a test run")
+  public ResponseEntity<TestRunDTO> unlinkDefect(@PathVariable Long runId, @PathVariable Long bugReportId) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(testRunService.unlinkDefect(runId, bugReportId));
   }
 
   @DeleteMapping("/test-runs/{id}")
@@ -391,6 +471,14 @@ public class QATestManagementController {
     User user = userRepository.findByUsername(userDetails.getUsername())
         .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
     return user.getId();
+  }
+
+  @PatchMapping("/bug-reports/{id}/move-to-project/{projectId}")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Move a bug report to a different project (admin only)")
+  public ResponseEntity<BugReportDTO> moveBugReportToProject(@PathVariable Long id, @PathVariable Long projectId) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(bugReportService.moveBugReportToProject(id, projectId));
   }
 
   private void checkFeatureEnabled() {

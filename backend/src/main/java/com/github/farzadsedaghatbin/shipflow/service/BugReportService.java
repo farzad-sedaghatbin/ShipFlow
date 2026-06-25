@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.jpa.domain.Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +34,7 @@ public class BugReportService {
   private final TaskRepository taskRepository;
   private final ProjectRepository projectRepository;
   private final ReleaseRepository releaseRepository;
+  private final ProjectPermissionService projectPermissionService;
 
   @Value("${app.qa.test-management.enabled:true}")
   private boolean testManagementEnabled;
@@ -107,6 +109,12 @@ public class BugReportService {
       Person assignee = personRepository.findById(request.getAssigneeId())
           .orElseThrow(() -> new IllegalArgumentException("Assignee not found: " + request.getAssigneeId()));
       bugReport.setAssignee(assignee);
+    }
+
+    if (request.getQaAssigneeId() != null) {
+      Person qaAssignee = personRepository.findById(request.getQaAssigneeId())
+          .orElseThrow(() -> new IllegalArgumentException("QA assignee not found: " + request.getQaAssigneeId()));
+      bugReport.setQaAssignee(qaAssignee);
     }
 
     if (request.getTargetReleaseId() != null) {
@@ -200,6 +208,12 @@ public class BugReportService {
       bugReport.setAssignee(assignee);
     }
 
+    if (request.getQaAssigneeId() != null) {
+      Person qaAssignee = personRepository.findById(request.getQaAssigneeId())
+          .orElseThrow(() -> new IllegalArgumentException("QA assignee not found: " + request.getQaAssigneeId()));
+      bugReport.setQaAssignee(qaAssignee);
+    }
+
     if (request.getTargetReleaseId() != null) {
       com.github.farzadsedaghatbin.shipflow.entity.Release release = releaseRepository.findById(request.getTargetReleaseId())
           .orElseThrow(() -> new IllegalArgumentException("Release not found: " + request.getTargetReleaseId()));
@@ -215,6 +229,30 @@ public class BugReportService {
     bugReport = bugReportRepository.save(bugReport);
     log.info("Updated bug report: {} by user: {}", bugReport.getBugKey(), userId);
 
+    return toDTO(bugReport);
+  }
+
+  /**
+   * Assign (or unassign) the QA tester for a bug. A null {@code qaAssigneeId} clears the QA
+   * assignee. All other fields are left untouched.
+   */
+  @Transactional
+  public BugReportDTO updateBugReportQaAssignee(Long id, Long qaAssigneeId) {
+    checkFeatureEnabled();
+
+    BugReport bugReport = bugReportRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Bug report not found: " + id));
+
+    if (qaAssigneeId == null) {
+      bugReport.setQaAssignee(null);
+    } else {
+      Person qaAssignee = personRepository.findById(qaAssigneeId)
+          .orElseThrow(() -> new IllegalArgumentException("QA assignee not found: " + qaAssigneeId));
+      bugReport.setQaAssignee(qaAssignee);
+    }
+
+    bugReport = bugReportRepository.save(bugReport);
+    log.info("Updated QA assignee for bug report: {} -> {}", bugReport.getBugKey(), qaAssigneeId);
     return toDTO(bugReport);
   }
 
@@ -336,70 +374,88 @@ public class BugReportService {
   /** Get bug reports with multi-selection filters. */
   @Transactional(readOnly = true)
   public Page<BugReportDTO> getBugReportsWithFilters(Long projectId, Long cycleId, Long pitchId,
-      List<BugStatus> statuses, List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude,
+      List<BugStatus> statuses, List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude, String search,
       Pageable pageable) {
+    if (projectId != null) {
+      projectPermissionService.requireProjectAccess(projectId);
+    }
     checkFeatureEnabled();
 
     log.info(
-        "getBugReportsWithFilters called - projectId: {}, cycleId: {}, pitchId: {}, statuses: {}, severities: {}, assigneeIds: {}, exclude: {}, page: {}, size: {}",
-        projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, pageable.getPageNumber(),
+        "getBugReportsWithFilters called - projectId: {}, cycleId: {}, pitchId: {}, statuses: {}, severities: {}, assigneeIds: {}, exclude: {}, search: {}, page: {}, size: {}",
+        projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, search, pageable.getPageNumber(),
         pageable.getPageSize());
 
-    // Convert empty lists to null for the query
+    // Normalise empty lists to null so the spec treats them as "no filter"
     List<BugStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
-    
-    // If no status filter provided and not in exclusion mode, exclude CLOSED bugs by default
+
+    // When no status filter is given and we are NOT in exclusion mode, hide CLOSED bugs by default
     if (statusList == null && (exclude == null || !exclude)) {
       statusList = Arrays.stream(BugStatus.values())
-          .filter(status -> status != BugStatus.CLOSED)
+          .filter(s -> s != BugStatus.CLOSED)
           .collect(Collectors.toList());
-      log.debug("No status filter provided - excluding CLOSED bugs by default");
+      log.debug("No status filter provided – excluding CLOSED by default");
     }
-    
+
     List<BugSeverity> severityList = (severities != null && !severities.isEmpty()) ? severities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    String searchParam = (search != null && !search.isBlank()) ? search.trim() : null;
 
-    log.debug("Converted filters - statusList: {}, severityList: {}, assigneeList: {}", statusList, severityList,
-        assigneeList);
+    // Build a JPA Specification so both the data and count queries use the same predicates.
+    // This replaces the old JPQL approach where (:param IS NULL OR field IN :param) is
+    // unreliable for collection parameters in Hibernate 6.
+    Specification<BugReport> spec = Boolean.TRUE.equals(exclude)
+        ? BugReportSpecification.withExclusionFilters(
+            projectId, cycleId, pitchId, statusList, severityList, assigneeList, searchParam)
+        : BugReportSpecification.withInclusionFilters(
+            projectId, cycleId, pitchId, statusList, severityList, assigneeList, searchParam);
 
-    Page<BugReport> result;
-    if (exclude != null && exclude) {
-      log.debug("Using exclusion filters query");
-      result = bugReportRepository.findWithExclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
-          assigneeList, pageable);
-    } else {
-      log.debug("Using inclusion filters query");
-      result = bugReportRepository.findWithFilters(projectId, cycleId, pitchId, statusList, severityList,
-          assigneeList, pageable);
-    }
+    Page<BugReport> result = bugReportRepository.findAll(spec, pageable);
 
     log.info(
-        "getBugReportsWithFilters result - totalElements: {}, totalPages: {}, numberOfElements: {}, content size: {}",
-        result.getTotalElements(), result.getTotalPages(), result.getNumberOfElements(),
-        result.getContent().size());
-
-    if (result.getContent().isEmpty()) {
-      log.warn("No bug reports found with filters - projectId: {}, cycleId: {}, pitchId: {}", projectId, cycleId,
-          pitchId);
-      // Log total count in database for debugging
-      long totalCount = bugReportRepository.count();
-      log.warn("Total bug reports in database: {}", totalCount);
-      if (projectId != null) {
-        long projectCount = bugReportRepository.countByProjectId(projectId);
-        log.warn("Bug reports with direct project_id={}: {}", projectId, projectCount);
-      }
-    } else {
-      log.debug("First bug report in result - id: {}, bugKey: {}, projectId: {}, cycleId: {}",
-          result.getContent().get(0).getId(), result.getContent().get(0).getBugKey(),
-          result.getContent().get(0).getProject() != null
-              ? result.getContent().get(0).getProject().getId()
-              : null,
-          result.getContent().get(0).getCycle() != null
-              ? result.getContent().get(0).getCycle().getId()
-              : null);
-    }
+        "getBugReportsWithFilters result - totalElements: {}, totalPages: {}, content size: {}",
+        result.getTotalElements(), result.getTotalPages(), result.getContent().size());
 
     return result.map(this::toDTO);
+  }
+
+  /** Aggregate stat counts for the current filter context (used by overview stat cards). */
+  @Transactional(readOnly = true)
+  public BugStatsDTO getBugStats(Long projectId, Long cycleId, Long pitchId, List<BugStatus> statuses,
+      List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude, String search) {
+    if (projectId != null) {
+      projectPermissionService.requireProjectAccess(projectId);
+    }
+    checkFeatureEnabled();
+
+    List<BugStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
+    if (statusList == null && (exclude == null || !exclude)) {
+      statusList = Arrays.stream(BugStatus.values()).filter(s -> s != BugStatus.CLOSED).collect(Collectors.toList());
+    }
+    List<BugSeverity> severityList = (severities != null && !severities.isEmpty()) ? severities : null;
+    List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    String searchParam = (search != null && !search.isBlank()) ? search.trim() : null;
+
+    Specification<BugReport> base = Boolean.TRUE.equals(exclude)
+        ? BugReportSpecification.withExclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
+            assigneeList, searchParam)
+        : BugReportSpecification.withInclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
+            assigneeList, searchParam);
+
+    long total = bugReportRepository.count(base);
+    long open = bugReportRepository.count(
+        base.and((r, q, cb) -> cb.equal(r.get("status"), BugStatus.OPEN)));
+    long inProgress = bugReportRepository.count(
+        base.and((r, q, cb) -> cb.equal(r.get("status"), BugStatus.IN_PROGRESS)));
+    long resolved = bugReportRepository.count(
+        base.and((r, q, cb) -> r.get("status").in(
+            List.of(BugStatus.RESOLVED, BugStatus.VERIFIED, BugStatus.CLOSED))));
+    long critical = bugReportRepository.count(
+        base.and((r, q, cb) -> r.get("severity").in(
+            List.of(BugSeverity.CRITICAL, BugSeverity.BLOCKER))));
+
+    return BugStatsDTO.builder().total(total).open(open).inProgress(inProgress).resolved(resolved)
+        .critical(critical).build();
   }
 
   /** Generate unique bug key. */
@@ -447,6 +503,8 @@ public class BugReportService {
         .reporterName(bugReport.getReporter() != null ? bugReport.getReporter().getUsername() : null)
         .assigneeId(bugReport.getAssignee() != null ? bugReport.getAssignee().getId() : null)
         .assigneeName(bugReport.getAssignee() != null ? bugReport.getAssignee().getName() : null)
+        .qaAssigneeId(bugReport.getQaAssignee() != null ? bugReport.getQaAssignee().getId() : null)
+        .qaAssigneeName(bugReport.getQaAssignee() != null ? bugReport.getQaAssignee().getName() : null)
         .resolution(bugReport.getResolution()).resolvedAt(bugReport.getResolvedAt())
         .createdAt(bugReport.getCreatedAt()).updatedAt(bugReport.getUpdatedAt())
         .targetReleaseId(bugReport.getTargetRelease() != null ? bugReport.getTargetRelease().getId() : null)
@@ -457,5 +515,24 @@ public class BugReportService {
         .fixedInReleaseVersion(bugReport.getFixedInRelease() != null ? bugReport.getFixedInRelease().getVersion() : null)
         .isSlipped(isSlipped)
         .build();
+  }
+
+  /** Move a bug report to a different project. Clears cycle and pitch cross-references. */
+  public BugReportDTO moveBugReportToProject(Long bugId, Long targetProjectId) {
+    BugReport bug = bugReportRepository.findById(bugId)
+        .orElseThrow(() -> new com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException("BugReport not found with id: " + bugId));
+    com.github.farzadsedaghatbin.shipflow.entity.Project target = projectRepository.findById(targetProjectId)
+        .orElseThrow(() -> new com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException("Project not found with id: " + targetProjectId));
+
+    if (bug.getProject() != null && targetProjectId.equals(bug.getProject().getId())) {
+      throw new IllegalArgumentException("Bug report is already in the target project");
+    }
+
+    bug.setProject(target);
+    bug.setCycle(null);
+    bug.setPitch(null);
+    bug.setTask(null);
+    bug.setUpdatedAt(java.time.LocalDateTime.now());
+    return toDTO(bugReportRepository.save(bug));
   }
 }

@@ -267,6 +267,8 @@
       "urgent": "فوری"
     },
     "priorityUpdated": "اولویت بروزرسانی شد",
+    "assigneeUpdated": "مسئول با موفقیت بروزرسانی شد",
+    "changeAssignee": "تغییر مسئول",
     "priorityUrgent": "فوری",
     "progress": "پیشرفت",
     "required": "الزامی",
@@ -553,11 +555,13 @@
       "export": "خروجی گرفتن",
       "import": "وارد کردن",
       "refresh": "بازنشانی",
-      "viewDetails": "مشاهده جزئیات"
+      "viewDetails": "مشاهده جزئیات",
+      "openFullPage": "باز کردن صفحه کامل"
     },
     "assignee": "مسئول",
     "bugReport": "گزارش باگ",
     "selectAssignee": "انتخاب مسئول",
+    "selectQaAssignee": "انتخاب تست‌کننده QA",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید این گزارش باگ را حذف کنید؟",
     "createBug": "گزارش باگ",
     "createSuccess": "باگ با موفقیت گزارش شد",
@@ -612,7 +616,9 @@
       "allAssignees": "همه مسئولان",
       "searchAssignee": "جستجوی افراد...",
       "allReleases": "همه نسخه‌ها",
-      "release": "نسخه"
+      "release": "نسخه",
+      "excludeLabel": "حذف فیلترها",
+      "excludeTooltip": "وقتی روشن است، اشکال‌هایی که با فیلترهای انتخابی مطابقت ندارند نمایش داده می‌شوند (فیلتر معکوس می‌شود)"
     },
     "loadFailed": "بارگذاری گزارش‌های باگ ناموفق بود",
     "noBugs": "هیچ باگی گزارش نشده",
@@ -620,7 +626,13 @@
       "itemsPerPage": "آیتم‌ها در هر صفحه",
       "rangeText": "{{start}}-{{end}} از {{total}}",
       "rowsPerPage": "ردیف در هر صفحه:",
-      "showing": "نمایش {{start}}-{{end}} از {{total}}"
+      "showing": "نمایش {{start}}-{{end}} از {{total}}",
+      "empty": "نتیجه‌ای یافت نشد",
+      "first": "صفحه اول",
+      "previous": "صفحه قبل",
+      "next": "صفحه بعد",
+      "last": "صفحه آخر",
+      "goToPage": "رفتن به صفحه {{page}}"
     },
     "viewMode": {
       "list": "نمای لیست",
@@ -721,6 +733,18 @@
       "linkedStory": "داستان / اپیک مرتبط",
       "selectStory": "انتخاب داستان یا اپیک",
       "editTitle": "ویرایش باگ"
+    },
+    "linkCopied": "لینک در کلیپ‌بورد کپی شد",
+    "copyLink": "کپی لینک قابل اشتراک‌گذاری",
+    "copyBugLink": "کپی لینک",
+    "savedFilters": {
+      "title": "فیلترهای ذخیره‌شده",
+      "saveCurrent": "ذخیره فیلترهای فعلی",
+      "namePlaceholder": "نام فیلتر...",
+      "saved": "فیلتر ذخیره شد",
+      "none": "هنوز فیلتری ذخیره نشده",
+      "apply": "اعمال",
+      "delete": "حذف"
     }
   },
   "bugAttachments": {
@@ -734,6 +758,7 @@
     "attached": "{{count}} پیوست",
     "pendingUpload": "{{count}} فایل آماده آپلود",
     "noAttachments": "بدون پیوست",
+    "unavailable": "در دسترس نیست",
     "videoNotSupported": "مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند"
   },
   "roadmap": {
@@ -1155,6 +1180,7 @@
     "update": "به‌روزرسانی",
     "view": "مشاهده",
     "viewAll": "مشاهده همه",
+    "openInNewTab": "باز کردن در تب جدید",
     "warning": "هشدار",
     "welcome": "خوش آمدید",
     "yes": "بله",
@@ -1796,6 +1822,7 @@
   "bugs": {
     "reporter": "گزارش‌دهنده",
     "assignee": "مسئول",
+    "qaAssignee": "تست‌کننده QA",
     "pitch": "پیچ",
     "cycle": "چرخه",
     "team": "تیم",
@@ -3468,7 +3495,8 @@
       "people": "افراد",
       "planning": "برنامه‌ریزی",
       "qaTesting": "تست و کیفیت",
-      "userAccess": "کاربران و دسترسی"
+      "userAccess": "کاربران و دسترسی",
+      "peopleAccess": "افراد و دسترسی"
     },
     "health": "نمای سلامت",
     "helpGuides": "راهنما و کمک",
@@ -3696,10 +3724,13 @@
     "settingsSaved": "تنظیمات سازمان با موفقیت ذخیره شد",
     "severityLevels": "سطوح شدت",
     "severityName": "نام شدت",
+    "addSeverity": "افزودن شدت",
     "slack": "یکپارچه‌سازی Slack",
     "slackNotifications": "اعلان‌های Slack",
     "slackWorkspace": "فضای کاری Slack",
     "statusName": "نام وضعیت",
+    "statusNameHint": "باید به فرمت UPPER_SNAKE_CASE باشد (مثال: IN_PROGRESS)",
+    "addStatus": "افزودن وضعیت",
     "subtitle": "پیکربندی پیش‌فرض‌ها و ترجیحات سازمانی",
     "taskCategories": "دسته‌بندی وظایف",
     "taskPitchCategories": "دسته‌بندی وظایف و پیچ‌ها",
@@ -5726,6 +5757,27 @@
   "testCases": {
     "actions": "عملیات",
     "aiGenerated": "تولید شده با هوش مصنوعی",
+    "source": "منبع",
+    "allSources": "همه منابع",
+    "sourceManual": "دستی",
+    "sourceAi": "تولید‌شده با هوش مصنوعی",
+    "createdBy": "ایجادشده توسط",
+    "allCreators": "همه ایجادکنندگان",
+    "bulkRun": {
+      "title": "ثبت اجرای تست‌ها",
+      "description": "ثبت نتیجه یکسان برای {{count}} مورد تست انتخاب‌شده.",
+      "selectedCount": "{{count}} مورد انتخاب شد",
+      "selectAll": "انتخاب همه",
+      "selectOne": "انتخاب مورد تست",
+      "recordRuns": "ثبت اجراها",
+      "clear": "پاک کردن",
+      "status": "نتیجه",
+      "environment": "محیط (اختیاری)",
+      "environmentPlaceholder": "مثلاً Chrome / staging",
+      "recording": "در حال ثبت…",
+      "success": "{{count}} اجرای تست ثبت شد",
+      "failed": "ثبت اجرای تست‌ها ناموفق بود"
+    },
     "allCycles": "همه چرخه‌ها",
     "allPitches": "همه پیچ‌ها",
     "allPriorities": "همه اولویت‌ها",
@@ -5803,7 +5855,22 @@
     },
     "updateSuccess": "مورد تست با موفقیت به‌روزرسانی شد",
     "view": "مشاهده",
-    "noMatch": "هیچ مورد تستی با جستجوی شما مطابقت ندارد"
+    "noMatch": "هیچ مورد تستی با جستجوی شما مطابقت ندارد",
+    "pagination": {
+      "rowsPerPage": "ردیف در هر صفحه",
+      "rangeText": "{{start}}-{{end}} از {{total}}",
+      "empty": "نتیجه‌ای یافت نشد",
+      "first": "صفحه اول",
+      "previous": "صفحه قبلی",
+      "next": "صفحه بعدی",
+      "last": "صفحه آخر",
+      "goToPage": "رفتن به صفحه {{page}}"
+    },
+    "searchStatus": "جستجوی وضعیت...",
+    "searchType": "جستجوی نوع...",
+    "searchPriority": "جستجوی اولویت...",
+    "searchCycle": "جستجوی چرخه‌ها...",
+    "searchPitch": "جستجوی پیچ‌ها..."
   },
   "testRunPage": {
     "actualResult": "نتیجه واقعی",
@@ -6083,9 +6150,24 @@
     "teamMember": "عضو تیم",
     "actions": "عملیات"
   },
+  "projectSelector": {
+    "openInNewTab": "باز کردن در تب جدید"
+  },
+  "testRuns": {
+    "viewDefect": "مشاهده ایراد {{key}}",
+    "statusValues": {
+      "PENDING": "در انتظار",
+      "RUNNING": "در حال اجرا",
+      "PASSED": "موفق",
+      "FAILED": "ناموفق",
+      "BLOCKED": "مسدود",
+      "SKIPPED": "رد‌شده"
+    }
+  },
   "workLogs": {
     "addSuccess": "گزارش کار با موفقیت افزوده شد",
     "addWorkLog": "افزودن گزارش کار",
+    "total": "مجموع",
     "createSuccess": "گزارش کار با موفقیت ایجاد شد",
     "date": "تاریخ",
     "deleteSuccess": "گزارش کار حذف شد",
@@ -6122,6 +6204,8 @@
     "selectPerson": "انتخاب فرد",
     "selectPitch": "انتخاب پیچ",
     "selectTask": "انتخاب وظیفه",
+    "selectCycleFirst": "ابتدا یک چرخه انتخاب کنید",
+    "selectCycleToSeeTasks": "برای مشاهده وظایف، یک چرخه انتخاب کنید",
     "task": "وظیفه",
     "taskSubtask": "وظیفه/زیروظیفه",
     "teamLogs": "گزارش‌های تیم",
@@ -6416,6 +6500,7 @@
     "connectAuth": "احراز هویت",
     "connectKeyHint": "در زبانه «کلیدهای API» یک کلید بسازید و از آن به‌عنوان توکن bearer استفاده کنید.",
     "connectNoRestart": "تغییرات بلافاصله اعمال می‌شوند — نیازی به راه‌اندازی مجدد سرور نیست.",
+    "viewUsageReport": "مشاهده گزارش استفاده",
     "apiKeysTitle": "کلیدهای API",
     "apiKeysDescription": "برای احراز هویت کلاینت‌های خارجی MCP کلید بسازید.",
     "createKey": "ساخت کلید",
@@ -6657,6 +6742,58 @@
     "addComment": "افزودن نظر از طریق MCP",
     "writeToolsEnabled": "ابزارهای نوشتاری فعال است"
   },
+  "mcpUsage": {
+    "title": "گزارش استفاده MCP",
+    "subtitle": "نمای مدیریتی از فعالیت فراخوانی ابزارهای MCP و API به ازای کاربر",
+    "refresh": "بازخوانی",
+    "loadError": "بارگذاری داده‌ها ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "noData": "هنوز داده‌ای ثبت نشده است. استفاده‌ها با فراخوانی ابزارها توسط کلاینت‌های MCP ثبت می‌شوند.",
+    "summary": {
+      "totalCalls": "مجموع فراخوانی‌ها",
+      "successRate": "نرخ موفقیت",
+      "failures": "خطاها",
+      "activeUsers": "کاربران فعال",
+      "last30Days": "۳۰ روز گذشته",
+      "uniqueTools": "ابزارهای منحصربه‌فرد",
+      "successCalls": "فراخوانی‌های موفق"
+    },
+    "tabs": {
+      "timeline": "خط زمانی",
+      "byUser": "بر اساس کاربر",
+      "byTool": "بر اساس ابزار",
+      "recent": "لاگ‌های اخیر"
+    },
+    "timeline": {
+      "title": "حجم فراخوانی روزانه (۳۰ روز گذشته)",
+      "totalCalls": "مجموع",
+      "successCalls": "موفق"
+    },
+    "byUser": {
+      "title": "استفاده بر اساس کاربر",
+      "username": "نام کاربری",
+      "email": "ایمیل",
+      "totalCalls": "مجموع فراخوانی",
+      "successRate": "نرخ موفقیت",
+      "lastSeen": "آخرین استفاده"
+    },
+    "byTool": {
+      "chartTitle": "فراخوانی‌ها به ازای ابزار",
+      "tableTitle": "جزئیات ابزارها",
+      "toolName": "ابزار",
+      "totalCalls": "مجموع فراخوانی",
+      "successRate": "نرخ موفقیت",
+      "uniqueUsers": "کاربران منحصربه‌فرد"
+    },
+    "recent": {
+      "title": "فراخوانی‌های اخیر (۵۰ مورد آخر)",
+      "calledAt": "زمان",
+      "user": "کاربر",
+      "toolName": "ابزار",
+      "status": "وضعیت",
+      "apiKey": "کلید API",
+      "duration": "مدت"
+    }
+  },
   "pitchDependencies": {
     "title": "وابستگی‌ها",
     "addDependency": "افزودن وابستگی",
@@ -6858,7 +6995,7 @@
     "autoStopped": "تایمر ۸ ساعت در حال اجرا بود. به‌صورت خودکار متوقف شد و ۸ ساعت ثبت گردید."
   },
   "publicRoadmap": {
-    "phaseKcTheme": "مرکز دانش",
+    "phaseKcTheme": "مرکز دانش و ویکی",
     "phaseKcItem0Title": "بارگذاری مستندات و افزودن URL",
     "phaseKcItem0Desc": "فایل‌های PDF، DOCX و Markdown را بارگذاری کنید یا URL بچسبانید تا به پرسش و پاسخ، تولید تست هوش مصنوعی، Wise Architecture و تحلیل ریسک خوراک بدهد — یک لایه دانش مشترک در همه سطوح هوش مصنوعی.",
     "phaseKcItem1Title": "محدوده سازمان / تیم / پروژه",
@@ -6943,12 +7080,14 @@
     "phase170Item2Title": "۲۰ قالب اتوماسیون",
     "phase170Item2Desc": "قالب‌های آماده برای گردش‌های کار رایج: چرخش آنکال، چک‌لیست‌های آغاز اسپرینت، تریاژ باگ و کتاب‌های اجرای روز انتشار.",
     "phase180Theme": "فیلدهای سفارشی و RBAC پیشرفته",
-    "phase180Item0Title": "فیلدهای سفارشی روی وظایف و پیشنهادها",
-    "phase180Item0Desc": "فیلدهای خود را اضافه کنید — متن، عدد، تاریخ، تک‌انتخابی، چندانتخابی — به وظایف و پیشنهادها. فیلدها به ازای هر پروژه پیکربندی می‌شوند.",
+    "phase180Item0Title": "فیلدهای سفارشی روی وظایف، پیشنهادها و باگ‌ها",
+    "phase180Item0Desc": "فیلدهای خود را اضافه کنید — متن، عدد، تاریخ، URL، چک‌باکس، تک‌انتخابی، چندانتخابی — به وظایف، پیشنهادها و گزارش‌های باگ. فیلدها را برای کل سازمان یا به ازای هر پروژه تعریف کنید.",
     "phase180Item1Title": "مجوزهای سطح پروژه",
     "phase180Item1Desc": "دسترسی در سطح پروژه اعطا کنید، نه فقط سازمان. به یک پیمانکار دسترسی خواندن به یک پروژه بدهید بدون تغییر نقش‌های جهانی.",
-    "phase180Item2Title": "قوانین نمایش فیلد",
-    "phase180Item2Desc": "فیلدهای سفارشی را بر اساس نقش، نوع پروژه یا فاز چرخه نمایش یا پنهان کنید.",
+    "phase180Item2Title": "تنظیمات فیلدهای سفارشی",
+    "phase180Item2Desc": "تعاریف فیلد را در تنظیمات سازمان → فیلدهای سفارشی مدیریت کنید. تب‌های جداگانه برای وظایف، پیشنهادها و گزارش‌های باگ.",
+    "phase180Item3Title": "گزارش استفاده MCP",
+    "phase180Item3Desc": "داشبورد مدیریتی با آمار فراخوانی MCP به تفکیک کاربر و ابزار، خط زمانی ۳۰ روزه، نرخ موفقیت و لاگ‌های اخیر.",
     "phase190Theme": "فضای Wiki / مستندات",
     "phase190Item0Title": "ویکی تیمی داخلی",
     "phase190Item0Desc": "مستندات را بدون خروج از ShipFlow بنویسید، سازماندهی کنید و جستجو کنید. صفحات کنار پیشنهادها و وظایفی که توصیف می‌کنند زندگی می‌کنند.",
@@ -7159,6 +7298,39 @@
     "templateGalleryDesc": "یک قالب را انتخاب کنید تا سریع شروع کنید. پس از افزودن می‌توانید آن را سفارشی کنید.",
     "noResults": "هیچ قالبی با جستجوی شما مطابقت ندارد."
   },
+  "customFields": {
+    "navLabel": "فیلدهای سفارشی",
+    "title": "فیلدهای سفارشی",
+    "subtitle": "فیلدهای متادیتای اضافه برای وظایف، پیچ‌ها و گزارش‌های باگ تعریف کنید",
+    "noFields": "هنوز هیچ فیلد سفارشی تعریف نشده",
+    "createField": "ایجاد فیلد",
+    "editField": "ویرایش فیلد",
+    "deleteField": "حذف فیلد",
+    "deleteConfirm": "حذف «{{name}}»؟ تمام مقادیر ذخیره‌شده برای این فیلد به‌طور دائم حذف می‌شوند.",
+    "fieldName": "نام فیلد",
+    "fieldType": "نوع فیلد",
+    "entityType": "اعمال بر",
+    "projectScope": "محدوده پروژه",
+    "orgWide": "سازمانی (همه پروژه‌ها)",
+    "required": "اجباری",
+    "sortOrder": "ترتیب نمایش",
+    "options": "گزینه‌ها",
+    "optionsHint": "گزینه‌ای تایپ کنید و Enter بزنید",
+    "saveFields": "ذخیره",
+    "saveSuccess": "مقادیر فیلد سفارشی ذخیره شد",
+    "saveFailed": "ذخیره مقادیر فیلد سفارشی ناموفق بود",
+    "entityType.TASK": "وظایف",
+    "entityType.PITCH": "پیچ‌ها",
+    "entityType.BUG": "گزارش‌های باگ",
+    "fieldType.TEXT": "متن",
+    "fieldType.NUMBER": "عدد",
+    "fieldType.DATE": "تاریخ",
+    "fieldType.SELECT": "انتخاب تکی",
+    "fieldType.MULTISELECT": "انتخاب چندگانه",
+    "fieldType.CHECKBOX": "چک‌باکس",
+    "fieldType.URL": "لینک",
+    "required.error": "{{name}} اجباری است"
+  },
   "pluginSettings": {
     "navLabel": "افزونه‌ها",
     "title": "افزونه‌های توسعه‌پذیر",
@@ -7178,6 +7350,30 @@
     "builtinNote": "این‌ها پیاده‌سازی‌های مرجع SDK هستند که با ShipFlow ارائه می‌شوند. آن‌ها API افزونه را نشان می‌دهند — برای سفارشی‌سازی رفتار، با افزونه‌های خود جایگزین کنید.",
     "builtinDeadlinePressureDesc": "پیچ‌ها را بر اساس شکاف بین زمان مصرف‌شده و تکمیل وظایف امتیازدهی می‌کند. به عنوان الگو برای محاسبه‌گرهای ریسک سفارشی استفاده کنید.",
     "builtinCycleHealthDesc": "خلاصه‌ای متنی از سلامت سیکل تولید می‌کند. با فرمت گزارش خود از طریق Plugin SDK جایگزین کنید."
+  },
+  "projectSettings": {
+    "title": "تنظیمات پروژه",
+    "members": "اعضا",
+    "membersDesc": "مدیریت افرادی که به این پروژه دسترسی دارند.",
+    "customFields": "فیلدهای سفارشی",
+    "addMember": "افزودن عضو",
+    "removeMember": "حذف عضو",
+    "removeConfirm": "آیا می‌خواهید {{username}} را از این پروژه حذف کنید؟",
+    "grantedAt": "اعطاشده در",
+    "grantedBy": "اعطاشده توسط",
+    "owner": "مالک",
+    "noMembers": "هنوز عضوی وجود ندارد.",
+    "noAccess": "شما دسترسی به این پروژه ندارید.",
+    "role": {
+      "VIEWER": "مشاهده‌گر",
+      "CONTRIBUTOR": "مشارکت‌کننده",
+      "MANAGER": "مدیر"
+    },
+    "roleDesc": {
+      "VIEWER": "فقط دسترسی خواندن",
+      "CONTRIBUTOR": "می‌تواند وظایف، پیشنهادها و باگ‌ها را ایجاد و ویرایش کند",
+      "MANAGER": "دسترسی کامل پروژه شامل مدیریت اعضا"
+    }
   },
   "knowledgeCenter": {
     "title": "مرکز دانش",
@@ -7296,5 +7492,20 @@
     "noResults": "نتیجه‌ای یافت نشد.",
     "loadHistoryError": "خطا در بارگذاری تاریخچه.",
     "loadSpacesError": "خطا در بارگذاری فضاها."
+  },
+  "moveToProject": {
+    "title": "انتقال {{type}} به پروژه دیگر",
+    "description": "«{{entity}}» به پروژه انتخابی منتقل خواهد شد. این عمل ثبت می‌شود و قابل بازگشت است.",
+    "selectProject": "پروژه مقصد",
+    "selectPlaceholder": "انتخاب پروژه…",
+    "entityTask": "وظیفه",
+    "entityPitch": "پیچ",
+    "entityBug": "گزارش باگ",
+    "confirm": "انتقال",
+    "success": "«{{entity}}» به {{project}} منتقل شد",
+    "failed": "انتقال ناموفق بود. لطفاً دوباره تلاش کنید.",
+    "loadProjectsFailed": "بارگذاری پروژه‌ها ناموفق بود.",
+    "taskNote": "تمام زیروظایف نیز منتقل می‌شوند. ارتباط با سیکل و پیچ حذف خواهد شد.",
+    "pitchNote": "پیچ به بک‌لاگ پروژه مقصد منتقل می‌شود. انتساب سیکل حذف خواهد شد."
   }
 }

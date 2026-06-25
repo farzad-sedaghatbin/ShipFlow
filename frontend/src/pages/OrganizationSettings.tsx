@@ -22,6 +22,7 @@ import {
   Scale,
   Puzzle,
   HardDrive,
+  Sliders,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useToast } from '../contexts';
@@ -46,6 +47,7 @@ import {
   ScimSettingsTab,
   PluginsSettingsTab,
   StorageSettingsTab,
+  CustomFieldsSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -73,7 +75,8 @@ type SectionId =
   | 'sso'
   | 'scim'
   | 'storage'
-  | 'import';
+  | 'import'
+  | 'customFields';
 
 interface SidebarItem {
   id: SectionId;
@@ -99,6 +102,7 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
       { id: 'cycles', labelKey: 'organizationSettings.cycles', icon: Calendar },
       { id: 'categories', labelKey: 'organizationSettings.categories', icon: Tags },
       { id: 'meetings', labelKey: 'organizationSettings.meetingTypes', icon: CalendarClock },
+      { id: 'customFields', labelKey: 'customFields.navLabel', icon: Sliders },
     ],
   },
   {
@@ -312,6 +316,8 @@ export default function OrganizationSettingsPage() {
         return <EmailSettingsTab formData={formData} setFormData={setFormData} />;
       case 'features':
         return <FeaturesSettingsTab formData={formData} setFormData={setFormData} settings={settings} />;
+      case 'customFields':
+        return <CustomFieldsSettingsTab />;
       case 'plugins':
         return <PluginsSettingsTab />;
       case 'sso':
@@ -340,8 +346,8 @@ export default function OrganizationSettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Header — sticky so Save is always reachable while scrolled into a tab */}
+      <div className="sticky top-0 z-10 bg-background pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Settings className="h-6 w-6" />

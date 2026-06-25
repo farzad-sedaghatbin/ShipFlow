@@ -12,3 +12,4 @@ export { SsoSettingsTab } from './SsoSettingsTab';
 export { ScimSettingsTab } from './ScimSettingsTab';
 export { PluginsSettingsTab } from './PluginsSettingsTab';
 export { StorageSettingsTab } from './StorageSettingsTab';
+export { CustomFieldsSettingsTab } from './CustomFieldsSettingsTab';

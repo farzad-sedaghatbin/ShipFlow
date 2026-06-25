@@ -202,8 +202,10 @@ const meetingsItems: NavItemConfig[] = [
   { textKey: 'nav.meetings', icon: Calendar, path: '/meetings', tourId: 'meetings-menu' },
 ];
 
-// Admin section - User & Access items
+// Admin section - People & Access (merges People/Teams + User Management/Permissions)
 const userAccessItems: NavItemConfig[] = [
+  { textKey: 'nav.people', icon: Users2, path: '/people', tourId: 'people-menu' },
+  { textKey: 'nav.teams', icon: Users, path: '/teams', tourId: 'teams-menu' },
   { textKey: 'nav.userManagement', icon: Shield, path: '/users' },
   { textKey: 'nav.permissions', icon: ShieldCheck, path: '/permissions' },
 ];
@@ -516,15 +518,19 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onClick={onItemClick}
           />
 
-          {/* Organization Section - moved down (less frequently used) */}
-          <SectionHeader textKey="nav.sections.organization" />
-          <NavGroup
-            titleKey="nav.groups.people"
-            icon={Users2}
-            items={peopleItems}
-            currentPath={currentPath}
-            onItemClick={onItemClick}
-          />
+          {/* Organization Section - only shown to non-admins; admins see People & Access under Administration */}
+          {!hasPermissionSync('SYSTEM', 'MANAGE') && (
+            <>
+              <SectionHeader textKey="nav.sections.organization" />
+              <NavGroup
+                titleKey="nav.groups.people"
+                icon={Users2}
+                items={peopleItems}
+                currentPath={currentPath}
+                onItemClick={onItemClick}
+              />
+            </>
+          )}
         </nav>
 
         {/* Member-visible integrations (API Keys etc.) — accessible to non-admins
@@ -548,8 +554,8 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             <SectionHeader textKey="nav.sections.administration" />
             <nav className="flex flex-col gap-1">
               <NavGroup
-                titleKey="nav.groups.userAccess"
-                icon={Shield}
+                titleKey="nav.groups.peopleAccess"
+                icon={Users2}
                 items={userAccessItems}
                 currentPath={currentPath}
                 onItemClick={onItemClick}

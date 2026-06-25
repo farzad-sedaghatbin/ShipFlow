@@ -50,7 +50,7 @@ public class RetroItemService {
       retroCrudService.validateRetrospectivesEnabled(retro.getProject().getId());
     }
 
-    List<RetroItem> items = retroItemRepository.findByRetrospectiveIdOrderByCreatedAtAsc(retroId);
+    List<RetroItem> items = retroItemRepository.findByRetrospectiveIdWithAuthorOrderByCreatedAtAsc(retroId);
     return retroMapper.toItemDTOBatch(items, retroCrudService.getCurrentUser());
   }
 

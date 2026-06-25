@@ -190,6 +190,10 @@ export default function WorkLogsPage() {
         personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsRes.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsRes);
     } catch (error) { console.error('Failed to load data:', error); }
     finally { setLoading(false); }
@@ -263,8 +267,9 @@ export default function WorkLogsPage() {
         const response = await taskService.getByProjectIdPaged(currentProject.id, 0, 1000);
         setTasks(response.data.content || []);
       } else {
-        const response = await taskService.getAll(0, 1000);
-        setTasks(response.data.content || []);
+        // When all projects are selected and no cycle is chosen, don't load tasks across
+        // all projects — the dropdown would be unusable. User must pick a cycle first.
+        setTasks([]);
       }
     } catch (error) { console.error('Failed to load tasks:', error); }
   };
@@ -416,7 +421,9 @@ export default function WorkLogsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="h-5 w-5 text-secondary-foreground" />
-              <span className="text-sm text-muted-foreground">{t('workLogs.thisCycle')}</span>
+              <span className="text-sm text-muted-foreground">
+                {isKanbanProject ? t('workLogs.total', 'Total') : t('workLogs.thisCycle')}
+              </span>
             </div>
             <div className="text-3xl font-bold">{summaryTotalHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">{t('workLogs.logsCount', { count: summaryTotalCount })}</p>
@@ -533,12 +540,15 @@ export default function WorkLogsPage() {
             ) : (
               <div className="space-y-2">
                 <Label>{t('workLogs.taskSubtask')} *</Label>
-                <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
-                  <SelectTrigger><SelectValue placeholder={t('workLogs.selectTask')} /></SelectTrigger>
+                <Select value={selectedTaskId} onValueChange={setSelectedTaskId} disabled={tasks.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={tasks.length === 0 ? t('workLogs.selectCycleFirst') : t('workLogs.selectTask')} /></SelectTrigger>
                   <SelectContent>
                     {tasks.map((tk) => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.parentTaskId && '└─ '}{tk.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {tasks.length === 0 && workLogType === 'task' && (
+                  <p className="text-xs text-muted-foreground">{t('workLogs.selectCycleToSeeTasks')}</p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">
@@ -604,12 +614,15 @@ export default function WorkLogsPage() {
             ) : (
               <div className="space-y-2">
                 <Label>{t('workLogs.taskSubtask')} *</Label>
-                <Select value={teamSelectedTaskId} onValueChange={setTeamSelectedTaskId}>
-                  <SelectTrigger><SelectValue placeholder={t('workLogs.selectTask')} /></SelectTrigger>
+                <Select value={teamSelectedTaskId} onValueChange={setTeamSelectedTaskId} disabled={tasks.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={tasks.length === 0 ? t('workLogs.selectCycleFirst') : t('workLogs.selectTask')} /></SelectTrigger>
                   <SelectContent>
                     {tasks.map((tk) => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.parentTaskId && '└─ '}{tk.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                {tasks.length === 0 && teamWorkLogType === 'task' && (
+                  <p className="text-xs text-muted-foreground">{t('workLogs.selectCycleToSeeTasks')}</p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-4">

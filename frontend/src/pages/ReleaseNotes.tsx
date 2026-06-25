@@ -58,6 +58,7 @@ import {
   Building2,
   Wand2,
   Zap,
+  Sliders,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -79,7 +80,7 @@ const releases: Release[] = [
   {
     version: '1.8.0',
     date: 'In Development',
-    title: 'Knowledge Center',
+    title: 'Knowledge Center & Wiki',
     upcoming: true,
     highlights: [
       {
@@ -100,13 +101,6 @@ const releases: Release[] = [
         description:
           'File upload and URL providers ship today. The provider SPI lets you drop in a new source type (GitHub, Confluence, Notion, Drive) by implementing a single Spring bean — Spring auto-registers it via KnowledgeSourceRegistry.',
       },
-    ],
-  },
-  {
-    version: '1.9.0',
-    date: 'June 18, 2026',
-    title: 'Wiki / Docs Space',
-    highlights: [
       {
         icon: <BookOpen className="h-5 w-5" />,
         title: 'Built-in Wiki',
@@ -130,6 +124,34 @@ const releases: Release[] = [
         title: 'Pluggable Object Storage',
         description:
           'Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; encrypted-by-config credentials, connection test, and one-click migration between backends.',
+      },
+    ],
+  },
+  {
+    version: '1.9.0',
+    date: 'Coming soon',
+    title: 'Custom Fields & Advanced RBAC',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Sliders className="h-5 w-5" />,
+        title: 'Custom Fields on Tasks, Pitches & Bugs',
+        description: 'Add your own fields — text, number, date, URL, checkbox, single-select, multi-select — to tasks, pitches, and bug reports. Define fields org-wide or per-project. Values appear on every detail page.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Project-Level Permissions',
+        description: 'Grant access at the project level, not just the organization. Give a contractor read access to one project without touching global roles.',
+      },
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Custom Fields Settings',
+        description: 'Manage field definitions in Organization Settings → Custom Fields. Separate tabs for Tasks, Pitches, and Bug Reports. Create and edit fields via a guided dialog.',
+      },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'MCP Usage Report',
+        description: 'Admin dashboard showing per-user and per-tool MCP call analytics — 30-day timeline, success rate, failure breakdown, and a recent-log feed. Accessible from Integrations → MCP → View Usage Report.',
       },
     ],
   },
