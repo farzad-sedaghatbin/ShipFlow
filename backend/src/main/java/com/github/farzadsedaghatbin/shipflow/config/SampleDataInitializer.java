@@ -801,6 +801,7 @@ public class SampleDataInitializer implements CommandLineRunner {
             + "4. Verify 'Send new code' CTA appears\n"
             + "5. Request new OTP and verify counter resets")
         .expectedResult("OTP locked after 3 failures. New OTP request re-enables input.")
+        .project(bankingProject)
         .pitch(biometricLogin)
         .cycle(mbaCompletedCycle)
         .team(authTeam)
@@ -825,6 +826,7 @@ public class SampleDataInitializer implements CommandLineRunner {
             + "4. Tap Continue\n"
             + "5. Observe: inline error before OTP screen appears")
         .expectedResult("Error message 'Insufficient balance' shown inline. OTP screen never shown.")
+        .project(bankingProject)
         .pitch(instantTransfer)
         .cycle(mbaActiveCycle)
         .team(paymentsTeam)

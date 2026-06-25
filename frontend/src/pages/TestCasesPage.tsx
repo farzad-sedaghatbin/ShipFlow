@@ -199,7 +199,8 @@ const TestCasesPage: React.FC = () => {
         'createdAt',
         'desc',
         undefined,
-        sourceFilter === 'ai' ? true : sourceFilter === 'manual' ? false : undefined
+        sourceFilter === 'ai' ? true : sourceFilter === 'manual' ? false : undefined,
+        isAllProjectsSelected ? undefined : currentProject?.id
       );
 
       // Handle both paginated (Page<TestCase>) and plain array responses
