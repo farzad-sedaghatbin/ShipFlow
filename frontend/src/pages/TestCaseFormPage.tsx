@@ -47,7 +47,7 @@ const TestCaseFormPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
-  const { isKanbanProject } = useProject();
+  const { isKanbanProject, currentProject, isAllProjectsSelected } = useProject();
   const id = safeParseId(idParam);
   const isEdit = !!id;
 
@@ -207,7 +207,10 @@ const TestCaseFormPage: React.FC = () => {
         };
         await qaTestManagementService.updateTestCase(id!, updateData);
       } else {
-        await qaTestManagementService.createTestCase(formData);
+        await qaTestManagementService.createTestCase({
+          ...formData,
+          projectId: isAllProjectsSelected ? formData.projectId : (currentProject?.id ?? formData.projectId),
+        });
       }
       navigate('/qa/test-cases');
     } catch (err: any) {

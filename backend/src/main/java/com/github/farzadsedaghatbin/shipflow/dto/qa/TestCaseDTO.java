@@ -20,6 +20,9 @@ public class TestCaseDTO {
   private String preconditions;
   private String steps;
   private String expectedResult;
+  private Long projectId;
+  private String projectName;
+  private String projectKey;
   private Long pitchId;
   private String pitchTitle;
   private Long cycleId;
