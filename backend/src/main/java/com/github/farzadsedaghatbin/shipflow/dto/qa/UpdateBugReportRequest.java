@@ -52,6 +52,9 @@ public class UpdateBugReportRequest {
 
   private Long assigneeId;
 
+  /** Person assigned to QA/test this bug. */
+  private Long qaAssigneeId;
+
   private String resolution;
 
   private Long targetReleaseId;

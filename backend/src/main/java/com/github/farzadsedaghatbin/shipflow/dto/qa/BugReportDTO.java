@@ -48,6 +48,8 @@ public class BugReportDTO {
   private String reporterName;
   private Long assigneeId;
   private String assigneeName;
+  private Long qaAssigneeId;
+  private String qaAssigneeName;
   private String resolution;
   private LocalDateTime resolvedAt;
   private LocalDateTime createdAt;

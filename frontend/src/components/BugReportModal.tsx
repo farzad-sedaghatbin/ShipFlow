@@ -122,6 +122,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         teamId: bugReport?.teamId || teamId,
         testRunId: bugReport?.testRunId || testRunId,
         assigneeId: bugReport?.assigneeId,
+        qaAssigneeId: bugReport?.qaAssigneeId,
         taskId: bugReport?.taskId,
         targetReleaseId: bugReport?.targetReleaseId,
       });
@@ -369,6 +370,20 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
                 value={formData.assigneeId?.toString() || 'unassigned'}
                 onValueChange={(value) => handleChange('assigneeId', value === 'unassigned' ? undefined : Number(value))}
                 placeholder={t('bugReports.selectAssignee', 'Select assignee')}
+                searchPlaceholder={t('bugReports.searchPerson', 'Search persons...')}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label>{t('bugs.qaAssignee', 'QA Tester')}</Label>
+              <Combobox
+                options={[
+                  { value: 'unassigned', label: t('bugReports.unassigned', 'Unassigned') },
+                  ...people.map(p => ({ value: p.id.toString(), label: p.name })),
+                ]}
+                value={formData.qaAssigneeId?.toString() || 'unassigned'}
+                onValueChange={(value) => handleChange('qaAssigneeId', value === 'unassigned' ? undefined : Number(value))}
+                placeholder={t('bugReports.selectQaAssignee', 'Select QA tester')}
                 searchPlaceholder={t('bugReports.searchPerson', 'Search persons...')}
               />
             </div>

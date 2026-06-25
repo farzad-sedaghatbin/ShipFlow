@@ -1139,6 +1139,8 @@ export interface BugReport {
   reporterName?: string;
   assigneeId?: number;
   assigneeName?: string;
+  qaAssigneeId?: number;
+  qaAssigneeName?: string;
   resolution?: string;
   resolvedAt?: string;
   createdAt: string;
@@ -1175,6 +1177,7 @@ export interface CreateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   targetReleaseId?: number;
 }
 
@@ -1196,6 +1199,7 @@ export interface UpdateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   resolution?: string;
   targetReleaseId?: number;
   fixedInReleaseId?: number;
@@ -1230,7 +1234,16 @@ export interface TestRun {
   attachments?: string;
   bugReportId?: number;
   bugReportKey?: string;
+  /** All bug reports (defects) linked to this run. A failed execution may have several. */
+  linkedBugs?: LinkedBugReport[];
   createdAt: string;
+}
+
+export interface LinkedBugReport {
+  id: number;
+  bugKey: string;
+  title?: string;
+  status?: BugStatus;
 }
 
 export interface CreateTestRunRequest {

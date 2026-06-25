@@ -561,6 +561,7 @@
     "assignee": "مسئول",
     "bugReport": "گزارش باگ",
     "selectAssignee": "انتخاب مسئول",
+    "selectQaAssignee": "انتخاب تست‌کننده QA",
     "confirmDelete": "آیا مطمئن هستید که می‌خواهید این گزارش باگ را حذف کنید؟",
     "createBug": "گزارش باگ",
     "createSuccess": "باگ با موفقیت گزارش شد",
@@ -735,6 +736,7 @@
     },
     "linkCopied": "لینک در کلیپ‌بورد کپی شد",
     "copyLink": "کپی لینک قابل اشتراک‌گذاری",
+    "copyBugLink": "کپی لینک",
     "savedFilters": {
       "title": "فیلترهای ذخیره‌شده",
       "saveCurrent": "ذخیره فیلترهای فعلی",
@@ -1820,6 +1822,7 @@
   "bugs": {
     "reporter": "گزارش‌دهنده",
     "assignee": "مسئول",
+    "qaAssignee": "تست‌کننده QA",
     "pitch": "پیچ",
     "cycle": "چرخه",
     "team": "تیم",
@@ -5752,6 +5755,27 @@
   "testCases": {
     "actions": "عملیات",
     "aiGenerated": "تولید شده با هوش مصنوعی",
+    "source": "منبع",
+    "allSources": "همه منابع",
+    "sourceManual": "دستی",
+    "sourceAi": "تولید‌شده با هوش مصنوعی",
+    "createdBy": "ایجادشده توسط",
+    "allCreators": "همه ایجادکنندگان",
+    "bulkRun": {
+      "title": "ثبت اجرای تست‌ها",
+      "description": "ثبت نتیجه یکسان برای {{count}} مورد تست انتخاب‌شده.",
+      "selectedCount": "{{count}} مورد انتخاب شد",
+      "selectAll": "انتخاب همه",
+      "selectOne": "انتخاب مورد تست",
+      "recordRuns": "ثبت اجراها",
+      "clear": "پاک کردن",
+      "status": "نتیجه",
+      "environment": "محیط (اختیاری)",
+      "environmentPlaceholder": "مثلاً Chrome / staging",
+      "recording": "در حال ثبت…",
+      "success": "{{count}} اجرای تست ثبت شد",
+      "failed": "ثبت اجرای تست‌ها ناموفق بود"
+    },
     "allCycles": "همه چرخه‌ها",
     "allPitches": "همه پیچ‌ها",
     "allPriorities": "همه اولویت‌ها",
@@ -6124,9 +6148,24 @@
     "teamMember": "عضو تیم",
     "actions": "عملیات"
   },
+  "projectSelector": {
+    "openInNewTab": "باز کردن در تب جدید"
+  },
+  "testRuns": {
+    "viewDefect": "مشاهده ایراد {{key}}",
+    "statusValues": {
+      "PENDING": "در انتظار",
+      "RUNNING": "در حال اجرا",
+      "PASSED": "موفق",
+      "FAILED": "ناموفق",
+      "BLOCKED": "مسدود",
+      "SKIPPED": "رد‌شده"
+    }
+  },
   "workLogs": {
     "addSuccess": "گزارش کار با موفقیت افزوده شد",
     "addWorkLog": "افزودن گزارش کار",
+    "total": "مجموع",
     "createSuccess": "گزارش کار با موفقیت ایجاد شد",
     "date": "تاریخ",
     "deleteSuccess": "گزارش کار حذف شد",

@@ -73,9 +73,11 @@ export const HillChartWidget: React.FC<HillChartWidgetProps> = ({
   };
 
   const getPositionColorClass = (position: number) => {
+    // Reserve green strictly for "done" (100%). Progress is already conveyed by the bar/position,
+    // so a green at 75% wrongly reads as finished. Uphill = amber, downhill in-progress = blue.
+    if (position >= 100) return 'bg-emerald-500';
     if (position < 50) return 'bg-amber-500';
-    if (position < 75) return 'bg-blue-500';
-    return 'bg-emerald-500';
+    return 'bg-blue-500';
   };
 
   if (loading) {

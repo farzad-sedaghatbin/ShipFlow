@@ -6,6 +6,7 @@ import {
   MoreVertical,
   Eye,
   ExternalLink,
+  Link as LinkIcon,
   Pencil,
   Trash2,
   MessageSquare,
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { detectTextDirection } from '../utils/rtlDetection';
+import { useToast } from '../contexts';
 import { BugReport, BugStatus, BugSeverity } from '../types';
 
 // Bug status columns configuration
@@ -85,6 +87,13 @@ interface BugKanbanColumnProps {
 function BugKanbanCard({ bug, onViewBug, onEditBug, onDeleteBug, dragging, updating }: BugKanbanCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/qa/bug-reports/${bug.id}`;
+    navigator.clipboard.writeText(url);
+    showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
+  };
   
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.setData('bugId', bug.id.toString());
@@ -123,6 +132,10 @@ function BugKanbanCard({ bug, onViewBug, onEditBug, onDeleteBug, dragging, updat
               <DropdownMenuItem onClick={() => navigate(`/qa/bug-reports/${bug.id}`)}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 {t('common.openFullPage', 'Open full page')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCopyLink}>
+                <LinkIcon className="h-4 w-4 mr-2" />
+                {t('bugReports.copyBugLink', 'Copy link')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEditBug(bug)}>
                 <Pencil className="h-4 w-4 mr-2" />
