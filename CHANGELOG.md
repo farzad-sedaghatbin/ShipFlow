@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — Bug detail URL now uses the bugKey, not the DB id
+
+- Opening a bug's full page showed a URL like `/qa/bug-reports/165` (the database primary key) while the dialog displayed `BUG-150` (the human-friendly `bugKey`) — two independent sequences that drift apart, which read as a mismatch. All in-app bug-detail links (list view, kanban, view-dialog "open in new tab", copy-link, pitch test page) now use the `bugKey`, so the address bar matches the key shown in the UI (Jira/Linear-style). `BugReportDetailPage` resolves by key, still accepts legacy numeric ids (old notification / shared links) via the existing `GET /api/qa/bug-reports/key/{key}` endpoint, and rewrites a numeric URL to its canonical key. Also fixed a dead link on the pitch test page that pointed at the non-existent `/qa/bugs/{id}` route.
+
 ### Added — QA: test-case filters & bulk execution
 
 - **Test-case filters by source and creator**: the Test Cases page can now filter by source (**Manual** vs **AI-generated**) and by **creator**. Backend `GET /api/qa/test-cases/filter` accepts `aiGenerated` and `createdById` query params; the source filter is applied server-side and the creator filter client-side (stable dropdown derived from loaded cases).

@@ -478,7 +478,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                 type="button"
                 title={t('common.openInNewTab', 'Open in new tab')}
                 className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.id}`, '_blank')}
+                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.bugKey}`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4" />
               </button>

@@ -344,7 +344,7 @@ const PitchTestPage: React.FC = () => {
                   <div
                     key={bug.id}
                     className="flex items-center justify-between py-3 px-2 hover:bg-muted/50 cursor-pointer rounded-md"
-                    onClick={() => navigate(`/qa/bugs/${bug.id}`)}
+                    onClick={() => navigate(`/qa/bug-reports/${bug.bugKey}`)}
                   >
                     <div className="flex items-center gap-3">
                       <Bug className="h-5 w-5 text-destructive" />

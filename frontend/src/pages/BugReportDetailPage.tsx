@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -16,13 +16,34 @@ export default function BugReportDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  // Tracks the bugKey we've already loaded so the canonical-URL redirect below doesn't
+  // trigger a redundant re-fetch when the param flips from a numeric id to the key.
+  const loadedKeyRef = useRef<string | null>(null);
 
   const load = () => {
     if (!id) return;
+    // After a legacy numeric URL is rewritten to its bugKey the param changes, but we're
+    // already showing that bug — skip the refetch (and the loader flash).
+    if (loadedKeyRef.current === id) return;
     setLoading(true);
     setError(null);
-    qaTestManagementService.getBugReportById(Number(id))
-      .then((res) => setBug(res.data))
+    // The canonical bug URL uses the human-friendly bugKey (e.g. BUG-150). Older links
+    // (legacy notification actionUrls, previously-shared URLs) still carry the numeric DB
+    // id, so resolve by id when the param is all digits and by key otherwise.
+    const isNumericId = /^\d+$/.test(id);
+    const request = isNumericId
+      ? qaTestManagementService.getBugReportById(Number(id))
+      : qaTestManagementService.getBugReportByKey(id);
+    request
+      .then((res) => {
+        setBug(res.data);
+        loadedKeyRef.current = res.data.bugKey;
+        // Rewrite a legacy numeric URL to the bugKey so the address bar matches the key
+        // shown throughout the UI.
+        if (isNumericId && res.data.bugKey) {
+          navigate(`/qa/bug-reports/${res.data.bugKey}`, { replace: true });
+        }
+      })
       .catch(() => setError(t('globalSearch.bugNotFound', 'Bug report not found')))
       .finally(() => setLoading(false));
   };

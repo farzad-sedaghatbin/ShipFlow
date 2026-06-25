@@ -1013,7 +1013,7 @@ const BugReportsPage: React.FC = () => {
                   actions: (
                     <>
                       <Button asChild variant="ghost" size="icon-sm" title={t('bugReports.actions.openFullPage', 'Open full page')}>
-                        <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                        <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
                           <Eye className="h-4 w-4" />
                         </RouterLink>
                       </Button>
@@ -1265,7 +1265,7 @@ const BugReportsPage: React.FC = () => {
                               size="icon"
                               className="h-8 w-8"
                             >
-                              <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                              <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
                                 <Eye className="h-4 w-4" />
                               </RouterLink>
                             </Button>
@@ -1281,7 +1281,7 @@ const BugReportsPage: React.FC = () => {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/qa/bug-reports/${bug.id}`);
+                                navigator.clipboard.writeText(`${window.location.origin}/qa/bug-reports/${bug.bugKey}`);
                                 showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
                               }}
                             >
@@ -1472,7 +1472,7 @@ const BugReportsPage: React.FC = () => {
         }}
         onOpenFullPage={(bug) => {
           setDetailModalOpen(false);
-          navigate(`/qa/bug-reports/${bug.id}`);
+          navigate(`/qa/bug-reports/${bug.bugKey}`);
         }}
         onUpdate={(updated) => setSelectedBug(updated)}
       />
