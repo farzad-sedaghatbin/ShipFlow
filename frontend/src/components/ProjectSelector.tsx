@@ -1,4 +1,5 @@
-import { ChevronDown, Settings, Plus, LayoutGrid, Loader2 } from 'lucide-react';
+import { ChevronDown, Settings, Plus, LayoutGrid, Loader2, ExternalLink } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useProject } from '../contexts';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -15,8 +16,19 @@ import {
 export default function ProjectSelector() {
   const { projects, currentProject, loading, selectProject, selectAllProjects, isAllProjectsSelected } = useProject();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
-  const handleSelectProject = (project: typeof projects[0]) => {
+  const openProjectInNewTab = (project: typeof projects[0]) => {
+    window.open(`${window.location.origin}/dashboard?project=${project.id}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleSelectProject = (project: typeof projects[0], e: React.MouseEvent) => {
+    // Cmd/Ctrl/middle click opens the project in a new tab instead of switching in place.
+    if (e.metaKey || e.ctrlKey) {
+      e.preventDefault();
+      openProjectInNewTab(project);
+      return;
+    }
     selectProject(project);
   };
 
@@ -101,9 +113,9 @@ export default function ProjectSelector() {
         {projects.map((project) => (
           <DropdownMenuItem
             key={project.id}
-            onClick={() => handleSelectProject(project)}
+            onClick={(e) => handleSelectProject(project, e)}
             className={cn(
-              "flex items-center gap-3",
+              "group flex items-center gap-3",
               currentProject?.id === project.id && "bg-accent"
             )}
           >
@@ -115,10 +127,19 @@ export default function ProjectSelector() {
                 {project.projectKey.substring(0, 2)}
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col min-w-0 flex-1">
               <span className="text-sm truncate">{project.name}</span>
               <span className="text-xs text-muted-foreground">{project.projectKey}</span>
             </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); e.preventDefault(); openProjectInNewTab(project); }}
+              className="ml-auto rounded p-1 opacity-0 transition-opacity hover:bg-accent-foreground/10 focus:opacity-100 group-hover:opacity-100"
+              aria-label={t('projectSelector.openInNewTab', 'Open in new tab')}
+              title={t('projectSelector.openInNewTab', 'Open in new tab')}
+            >
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
           </DropdownMenuItem>
         ))}
         

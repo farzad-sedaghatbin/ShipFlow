@@ -60,7 +60,9 @@ export const qaTestManagementService = {
     page: number = 0,
     size: number = 10,
     sortBy: string = 'createdAt',
-    sortOrder: string = 'desc'
+    sortOrder: string = 'desc',
+    createdById?: number,
+    aiGenerated?: boolean
   ) =>
     api.get<Page<TestCase>>('/qa/test-cases/filter', {
       params: {
@@ -73,6 +75,8 @@ export const qaTestManagementService = {
         size,
         sortBy,
         sortOrder,
+        createdById,
+        aiGenerated,
       },
     }),
 
@@ -167,8 +171,12 @@ export const qaTestManagementService = {
   createBugReport: (request: CreateBugReportRequest) => 
     api.post<BugReport>('/qa/bug-reports', request),
 
-  updateBugReport: (id: number, request: UpdateBugReportRequest) => 
+  updateBugReport: (id: number, request: UpdateBugReportRequest) =>
     api.put<BugReport>(`/qa/bug-reports/${id}`, request),
+
+  /** Lightweight PATCH to assign/unassign the QA tester for a bug. Pass null to unassign. */
+  updateBugQaAssignee: (id: number, qaAssigneeId: number | null) =>
+    api.patch<BugReport>(`/qa/bug-reports/${id}/qa-assignee`, { qaAssigneeId }),
 
   deleteBugReport: (id: number) => 
     api.delete<{ message: string }>(`/qa/bug-reports/${id}`),
@@ -192,16 +200,39 @@ export const qaTestManagementService = {
   getLatestTestRun: (testCaseId: number) => 
     api.get<TestRun>(`/qa/test-runs/latest/${testCaseId}`),
 
-  createTestRun: (request: CreateTestRunRequest) => 
+  createTestRun: (request: CreateTestRunRequest) =>
     api.post<TestRun>('/qa/test-runs', request),
 
-  updateTestRunStatus: (id: number, status: TestRunStatus, notes?: string) => 
+  /** Record the same execution result against many test cases at once (Zephyr-style bulk run). */
+  recordTestRunsBulk: (request: {
+    testCaseIds: number[];
+    status: TestRunStatus;
+    environment?: string;
+    buildVersion?: string;
+    notes?: string;
+    cycleId?: number;
+    pitchId?: number;
+  }) => api.post<TestRun[]>('/qa/test-runs/bulk', request),
+
+  /** Update the status of many test runs at once (Zephyr-style bulk update). */
+  updateTestRunStatusBulk: (request: { testRunIds: number[]; status: TestRunStatus; notes?: string }) =>
+    api.patch<TestRun[]>('/qa/test-runs/bulk/status', request),
+
+  updateTestRunStatus: (id: number, status: TestRunStatus, notes?: string) =>
     api.patch<TestRun>(`/qa/test-runs/${id}/status`, null, {
       params: { status, notes },
     }),
 
-  deleteTestRun: (id: number) => 
+  deleteTestRun: (id: number) =>
     api.delete<{ message: string }>(`/qa/test-runs/${id}`),
+
+  /** Link an existing bug report (defect) to a test run. A run can have several linked defects. */
+  linkDefectToRun: (runId: number, bugReportId: number) =>
+    api.patch<TestRun>(`/qa/test-runs/${runId}/defects/${bugReportId}`),
+
+  /** Unlink a bug report (defect) from a test run. */
+  unlinkDefectFromRun: (runId: number, bugReportId: number) =>
+    api.delete<TestRun>(`/qa/test-runs/${runId}/defects/${bugReportId}`),
 
   // ========== Coverage & Dashboard ==========
   getTestCoverageByPitch: (pitchId: number) => 

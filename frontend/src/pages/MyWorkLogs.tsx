@@ -363,7 +363,7 @@ export default function MyWorkLogs() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="h-5 w-5 text-secondary-foreground" />
-              <span className="text-sm text-muted-foreground">This Cycle</span>
+              <span className="text-sm text-muted-foreground">{t('workLogs.total', 'Total')}</span>
             </div>
             <div className="text-3xl font-bold">{totalHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">

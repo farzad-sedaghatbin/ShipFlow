@@ -1406,6 +1406,7 @@
   "bugs": {
     "reporter": "Reporter",
     "assignee": "Assignee",
+    "qaAssignee": "QA Tester",
     "pitch": "Pitch",
     "cycle": "Cycle",
     "team": "Team",
@@ -2040,6 +2041,20 @@
       "loadFailed": "Failed to load meeting details"
     }
   },
+  "projectSelector": {
+    "openInNewTab": "Open in new tab"
+  },
+  "testRuns": {
+    "viewDefect": "View defect {{key}}",
+    "statusValues": {
+      "PENDING": "Pending",
+      "RUNNING": "Running",
+      "PASSED": "Passed",
+      "FAILED": "Failed",
+      "BLOCKED": "Blocked",
+      "SKIPPED": "Skipped"
+    }
+  },
   "workLogs": {
     "title": "Work Logs",
     "addWorkLog": "Add Work Log",
@@ -2051,6 +2066,7 @@
     "note": "Note",
     "description": "Description",
     "totalHours": "Total Hours",
+    "total": "Total",
     "thisCycle": "This Cycle",
     "today": "Today",
     "thisWeek": "This Week",
@@ -2213,6 +2229,27 @@
     "noMatch": "No test cases match your search",
     "actions": "Actions",
     "aiGenerated": "AI Generated",
+    "source": "Source",
+    "allSources": "All sources",
+    "sourceManual": "Manual",
+    "sourceAi": "AI-generated",
+    "createdBy": "Created by",
+    "allCreators": "All creators",
+    "bulkRun": {
+      "title": "Record test runs",
+      "description": "Record the same result for {{count}} selected test case(s).",
+      "selectedCount": "{{count}} selected",
+      "selectAll": "Select all",
+      "selectOne": "Select test case",
+      "recordRuns": "Record runs",
+      "clear": "Clear",
+      "status": "Result",
+      "environment": "Environment (optional)",
+      "environmentPlaceholder": "e.g. Chrome / staging",
+      "recording": "Recording…",
+      "success": "Recorded {{count}} test run(s)",
+      "failed": "Failed to record test runs"
+    },
     "allCycles": "All Cycles",
     "allPitches": "All Pitches",
     "allPriorities": "All Priorities",
@@ -2444,6 +2481,7 @@
     },
     "assignee": "Assignee",
     "selectAssignee": "Select assignee",
+    "selectQaAssignee": "Select QA tester",
     "searchPerson": "Search persons...",
     "component": "Component",
     "noComponent": "No component",
@@ -2503,6 +2541,7 @@
     "updateSuccess": "[Translation needed: باگ با موفقیت به‌روزرسانی شد]",
     "linkCopied": "Link copied to clipboard",
     "copyLink": "Copy shareable link",
+    "copyBugLink": "Copy link",
     "savedFilters": {
       "title": "Saved filters",
       "saveCurrent": "Save current filters",

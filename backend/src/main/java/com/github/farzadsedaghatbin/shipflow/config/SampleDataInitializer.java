@@ -736,6 +736,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .team(paymentsTeam)
         .reporter(aliUser)
         .assignee(aliPerson)
+        .qaAssignee(minaPerson)
         .createdAt(LocalDateTime.of(2026, 4, 4, 11, 30))
         .build();
     bugReportRepository.save(criticalBug);

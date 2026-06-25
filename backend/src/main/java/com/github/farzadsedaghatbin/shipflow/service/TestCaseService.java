@@ -270,7 +270,7 @@ public class TestCaseService {
   /** Get test cases with filters. */
   @Transactional(readOnly = true)
   public List<TestCaseDTO> getTestCasesWithFilters(Long cycleId, Long pitchId, List<TestCaseStatus> statuses,
-      List<TestCaseType> types, List<TestCasePriority> priorities) {
+      List<TestCaseType> types, List<TestCasePriority> priorities, Long createdById, Boolean aiGenerated) {
     checkFeatureEnabled();
 
     // Convert empty lists to null for the query
@@ -278,7 +278,8 @@ public class TestCaseService {
     List<TestCaseType> typeList = (types != null && !types.isEmpty()) ? types : null;
     List<TestCasePriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
 
-    return testCaseRepository.findWithFilters(cycleId, pitchId, statusList, typeList, priorityList).stream()
+    return testCaseRepository
+        .findWithFilters(cycleId, pitchId, statusList, typeList, priorityList, createdById, aiGenerated).stream()
         .map(this::toDTO).collect(Collectors.toList());
   }
 

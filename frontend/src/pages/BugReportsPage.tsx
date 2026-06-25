@@ -303,7 +303,7 @@ const BugReportsPage: React.FC = () => {
 
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, currentProject?.id, isAllProjectsSelected, debouncedSearch]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, viewMode, currentProject?.id, isAllProjectsSelected, debouncedSearch]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -342,10 +342,12 @@ const BugReportsPage: React.FC = () => {
       const activeSeverities = severityFilter.length > 0 ? severityFilter : undefined;
       const activeAssignees = assigneeFilter !== undefined ? [assigneeFilter] : undefined;
 
-      // When release filter is active, fetch a large page so client-side
-      // filtering covers all records (no reliable backend support yet).
-      const effectivePage = releaseFilter !== undefined ? 0 : page;
-      const effectiveSize = releaseFilter !== undefined ? 1000 : rowsPerPage;
+      // The kanban board groups every matching bug into status columns, so it needs the full
+      // result set rather than a single page. The release filter is applied client-side and also
+      // needs all records. In both cases fetch a large page; otherwise honor list pagination.
+      const fetchAll = releaseFilter !== undefined || viewMode === 'kanban';
+      const effectivePage = fetchAll ? 0 : page;
+      const effectiveSize = fetchAll ? 1000 : rowsPerPage;
 
       // Fire page data and aggregate stats in parallel
       const [response, statsResponse] = await Promise.all([
@@ -1269,6 +1271,24 @@ const BugReportsPage: React.FC = () => {
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('bugReports.actions.openFullPage', 'Open full page')}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/qa/bug-reports/${bug.id}`);
+                                showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
+                              }}
+                            >
+                              <Link className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('bugReports.copyBugLink', 'Copy link')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>

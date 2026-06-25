@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added — QA: test-case filters & bulk execution
+
+- **Test-case filters by source and creator**: the Test Cases page can now filter by source (**Manual** vs **AI-generated**) and by **creator**. Backend `GET /api/qa/test-cases/filter` accepts `aiGenerated` and `createdById` query params; the source filter is applied server-side and the creator filter client-side (stable dropdown derived from loaded cases).
+- **Bulk test execution (Zephyr-style)**: multi-select test cases on the Test Cases page and record the same run result (with an optional environment) against all of them at once. New `POST /api/qa/test-runs/bulk` (one run per case, atomic) and `PATCH /api/qa/test-runs/bulk/status` (bulk status update) endpoints.
+- **Multiple defects per test run**: a test execution can now link **multiple** bug reports (the ShipFlow-native equivalent of attaching defects to an execution — no external tracker). `TestRun.bugReport` (one) became `bugReports` (many) over the existing `bug_reports.test_run_id` FK (no migration); `TestRunDTO` gains a `linkedBugs` list (the legacy `bugReportId`/`bugReportKey` still return the first). New `PATCH /api/qa/test-runs/{runId}/defects/{bugId}` and `DELETE …/defects/{bugId}` endpoints; the execution panel renders all linked defects.
+
+### Added — Open a project in a new tab
+
+- The top-bar project selector now supports opening a project in a new browser tab — Cmd/Ctrl-click a project, or use the new "open in new tab" button on each row. New tabs deep-link via `?project=<id>`, which `ProjectContext` honors on load.
+
+### Changed — Hill chart dot color
+
+- Hill-chart progress indicators no longer turn **green at 75%** (which read as "done"). Green is now reserved for **100%/complete**; in-progress downhill work is blue and uphill is amber — position already conveys progress.
+
+### Fixed — Kanban worklog overview label
+
+- For Kanban projects the worklog overview summary card no longer says "This Cycle" (Kanban has no cycles) — it now shows "Total". `MyWorkLogs` likewise relabeled (the figure was an all-time total, not a cycle total).
+
+### Added — Bug Report QA Assignee & Sharing
+
+- **QA assignee on bug reports**: a bug can now have a dedicated *QA tester* (who verifies the fix), separate from the *assignee* (who fixes it). Set it inline from the bug detail dialog or in the create/edit form. New `qaAssignee` field (audited via Envers), `qaAssigneeId`/`qaAssigneeName` on the DTO, and a lightweight `PATCH /api/qa/bug-reports/{id}/qa-assignee` endpoint (pass `null` to unassign).
+- **Copy bug link**: a "Copy link" action on every bug card (kanban menu) and list-view row copies a direct `/qa/bug-reports/{id}` URL to the clipboard for sharing.
+- New Flyway migration `V2026_06_25_0001__add_qa_assignee_to_bug_reports.sql` (adds `qa_assignee_id` to `bug_reports` and `bug_reports_aud`).
+
+### Added — MCP can view bug image attachments
+
+- New **`download_bug_attachment`** MCP read tool returns an image attachment (PNG/JPEG/GIF/WebP) as a native MCP `image` content block, so AI clients (Claude Code, etc.) can actually *see* design mockups/screenshots attached to a bug — previously only metadata and extracted text were exposed. Scoped to bug attachments, image types only, 8 MB cap.
+- `get_bug_attachments` now includes an `isImage` flag per attachment to signal which ones can be downloaded for viewing.
+- MCP tool results can now carry native content blocks (e.g. images) via the new `McpContentResult` return type, instead of always being JSON-as-text.
+
+### Changed — MCP bug lookup by key
+
+- The `get_bug_report`, `get_bug_attachments`, and `update_bug_status` MCP tools now accept the human-facing **`bugKey`** (e.g. `"BUG-125"`) in addition to the numeric `bugReportId`. A key passed in the `bugReportId` slot is also resolved by key, so an agent asking for "bug 125" no longer fetches the wrong record by numeric ID.
+
 ### Added — MCP Usage Report (admin)
 
 - **Per-user MCP/API usage tracking**: every `tools/call` invocation is recorded in `mcp_usage_log` (tool name, success/failure, duration, API key prefix, user, timestamp).
@@ -16,6 +50,7 @@ All notable changes to this project will be documented in this file.
 - `McpUsageReportServiceTest` — 8 unit tests covering all service methods.
 
 ### Fixed
+- Bug Reports kanban view now loads **all** matching bugs into the status columns instead of only the first page — the board fetches the full result set (page size is reserved for the paginated list view), and switching between list/kanban now re-fetches with the correct page size
 - Jira CSV import: fixed `null value in column "source_format"` DB error — the `ImportJob` was saved before the format was detected; now parses the file and resolves the format before the first `save()` so the `NOT NULL` constraint is never violated
 - Risk history endpoint: fixed `LazyInitializationException` on `GET /api/risk/pitch/{id}/history` — Jackson was serialising `pitch.project` as a Hibernate proxy after the transaction closed; added `"project"` to `@JsonIgnoreProperties` on `PitchRiskHistory.pitch`
 - MCP Usage Report: "View Usage Report" button now navigates to `/integrations/mcp-usage` instead of the non-existent `/app/integrations/mcp-usage` path (was silently redirecting to dashboard)

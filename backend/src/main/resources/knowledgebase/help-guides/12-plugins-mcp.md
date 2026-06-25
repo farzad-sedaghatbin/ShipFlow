@@ -85,6 +85,10 @@ Go to **MCP Integration** (in the main navigation under Integrations). There are
 4. Use the API key as a bearer token in the `Authorization` header.
 5. Changes take effect immediately — no restart needed.
 
+## Can an AI tool view image attachments on a bug?
+
+Yes. Call `get_bug_attachments` (by `bugKey` or `bugReportId`) to list a bug's files — each one has an `isImage` flag. For image attachments (PNG, JPEG, GIF, WebP) pass the attachment `id` to `download_bug_attachment`, which returns the image itself so the AI client (e.g. Claude Code) can view a design mockup or screenshot directly. PDFs and documents aren't returned as images — read their `extractedText` from `get_bug_attachments` instead. Images over 8 MB are not returned inline.
+
 ## How do I set up a Notion MCP connection?
 
 1. Create a Notion internal integration at notion.so/my-integrations.

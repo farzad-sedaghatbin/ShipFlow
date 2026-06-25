@@ -111,6 +111,12 @@ public class BugReportService {
       bugReport.setAssignee(assignee);
     }
 
+    if (request.getQaAssigneeId() != null) {
+      Person qaAssignee = personRepository.findById(request.getQaAssigneeId())
+          .orElseThrow(() -> new IllegalArgumentException("QA assignee not found: " + request.getQaAssigneeId()));
+      bugReport.setQaAssignee(qaAssignee);
+    }
+
     if (request.getTargetReleaseId() != null) {
       com.github.farzadsedaghatbin.shipflow.entity.Release release = releaseRepository.findById(request.getTargetReleaseId())
           .orElseThrow(() -> new IllegalArgumentException("Release not found: " + request.getTargetReleaseId()));
@@ -202,6 +208,12 @@ public class BugReportService {
       bugReport.setAssignee(assignee);
     }
 
+    if (request.getQaAssigneeId() != null) {
+      Person qaAssignee = personRepository.findById(request.getQaAssigneeId())
+          .orElseThrow(() -> new IllegalArgumentException("QA assignee not found: " + request.getQaAssigneeId()));
+      bugReport.setQaAssignee(qaAssignee);
+    }
+
     if (request.getTargetReleaseId() != null) {
       com.github.farzadsedaghatbin.shipflow.entity.Release release = releaseRepository.findById(request.getTargetReleaseId())
           .orElseThrow(() -> new IllegalArgumentException("Release not found: " + request.getTargetReleaseId()));
@@ -217,6 +229,30 @@ public class BugReportService {
     bugReport = bugReportRepository.save(bugReport);
     log.info("Updated bug report: {} by user: {}", bugReport.getBugKey(), userId);
 
+    return toDTO(bugReport);
+  }
+
+  /**
+   * Assign (or unassign) the QA tester for a bug. A null {@code qaAssigneeId} clears the QA
+   * assignee. All other fields are left untouched.
+   */
+  @Transactional
+  public BugReportDTO updateBugReportQaAssignee(Long id, Long qaAssigneeId) {
+    checkFeatureEnabled();
+
+    BugReport bugReport = bugReportRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Bug report not found: " + id));
+
+    if (qaAssigneeId == null) {
+      bugReport.setQaAssignee(null);
+    } else {
+      Person qaAssignee = personRepository.findById(qaAssigneeId)
+          .orElseThrow(() -> new IllegalArgumentException("QA assignee not found: " + qaAssigneeId));
+      bugReport.setQaAssignee(qaAssignee);
+    }
+
+    bugReport = bugReportRepository.save(bugReport);
+    log.info("Updated QA assignee for bug report: {} -> {}", bugReport.getBugKey(), qaAssigneeId);
     return toDTO(bugReport);
   }
 
@@ -467,6 +503,8 @@ public class BugReportService {
         .reporterName(bugReport.getReporter() != null ? bugReport.getReporter().getUsername() : null)
         .assigneeId(bugReport.getAssignee() != null ? bugReport.getAssignee().getId() : null)
         .assigneeName(bugReport.getAssignee() != null ? bugReport.getAssignee().getName() : null)
+        .qaAssigneeId(bugReport.getQaAssignee() != null ? bugReport.getQaAssignee().getId() : null)
+        .qaAssigneeName(bugReport.getQaAssignee() != null ? bugReport.getQaAssignee().getName() : null)
         .resolution(bugReport.getResolution()).resolvedAt(bugReport.getResolvedAt())
         .createdAt(bugReport.getCreatedAt()).updatedAt(bugReport.getUpdatedAt())
         .targetReleaseId(bugReport.getTargetRelease() != null ? bugReport.getTargetRelease().getId() : null)
