@@ -160,10 +160,17 @@ class GlobalSearchControllerTest {
   }
 
   @Test
-  void globalSearch_WithMissingProjectId_ShouldReturnError() throws Exception {
+  void globalSearch_WithMissingProjectId_ShouldSearchOrgGlobalWiki() throws Exception {
+    // projectId is optional: omitting it performs an org-global wiki search (no project access check).
+    when(globalSearchService.search("test", null, 10)).thenReturn(List.of());
+
     mockMvc
         .perform(get("/api/search/global").param("q", "test"))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(0)));
+
+    verify(globalSearchService).search("test", null, 10);
+    verifyNoInteractions(projectService);
   }
 
   @Test

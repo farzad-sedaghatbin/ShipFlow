@@ -10,7 +10,7 @@ import {
 import QAPanel from './QAPanel';
 
 interface QAFloatingButtonProps {
-  contextType: 'pitch' | 'meeting' | 'team' | 'cycle';
+  contextType: 'pitch' | 'meeting' | 'team' | 'cycle' | 'knowledge';
   contextId?: number;
   contextName?: string;
   cycleId?: number;

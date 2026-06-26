@@ -1826,7 +1826,14 @@ export interface BulkUpdateResult {
 }
 
 // Global Search
-export type GlobalSearchEntityType = 'TASK' | 'SUBTASK' | 'BUG_REPORT' | 'PITCH' | 'EPIC';
+export type GlobalSearchEntityType =
+  | 'TASK'
+  | 'SUBTASK'
+  | 'BUG_REPORT'
+  | 'PITCH'
+  | 'EPIC'
+  | 'WIKI_SPACE'
+  | 'WIKI_PAGE';
 
 export interface GlobalSearchResult {
   entityType: GlobalSearchEntityType;

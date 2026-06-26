@@ -29,13 +29,15 @@ public class GlobalSearchController {
   @GetMapping("/global")
   @Operation(
       summary = "Global search",
-      description = "Search across tasks, subtasks, bug reports, pitches, and epics within a project. "
-          + "Supports fuzzy matching via trigram similarity and exact key matching (e.g. BUG-123).")
+      description = "Search across tasks, subtasks, bug reports, pitches, and epics within a project, "
+          + "plus org-global wiki spaces and pages. When projectId is omitted, only the org-global "
+          + "wiki is searched. Supports fuzzy matching via trigram similarity and exact key matching "
+          + "(e.g. BUG-123).")
   public ResponseEntity<List<GlobalSearchResultDTO>> globalSearch(
       @Parameter(description = "Search query (minimum 2 characters)")
       @RequestParam(required = true) String q,
-      @Parameter(description = "Project ID to scope the search")
-      @RequestParam(required = true) Long projectId,
+      @Parameter(description = "Project ID to scope project entities; omit for an org-global wiki search")
+      @RequestParam(required = false) Long projectId,
       @Parameter(description = "Maximum number of results to return")
       @RequestParam(defaultValue = "10") int limit) {
 
@@ -47,7 +49,10 @@ public class GlobalSearchController {
       limit = 10;
     }
 
-    projectService.requireProjectAccess(projectId);
+    // Project entities require access to that project; the org-global wiki (no projectId) does not.
+    if (projectId != null) {
+      projectService.requireProjectAccess(projectId);
+    }
 
     log.debug("Global search: q='{}', projectId={}, limit={}", q, projectId, limit);
 

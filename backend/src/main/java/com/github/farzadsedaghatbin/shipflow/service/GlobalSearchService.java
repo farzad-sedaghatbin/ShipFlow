@@ -22,10 +22,15 @@ public class GlobalSearchService {
   private EntityManager entityManager;
 
   /**
-   * Search across all entity types within a project.
+   * Search across all entity types.
+   *
+   * <p>Project-scoped entities (tasks, subtasks, bug reports, pitches, epics) are included only when
+   * {@code projectId} is provided. Wiki spaces and pages are org-global by design, so they are always
+   * searched: when a project is selected we include that project's spaces plus every org-global
+   * (project-less) space; with no project selected we search org-global spaces only.
    *
    * @param query     the search text (minimum 2 characters)
-   * @param projectId the project to scope results to
+   * @param projectId the project to scope results to, or {@code null} for an org-global wiki search
    * @param limit     maximum number of results to return
    * @return ranked list of search results
    */
@@ -37,14 +42,18 @@ public class GlobalSearchService {
     }
 
     String trimmedQuery = query.trim();
-    String sql = buildSearchQuery();
+    boolean hasProject = projectId != null;
+    String sql = buildSearchQuery(hasProject);
 
     Query nativeQuery = entityManager.createNativeQuery(sql);
     nativeQuery.setParameter("query", trimmedQuery);
     // Escape LIKE special chars using '!' as escape character (see ESCAPE '!' in SQL)
     String escapedForLike = trimmedQuery.replace("!", "!!").replace("%", "!%").replace("_", "!_");
     nativeQuery.setParameter("queryPattern", "%" + escapedForLike + "%");
-    nativeQuery.setParameter("projectId", projectId);
+    // Only bind :projectId when the SQL references it (omitted for org-global wiki-only search).
+    if (hasProject) {
+      nativeQuery.setParameter("projectId", projectId);
+    }
     nativeQuery.setParameter("resultLimit", limit);
 
     List<Object[]> rows = nativeQuery.getResultList();
@@ -65,9 +74,100 @@ public class GlobalSearchService {
     return results;
   }
 
-  private String buildSearchQuery() {
+  /**
+   * Build the search SQL. Project-scoped entity blocks are included only when {@code hasProject};
+   * wiki space + page blocks are always included, scoped org-globally (and, when a project is
+   * selected, additionally to that project's spaces).
+   */
+  private String buildSearchQuery(boolean hasProject) {
+    // Org-global wiki is always searchable; a selected project additionally surfaces its own spaces.
+    String wikiScope =
+        hasProject
+            ? "(ws.project_id = :projectId OR ws.project_id IS NULL)"
+            : "ws.project_id IS NULL";
+
+    StringBuilder sb = new StringBuilder("WITH search_results AS (\n");
+    if (hasProject) {
+      sb.append(PROJECT_SCOPED_BLOCK).append("\n          UNION ALL\n");
+    }
+    sb.append(wikiSpaceBlock(wikiScope))
+        .append("\n          UNION ALL\n")
+        .append(wikiPageBlock(wikiScope))
+        .append("\n        )\n")
+        .append("        SELECT entity_type, entity_id, title, subtitle, route, score, matched_by\n")
+        .append("        FROM search_results\n")
+        .append("        ORDER BY score DESC, title ASC\n")
+        .append("        LIMIT :resultLimit\n");
+    return sb.toString();
+  }
+
+  /** Wiki space results — matches space name and key; routes to the space by numeric id. */
+  private String wikiSpaceBlock(String wikiScope) {
     return """
-        WITH search_results AS (
+          -- Wiki Spaces
+          SELECT
+            'WIKI_SPACE' AS entity_type,
+            ws.id AS entity_id,
+            ws.name AS title,
+            CONCAT('Wiki space · ', ws.space_key) AS subtitle,
+            CONCAT('/wiki/', ws.id) AS route,
+            GREATEST(
+              similarity(ws.name, :query),
+              CASE WHEN LOWER(ws.name) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.6 ELSE 0.0 END,
+              CASE WHEN LOWER(ws.space_key) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.5 ELSE 0.0 END
+            ) AS score,
+            CASE
+              WHEN LOWER(ws.name) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_TITLE'
+              WHEN LOWER(ws.space_key) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_KEY'
+              ELSE 'TRIGRAM'
+            END AS matched_by
+          FROM wiki_spaces ws
+          WHERE %s
+            AND ws.deleted_at IS NULL
+            AND (
+              similarity(ws.name, :query) > 0.1
+              OR LOWER(ws.name) LIKE LOWER(:queryPattern) ESCAPE '!'
+              OR LOWER(ws.space_key) LIKE LOWER(:queryPattern) ESCAPE '!'
+            )"""
+        .formatted(wikiScope);
+  }
+
+  /** Wiki page results — matches title and body; routes to the page by numeric space id + page id. */
+  private String wikiPageBlock(String wikiScope) {
+    return """
+          -- Wiki Pages
+          SELECT
+            'WIKI_PAGE' AS entity_type,
+            wp.id AS entity_id,
+            wp.title AS title,
+            ws.name AS subtitle,
+            CONCAT('/wiki/', ws.id, '/', wp.id) AS route,
+            GREATEST(
+              similarity(wp.title, :query),
+              CASE WHEN LOWER(wp.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.6 ELSE 0.0 END,
+              CASE WHEN LOWER(wp.content_text) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 0.4 ELSE 0.0 END
+            ) AS score,
+            CASE
+              WHEN LOWER(wp.title) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_TITLE'
+              WHEN LOWER(wp.content_text) LIKE LOWER(:queryPattern) ESCAPE '!' THEN 'LIKE_BODY'
+              ELSE 'TRIGRAM'
+            END AS matched_by
+          FROM wiki_pages wp
+            JOIN wiki_spaces ws ON wp.space_id = ws.id
+          WHERE %s
+            AND ws.deleted_at IS NULL
+            AND wp.deleted_at IS NULL
+            AND (
+              similarity(wp.title, :query) > 0.1
+              OR LOWER(wp.title) LIKE LOWER(:queryPattern) ESCAPE '!'
+              OR LOWER(wp.content_text) LIKE LOWER(:queryPattern) ESCAPE '!'
+            )"""
+        .formatted(wikiScope);
+  }
+
+  /** Project-scoped entity SELECTs (tasks, subtasks, bug reports, pitches, epics), UNION-joined. */
+  private static final String PROJECT_SCOPED_BLOCK =
+      """
           -- Tasks (parent_task_id IS NULL = root task)
           SELECT
             CASE WHEN t.parent_task_id IS NULL THEN 'TASK' ELSE 'SUBTASK' END AS entity_type,
@@ -176,12 +276,5 @@ public class GlobalSearchService {
             AND (
               similarity(e.name, :query) > 0.1
               OR LOWER(e.name) LIKE LOWER(:queryPattern) ESCAPE '!'
-            )
-        )
-        SELECT entity_type, entity_id, title, subtitle, route, score, matched_by
-        FROM search_results
-        ORDER BY score DESC, title ASC
-        LIMIT :resultLimit
-        """;
-  }
+            )""";
 }

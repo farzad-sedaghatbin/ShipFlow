@@ -21,6 +21,7 @@ import {
   Upload,
   Scale,
   Puzzle,
+  HardDrive,
   Sliders,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -45,6 +46,7 @@ import {
   SsoSettingsTab,
   ScimSettingsTab,
   PluginsSettingsTab,
+  StorageSettingsTab,
   CustomFieldsSettingsTab,
 } from '../components/organizationSettings';
 
@@ -72,6 +74,7 @@ type SectionId =
   | 'plugins'
   | 'sso'
   | 'scim'
+  | 'storage'
   | 'import'
   | 'customFields';
 
@@ -134,6 +137,12 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { id: 'sso', labelKey: 'sso.tabLabel', icon: Shield },
       { id: 'scim', labelKey: 'scim.title', icon: Users },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionInfrastructure',
+    items: [
+      { id: 'storage', labelKey: 'storage.tabLabel', icon: HardDrive },
     ],
   },
   {
@@ -315,6 +324,8 @@ export default function OrganizationSettingsPage() {
         return <SsoSettingsTab />;
       case 'scim':
         return <ScimSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'storage':
+        return <StorageSettingsTab />;
       case 'import':
         return (
           <div className="space-y-4">

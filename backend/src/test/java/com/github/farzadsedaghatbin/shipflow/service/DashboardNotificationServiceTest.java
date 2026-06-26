@@ -48,6 +48,9 @@ class DashboardNotificationServiceTest {
   private UserRepository userRepository;
 
   @Mock
+  private WikiPageRepository wikiPageRepository;
+
+  @Mock
   private NotificationProvider slackProvider;
 
   @Mock
@@ -76,7 +79,7 @@ class DashboardNotificationServiceTest {
     lenient().when(teamsProvider.isActive()).thenReturn(false);
 
     notificationService = new DashboardNotificationService(notificationRepository, taskRepository,
-        cycleRepository, pitchRepository, hillChartPointRepository, userRepository,
+        cycleRepository, pitchRepository, hillChartPointRepository, userRepository, wikiPageRepository,
         List.of(slackProvider, teamsProvider), notificationSseManager, emailService);
 
     testUser = User.builder().id(1L).username("testuser").build();

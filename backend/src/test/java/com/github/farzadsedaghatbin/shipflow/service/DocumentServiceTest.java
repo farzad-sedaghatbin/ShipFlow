@@ -9,6 +9,11 @@ import static org.mockito.Mockito.*;
 import com.github.farzadsedaghatbin.shipflow.dto.DocumentUploadResponse;
 import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository;
+import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
+import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StoredObjectRef;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +46,12 @@ class DocumentServiceTest {
   @Mock
   private LocalizationService localizationService;
 
+  @Mock
+  private ObjectStorageService objectStorageService;
+
+  @Mock
+  private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
   @InjectMocks
   private DocumentService documentService;
 
@@ -70,12 +81,21 @@ class DocumentServiceTest {
     ReflectionTestUtils.setField(documentService, "maxFileSize", 10485760L); // 10MB
   }
 
+  private StoredObjectRef storedRef(String key) {
+    return StoredObjectRef.builder().key(key).bucket("bucket").contentType("application/pdf")
+        .sizeBytes(10L).build();
+  }
+
   @Test
   void uploadDocument_withPdfFile_shouldExtractTextAndSave() throws IOException {
     // Given
     String fileName = "test-document.pdf";
     byte[] content = "PDF content".getBytes();
     MockMultipartFile file = new MockMultipartFile("file", fileName, "application/pdf", content);
+
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.LOCAL_FS);
+    when(objectStorageService.storeWithoutValidation(eq("documents/pitch/1"), eq(fileName), any(), anyLong(), any()))
+        .thenReturn(storedRef("documents/pitch/1/uuid_" + fileName));
 
     UploadedDocument savedDoc = UploadedDocument.builder().id(1L).fileName("uuid_" + fileName)
         .originalFileName(fileName).fileType("pdf").fileSize((long) content.length).textExtracted(true).build();
@@ -90,6 +110,82 @@ class DocumentServiceTest {
     assertThat(response.getFileName()).contains(fileName);
     assertThat(response.getFileType()).isEqualTo("pdf");
     verify(documentRepository).save(any(UploadedDocument.class));
+  }
+
+  @Test
+  void uploadDocument_shouldRouteToObjectStorageAndPersistStorageKey() throws IOException {
+    // Given
+    String fileName = "notes.txt";
+    byte[] content = "hello world".getBytes();
+    MockMultipartFile file = new MockMultipartFile("file", fileName, "text/plain", content);
+
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.S3);
+    when(objectStorageService.storeWithoutValidation(eq("documents/pitch/1"), eq(fileName), any(), anyLong(), any()))
+        .thenReturn(storedRef("documents/pitch/1/uuid_notes.txt"));
+    when(documentRepository.save(any(UploadedDocument.class))).thenAnswer(i -> i.getArgument(0));
+
+    // When
+    documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
+
+    // Then — file is stored through the SPI (never written to disk) and the key is persisted
+    verify(objectStorageService).storeWithoutValidation(eq("documents/pitch/1"), eq(fileName), any(), anyLong(), any());
+    verify(documentRepository).save(argThat(doc -> "documents/pitch/1/uuid_notes.txt".equals(doc.getStorageKey())
+        && doc.getStorageProvider() == StorageProviderType.S3 && doc.getStoragePath() == null));
+  }
+
+  @Test
+  void uploadDocument_defersQaIndexingToBackgroundEvent() throws IOException {
+    // Given a text document that extracts successfully
+    MockMultipartFile file =
+        new MockMultipartFile("file", "notes.txt", "text/plain", "indexable text content".getBytes());
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.S3);
+    when(objectStorageService.storeWithoutValidation(any(), any(), any(), anyLong(), any()))
+        .thenReturn(storedRef("documents/pitch/1/uuid_notes.txt"));
+    when(documentRepository.save(any(UploadedDocument.class))).thenAnswer(i -> {
+      UploadedDocument d = i.getArgument(0);
+      if (d.getId() == null) d.setId(99L);
+      return d;
+    });
+
+    // When
+    documentService.uploadDocument(file, "PITCH", 1L, 1L, "testuser");
+
+    // Then — indexing is NOT run inline (it would block the upload response on slow embeddings);
+    // instead an event is published for the async AFTER_COMMIT listener.
+    verify(knowledgeIngestionService, never()).ingestDocument(any());
+    verify(eventPublisher)
+        .publishEvent(any(com.github.farzadsedaghatbin.shipflow.event.DocumentUploadedEvent.class));
+  }
+
+  @Test
+  void uploadMediaAttachment_shouldRouteToObjectStorageWithBugAttachmentsKeyHint() throws IOException {
+    // Given a video — exceeds the façade allowlist, so it must use the non-validating store path
+    String fileName = "clip.mp4";
+    byte[] content = new byte[1024];
+    MockMultipartFile file = new MockMultipartFile("file", fileName, "video/mp4", content);
+
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.LOCAL_FS);
+    when(objectStorageService.storeWithoutValidation(eq("attachments/bug/7"), eq(fileName), any(), anyLong(), any()))
+        .thenReturn(storedRef("attachments/bug/7/uuid_clip.mp4"));
+    when(documentRepository.save(any(UploadedDocument.class))).thenAnswer(i -> i.getArgument(0));
+
+    // When
+    DocumentUploadResponse response =
+        documentService.uploadMediaAttachment(file, "BUG_REPORT", 7L, 1L, "testuser", 0);
+
+    // Then
+    assertThat(response.getErrorMessage()).isNull();
+    verify(objectStorageService).storeWithoutValidation(eq("attachments/bug/7"), eq(fileName), any(), anyLong(), any());
+    verify(documentRepository).save(argThat(doc -> "attachments/bug/7/uuid_clip.mp4".equals(doc.getStorageKey())
+        && doc.getStoragePath() == null));
+  }
+
+  @Test
+  void storageKeyHint_groupsByCategory() {
+    assertThat(DocumentService.storageKeyHint("PITCH", 5L)).isEqualTo("documents/pitch/5");
+    assertThat(DocumentService.storageKeyHint("MEETING", 9L)).isEqualTo("documents/meeting/9");
+    assertThat(DocumentService.storageKeyHint("BUG_REPORT", 7L)).isEqualTo("attachments/bug/7");
+    assertThat(DocumentService.storageKeyHint(null, 3L)).isEqualTo("documents/misc/3");
   }
 
   @Test
@@ -176,6 +272,63 @@ class DocumentServiceTest {
     // When/Then
     assertThatThrownBy(() -> documentService.getDocumentById(999L)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Document not found");
+  }
+
+  @Test
+  void deleteDocument_withStorageKey_shouldDeleteViaSpi() {
+    // Given
+    UploadedDocument doc = UploadedDocument.builder().id(1L).storageProvider(StorageProviderType.S3)
+        .storageKey("documents/uuid_file.pdf").build();
+    when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
+
+    // When
+    documentService.deleteDocument(1L);
+
+    // Then — removal goes through the SPI, not the filesystem
+    verify(objectStorageService).delete(StorageProviderType.S3, "documents/uuid_file.pdf");
+    verify(documentRepository).delete(doc);
+  }
+
+  @Test
+  void downloadDocument_withStorageKey_shouldRetrieveViaSpi() {
+    // Given
+    UploadedDocument doc = UploadedDocument.builder().id(1L).originalFileName("report.pdf").fileType("pdf")
+        .storageProvider(StorageProviderType.S3).storageKey("documents/uuid_report.pdf").build();
+    when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
+
+    DownloadResource dr = DownloadResource.builder()
+        .stream(new ByteArrayInputStream("PDF bytes".getBytes()))
+        .contentType("application/pdf").sizeBytes(9L).filename("report.pdf").build();
+    when(objectStorageService.retrieve(StorageProviderType.S3, "documents/uuid_report.pdf")).thenReturn(dr);
+
+    // When
+    ResponseEntity<Resource> response = documentService.downloadDocument(1L);
+
+    // Then
+    assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+    assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PDF);
+    assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).contains("report.pdf");
+    verify(objectStorageService).retrieve(StorageProviderType.S3, "documents/uuid_report.pdf");
+  }
+
+  @Test
+  void getDocumentBytes_withStorageKey_shouldReadViaSpi() throws IOException {
+    // Given
+    UploadedDocument doc = UploadedDocument.builder().id(1L).originalFileName("d.pdf").fileType("pdf")
+        .storageProvider(StorageProviderType.MINIO).storageKey("documents/uuid_d.pdf").build();
+    when(documentRepository.findById(1L)).thenReturn(Optional.of(doc));
+
+    DownloadResource dr = DownloadResource.builder()
+        .stream(new ByteArrayInputStream("payload".getBytes()))
+        .contentType("application/pdf").sizeBytes(7L).filename("d.pdf").build();
+    when(objectStorageService.retrieve(StorageProviderType.MINIO, "documents/uuid_d.pdf")).thenReturn(dr);
+
+    // When
+    byte[] bytes = documentService.getDocumentBytes(1L);
+
+    // Then
+    assertThat(new String(bytes)).isEqualTo("payload");
+    verify(objectStorageService).retrieve(StorageProviderType.MINIO, "documents/uuid_d.pdf");
   }
 
   @Test

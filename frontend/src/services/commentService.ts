@@ -1,7 +1,7 @@
 import api from './api';
 
 // Types
-export type CommentEntityType = 'TASK' | 'BUG_REPORT';
+export type CommentEntityType = 'TASK' | 'BUG_REPORT' | 'WIKI_PAGE';
 
 export type CommentReaction = 
   | 'THUMBS_UP' 

@@ -43,10 +43,16 @@ import commentService, {
 import UserProfilePopover from './UserProfilePopover';
 
 interface CommentsProps {
-  entityType: 'task' | 'bug';
+  entityType: 'task' | 'bug' | 'wiki';
   entityId: number;
   locale?: string;
 }
+
+const ENTITY_TYPE_MAP: Record<CommentsProps['entityType'], CommentEntityType> = {
+  task: 'TASK',
+  bug: 'BUG_REPORT',
+  wiki: 'WIKI_PAGE',
+};
 
 const AVAILABLE_REACTIONS: CommentReaction[] = [
   'THUMBS_UP',
@@ -136,7 +142,7 @@ const Comments: React.FC<CommentsProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionDropdownRef = useRef<HTMLDivElement>(null);
 
-  const apiEntityType: CommentEntityType = entityType === 'task' ? 'TASK' : 'BUG_REPORT';
+  const apiEntityType: CommentEntityType = ENTITY_TYPE_MAP[entityType];
 
   const loadComments = useCallback(async () => {
     setLoading(true);

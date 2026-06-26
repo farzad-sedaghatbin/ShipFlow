@@ -38,6 +38,7 @@ public class DashboardNotificationService {
   private final PitchRepository pitchRepository;
   private final HillChartPointRepository hillChartPointRepository;
   private final UserRepository userRepository;
+  private final WikiPageRepository wikiPageRepository;
   private final List<NotificationProvider> notificationProviders;
   private final NotificationSseManager notificationSseManager;
   private final IEmailNotificationService emailService;
@@ -137,7 +138,7 @@ public class DashboardNotificationService {
 
     String authorName = author.getPerson() != null ? author.getPerson().getName() : author.getUsername();
 
-    String actionUrl = entityType.equals("TASK") ? "/backlog/" + entityId : "/qa/bug-reports/" + entityId;
+    String actionUrl = resolveCommentEntityUrl(entityType, entityId);
 
     createNotification(mentionedUser, "COMMENT_MENTION", "You were mentioned in a comment",
         String.format("%s mentioned you: \"%s\"", authorName,
@@ -162,6 +163,25 @@ public class DashboardNotificationService {
 
     log.info("Created comment mention notification for user {} from author {} on {} {}", mentionedUser.getId(),
         author.getId(), entityType, entityId);
+  }
+
+  /**
+   * Resolve the in-app URL for a commented entity so a mention notification deep-links to it.
+   * Wiki pages need their space id to build the canonical {@code /wiki/{spaceId}/{pageId}} route;
+   * if the page can't be resolved we fall back to the wiki index.
+   */
+  private String resolveCommentEntityUrl(String entityType, Long entityId) {
+    switch (entityType) {
+      case "TASK" :
+        return "/backlog/" + entityId;
+      case "WIKI_PAGE" :
+        return wikiPageRepository.findById(entityId)
+            .map(page -> "/wiki/" + page.getSpaceId() + "/" + page.getId())
+            .orElse("/wiki");
+      case "BUG_REPORT" :
+      default :
+        return "/qa/bug-reports/" + entityId;
+    }
   }
 
   /** Create notification when a task is reassigned from one person to another */

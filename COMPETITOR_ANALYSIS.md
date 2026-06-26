@@ -1,6 +1,6 @@
 # ShipFlow — Competitive Analysis
 
-_Last updated: 2026-06-16 (v1.7.0 shipped — Workflow Automations: 14 triggers, 7 actions, 20 built-in templates)_
+_Last updated: 2026-06-18 (v1.9.0 shipped — Wiki / Docs Space + Pluggable Object Storage; v1.8.0 Knowledge Center shipped 2026-06-18)_
 
 This document positions ShipFlow against the tools teams most commonly evaluate before adopting it.
 It is written factually to help evaluators make an informed decision.
@@ -63,10 +63,14 @@ ShipFlow targets teams that:
 | **Shape Up–aware automation triggers (hill chart, appetite, betting table)** | ✅ (v1.7.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Automation execution log (per-run status, payload, result)** | ✅ (v1.7.0) | Partial | Partial | ❌ | Partial | ❌ | ❌ |
 | **Unified Knowledge Center wired into AI features** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Built-in team wiki (block editor, version history, @mentions, search)** | ✅ (v1.9.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Wiki auto-ingested into AI context** | ✅ (v1.9.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Pluggable object storage (S3 / MinIO / local disk, one-click migration)** | ✅ (v1.9.0) | ❌ | Partial⁴ | ❌ | ❌ | Partial⁴ | ❌ |
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
 ³ Linear has a "Triage" view for overdue issues but no proactive AI-computed insight panel with scope-creep detection or velocity trend analysis.
+⁴ Jira and Confluence support S3 attachment storage in their Data Center editions but do not expose a UI-driven backend switcher or one-click migration.
 
 ---
 

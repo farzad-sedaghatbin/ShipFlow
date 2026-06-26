@@ -7,5 +7,6 @@ public enum KnowledgeProviderType {
   GITHUB,
   CONFLUENCE,
   NOTION,
-  GOOGLE_DRIVE
+  GOOGLE_DRIVE,
+  WIKI
 }

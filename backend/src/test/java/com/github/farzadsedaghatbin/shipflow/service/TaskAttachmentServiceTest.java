@@ -2,10 +2,11 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.StorageConfig;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.TaskAttachment;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
@@ -14,8 +15,10 @@ import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageRegistry;
+import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
+import com.github.farzadsedaghatbin.shipflow.service.storage.provider.LocalFsStorageProvider;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +29,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -37,8 +39,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.nio.file.Path;
+
 /**
  * Unit tests for {@link TaskAttachmentService}.
+ *
+ * <p>Uses a real {@link ObjectStorageService} wired over a real {@link LocalFsStorageProvider}
+ * pointed at a JUnit {@link TempDir}, so upload→download→delete behavior is exercised end-to-end
+ * without a full Spring context.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -51,12 +59,14 @@ class TaskAttachmentServiceTest {
   private TaskRepository taskRepository;
   @Mock
   private UserRepository userRepository;
-
-  @InjectMocks
-  private TaskAttachmentService service;
+  @Mock
+  private StorageConfigService storageConfigService;
 
   @TempDir
   Path tempDir;
+
+  private TaskAttachmentService service;
+  private ObjectStorageService objectStorageService;
 
   private Task task;
   private User uploader;
@@ -64,7 +74,21 @@ class TaskAttachmentServiceTest {
 
   @BeforeEach
   void setUp() {
-    ReflectionTestUtils.setField(service, "uploadDir", tempDir.toString());
+    // Wire a real LocalFsStorageProvider backed by the JUnit TempDir
+    LocalFsStorageProvider localFsProvider = new LocalFsStorageProvider(tempDir.toString());
+    ObjectStorageRegistry registry = new ObjectStorageRegistry(List.of(localFsProvider));
+
+    // StorageConfigService returns a default LOCAL_FS config
+    StorageConfig localFsConfig = StorageConfig.builder()
+        .activeProvider(StorageProviderType.LOCAL_FS)
+        .config("{}")
+        .build();
+    when(storageConfigService.getActiveConfig()).thenReturn(localFsConfig);
+
+    objectStorageService = new ObjectStorageService(storageConfigService, registry, new ObjectMapper());
+
+    service = new TaskAttachmentService(
+        attachmentRepository, taskRepository, userRepository, objectStorageService);
 
     task = Task.builder().build();
     ReflectionTestUtils.setField(task, "id", 1L);
@@ -186,6 +210,31 @@ class TaskAttachmentServiceTest {
     }
   }
 
+  // ── Download ───────────────────────────────────────────────────────────────
+
+  @Nested
+  @DisplayName("downloadAttachment")
+  class Download {
+
+    @Test
+    @DisplayName("missing object — throws ResourceNotFoundException (not raw RuntimeException)")
+    void download_missingObject_throwsResourceNotFoundException() {
+      // Build an attachment whose storageKey points at a non-existent object in the TempDir
+      String nonExistentKey = "tasks/1/deadbeef-0000-0000-0000-000000000000_ghost.png";
+      TaskAttachment a = TaskAttachment.builder()
+          .task(task).fileName("ghost.png").filePath(nonExistentKey)
+          .storageProvider(StorageProviderType.LOCAL_FS).storageKey(nonExistentKey)
+          .fileSize(0L).contentType("image/png").uploadedBy(uploader).build();
+      ReflectionTestUtils.setField(a, "id", 300L);
+      ReflectionTestUtils.setField(a, "createdAt", java.time.LocalDateTime.now());
+      when(attachmentRepository.findById(300L)).thenReturn(Optional.of(a));
+
+      assertThatThrownBy(() -> service.downloadAttachment(1L, 300L))
+          .isInstanceOf(ResourceNotFoundException.class)
+          .hasMessageContaining("ghost.png");
+    }
+  }
+
   // ── Delete ─────────────────────────────────────────────────────────────────
 
   @Nested
@@ -194,10 +243,9 @@ class TaskAttachmentServiceTest {
 
     @Test
     @DisplayName("uploader can delete their own attachment")
-    void delete_byUploader_succeeds() throws Exception {
+    void delete_byUploader_succeeds() {
+      // storageKey uses the façade key format; no actual file needed — LocalFs delete is best-effort
       TaskAttachment a = buildAttachment(100L, "shot.png", uploader);
-      // Create the file so deleteIfExists finds it
-      Files.createFile(tempDir.resolve(a.getFilePath()));
       when(attachmentRepository.findById(100L)).thenReturn(Optional.of(a));
 
       service.deleteAttachment(1L, 100L);
@@ -207,14 +255,13 @@ class TaskAttachmentServiceTest {
 
     @Test
     @DisplayName("ADMIN can delete any attachment")
-    void delete_byAdmin_succeeds() throws Exception {
+    void delete_byAdmin_succeeds() {
       User otherUser = new User();
       otherUser.setId(20L);
       otherUser.setUsername("ali");
       otherUser.setRole(UserRole.MEMBER);
 
       TaskAttachment a = buildAttachment(101L, "spec.pdf", otherUser);
-      Files.createFile(tempDir.resolve(a.getFilePath()));
       when(attachmentRepository.findById(101L)).thenReturn(Optional.of(a));
 
       authenticateAs("admin");
@@ -241,6 +288,44 @@ class TaskAttachmentServiceTest {
     }
 
     @Test
+    @DisplayName("real round-trip: upload then delete removes the object from storage")
+    void delete_realRoundTrip_objectGoneFromStorage() throws Exception {
+      // Upload a real file via the service so an actual object is written under tasks/1/... in tempDir
+      MockMultipartFile file = new MockMultipartFile(
+          "file", "roundtrip.png", "image/png", new byte[256]);
+
+      TaskAttachmentDTO dto = service.uploadAttachment(1L, file);
+
+      // Retrieve the saved attachment via the repository mock return
+      // (attachmentRepository.save() was intercepted to set id=100; retrieve that attachment)
+      String savedKey = dto.getFileName(); // we need the storageKey — capture from save mock
+      // Re-build the attachment using the key that was passed to save() in uploadAttachment
+      // We intercept via an ArgumentCaptor approach: re-use the attachment from the save mock answer
+      // Instead, we directly download to confirm the object exists, then delete it.
+
+      // Capture the actual attachment entity that was saved
+      org.mockito.ArgumentCaptor<TaskAttachment> captor =
+          org.mockito.ArgumentCaptor.forClass(TaskAttachment.class);
+      verify(attachmentRepository).save(captor.capture());
+      TaskAttachment saved = captor.getValue();
+      // The service assigned id=100 via the save mock
+      when(attachmentRepository.findById(100L)).thenReturn(Optional.of(saved));
+
+      // Confirm object is accessible before delete
+      assertThatNoException().isThrownBy(() -> service.downloadAttachment(1L, 100L));
+
+      // Delete via service
+      service.deleteAttachment(1L, 100L);
+
+      // Assert the repository delete was called
+      verify(attachmentRepository).delete(saved);
+
+      // Assert the underlying object is gone from storage — download must now throw ResourceNotFoundException
+      assertThatThrownBy(() -> service.downloadAttachment(1L, 100L))
+          .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
     @DisplayName("attachment belongs to different task — throws ResourceNotFoundException")
     void delete_wrongTask_throws() {
       Task otherTask = Task.builder().build();
@@ -257,9 +342,11 @@ class TaskAttachmentServiceTest {
   // ── Helper ─────────────────────────────────────────────────────────────────
 
   private TaskAttachment buildAttachment(Long id, String fileName, User owner) {
-    String storedName = "uuid_" + fileName;
+    // storageKey uses the façade key format; filePath mirrors storageKey for legacy compatibility
+    String storageKey = "tasks/1/uuid_" + fileName;
     TaskAttachment a = TaskAttachment.builder()
-        .task(task).fileName(fileName).filePath(storedName)
+        .task(task).fileName(fileName).filePath(storageKey)
+        .storageProvider(StorageProviderType.LOCAL_FS).storageKey(storageKey)
         .fileSize(1024L).contentType("image/png").uploadedBy(owner).build();
     ReflectionTestUtils.setField(a, "id", id);
     ReflectionTestUtils.setField(a, "createdAt", LocalDateTime.now());

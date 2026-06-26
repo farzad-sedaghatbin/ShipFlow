@@ -57,8 +57,8 @@ import {
   Link2,
   Building2,
   Wand2,
-  Sliders,
   Zap,
+  Sliders,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -80,7 +80,7 @@ const releases: Release[] = [
   {
     version: '1.8.0',
     date: 'In Development',
-    title: 'Knowledge Center',
+    title: 'Knowledge Center & Wiki',
     upcoming: true,
     highlights: [
       {
@@ -100,6 +100,36 @@ const releases: Release[] = [
         title: 'Pluggable Provider SPI',
         description:
           'File upload and URL providers ship today. The provider SPI lets you drop in a new source type (GitHub, Confluence, Notion, Drive) by implementing a single Spring bean — Spring auto-registers it via KnowledgeSourceRegistry.',
+      },
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Built-in Wiki',
+        description:
+          'Hierarchical spaces → pages tree with a Notion-style block editor (headings, lists, checkboxes, tables, code blocks, callouts, slash menu). Drag pages to reorganize.',
+      },
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Page comments & discussion',
+        description:
+          'Every wiki page has a comments thread — the same one used on tasks and bugs — with Markdown, emoji reactions, and @mention autocomplete that notifies and deep-links teammates back to the page.',
+      },
+      {
+        icon: <Clock className="h-5 w-5" />,
+        title: 'Versioned docs with history',
+        description:
+          'Every edit is versioned; compare any past revision against the current page in a side-by-side diff, then restore it. Breadcrumbs, auto table-of-contents, full-text search, @mentions, internal page links, and file attachments.',
+      },
+      {
+        icon: <Brain className="h-5 w-5" />,
+        title: 'AI-connected docs',
+        description:
+          'Wiki pages auto-feed the Knowledge Center, so AI Q&A and Wise Architecture answer from your team\'s docs automatically.',
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Pluggable Object Storage',
+        description:
+          'Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; encrypted-by-config credentials, connection test, and one-click migration between backends.',
       },
     ],
   },
