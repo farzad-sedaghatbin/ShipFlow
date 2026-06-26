@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
 ### Fixed — Bug assignee dropdowns show the person's name
 
 - The QA/Developer assignee selects in the bug view dialog listed members by their login `username` instead of their display name. They now show `personName` (falling back to `username` when no display name is set), matching how members are labelled elsewhere in the app.
+### Fixed — Bug attachment upload duplicates and missing attachments when editing
+
+- **Duplicate pending images**: selecting an image for a new bug could show the same file 3–4 times (notably on macOS Chrome, which can hand back duplicate `File` entries in one pick/drop). The pending-file handlers were memoized with a stale `[bugId]` dependency, so in creation mode they captured an empty pending list and never de-duplicated. The handlers now always read the current pending list and de-duplicate by name/size/last-modified, both within a selection and against already-pending files. Pending previews are also built once per file (and revoked) instead of calling `URL.createObjectURL` inline on every render.
+- **Editing a bug ignored existing attachments**: the edit dialog mounted the uploader with only a `bugId` and never loaded the bug's current attachments, so they couldn't be previewed or removed. `MediaAttachmentUpload` now fetches the bug's attachments when given a `bugId`, so editing shows existing attachments and supports adding and removing them. Object URLs are revoked on unmount.
 
 ### Fixed — Bug detail URL now uses the bugKey, not the DB id
 
