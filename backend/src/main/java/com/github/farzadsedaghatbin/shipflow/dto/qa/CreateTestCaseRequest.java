@@ -28,6 +28,8 @@ public class CreateTestCaseRequest {
 
   private String expectedResult;
 
+  private Long projectId;
+
   private Long pitchId;
 
   private Long cycleId;

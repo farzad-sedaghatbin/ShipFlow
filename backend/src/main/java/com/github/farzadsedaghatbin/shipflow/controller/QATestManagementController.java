@@ -114,15 +114,16 @@ public class QATestManagementController {
 
   @GetMapping("/test-cases/filter")
   @Operation(summary = "Get test cases with multi-selection filters", description = "Filter test cases by cycle, pitch, statuses, types, priorities, creator, and source (manual vs AI-generated)")
-  public ResponseEntity<List<TestCaseDTO>> getTestCasesWithFilters(@RequestParam(required = false) Long cycleId,
+  public ResponseEntity<List<TestCaseDTO>> getTestCasesWithFilters(@RequestParam(required = false) Long projectId,
+      @RequestParam(required = false) Long cycleId,
       @RequestParam(required = false) Long pitchId, @RequestParam(required = false) List<TestCaseStatus> statuses,
       @RequestParam(required = false) List<TestCaseType> types,
       @RequestParam(required = false) List<TestCasePriority> priorities,
       @RequestParam(required = false) Long createdById,
       @RequestParam(required = false) Boolean aiGenerated) {
     checkFeatureEnabled();
-    return ResponseEntity.ok(testCaseService.getTestCasesWithFilters(cycleId, pitchId, statuses, types, priorities,
-        createdById, aiGenerated));
+    return ResponseEntity.ok(testCaseService.getTestCasesWithFilters(projectId, cycleId, pitchId, statuses, types,
+        priorities, createdById, aiGenerated));
   }
 
   @PostMapping("/test-cases")

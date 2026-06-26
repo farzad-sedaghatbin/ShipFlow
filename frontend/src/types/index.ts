@@ -1033,6 +1033,9 @@ export interface TestCase {
   preconditions?: string;
   steps?: string;
   expectedResult?: string;
+  projectId?: number;
+  projectName?: string;
+  projectKey?: string;
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -1071,6 +1074,7 @@ export interface CreateTestCaseRequest {
   preconditions?: string;
   steps?: string;
   expectedResult?: string;
+  projectId?: number;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;

@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Fixed — Bug detail URL now uses the bugKey, not the DB id
 
 - Opening a bug's full page showed a URL like `/qa/bug-reports/165` (the database primary key) while the dialog displayed `BUG-150` (the human-friendly `bugKey`) — two independent sequences that drift apart, which read as a mismatch. All in-app bug-detail links (list view, kanban, view-dialog "open in new tab", copy-link, pitch test page) now use the `bugKey`, so the address bar matches the key shown in the UI (Jira/Linear-style). `BugReportDetailPage` resolves by key, still accepts legacy numeric ids (old notification / shared links) via the existing `GET /api/qa/bug-reports/key/{key}` endpoint, and rewrites a numeric URL to its canonical key. Also fixed a dead link on the pitch test page that pointed at the non-existent `/qa/bugs/{id}` route.
+### Fixed — Test cases now scoped to the selected project
+
+- Test cases had no direct project link, so the Test Cases page showed **every** project's cases regardless of the selected project. Added a direct `project` association to `TestCase` (migration `V2026_06_25_0002`, backfilled from each case's cycle then pitch); the list endpoint now accepts a `projectId` filter and the page passes the current project (all cases when "All Projects" is selected). New test cases inherit the project from the current selection / linked pitch / cycle.
 
 ### Added — QA: test-case filters & bulk execution
 
