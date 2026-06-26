@@ -117,6 +117,7 @@ export interface ProjectMember {
   userId: number;
   personId?: number;
   username: string;
+  personName?: string;
   email?: string;
   projectRole: ProjectRole;
   grantedAt: string;
