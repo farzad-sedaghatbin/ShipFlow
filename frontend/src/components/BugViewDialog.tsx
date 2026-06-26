@@ -607,7 +607,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                             <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
                             {members.filter(m => m.personId != null).map((m) => (
                               <SelectItem key={m.userId} value={m.personId!.toString()}>
-                                {m.username}
+                                {m.personName || m.username}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -636,7 +636,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                             <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
                             {members.filter(m => m.personId != null).map((m) => (
                               <SelectItem key={m.userId} value={m.personId!.toString()}>
-                                {m.username}
+                                {m.personName || m.username}
                               </SelectItem>
                             ))}
                           </SelectContent>
