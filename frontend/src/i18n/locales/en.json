@@ -2382,6 +2382,7 @@
       "allReleases": "All Releases",
       "allAssignees": "All Assignees",
       "searchAssignee": "Search people...",
+      "noAssignee": "No people found",
       "excludeLabel": "Exclude filters",
       "excludeTooltip": "When ON, shows bugs that do NOT match the selected filters (inverts the filter)"
     },
@@ -3421,6 +3422,8 @@
       "allReleases": "All Releases",
       "all": "All",
       "assignee": "Assignee",
+      "searchAssignee": "Search people...",
+      "noAssignee": "No people found",
       "blocked": "Blocked",
       "blocking": "Blocking",
       "dependency": "Dependencies"

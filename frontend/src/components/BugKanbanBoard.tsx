@@ -90,7 +90,7 @@ function BugKanbanCard({ bug, onViewBug, onEditBug, onDeleteBug, dragging, updat
   const { showToast } = useToast();
 
   const handleCopyLink = () => {
-    const url = `${window.location.origin}/qa/bug-reports/${bug.id}`;
+    const url = `${window.location.origin}/qa/bug-reports/${bug.bugKey}`;
     navigator.clipboard.writeText(url);
     showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
   };
@@ -129,7 +129,7 @@ function BugKanbanCard({ bug, onViewBug, onEditBug, onDeleteBug, dragging, updat
                 <Eye className="h-4 w-4 mr-2" />
                 {t('common.preview', 'Preview')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate(`/qa/bug-reports/${bug.id}`)}>
+              <DropdownMenuItem onClick={() => navigate(`/qa/bug-reports/${bug.bugKey}`)}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 {t('common.openFullPage', 'Open full page')}
               </DropdownMenuItem>
