@@ -158,6 +158,7 @@ class WikiServiceTest {
     child.setSlug("child");
 
     when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(pageRepository.findById(childId)).thenReturn(Optional.of(child));
     when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
     when(pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId))
         .thenReturn(List.of(page, child));
@@ -300,7 +301,15 @@ class WikiServiceTest {
     srcSibling.setTitle("SrcSibling");
     srcSibling.setSlug("src-sibling");
 
-    // Destination: destSibling(pos=0) under parent=destParentId
+    // Destination parent page (id=destParentId) and its child destSibling(pos=0)
+    WikiPage destParent = new WikiPage();
+    destParent.setId(destParentId);
+    destParent.setSpaceId(spaceId);
+    destParent.setParentId(null);
+    destParent.setPosition(1);
+    destParent.setTitle("DestParent");
+    destParent.setSlug("dest-parent");
+
     WikiPage destSibling = new WikiPage();
     destSibling.setId(3L);
     destSibling.setSpaceId(spaceId);
@@ -310,6 +319,7 @@ class WikiServiceTest {
     destSibling.setSlug("dest-sibling");
 
     when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(pageRepository.findById(destParentId)).thenReturn(Optional.of(destParent));
     when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
     // Descendants check
     when(pageRepository.findBySpaceIdAndDeletedAtIsNull(spaceId))

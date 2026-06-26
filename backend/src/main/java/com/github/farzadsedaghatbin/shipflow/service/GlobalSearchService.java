@@ -1,12 +1,20 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.GlobalSearchResultDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +29,12 @@ public class GlobalSearchService {
   @PersistenceContext
   private EntityManager entityManager;
 
+  // Field-injected (this service already uses @PersistenceContext field injection) so the
+  // EntityManager field above is still populated under Mockito @InjectMocks.
+  @Autowired private WikiSpaceRepository wikiSpaceRepository;
+
+  @Autowired private WikiPermissionService wikiPermissionService;
+
   /**
    * Search across all entity types.
    *
@@ -29,14 +43,19 @@ public class GlobalSearchService {
    * searched: when a project is selected we include that project's spaces plus every org-global
    * (project-less) space; with no project selected we search org-global spaces only.
    *
+   * <p>Wiki results are additionally filtered through {@link WikiPermissionService} so a user only
+   * sees spaces/pages they may read — the SQL scopes wiki rows by {@code project_id} only, which is
+   * coarser than the per-space ACL enforced by the dedicated wiki endpoints.
+   *
    * @param query     the search text (minimum 2 characters)
    * @param projectId the project to scope results to, or {@code null} for an org-global wiki search
    * @param limit     maximum number of results to return
+   * @param userId    the requesting user, used to ACL-filter wiki results
    * @return ranked list of search results
    */
   @Transactional(readOnly = true)
   @SuppressWarnings("unchecked")
-  public List<GlobalSearchResultDTO> search(String query, Long projectId, int limit) {
+  public List<GlobalSearchResultDTO> search(String query, Long projectId, int limit, Long userId) {
     if (query == null || query.trim().length() < 2) {
       return List.of();
     }
@@ -71,7 +90,62 @@ public class GlobalSearchService {
           .build());
     }
 
-    return results;
+    return filterWikiByPermission(results, userId);
+  }
+
+  /**
+   * Removes wiki spaces/pages the user may not read. The native query scopes wiki rows by
+   * {@code project_id} only; this re-applies the per-space ACL (ADMIN / RBAC / explicit grants) that
+   * {@link WikiPermissionService} resolves, so global search can never surface a restricted space's
+   * titles. Non-wiki results pass through untouched.
+   */
+  private List<GlobalSearchResultDTO> filterWikiByPermission(
+      List<GlobalSearchResultDTO> results, Long userId) {
+    Set<Long> spaceIds = new HashSet<>();
+    for (GlobalSearchResultDTO r : results) {
+      Long spaceId = wikiSpaceIdOf(r);
+      if (spaceId != null) {
+        spaceIds.add(spaceId);
+      }
+    }
+    if (spaceIds.isEmpty()) {
+      return results;
+    }
+
+    // Fail closed: with no user context, do not expose any wiki result.
+    Map<Long, Boolean> readable = new HashMap<>();
+    if (userId != null) {
+      for (WikiSpace space : wikiSpaceRepository.findAllById(spaceIds)) {
+        readable.put(space.getId(), wikiPermissionService.canRead(userId, space));
+      }
+    }
+
+    return results.stream()
+        .filter(
+            r -> {
+              Long spaceId = wikiSpaceIdOf(r);
+              return spaceId == null || Boolean.TRUE.equals(readable.get(spaceId));
+            })
+        .collect(Collectors.toList());
+  }
+
+  /** Resolves the owning wiki space id for a wiki result, or {@code null} for non-wiki results. */
+  private Long wikiSpaceIdOf(GlobalSearchResultDTO r) {
+    if ("WIKI_SPACE".equals(r.getEntityType())) {
+      return r.getEntityId();
+    }
+    if ("WIKI_PAGE".equals(r.getEntityType())) {
+      // Route shape: /wiki/{spaceId}/{pageId}
+      String[] parts = r.getRoute() == null ? new String[0] : r.getRoute().split("/");
+      if (parts.length >= 3) {
+        try {
+          return Long.parseLong(parts[2]);
+        } catch (NumberFormatException ignored) {
+          return null;
+        }
+      }
+    }
+    return null;
   }
 
   /**

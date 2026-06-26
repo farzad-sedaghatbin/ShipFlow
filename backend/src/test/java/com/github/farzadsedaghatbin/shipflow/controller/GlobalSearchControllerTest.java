@@ -56,7 +56,7 @@ class GlobalSearchControllerTest {
                 .matchedBy("EXACT_KEY")
                 .build());
 
-    when(globalSearchService.search("login", 5L, 10)).thenReturn(results);
+    when(globalSearchService.search("login", 5L, 10, null)).thenReturn(results);
 
     mockMvc
         .perform(get("/api/search/global").param("q", "login").param("projectId", "5"))
@@ -93,7 +93,7 @@ class GlobalSearchControllerTest {
 
   @Test
   void globalSearch_WithCustomLimit_ShouldPassLimitToService() throws Exception {
-    when(globalSearchService.search("test", 3L, 25)).thenReturn(List.of());
+    when(globalSearchService.search("test", 3L, 25, null)).thenReturn(List.of());
 
     mockMvc
         .perform(
@@ -104,12 +104,12 @@ class GlobalSearchControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(0)));
 
-    verify(globalSearchService).search("test", 3L, 25);
+    verify(globalSearchService).search("test", 3L, 25, null);
   }
 
   @Test
   void globalSearch_WithLimitExceeding50_ShouldDefaultTo10() throws Exception {
-    when(globalSearchService.search("test", 3L, 10)).thenReturn(List.of());
+    when(globalSearchService.search("test", 3L, 10, null)).thenReturn(List.of());
 
     mockMvc
         .perform(
@@ -119,12 +119,12 @@ class GlobalSearchControllerTest {
                 .param("limit", "100"))
         .andExpect(status().isOk());
 
-    verify(globalSearchService).search("test", 3L, 10);
+    verify(globalSearchService).search("test", 3L, 10, null);
   }
 
   @Test
   void globalSearch_WithLimitBelowOne_ShouldDefaultTo10() throws Exception {
-    when(globalSearchService.search("test", 3L, 10)).thenReturn(List.of());
+    when(globalSearchService.search("test", 3L, 10, null)).thenReturn(List.of());
 
     mockMvc
         .perform(
@@ -134,23 +134,23 @@ class GlobalSearchControllerTest {
                 .param("limit", "0"))
         .andExpect(status().isOk());
 
-    verify(globalSearchService).search("test", 3L, 10);
+    verify(globalSearchService).search("test", 3L, 10, null);
   }
 
   @Test
   void globalSearch_WithDefaultLimit_ShouldUse10() throws Exception {
-    when(globalSearchService.search("test", 1L, 10)).thenReturn(List.of());
+    when(globalSearchService.search("test", 1L, 10, null)).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/search/global").param("q", "test").param("projectId", "1"))
         .andExpect(status().isOk());
 
-    verify(globalSearchService).search("test", 1L, 10);
+    verify(globalSearchService).search("test", 1L, 10, null);
   }
 
   @Test
   void globalSearch_WithNoResults_ShouldReturnEmptyArray() throws Exception {
-    when(globalSearchService.search("nonexistent", 1L, 10)).thenReturn(List.of());
+    when(globalSearchService.search("nonexistent", 1L, 10, null)).thenReturn(List.of());
 
     mockMvc
         .perform(
@@ -162,14 +162,14 @@ class GlobalSearchControllerTest {
   @Test
   void globalSearch_WithMissingProjectId_ShouldSearchOrgGlobalWiki() throws Exception {
     // projectId is optional: omitting it performs an org-global wiki search (no project access check).
-    when(globalSearchService.search("test", null, 10)).thenReturn(List.of());
+    when(globalSearchService.search("test", null, 10, null)).thenReturn(List.of());
 
     mockMvc
         .perform(get("/api/search/global").param("q", "test"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$", hasSize(0)));
 
-    verify(globalSearchService).search("test", null, 10);
+    verify(globalSearchService).search("test", null, 10, null);
     verifyNoInteractions(projectService);
   }
 
@@ -230,7 +230,7 @@ class GlobalSearchControllerTest {
                 .matchedBy("TRIGRAM")
                 .build());
 
-    when(globalSearchService.search("test", 1L, 10)).thenReturn(results);
+    when(globalSearchService.search("test", 1L, 10, null)).thenReturn(results);
 
     mockMvc
         .perform(get("/api/search/global").param("q", "test").param("projectId", "1"))

@@ -162,6 +162,8 @@ public class WikiService {
     WikiSpace space = requireSpace(req.spaceId());
     permissionService.requireWrite(userId, space);
 
+    validateParentInSpace(req.spaceId(), req.parentId());
+
     WikiPage page = new WikiPage();
     page.setSpaceId(req.spaceId());
     page.setParentId(req.parentId());
@@ -207,6 +209,9 @@ public class WikiService {
 
     Long newParentId = req.newParentId();
 
+    // The new parent must live in the same space (and exist / not be soft-deleted).
+    validateParentInSpace(page.getSpaceId(), newParentId);
+
     // Cycle prevention: newParentId must not be the page itself or any descendant
     if (newParentId != null) {
       if (newParentId.equals(pageId)) {
@@ -224,7 +229,7 @@ public class WikiService {
     if (Objects.equals(oldParentId, newParentId)) {
       // Same-parent reorder: operate on a single list to avoid double-processing.
       List<WikiPage> siblings = getSiblings(page.getSpaceId(), oldParentId, pageId);
-      int insertAt = Math.min(req.newIndex(), siblings.size());
+      int insertAt = Math.max(0, Math.min(req.newIndex(), siblings.size()));
       siblings.add(insertAt, page);
       for (int i = 0; i < siblings.size(); i++) {
         siblings.get(i).setPosition(i);
@@ -239,7 +244,7 @@ public class WikiService {
       }
 
       List<WikiPage> destSiblings = getSiblings(page.getSpaceId(), newParentId, null);
-      int insertAt = Math.min(req.newIndex(), destSiblings.size());
+      int insertAt = Math.max(0, Math.min(req.newIndex(), destSiblings.size()));
       destSiblings.add(insertAt, page);
       for (int i = 0; i < destSiblings.size(); i++) {
         destSiblings.get(i).setPosition(i);
@@ -395,6 +400,10 @@ public class WikiService {
 
   @Transactional(readOnly = true)
   public List<WikiPageSearchDTO> searchPages(String q, Long spaceId, Long userId) {
+    // A blank query would match every page (contains("") is always true) and leak the full
+    // page list of every readable space — require a real search term.
+    if (q == null || q.isBlank()) return List.of();
+
     List<WikiSpace> accessibleSpaces =
         spaceRepository.findByDeletedAtIsNullOrderByNameAsc().stream()
             .filter(s -> permissionService.canRead(userId, s))
@@ -402,7 +411,7 @@ public class WikiService {
 
     if (accessibleSpaces.isEmpty()) return List.of();
 
-    String lowerQ = q == null ? "" : q.toLowerCase();
+    String lowerQ = q.toLowerCase();
 
     return accessibleSpaces.stream()
         .filter(s -> spaceId == null || s.getId().equals(spaceId))
@@ -419,6 +428,20 @@ public class WikiService {
         .findById(pageId)
         .filter(p -> p.getDeletedAt() == null)
         .orElseThrow(() -> new ResourceNotFoundException("Page not found: " + pageId));
+  }
+
+  /**
+   * Ensures a parent page reference is valid for the given space: it must exist, not be
+   * soft-deleted, and belong to {@code spaceId}. A {@code null} parentId (root-level page) is
+   * always allowed. Prevents cross-space parent pointers, which would make the page disappear from
+   * every space tree while still existing in the database.
+   */
+  private void validateParentInSpace(Long spaceId, Long parentId) {
+    if (parentId == null) return;
+    WikiPage parent = requirePage(parentId);
+    if (!Objects.equals(parent.getSpaceId(), spaceId)) {
+      throw new IllegalArgumentException("Parent page must belong to the same space");
+    }
   }
 
   private WikiSpace requireSpace(Long spaceId) {

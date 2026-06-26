@@ -46,8 +46,8 @@ docker compose up -d
 | **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
 | **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
-| **Wiki / Docs Space** *(v1.9.0)* | Built-in hierarchical wiki with a Notion-style block editor (headings, tables, code blocks, callouts, slash menu). Every page is versioned, searchable, and auto-ingested into the AI Knowledge Center |
-| **Pluggable Object Storage** *(v1.9.0)* | Attachments on AWS S3, MinIO, or local disk — chosen in Org Settings with one-click backend migration and encrypted-at-rest credentials |
+| **Wiki / Docs Space** *(v1.8.0)* | Built-in hierarchical wiki with a Notion-style block editor (headings, tables, code blocks, callouts, slash menu). Every page is versioned, searchable, and auto-ingested into the AI Knowledge Center |
+| **Pluggable Object Storage** *(v1.8.0)* | Attachments on AWS S3, MinIO, or local disk — chosen in Org Settings with one-click backend migration and a connection test |
 | **Knowledge Center** | Upload docs and paste URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis — scoped Org / Team / Project, pluggable provider SPI |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
 | **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
@@ -530,9 +530,9 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A multi-turn memory** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Unified Knowledge Center wired into all AI features** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Built-in team wiki (block editor, version history, @mentions)** | ✅ (v1.9.0) | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Wiki auto-ingested into AI Knowledge Center** | ✅ (v1.9.0) | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Pluggable object storage (S3 / MinIO / local, one-click migration)** | ✅ (v1.9.0) | ❌ | Partial | ❌ | ❌ | ❌ |
+| **Built-in team wiki (block editor, version history, @mentions)** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Wiki auto-ingested into AI Knowledge Center** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Pluggable object storage (S3 / MinIO / local, one-click migration)** | ✅ (v1.8.0) | ❌ | Partial | ❌ | ❌ | ❌ |
 | **Interactive onboarding tour** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global Search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |

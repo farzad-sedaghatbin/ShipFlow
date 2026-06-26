@@ -25,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
  * <ol>
  *   <li>ADMIN role → unconditional full access (read + write).</li>
  *   <li>Explicit {@link WikiSpacePermission} row for the space:
- *       USER grant checked first, then ROLE grant.</li>
+ *       USER grant checked first, then ROLE grant. An explicit grant is
+ *       authoritative for the space and overrides the RBAC fallback (so a
+ *       narrower per-space grant can deliberately restrict a user/role).</li>
  *   <li>Fall back to the global RBAC table via {@link PermissionService}
  *       ({@code WIKI / READ} and {@code WIKI / UPDATE}).</li>
  *   <li>Otherwise deny.</li>

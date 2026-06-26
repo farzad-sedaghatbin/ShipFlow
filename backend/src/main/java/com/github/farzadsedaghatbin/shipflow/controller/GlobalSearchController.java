@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.GlobalSearchResultDTO;
 import com.github.farzadsedaghatbin.shipflow.service.GlobalSearchService;
 import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
+import com.github.farzadsedaghatbin.shipflow.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,6 +11,8 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -25,6 +28,7 @@ public class GlobalSearchController {
 
   private final GlobalSearchService globalSearchService;
   private final ProjectService projectService;
+  private final UserService userService;
 
   @GetMapping("/global")
   @Operation(
@@ -56,7 +60,16 @@ public class GlobalSearchController {
 
     log.debug("Global search: q='{}', projectId={}, limit={}", q, projectId, limit);
 
-    List<GlobalSearchResultDTO> results = globalSearchService.search(q, projectId, limit);
+    List<GlobalSearchResultDTO> results =
+        globalSearchService.search(q, projectId, limit, currentUserId());
     return ResponseEntity.ok(results);
+  }
+
+  private Long currentUserId() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || auth.getName() == null) {
+      return null;
+    }
+    return userService.findByUsername(auth.getName()).getId();
   }
 }
