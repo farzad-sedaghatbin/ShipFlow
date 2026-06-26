@@ -5,12 +5,12 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.8.0 — "Custom Fields & Advanced RBAC"
+## Current Milestone: v1.8.0 — "Custom Fields, Advanced RBAC, Wiki & Object Storage"
 
 **Current version**: v1.7.0 (released 2026-06-16)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Next: Custom Fields & Advanced RBAC (v1.8.0).
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. **In development (v1.8.0, unreleased):** Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage.
 
 ### v1.3.0 session map
 
@@ -116,12 +116,11 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 | Version | Theme | Sessions |
 |---------|-------|----------|
-| v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S48–S50 |
-| v1.9.0 | Wiki / Docs Space — built-in wiki so teams can write and read docs without Confluence/Notion | S51–S53 |
-| v1.10.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
-| v1.11.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
-| v1.12.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
-| v1.13.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
+| v1.8.0 (current, unreleased) | Custom Fields & Advanced RBAC + Wiki / Docs Space + pluggable Object Storage — custom fields on tasks/pitches, project-level permissions, built-in wiki, attachment storage (LOCAL_FS/S3/MinIO) | S48–S53 |
+| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
+| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
+| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
+| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
@@ -498,7 +497,7 @@ Key product/architecture decisions recorded here so future Claude Code sessions 
 |------|----------|-----------|
 | 2026-04-05 | Competitor migration tools ship in **v1.2.0**, after Scrum mode (v1.1.0) | 90% of Jira/Linear users work in Sprints. Without Scrum mode, imported sprint history would be dropped or wrongly mapped to Shape Up cycles. Once v1.1 ships, the mapping is clean: Sprint→Sprint, Epic→Pitch, Issue→Task. Migration sequence: CSV import → Linear API → Jira API. Always import into Kanban project by default; teams adopt Shape Up/Scrum at their own pace. |
 | 2026-06-05 | v1.4.0 merges original v1.4 (Enterprise Auth) + v1.5 (UX Depth) into one milestone | SSO and UX polish are both table-stakes before the AI/automation sprint; combining keeps the release train moving without fragmenting small polish fixes into a separate patch version. |
-| 2026-06-18 | v1.9.0 attachments go through a pluggable **object-storage SPI** (`service/storage/`, backends LOCAL_FS/S3/MinIO); LOCAL_FS stays the default so nothing breaks out of the box | Self-hosters need S3/MinIO without code changes. Mirrors the Knowledge Center provider pattern (registry over `List<Provider>`). All attachment I/O routes through `ObjectStorageService`; existing local files keep working and are migrated on backend switch (`StorageMigrationService`, copy-verified before source untouched). |
+| 2026-06-18 | v1.8.0 attachments go through a pluggable **object-storage SPI** (`service/storage/`, backends LOCAL_FS/S3/MinIO); LOCAL_FS stays the default so nothing breaks out of the box | Self-hosters need S3/MinIO without code changes. Mirrors the Knowledge Center provider pattern (registry over `List<Provider>`). All attachment I/O routes through `ObjectStorageService`; existing local files keep working and are migrated on backend switch (`StorageMigrationService`, copy-verified before source untouched). |
 | 2026-06-18 | Storage connection **credentials stored as plaintext TEXT**, consistent with existing integration secrets (Figma/GitHub/Notion/SMTP), rather than introducing at-rest encryption now | Consistency with the current codebase (no encryption subsystem exists yet) per product decision. Compensating controls: secrets never returned in any DTO (`hasSecretKey` boolean only), never logged. Secret columns are isolated so a future AES-GCM `AttributeConverter` can be dropped in with no schema change. |
 | 2026-06-25 | Wiki **revision comparison diffs are computed client-side per BlockNote block** (`frontend/src/components/wiki/wikiDiff.ts`: `blocksToLines` → LCS `diffLines`), NOT from the stored `contentText` | `WikiService.extractText` joins every text node with single spaces, so `contentText` is one space-delimited blob with no block/line boundaries — useless for a readable line diff. The fix: a new read-only `GET /wiki/pages/{id}/revisions/{revision}` returns a single revision's full BlockNote `content` JSON; the frontend extracts one line per block (descending into children) and runs an LCS line diff into side-by-side rows (same/added/removed/changed). Future "compare/diff revisions" work should reuse `wikiDiff.ts`, not diff `contentText`. The compare dialog reuses the `["wiki-page", pageId]` React Query cache for the current version (no extra fetch) and renders highlighted text lines rather than mounting a second BlockNote editor (avoids the cost of two live editors). |
 | 2026-06-25 | Wiki page **comments reuse the existing polymorphic comment system** (`CommentEntityType.WIKI_PAGE` on `/api/comments`), not a new wiki-specific table | The `Comment` entity is keyed by `(entityType, entityId)` with no FK, so adding a new commentable surface is purely additive — a new enum value, one `validateEntityExists` case, a notification action-URL case (`/wiki/{spaceId}/{pageId}`), and reusing the `Comments.tsx` component. **Gotcha (fixed in `V2026_06_26_0001`):** the `comments` table has a `CHECK (entity_type IN ('TASK','BUG_REPORT'))` constraint from `V64`, so a new enum value REQUIRES a migration to widen it — H2 tests generate the schema from entities (no CHECK) so they pass while real Postgres rejects the insert with a data-integrity violation. Any future commentable entity must both extend the enum AND add a constraint-widening migration. Note: wiki comments are `isAuthenticated()`-only (matching tasks/bugs), NOT gated by per-space wiki ACL — revisit if private-space comment confidentiality becomes a requirement. |

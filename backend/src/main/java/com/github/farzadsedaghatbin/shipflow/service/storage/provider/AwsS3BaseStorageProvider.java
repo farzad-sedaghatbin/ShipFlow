@@ -7,7 +7,9 @@ import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
 import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageProvider;
 import com.github.farzadsedaghatbin.shipflow.service.storage.StorePutContext;
 import com.github.farzadsedaghatbin.shipflow.service.storage.StoredObjectRef;
-import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
@@ -162,24 +164,51 @@ public abstract class AwsS3BaseStorageProvider implements ObjectStorageProvider 
   public DownloadResource retrieve(String bucket, String key, JsonNode config) {
     GetObjectRequest getReq = GetObjectRequest.builder().bucket(bucket).key(key).build();
 
-    try (S3Client client = s3Client(config);
-        software.amazon.awssdk.core.ResponseInputStream<GetObjectResponse> response =
-            client.getObject(getReq)) {
+    // Stream the object straight through to the caller instead of buffering the whole object into
+    // a byte[] — a large media download would otherwise pin its full size in heap per concurrent
+    // request. Ownership of both the response stream and the S3 client transfers to the returned
+    // DownloadResource: closing the stream closes the client's connection pool.
+    S3Client client = s3Client(config);
+    try {
+      software.amazon.awssdk.core.ResponseInputStream<GetObjectResponse> response =
+          client.getObject(getReq);
       GetObjectResponse meta = response.response();
       String contentType = meta.contentType();
       long sizeBytes = meta.contentLength() != null ? meta.contentLength() : -1L;
 
-      byte[] bytes = response.readAllBytes();
-      log.debug("Retrieved object: bucket={} key={} size={}", bucket, key, bytes.length);
+      log.debug("Streaming object: bucket={} key={} size={}", bucket, key, sizeBytes);
       return DownloadResource.builder()
-          .stream(new ByteArrayInputStream(bytes))
+          .stream(new ClientClosingInputStream(response, client))
           .contentType(contentType)
           .sizeBytes(sizeBytes)
           .filename(extractFilename(key))
           .build();
     } catch (Exception e) {
+      client.close();
       throw new RuntimeException(
           "Failed to read object from S3: bucket=" + bucket + " key=" + key, e);
+    }
+  }
+
+  /**
+   * Wraps the S3 response stream so that closing it (done by the controller after writing the HTTP
+   * response) also closes the owning {@link S3Client} and its connection pool.
+   */
+  private static final class ClientClosingInputStream extends FilterInputStream {
+    private final S3Client client;
+
+    ClientClosingInputStream(InputStream in, S3Client client) {
+      super(in);
+      this.client = client;
+    }
+
+    @Override
+    public void close() throws IOException {
+      try {
+        super.close();
+      } finally {
+        client.close();
+      }
     }
   }
 

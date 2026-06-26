@@ -200,7 +200,7 @@ public class CommentService {
         }
         break;
       case WIKI_PAGE :
-        if (!wikiPageRepository.existsById(entityId)) {
+        if (!wikiPageRepository.existsByIdAndDeletedAtIsNull(entityId)) {
           throw new IllegalArgumentException(messageService.getMessage("comment.wiki.not.found"));
         }
         break;

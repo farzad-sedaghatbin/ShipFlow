@@ -184,7 +184,7 @@ class CommentServiceTest {
           .entityType(CommentEntityType.WIKI_PAGE).entityId(1L).build();
 
       when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-      when(wikiPageRepository.existsById(1L)).thenReturn(true);
+      when(wikiPageRepository.existsByIdAndDeletedAtIsNull(1L)).thenReturn(true);
       when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> {
         Comment c = inv.getArgument(0);
         c.setId(3L);
@@ -212,7 +212,7 @@ class CommentServiceTest {
           .entityType(CommentEntityType.WIKI_PAGE).entityId(999L).build();
 
       when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-      when(wikiPageRepository.existsById(999L)).thenReturn(false);
+      when(wikiPageRepository.existsByIdAndDeletedAtIsNull(999L)).thenReturn(false);
 
       // Act & Assert
       assertThatThrownBy(() -> commentService.createComment(request, 1L))

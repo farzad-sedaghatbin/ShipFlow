@@ -62,8 +62,8 @@ All storage configuration is managed through **Organization Settings → Storage
 |-------|-------------|
 | **Bucket name** | The S3 bucket. Must already exist; ShipFlow does not create buckets. |
 | **Region** | AWS region code (e.g. `us-east-1`). |
-| **Access key ID** | AWS IAM access key ID. Stored encrypted at rest. |
-| **Secret access key** | AWS IAM secret key. Stored encrypted at rest; masked in the UI after saving. |
+| **Access key ID** | AWS IAM access key ID. Masked in the UI after saving and never returned by the API. |
+| **Secret access key** | AWS IAM secret key. Masked in the UI after saving and never returned by the API. |
 | **Path prefix** | Optional prefix prepended to all object keys (e.g. `shipflow/prod/`). Useful for sharing a bucket across multiple environments. |
 
 Minimum IAM policy required:
@@ -81,8 +81,8 @@ Minimum IAM policy required:
 |-------|-------------|
 | **Endpoint URL** | Full URL of the MinIO server (e.g. `http://minio.internal:9000`). |
 | **Bucket name** | The MinIO bucket. Must exist before saving. |
-| **Access key** | MinIO access key (username). Stored encrypted. |
-| **Secret key** | MinIO secret key. Stored encrypted; masked after saving. |
+| **Access key** | MinIO access key (username). Masked in the UI after saving and never returned by the API. |
+| **Secret key** | MinIO secret key. Masked in the UI after saving and never returned by the API. |
 | **Path prefix** | Optional prefix (same behavior as S3). |
 
 ---
@@ -101,8 +101,8 @@ A green **Connection successful** toast confirms readiness. If the test fails, t
 
 ## Credential Handling
 
-- All credentials (access keys, secret keys) are stored encrypted in the database using the application secret key (`app.encryption.key` in `application.properties`).
-- Credentials are never returned in plain text via the API after the first save — the UI shows a masked value (`••••••••`).
+- Credentials (access keys, secret keys) are stored as plaintext in the database — consistent with ShipFlow's other integration secrets (GitHub, Figma, Notion, SMTP). There is no at-rest encryption subsystem yet; protect the database accordingly.
+- As compensating controls, credentials are **never returned by the API** after the first save (the UI shows only a masked `••••••••` and a "secret is set" flag) and are **never written to logs**.
 - To rotate credentials: enter the new values and click **Save**. The new credentials are used for all subsequent uploads immediately.
 
 ---
@@ -114,8 +114,8 @@ When you switch from one backend to another, existing attachments remain on the 
 1. Configure and save the **new** backend settings.
 2. Click **Test Connection** to confirm the new backend is reachable.
 3. Click **Migrate attachments** in the Storage settings panel.
-4. A background job copies all stored objects — **task attachments, wiki attachments, pitch/meeting/cycle/note documents, and bug-report media** — to the new backend. Legacy documents that predate the storage abstraction (stored as raw files on disk) are copied across in the same pass.
-5. Progress is shown in the **Migration status** panel with object count, bytes transferred, and estimated time remaining.
+4. ShipFlow copies all stored objects — **task attachments, wiki attachments, pitch/meeting/cycle/note documents, and bug-report media** — to the new backend. Legacy documents that predate the storage abstraction (stored as raw files on disk) are copied across in the same pass. Each object is read back from the new backend and verified before its source copy is touched.
+5. When the migration finishes, a summary reports how many objects were **migrated, skipped (already on the active backend), and failed**.
 6. Once complete, all download links resolve from the new backend. The old files are left in place and can be deleted manually after confirming the migration.
 
 > Do not switch the active backend while a migration is in progress — this will interrupt the job.
@@ -124,8 +124,8 @@ When you switch from one backend to another, existing attachments remain on the 
 
 ## Download URL Behavior
 
-- `LOCAL_FS`: ShipFlow serves files via a signed internal endpoint (`/api/v1/storage/download/{ref}`), protected by JWT authentication.
-- `S3` / `MinIO`: ShipFlow generates a pre-signed URL valid for 1 hour. The URL is returned to the client on each download request — files are never proxied through the application server, reducing bandwidth.
+- **All backends** (`LOCAL_FS`, `S3`, `MinIO`): downloads stream through ShipFlow's own attachment/document endpoints, protected by JWT authentication — the object is read from the active backend and streamed to the client. This keeps every download behind the app's access checks regardless of backend.
+- Pre-signed-URL generation is implemented for S3/MinIO at the provider layer but is **not yet wired into the download flow**, so downloads are currently proxied through the application for all backends.
 
 ---
 

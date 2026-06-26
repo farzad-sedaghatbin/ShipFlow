@@ -80,7 +80,7 @@ const releases: Release[] = [
   {
     version: '1.8.0',
     date: 'In Development',
-    title: 'Knowledge Center & Wiki',
+    title: 'Custom Fields, Wiki & Object Storage',
     upcoming: true,
     highlights: [
       {
@@ -131,14 +131,6 @@ const releases: Release[] = [
         description:
           'Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; encrypted-by-config credentials, connection test, and one-click migration between backends.',
       },
-    ],
-  },
-  {
-    version: '1.9.0',
-    date: 'Coming soon',
-    title: 'Custom Fields & Advanced RBAC',
-    upcoming: true,
-    highlights: [
       {
         icon: <Sliders className="h-5 w-5" />,
         title: 'Custom Fields on Tasks, Pitches & Bugs',

@@ -87,18 +87,19 @@ public class StorageMigrationService {
       }
 
       try {
-        // 1. Retrieve from current backend
-        DownloadResource resource = objectStorageService.retrieve(currentProvider, currentKey);
-
-        // 2. Store to active backend
+        // 1. Retrieve from current backend and 2. store to active backend (close source stream)
         String keyHint = "attachments/task/" + att.getTask().getId();
-        StoredObjectRef ref =
-            objectStorageService.store(
-                keyHint,
-                att.getFileName(),
-                att.getContentType(),
-                att.getFileSize(),
-                resource.getStream());
+        StoredObjectRef ref;
+        try (DownloadResource resource =
+            objectStorageService.retrieve(currentProvider, currentKey)) {
+          ref =
+              objectStorageService.store(
+                  keyHint,
+                  att.getFileName(),
+                  att.getContentType(),
+                  att.getFileSize(),
+                  resource.getStream());
+        }
 
         // 3. Update row — only AFTER store succeeds
         att.setStorageProvider(active);
@@ -108,8 +109,7 @@ public class StorageMigrationService {
 
         // 4. Verify the stored copy is readable before deleting the source
         boolean verified = false;
-        try {
-          DownloadResource verify = objectStorageService.retrieve(active, ref.getKey());
+        try (DownloadResource verify = objectStorageService.retrieve(active, ref.getKey())) {
           verified = verify != null;
         } catch (Exception verEx) {
           log.error(
@@ -184,18 +184,19 @@ public class StorageMigrationService {
       }
 
       try {
-        // 1. Retrieve from current backend
-        DownloadResource resource = objectStorageService.retrieve(currentProvider, currentKey);
-
-        // 2. Store to active backend
+        // 1. Retrieve from current backend and 2. store to active backend (close source stream)
         String keyHint = "attachments/wiki/" + att.getPageId();
-        StoredObjectRef ref =
-            objectStorageService.store(
-                keyHint,
-                att.getFileName(),
-                att.getContentType(),
-                att.getFileSize(),
-                resource.getStream());
+        StoredObjectRef ref;
+        try (DownloadResource resource =
+            objectStorageService.retrieve(currentProvider, currentKey)) {
+          ref =
+              objectStorageService.store(
+                  keyHint,
+                  att.getFileName(),
+                  att.getContentType(),
+                  att.getFileSize(),
+                  resource.getStream());
+        }
 
         // 3. Update row — only AFTER store succeeds
         att.setStorageProvider(active);
@@ -204,8 +205,7 @@ public class StorageMigrationService {
 
         // 4. Verify the stored copy is readable before deleting the source
         boolean verified = false;
-        try {
-          DownloadResource verify = objectStorageService.retrieve(active, ref.getKey());
+        try (DownloadResource verify = objectStorageService.retrieve(active, ref.getKey())) {
           verified = verify != null;
         } catch (Exception verEx) {
           log.error(
@@ -310,17 +310,18 @@ public class StorageMigrationService {
       }
 
       try {
-        // 1. Retrieve from current backend
-        DownloadResource resource = objectStorageService.retrieve(currentProvider, doc.getStorageKey());
-
-        // 2. Store to active backend
-        StoredObjectRef ref =
-            objectStorageService.storeWithoutValidation(
-                DocumentService.storageKeyHint(doc.getEntityType(), doc.getEntityId()),
-                doc.getOriginalFileName(),
-                contentTypeFor(doc.getFileType()),
-                doc.getFileSize() != null ? doc.getFileSize() : 0L,
-                resource.getStream());
+        // 1. Retrieve from current backend and 2. store to active backend (close source stream)
+        StoredObjectRef ref;
+        try (DownloadResource resource =
+            objectStorageService.retrieve(currentProvider, doc.getStorageKey())) {
+          ref =
+              objectStorageService.storeWithoutValidation(
+                  DocumentService.storageKeyHint(doc.getEntityType(), doc.getEntityId()),
+                  doc.getOriginalFileName(),
+                  contentTypeFor(doc.getFileType()),
+                  doc.getFileSize() != null ? doc.getFileSize() : 0L,
+                  resource.getStream());
+        }
 
         // 3. Update row — only AFTER store succeeds
         String oldKey = doc.getStorageKey();
@@ -330,8 +331,7 @@ public class StorageMigrationService {
 
         // 4. Verify the stored copy is readable before deleting the source
         boolean verified = false;
-        try {
-          DownloadResource verify = objectStorageService.retrieve(active, ref.getKey());
+        try (DownloadResource verify = objectStorageService.retrieve(active, ref.getKey())) {
           verified = verify != null;
         } catch (Exception verEx) {
           log.error(
