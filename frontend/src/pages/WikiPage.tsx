@@ -2,11 +2,13 @@ import { lazy, Suspense, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Edit2, Paperclip, Download, Trash2, ChevronDown, ChevronUp, FileDown } from "lucide-react";
+import { Edit2, Paperclip, ChevronDown, ChevronUp, FileDown } from "lucide-react";
 import WikiTree from "../components/wiki/WikiTree";
 import WikiBreadcrumbs from "../components/wiki/WikiBreadcrumbs";
 import WikiTableOfContents from "../components/wiki/WikiTableOfContents";
 import WikiHistoryPanel from "../components/wiki/WikiHistoryPanel";
+import WikiAttachmentItem from "../components/wiki/WikiAttachmentItem";
+import Comments from "../components/Comments";
 import {
   wikiService,
   type WikiPageDTO,
@@ -389,6 +391,11 @@ export default function WikiPage() {
                   onChange={handleFileChange}
                 />
               </div>
+              {uploadMutation.isError && (
+                <p className="text-sm text-destructive">
+                  {t("wiki.uploadFailed")}
+                </p>
+              )}
               {attachments && attachments.length === 0 && (
                 <p className="text-sm text-muted-foreground">
                   {t("wiki.noAttachments")}
@@ -397,38 +404,20 @@ export default function WikiPage() {
               {attachments && attachments.length > 0 && (
                 <ul className="divide-y divide-border rounded border overflow-hidden">
                   {attachments.map((att) => (
-                    <li
+                    <WikiAttachmentItem
                       key={att.id}
-                      className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-                    >
-                      <span className="truncate">{att.fileName}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {(att.fileSize / 1024).toFixed(1)} KB
-                      </span>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <a
-                          href={wikiService.getAttachmentDownloadUrl(att.id)}
-                          download={att.fileName}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                          aria-label={t("wiki.download")}
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
-                        <button
-                          onClick={() =>
-                            deleteAttachmentMutation.mutate(att.id)
-                          }
-                          disabled={deleteAttachmentMutation.isPending}
-                          className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                          aria-label={t("wiki.deleteAttachment")}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </li>
+                      attachment={att}
+                      onDelete={(id) => deleteAttachmentMutation.mutate(id)}
+                      deleting={deleteAttachmentMutation.isPending}
+                    />
                   ))}
                 </ul>
               )}
+            </section>
+
+            {/* Comments */}
+            <section className="no-print">
+              <Comments entityType="wiki" entityId={numPageId} />
             </section>
 
             {/* History (collapsible) */}

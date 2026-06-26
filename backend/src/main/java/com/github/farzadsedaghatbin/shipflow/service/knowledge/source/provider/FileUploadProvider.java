@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.github.farzadsedaghatbin.shipflow.entity.KnowledgeSource;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeProviderType;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.*;
+import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StoredObjectRef;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -21,6 +23,11 @@ public class FileUploadProvider implements KnowledgeSourceProvider {
   private static final int CHUNK_OVERLAP = 150;
 
   private final Tika tika = new Tika();
+  private final ObjectStorageService objectStorageService;
+
+  public FileUploadProvider(ObjectStorageService objectStorageService) {
+    this.objectStorageService = objectStorageService;
+  }
 
   @Override
   public KnowledgeProviderType getType() {
@@ -67,6 +74,20 @@ public class FileUploadProvider implements KnowledgeSourceProvider {
       if (ctx.getUploadContentType() != null)
         meta.put("contentType", ctx.getUploadContentType());
       meta.put("byteSize", bytes.length);
+
+      // Persist the original file through the object-storage SPI so Knowledge Center docs land in
+      // the configured bucket. Use the non-validating entry point — the Knowledge Center accepts a
+      // broad set of doc types beyond the façade's allowlist. The key rides in sourceMetadata →
+      // merged into the source's config JSON by the caller (no schema change).
+      StoredObjectRef ref =
+          objectStorageService.storeWithoutValidation(
+              "knowledge/" + source.getId(),
+              ctx.getUploadOriginalFilename(),
+              ctx.getUploadContentType() != null ? ctx.getUploadContentType() : "application/octet-stream",
+              bytes.length,
+              new ByteArrayInputStream(bytes));
+      meta.put("storageKey", ref.getKey());
+      meta.put("storageProvider", objectStorageService.activeProvider().name());
 
       return IngestionResult.builder().chunks(chunks).sourceMetadata(meta).build();
     } catch (RuntimeException e) {

@@ -154,6 +154,9 @@ export const wikiService = {
   getPageHistory: (id: number) =>
     api.get<WikiRevisionDTO[]>(`/wiki/pages/${id}/history`),
 
+  getPageRevision: (id: number, revision: number) =>
+    api.get<WikiPageDTO>(`/wiki/pages/${id}/revisions/${revision}`),
+
   restorePage: (id: number, revision: number) =>
     api.post<WikiPageDTO>(`/wiki/pages/${id}/restore/${revision}`),
 
@@ -173,7 +176,34 @@ export const wikiService = {
   deleteAttachment: (attId: number) =>
     api.delete(`/wiki/attachments/${attId}`),
 
-  /** Returns a browser-navigable URL — use as href or window.open target. */
-  getAttachmentDownloadUrl: (attId: number) =>
-    `/api/wiki/attachments/${attId}/download`,
+  /**
+   * Download an attachment through the authenticated axios client and trigger a
+   * browser save. A plain `<a href>` cannot be used: the JWT lives in
+   * localStorage and is only attached by the axios request interceptor, so a raw
+   * browser GET to the secured endpoint returns 401.
+   */
+  downloadAttachment: async (attId: number, fileName: string) => {
+    const response = await api.get<Blob>(`/wiki/attachments/${attId}/download`, {
+      responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Fetch an attachment's bytes (authenticated) and return an object URL for
+   * inline preview (e.g. an `<img src>`). Caller MUST revoke the URL when done.
+   */
+  fetchAttachmentObjectUrl: async (attId: number): Promise<string> => {
+    const response = await api.get<Blob>(`/wiki/attachments/${attId}/download`, {
+      responseType: 'blob',
+    });
+    return window.URL.createObjectURL(response.data);
+  },
 };

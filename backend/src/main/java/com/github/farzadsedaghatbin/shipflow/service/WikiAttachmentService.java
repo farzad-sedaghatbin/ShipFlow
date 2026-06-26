@@ -53,7 +53,7 @@ public class WikiAttachmentService {
     try {
       ref =
           objectStorageService.store(
-              "wiki/" + pageId,
+              "attachments/wiki/" + pageId,
               file.getOriginalFilename(),
               contentType,
               file.getSize(),

@@ -272,6 +272,23 @@ public class WikiService {
     return historyReader.history(pageId);
   }
 
+  /**
+   * Return the full content of a single historical revision so the UI can diff it against the
+   * current page before restoring. Requires read access to the page's space.
+   */
+  @Transactional(readOnly = true)
+  public WikiPageDTO getRevision(Long pageId, int revision, Long userId) {
+    WikiPage page = requirePage(pageId);
+    WikiSpace space = requireSpace(page.getSpaceId());
+    permissionService.requireRead(userId, space);
+
+    WikiPage historicPage =
+        historyReader
+            .revision(pageId, revision)
+            .orElseThrow(() -> new ResourceNotFoundException("Revision not found: " + revision));
+    return toPageDTO(historicPage);
+  }
+
   public WikiPageDTO restoreRevision(Long pageId, int revision, Long userId) {
     WikiPage page = requirePage(pageId);
     WikiSpace space = requireSpace(page.getSpaceId());

@@ -72,6 +72,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final WikiSpaceRepository wikiSpaceRepository;
   private final WikiPageRepository wikiPageRepository;
   private final StorageConfigRepository storageConfigRepository;
+  private final CommentRepository commentRepository;
   private final CustomFieldDefinitionRepository customFieldDefinitionRepository;
   private final CustomFieldValueRepository customFieldValueRepository;
   private final McpUsageLogRepository mcpUsageLogRepository;
@@ -2070,6 +2071,24 @@ public class SampleDataInitializer implements CommandLineRunner {
             .position(1)
             .createdBy(createdById)
             .build());
+
+    // ── Demo discussion thread on the Getting Started page ────────────────────
+    if (createdByUser != null) {
+      commentRepository.save(
+          Comment.builder()
+              .content("Welcome aboard! Ping me if anything here is out of date. 🙌")
+              .entityType(CommentEntityType.WIKI_PAGE)
+              .entityId(gettingStarted.getId())
+              .author(createdByUser)
+              .build());
+      commentRepository.save(
+          Comment.builder()
+              .content("Should we add a section on the local Redis setup? It tripped me up.")
+              .entityType(CommentEntityType.WIKI_PAGE)
+              .entityId(gettingStarted.getId())
+              .author(createdByUser)
+              .build());
+    }
 
     log.info(
         "Demo wiki space seeded: space DOCS with 4 pages "

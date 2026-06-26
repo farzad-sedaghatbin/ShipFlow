@@ -74,12 +74,22 @@ Click any cell to edit. Use Tab to move to the next cell. Right-click a row or c
 
 Every save creates a new revision. To browse history:
 
-1. Open a page and click **…** → **Page History**.
-2. A list of revisions appears with author name, timestamp, and change summary.
-3. Click any revision to preview it in read-only mode.
-4. Click **Restore this version** to make it the current page content.
+1. Open a page and expand the **History** section at the bottom.
+2. A list of revisions appears with revision number, title, timestamp, and editor.
+3. Click **Compare & restore** on any revision to open the compare view.
 
-The current published version is never overwritten — restoring just creates a new revision at the top.
+### Compare before restoring
+
+The compare view shows the **current version and the selected revision side by side**, with changes highlighted line by line:
+
+- **Green** — content added by the revision (present on the right, absent on the left).
+- **Red** — content removed by the revision (present on the left, absent on the right).
+- A **changed** line shows the old text on the left (red) paired with the new text on the right (green).
+- If the page **title** changed between versions, the old and new titles are shown at the top.
+
+Review the differences, then click **Restore this version** to make the selected revision the current content — or **Cancel** to back out. If there are no differences, the view tells you the revision matches the current page.
+
+The current published version is never overwritten — restoring just creates a new revision at the top, so you can always compare and roll back again.
 
 ---
 
@@ -103,9 +113,26 @@ Within a space, use the search box at the top of the page tree to filter pages b
 
 ## File Attachments
 
-Click the **Attach file** button in the editor toolbar or use the `/file` slash command to attach files to a page. Attachments are stored via the configured [object storage backend](15-object-storage.md) (S3, MinIO, or local disk).
+Click the **Upload Attachment** button in the page's Attachments section to attach files to a page. Attachments are stored via the configured [object storage backend](15-object-storage.md) (S3, MinIO, or local disk).
 
-The attachment list appears at the bottom of the page. Click an attachment to download it.
+The attachment list appears at the bottom of the page:
+
+- **Image attachments** show an inline thumbnail preview — click it to open the full-size image in a new tab.
+- **Download** any attachment with the download button (it streams through the authenticated session, so files in private spaces stay protected).
+- **Delete** an attachment with the trash button (uploader, or an admin/manager).
+
+---
+
+## Comments and Discussion
+
+Every wiki page has a **comments thread** at the bottom — the same discussion experience used on tasks and bug reports.
+
+- **Add a comment**: type in the comment box below the page content and click **Post**. Comments support Markdown (bold, lists, code, links, tables).
+- **@mention teammates**: type `@` and pick a name from the autocomplete. The mentioned person gets an in-app notification (and email, if enabled) that deep-links straight back to the page.
+- **React with emoji**: hover a comment and pick a reaction (👍 ❤️ 🚀 …). Reaction counts are shown inline.
+- **Edit or delete**: authors can edit or delete their own comments from the **⋯** menu; admins and managers can delete any comment. Deletes are soft (recoverable), consistent with the rest of ShipFlow.
+
+Comments are a great place for review feedback, open questions, or change proposals without editing the page body itself. They are **not** included in PDF exports.
 
 ---
 

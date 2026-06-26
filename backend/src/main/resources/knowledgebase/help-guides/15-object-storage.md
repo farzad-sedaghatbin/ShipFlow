@@ -1,6 +1,24 @@
 # Pluggable Object Storage
 
-ShipFlow stores file attachments (wiki pages, task attachments, pitch documents) through a configurable object storage backend. Admins can choose between local disk, AWS S3, and MinIO without changing application code.
+ShipFlow stores **all** persistent file uploads through a configurable object storage backend. This covers task attachments, wiki page attachments, pitch/meeting/cycle/note documents, and bug-report media (images and video). Admins can choose between local disk, AWS S3, and MinIO without changing application code.
+
+> Every upload path in the application routes through the object-storage abstraction — no feature writes files to the server disk directly. This means a single backend choice (and a single migration) covers documents and bug attachments alongside task and wiki files. **Knowledge Center file uploads are stored too** — the original file is persisted to the active backend (not just its extracted text), and the storage key is tracked in the source configuration.
+
+---
+
+## Folder structure
+
+Objects are grouped into a consistent, category-based key layout so a bucket (or local directory) is browsable by what the file belongs to:
+
+| Prefix | Contains |
+|--------|----------|
+| `attachments/task/{taskId}/…` | Files attached to a task |
+| `attachments/bug/{bugId}/…` | Images and video attached to a bug report |
+| `attachments/wiki/{pageId}/…` | Files attached to a wiki page |
+| `documents/{type}/{entityId}/…` | Uploaded documents, grouped by entity type (`pitch`, `meeting`, `cycle`, `note`) |
+| `knowledge/{sourceId}/…` | Original files uploaded to a Knowledge Center source |
+
+> The structure applies to **new** uploads. Files uploaded before this layout was introduced keep their original keys and continue to download correctly; running **Migrate attachments** re-stores them under the new structure.
 
 ---
 
@@ -96,7 +114,7 @@ When you switch from one backend to another, existing attachments remain on the 
 1. Configure and save the **new** backend settings.
 2. Click **Test Connection** to confirm the new backend is reachable.
 3. Click **Migrate attachments** in the Storage settings panel.
-4. A background job copies all stored objects to the new backend.
+4. A background job copies all stored objects — **task attachments, wiki attachments, pitch/meeting/cycle/note documents, and bug-report media** — to the new backend. Legacy documents that predate the storage abstraction (stored as raw files on disk) are copied across in the same pass.
 5. Progress is shown in the **Migration status** panel with object count, bytes transferred, and estimated time remaining.
 6. Once complete, all download links resolve from the new backend. The old files are left in place and can be deleted manually after confirming the migration.
 

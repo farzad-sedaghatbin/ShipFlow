@@ -260,7 +260,7 @@ class WikiControllerTest {
             .contentType("image/png")
             .sizeBytes(100L)
             .build();
-    when(objectStorageService.store(eq("wiki/" + pageId), any(), any(), anyLong(), any()))
+    when(objectStorageService.store(eq("attachments/wiki/" + pageId), any(), any(), anyLong(), any()))
         .thenReturn(mockRef);
 
     MockMultipartFile file =
@@ -273,7 +273,7 @@ class WikiControllerTest {
         .andExpect(jsonPath("$.fileName", is("test.png")))
         .andExpect(jsonPath("$.contentType", is("image/png")));
 
-    verify(objectStorageService).store(eq("wiki/" + pageId), any(), any(), anyLong(), any());
+    verify(objectStorageService).store(eq("attachments/wiki/" + pageId), any(), any(), anyLong(), any());
 
     List<WikiAttachment> attachments =
         wikiAttachmentRepository.findByPageIdAndDeletedAtIsNullOrderByCreatedAtDesc(pageId);

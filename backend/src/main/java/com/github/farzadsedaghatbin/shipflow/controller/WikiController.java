@@ -159,6 +159,15 @@ public class WikiController {
     return ResponseEntity.ok(wikiService.getHistory(id, currentUserId()));
   }
 
+  @GetMapping("/pages/{id}/revisions/{revision}")
+  @Operation(
+      summary = "Get the full content of a specific page revision",
+      description = "Used to compare a historical revision against the current page before restoring")
+  public ResponseEntity<WikiPageDTO> getRevision(
+      @PathVariable Long id, @PathVariable int revision) {
+    return ResponseEntity.ok(wikiService.getRevision(id, revision, currentUserId()));
+  }
+
   @PostMapping("/pages/{id}/restore/{revision}")
   @Operation(summary = "Restore a page to a specific revision")
   public ResponseEntity<WikiPageDTO> restoreRevision(

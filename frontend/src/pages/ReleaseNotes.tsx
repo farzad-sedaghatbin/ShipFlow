@@ -108,10 +108,16 @@ const releases: Release[] = [
           'Hierarchical spaces → pages tree with a Notion-style block editor (headings, lists, checkboxes, tables, code blocks, callouts, slash menu). Drag pages to reorganize.',
       },
       {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Page comments & discussion',
+        description:
+          'Every wiki page has a comments thread — the same one used on tasks and bugs — with Markdown, emoji reactions, and @mention autocomplete that notifies and deep-links teammates back to the page.',
+      },
+      {
         icon: <Clock className="h-5 w-5" />,
         title: 'Versioned docs with history',
         description:
-          'Every edit is versioned; restore any past revision. Breadcrumbs, auto table-of-contents, full-text search, @mentions, internal page links, and file attachments.',
+          'Every edit is versioned; compare any past revision against the current page in a side-by-side diff, then restore it. Breadcrumbs, auto table-of-contents, full-text search, @mentions, internal page links, and file attachments.',
       },
       {
         icon: <Brain className="h-5 w-5" />,

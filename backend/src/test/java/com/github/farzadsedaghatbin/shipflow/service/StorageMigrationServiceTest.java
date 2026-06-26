@@ -9,14 +9,17 @@ import static org.mockito.Mockito.*;
 import com.github.farzadsedaghatbin.shipflow.dto.storage.MigrationResultDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.TaskAttachment;
+import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiAttachment;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
 import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
 import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
 import com.github.farzadsedaghatbin.shipflow.service.storage.StoredObjectRef;
 import java.io.ByteArrayInputStream;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -24,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +38,7 @@ class StorageMigrationServiceTest {
   @Mock private ObjectStorageService objectStorageService;
   @Mock private TaskAttachmentRepository taskAttachmentRepository;
   @Mock private WikiAttachmentRepository wikiAttachmentRepository;
+  @Mock private UploadedDocumentRepository documentRepository;
 
   private StorageMigrationService service;
 
@@ -41,9 +46,15 @@ class StorageMigrationServiceTest {
   void setUp() {
     service =
         new StorageMigrationService(
-            objectStorageService, taskAttachmentRepository, wikiAttachmentRepository);
-    // Default: no wiki attachments — prevents NPE in tests that only exercise task migration
+            objectStorageService,
+            taskAttachmentRepository,
+            wikiAttachmentRepository,
+            documentRepository);
+    // Default: no wiki attachments / documents — prevents NPE in tests that only exercise
+    // task migration. uploadDir is needed only by the legacy-document disk path.
     lenient().when(wikiAttachmentRepository.findByDeletedAtIsNull()).thenReturn(List.of());
+    lenient().when(documentRepository.findAll()).thenReturn(List.of());
+    org.springframework.test.util.ReflectionTestUtils.setField(service, "uploadDir", "uploads");
   }
 
   private Task makeTask(Long id) {
@@ -109,7 +120,7 @@ class StorageMigrationServiceTest {
             .contentType("text/plain")
             .sizeBytes(100L)
             .build();
-    when(objectStorageService.store(eq("tasks/42"), any(), any(), anyLong(), any()))
+    when(objectStorageService.store(eq("attachments/task/42"), any(), any(), anyLong(), any()))
         .thenReturn(newRef);
 
     // Stub the post-store verify retrieve (called on the ACTIVE provider with the NEW key)
@@ -135,7 +146,7 @@ class StorageMigrationServiceTest {
 
     // Verify order: store → save → retrieve(verify) → delete
     InOrder order = inOrder(objectStorageService, taskAttachmentRepository);
-    order.verify(objectStorageService).store(eq("tasks/42"), any(), any(), anyLong(), any());
+    order.verify(objectStorageService).store(eq("attachments/task/42"), any(), any(), anyLong(), any());
     order.verify(taskAttachmentRepository).save(att);
     order.verify(objectStorageService).retrieve(StorageProviderType.S3, "new-key");
     order.verify(objectStorageService).delete(StorageProviderType.LOCAL_FS, "old-key");
@@ -268,7 +279,7 @@ class StorageMigrationServiceTest {
             .contentType("image/png")
             .sizeBytes(512L)
             .build();
-    when(objectStorageService.store(eq("wiki/20"), any(), any(), anyLong(), any()))
+    when(objectStorageService.store(eq("attachments/wiki/20"), any(), any(), anyLong(), any()))
         .thenReturn(newRef);
 
     // Stub the post-store verify retrieve on the active provider
@@ -294,7 +305,7 @@ class StorageMigrationServiceTest {
 
     // Verify copy-verify-before-delete order: store → save → retrieve(verify) → delete
     InOrder order = inOrder(objectStorageService, wikiAttachmentRepository);
-    order.verify(objectStorageService).store(eq("wiki/20"), any(), any(), anyLong(), any());
+    order.verify(objectStorageService).store(eq("attachments/wiki/20"), any(), any(), anyLong(), any());
     order.verify(wikiAttachmentRepository).save(att);
     order.verify(objectStorageService).retrieve(StorageProviderType.S3, "wiki/20/wiki-file.png");
     order.verify(objectStorageService).delete(StorageProviderType.LOCAL_FS, "old-wiki-key");
@@ -326,7 +337,7 @@ class StorageMigrationServiceTest {
             .contentType("image/png")
             .sizeBytes(512L)
             .build();
-    when(objectStorageService.store(eq("wiki/30"), any(), any(), anyLong(), any()))
+    when(objectStorageService.store(eq("attachments/wiki/30"), any(), any(), anyLong(), any()))
         .thenReturn(newRef);
 
     // Post-store verify throws — simulates destination unreadable after write
@@ -339,6 +350,129 @@ class StorageMigrationServiceTest {
     assertThat(result.getMigrated()).isEqualTo(0);
     // The OLD source object must NOT be deleted when verify fails
     verify(objectStorageService, never()).delete(any(), any());
+  }
+
+  // ── Document migration tests ──────────────────────────────────────────────
+
+  private UploadedDocument makeDocument(
+      Long id, StorageProviderType provider, String key, String storagePath) {
+    UploadedDocument doc = new UploadedDocument();
+    doc.setId(id);
+    doc.setStorageProvider(provider);
+    doc.setStorageKey(key);
+    doc.setStoragePath(storagePath);
+    doc.setOriginalFileName("doc.pdf");
+    doc.setFileName("doc.pdf");
+    doc.setFileType("pdf");
+    doc.setFileSize(2048L);
+    doc.setEntityType("PITCH");
+    doc.setEntityId(id);
+    return doc;
+  }
+
+  @Test
+  @DisplayName("(g) SPI-managed document on different provider: store→update→verify→delete in order")
+  void document_onDifferentProvider_migratedAndOldDeleted() {
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.S3);
+    when(taskAttachmentRepository.findAll()).thenReturn(List.of());
+    UploadedDocument doc = makeDocument(40L, StorageProviderType.LOCAL_FS, "old-doc-key", null);
+    when(documentRepository.findAll()).thenReturn(List.of(doc));
+
+    DownloadResource fakeResource =
+        DownloadResource.builder()
+            .stream(new ByteArrayInputStream(new byte[0]))
+            .contentType("application/pdf")
+            .sizeBytes(2048L)
+            .filename("doc.pdf")
+            .build();
+    when(objectStorageService.retrieve(StorageProviderType.LOCAL_FS, "old-doc-key"))
+        .thenReturn(fakeResource);
+
+    StoredObjectRef newRef =
+        StoredObjectRef.builder()
+            .key("documents/uuid_doc.pdf")
+            .bucket("bucket")
+            .contentType("application/pdf")
+            .sizeBytes(2048L)
+            .build();
+    when(objectStorageService.storeWithoutValidation(eq("documents/pitch/40"), any(), any(), anyLong(), any()))
+        .thenReturn(newRef);
+
+    DownloadResource verifyResource =
+        DownloadResource.builder()
+            .stream(new ByteArrayInputStream(new byte[0]))
+            .contentType("application/pdf")
+            .sizeBytes(2048L)
+            .filename("doc.pdf")
+            .build();
+    when(objectStorageService.retrieve(StorageProviderType.S3, "documents/uuid_doc.pdf"))
+        .thenReturn(verifyResource);
+
+    MigrationResultDTO result = service.migrateToActiveBackend();
+
+    assertThat(result.getMigrated()).isEqualTo(1);
+    assertThat(result.getSkipped()).isEqualTo(0);
+    assertThat(result.getFailed()).isEqualTo(0);
+    assertThat(result.getTotal()).isEqualTo(1);
+
+    assertThat(doc.getStorageProvider()).isEqualTo(StorageProviderType.S3);
+    assertThat(doc.getStorageKey()).isEqualTo("documents/uuid_doc.pdf");
+
+    InOrder order = inOrder(objectStorageService, documentRepository);
+    order.verify(objectStorageService).storeWithoutValidation(eq("documents/pitch/40"), any(), any(), anyLong(), any());
+    order.verify(documentRepository).save(doc);
+    order.verify(objectStorageService).retrieve(StorageProviderType.S3, "documents/uuid_doc.pdf");
+    order.verify(objectStorageService).delete(StorageProviderType.LOCAL_FS, "old-doc-key");
+  }
+
+  @Test
+  @DisplayName("(h) SPI-managed document already on active provider is skipped")
+  void document_alreadyOnActiveProvider_isSkipped() {
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.S3);
+    when(taskAttachmentRepository.findAll()).thenReturn(List.of());
+    UploadedDocument doc = makeDocument(41L, StorageProviderType.S3, "existing-doc-key", null);
+    when(documentRepository.findAll()).thenReturn(List.of(doc));
+
+    MigrationResultDTO result = service.migrateToActiveBackend();
+
+    assertThat(result.getSkipped()).isEqualTo(1);
+    assertThat(result.getMigrated()).isEqualTo(0);
+    assertThat(result.getTotal()).isEqualTo(1);
+    verify(objectStorageService, never()).storeWithoutValidation(any(), any(), any(), anyLong(), any());
+    verify(objectStorageService, never()).delete(any(), any());
+  }
+
+  @Test
+  @DisplayName("(i) Legacy disk document (storageKey null) is copied onto the active backend")
+  void document_legacyDisk_isMigratedFromFilesystem(@TempDir Path tempDir)
+      throws java.io.IOException {
+    java.nio.file.Path file = tempDir.resolve("legacy-doc.pdf");
+    java.nio.file.Files.write(file, "legacy bytes".getBytes());
+    org.springframework.test.util.ReflectionTestUtils.setField(service, "uploadDir", tempDir.toString());
+
+    when(objectStorageService.activeProvider()).thenReturn(StorageProviderType.LOCAL_FS);
+    when(taskAttachmentRepository.findAll()).thenReturn(List.of());
+    UploadedDocument doc = makeDocument(42L, null, null, "legacy-doc.pdf");
+    when(documentRepository.findAll()).thenReturn(List.of(doc));
+
+    StoredObjectRef newRef =
+        StoredObjectRef.builder()
+            .key("documents/uuid_legacy-doc.pdf")
+            .bucket("bucket")
+            .contentType("application/pdf")
+            .sizeBytes(12L)
+            .build();
+    when(objectStorageService.storeWithoutValidation(eq("documents/pitch/42"), any(), any(), anyLong(), any()))
+        .thenReturn(newRef);
+
+    MigrationResultDTO result = service.migrateToActiveBackend();
+
+    assertThat(result.getMigrated()).isEqualTo(1);
+    assertThat(result.getFailed()).isEqualTo(0);
+    assertThat(doc.getStorageProvider()).isEqualTo(StorageProviderType.LOCAL_FS);
+    assertThat(doc.getStorageKey()).isEqualTo("documents/uuid_legacy-doc.pdf");
+    verify(objectStorageService).storeWithoutValidation(eq("documents/pitch/42"), any(), any(), anyLong(), any());
+    verify(documentRepository).save(doc);
   }
 
   @Test

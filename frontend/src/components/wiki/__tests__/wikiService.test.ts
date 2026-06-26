@@ -205,11 +205,37 @@ describe('wikiService', () => {
     });
   });
 
-  describe('getAttachmentDownloadUrl', () => {
-    it('returns the correct download URL', () => {
-      expect(wikiService.getAttachmentDownloadUrl(42)).toBe(
-        '/api/wiki/attachments/42/download'
-      );
+  describe('downloadAttachment', () => {
+    it('GETs the endpoint as a blob and triggers a save (not a raw href)', async () => {
+      const blob = new Blob(['x'], { type: 'image/png' });
+      mockedApi.get.mockResolvedValueOnce({ data: blob });
+      const createObjectURL = vi.fn(() => 'blob:mock');
+      const revokeObjectURL = vi.fn();
+      window.URL.createObjectURL = createObjectURL;
+      window.URL.revokeObjectURL = revokeObjectURL;
+
+      await wikiService.downloadAttachment(42, 'pic.png');
+
+      expect(mockedApi.get).toHaveBeenCalledWith('/wiki/attachments/42/download', {
+        responseType: 'blob',
+      });
+      expect(createObjectURL).toHaveBeenCalledWith(blob);
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+    });
+  });
+
+  describe('fetchAttachmentObjectUrl', () => {
+    it('GETs the endpoint as a blob and returns an object URL for preview', async () => {
+      const blob = new Blob(['x'], { type: 'image/png' });
+      mockedApi.get.mockResolvedValueOnce({ data: blob });
+      window.URL.createObjectURL = vi.fn(() => 'blob:preview');
+
+      const url = await wikiService.fetchAttachmentObjectUrl(7);
+
+      expect(mockedApi.get).toHaveBeenCalledWith('/wiki/attachments/7/download', {
+        responseType: 'blob',
+      });
+      expect(url).toBe('blob:preview');
     });
   });
 });

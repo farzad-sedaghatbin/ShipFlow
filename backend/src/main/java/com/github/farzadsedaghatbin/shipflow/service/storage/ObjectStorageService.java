@@ -65,7 +65,44 @@ public class ObjectStorageService {
       long sizeBytes,
       InputStream stream) {
     validateFileInput(contentType, sizeBytes);
+    return doStore(keyHint, originalFilename, contentType, sizeBytes, stream);
+  }
 
+  /**
+   * Stores a file WITHOUT enforcing the façade's size/MIME allowlist.
+   *
+   * <p>Intended for callers that enforce their OWN, broader upload policy before invoking this
+   * method — notably {@link com.github.farzadsedaghatbin.shipflow.service.DocumentService}, which
+   * permits video and larger media for bug-report attachments. The façade must NOT re-impose its
+   * stricter image/PDF/DOC allowlist (which excludes video) or those uploads would be wrongly
+   * rejected. The caller is responsible for validating size and type beforehand.
+   *
+   * @param keyHint logical prefix (e.g. {@code "documents"} or {@code "bug-attachments"})
+   * @param originalFilename filename supplied by the upload client
+   * @param contentType MIME type of the file
+   * @param sizeBytes declared byte length
+   * @param stream raw byte stream
+   * @return a {@link StoredObjectRef} identifying the stored object
+   */
+  public StoredObjectRef storeWithoutValidation(
+      String keyHint,
+      String originalFilename,
+      String contentType,
+      long sizeBytes,
+      InputStream stream) {
+    return doStore(keyHint, originalFilename, contentType, sizeBytes, stream);
+  }
+
+  /**
+   * Performs the actual store against the active backend. Shared by the validating {@link #store}
+   * and the non-validating {@link #storeWithoutValidation} entry points.
+   */
+  private StoredObjectRef doStore(
+      String keyHint,
+      String originalFilename,
+      String contentType,
+      long sizeBytes,
+      InputStream stream) {
     StorageConfig cfg = configService.getActiveConfig();
     JsonNode cfgNode = parseConfig(cfg.getConfig());
     String bucket = extractBucket(cfgNode);

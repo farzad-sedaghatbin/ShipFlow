@@ -429,6 +429,64 @@ class WikiServiceTest {
   }
 
   @Test
+  void getRevision_returnsHistoricContentAfterReadCheck() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    Long pageId = 1L;
+    int revision = 2;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setCreatedBy(userId);
+
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+    page.setTitle("Current");
+
+    WikiPage historicPage = new WikiPage();
+    historicPage.setId(pageId);
+    historicPage.setSpaceId(spaceId);
+    historicPage.setTitle("Old Title");
+    historicPage.setContent("[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Old\"}]}]");
+
+    when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    when(historyReader.revision(pageId, revision)).thenReturn(Optional.of(historicPage));
+    doNothing().when(permissionService).requireRead(eq(userId), any(WikiSpace.class));
+
+    WikiPageDTO dto = wikiService.getRevision(pageId, revision, userId);
+
+    verify(permissionService).requireRead(eq(userId), any(WikiSpace.class));
+    verify(historyReader).revision(pageId, revision);
+    assertThat(dto.title()).isEqualTo("Old Title");
+    assertThat(dto.content()).contains("Old");
+  }
+
+  @Test
+  void getRevision_throwsWhenRevisionMissing() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    Long pageId = 1L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setCreatedBy(userId);
+
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+
+    when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    when(historyReader.revision(pageId, 99)).thenReturn(Optional.empty());
+    doNothing().when(permissionService).requireRead(eq(userId), any(WikiSpace.class));
+
+    assertThatThrownBy(() -> wikiService.getRevision(pageId, 99, userId))
+        .isInstanceOf(ResourceNotFoundException.class);
+  }
+
+  @Test
   void writeOpWithoutPermission_propagatesAccessDeniedException() {
     Long userId = 1L;
     Long spaceId = 10L;

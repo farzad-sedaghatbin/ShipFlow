@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-06-25T16:50:00.043Z",
+  "timestamp": "2026-06-26T08:45:27.671Z",
   "stats": {
-    "totalEnKeys": 7715,
-    "totalFaKeys": 6795,
-    "totalUsedKeys": 5102,
-    "filesScanned": 472
+    "totalEnKeys": 7730,
+    "totalFaKeys": 6810,
+    "totalUsedKeys": 5116,
+    "filesScanned": 476
   },
   "issues": {
     "missingInFa": [
@@ -3618,6 +3618,7 @@
     "knowledgeCenter.status.FAILED",
     "storage.loadFailed",
     "wiki.view",
+    "wiki.restore",
     "wiki.deletePageConfirm",
     "wiki.searchPlaceholder",
     "wiki.noResults"

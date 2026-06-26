@@ -64,7 +64,7 @@ public class TaskAttachmentService {
     StoredObjectRef ref;
     try {
       ref = objectStorageService.store(
-          "tasks/" + taskId,
+          "attachments/task/" + taskId,
           file.getOriginalFilename(),
           contentType,
           file.getSize(),
