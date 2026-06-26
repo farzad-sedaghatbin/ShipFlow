@@ -53,6 +53,9 @@ class QATestManagementControllerIntegrationTest {
   @Autowired
   private TestRunRepository testRunRepository;
 
+  @Autowired
+  private ProjectRepository projectRepository;
+
   private Cycle testCycle;
   private User testUser;
   private BugReport testBugReport;
@@ -204,6 +207,26 @@ class QATestManagementControllerIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.linkedBugs", hasSize(1)))
         .andExpect(jsonPath("$.linkedBugs[0].bugKey", is("BUG-202")));
+  }
+
+  @Test
+  void getTestCasesWithFilters_ByProject_ShouldReturnOnlyThatProjectsCases() throws Exception {
+    Project project = projectRepository.save(Project.builder().name("Alpha").projectKey("ALPHA")
+        .isActive(true).createdAt(LocalDateTime.now()).build());
+    testCaseRepository.save(TestCase.builder().testCaseKey("TC-300").title("In project")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.LOW).status(TestCaseStatus.READY)
+        .aiGenerated(false).project(project).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+    testCaseRepository.save(TestCase.builder().testCaseKey("TC-301").title("No project")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.LOW).status(TestCaseStatus.READY)
+        .aiGenerated(false).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+
+    mockMvc.perform(get("/api/qa/test-cases/filter").param("projectId", project.getId().toString()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].testCaseKey", is("TC-300")))
+        .andExpect(jsonPath("$[0].projectKey", is("ALPHA")));
   }
 
   @Test

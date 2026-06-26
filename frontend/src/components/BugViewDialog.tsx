@@ -478,7 +478,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                 type="button"
                 title={t('common.openInNewTab', 'Open in new tab')}
                 className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.id}`, '_blank')}
+                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.bugKey}`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4" />
               </button>
@@ -607,7 +607,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                             <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
                             {members.filter(m => m.personId != null).map((m) => (
                               <SelectItem key={m.userId} value={m.personId!.toString()}>
-                                {m.username}
+                                {m.personName || m.username}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -636,7 +636,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                             <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
                             {members.filter(m => m.personId != null).map((m) => (
                               <SelectItem key={m.userId} value={m.personId!.toString()}>
-                                {m.username}
+                                {m.personName || m.username}
                               </SelectItem>
                             ))}
                           </SelectContent>

@@ -41,6 +41,7 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { Combobox } from '../components/ui/combobox';
+import { MultiCombobox } from '../components/ui/multi-combobox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,7 +141,7 @@ type SavedBugFilter = {
   searchQuery: string;
   statusFilter: BugStatus[];
   severityFilter: BugSeverity[];
-  assigneeFilter?: number;
+  assigneeFilter: number[];
   excludeMode: boolean;
   sortBy: 'createdAt' | 'severity' | 'status' | 'title';
   sortOrder: 'asc' | 'desc';
@@ -185,8 +186,9 @@ const BugReportsPage: React.FC = () => {
   const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() =>
     searchParams.getAll('severity').length > 0 ? searchParams.getAll('severity') as BugSeverity[] : readSavedBugFilter('severityFilter', [])
   );
-  const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(() => {
-    const v = searchParams.get('assignee'); return v ? parseInt(v) : readSavedBugFilter('assigneeFilter', undefined);
+  const [assigneeFilter, setAssigneeFilter] = useState<number[]>(() => {
+    const urlVals = searchParams.getAll('assignee');
+    return urlVals.length > 0 ? urlVals.map((v) => parseInt(v)) : readSavedBugFilter('assigneeFilter', []);
   });
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(() => {
     const v = searchParams.get('cycle'); return v ? parseInt(v) : undefined;
@@ -253,7 +255,7 @@ const BugReportsPage: React.FC = () => {
       if (searchQuery) next.set('q', searchQuery);
       statusFilter.forEach(s => next.append('status', s));
       severityFilter.forEach(s => next.append('severity', s));
-      if (assigneeFilter !== undefined) next.set('assignee', String(assigneeFilter));
+      assigneeFilter.forEach(a => next.append('assignee', String(a)));
       if (cycleFilter !== undefined) next.set('cycle', String(cycleFilter));
       if (pitchFilter !== undefined) next.set('pitch', String(pitchFilter));
       if (releaseFilter !== undefined) next.set('release', String(releaseFilter));
@@ -340,7 +342,7 @@ const BugReportsPage: React.FC = () => {
       const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
       const activeStatuses = statusFilter.length > 0 ? statusFilter : undefined;
       const activeSeverities = severityFilter.length > 0 ? severityFilter : undefined;
-      const activeAssignees = assigneeFilter !== undefined ? [assigneeFilter] : undefined;
+      const activeAssignees = assigneeFilter.length > 0 ? assigneeFilter : undefined;
 
       // The kanban board groups every matching bug into status columns, so it needs the full
       // result set rather than a single page. The release filter is applied client-side and also
@@ -421,7 +423,10 @@ const BugReportsPage: React.FC = () => {
     setDebouncedSearch(f.searchQuery);
     setStatusFilter(f.statusFilter);
     setSeverityFilter(f.severityFilter);
-    setAssigneeFilter(f.assigneeFilter);
+    // Older saved filters may have stored a single assignee number — normalize to an array.
+    const savedAssignee = f.assigneeFilter as unknown;
+    setAssigneeFilter(Array.isArray(savedAssignee) ? (savedAssignee as number[])
+      : typeof savedAssignee === 'number' ? [savedAssignee] : []);
     setExcludeMode(f.excludeMode);
     setSortBy(f.sortBy);
     setSortOrder(f.sortOrder);
@@ -521,6 +526,13 @@ const BugReportsPage: React.FC = () => {
   const toggleSeverityFilter = (severity: BugSeverity) => {
     setSeverityFilter((prev) =>
       prev.includes(severity) ? prev.filter((s) => s !== severity) : [...prev, severity]
+    );
+    setPage(0);
+  };
+
+  const toggleAssigneeFilter = (personId: number) => {
+    setAssigneeFilter((prev) =>
+      prev.includes(personId) ? prev.filter((p) => p !== personId) : [...prev, personId]
     );
     setPage(0);
   };
@@ -873,18 +885,28 @@ const BugReportsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Assignee filter */}
+          {/* Assignee multi-select — searchable so typing a name filters the list instead
+              of leaking keystrokes to the global keyboard shortcuts (the old dropdown had
+              no text input, so isTyping() stayed false and single-key shortcuts fired). */}
           {persons.length > 0 && (
-            <div className="min-w-[160px]">
-              <Combobox
-                options={[
-                  { value: 'all', label: t('bugReports.filters.allAssignees', 'All Assignees') },
-                  ...persons.map(p => ({ value: p.id.toString(), label: p.name })),
-                ]}
-                value={assigneeFilter?.toString() ?? 'all'}
-                onValueChange={(v) => setAssigneeFilter(v === 'all' ? undefined : parseInt(v))}
+            <div className="min-w-[200px]">
+              <MultiCombobox
+                options={persons.map((p) => ({ value: String(p.id), label: p.name }))}
+                value={assigneeFilter.map(String)}
+                onValueChange={(vals) => {
+                  // MultiCombobox emits the full next selection; toggleAssigneeFilter flips a
+                  // single id, so forward only the one that changed.
+                  const next = vals.map(Number);
+                  const toggled =
+                    next.find((id) => !assigneeFilter.includes(id)) ??
+                    assigneeFilter.find((id) => !next.includes(id));
+                  if (toggled !== undefined) toggleAssigneeFilter(toggled);
+                }}
                 placeholder={t('bugReports.filters.allAssignees', 'All Assignees')}
                 searchPlaceholder={t('bugReports.filters.searchAssignee', 'Search people...')}
+                emptyText={t('bugReports.filters.noAssignee', 'No people found')}
+                triggerClassName="h-9 min-h-9"
+                maxDisplay={2}
               />
             </div>
           )}
@@ -962,7 +984,7 @@ const BugReportsPage: React.FC = () => {
               onClick={() => {
                 setStatusFilter([]);
                 setSeverityFilter([]);
-                setAssigneeFilter(undefined);
+                setAssigneeFilter([]);
                 setCycleFilter(undefined);
                 setPitchFilter(undefined);
                 setReleaseFilter(undefined);
@@ -1013,7 +1035,7 @@ const BugReportsPage: React.FC = () => {
                   actions: (
                     <>
                       <Button asChild variant="ghost" size="icon-sm" title={t('bugReports.actions.openFullPage', 'Open full page')}>
-                        <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                        <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
                           <Eye className="h-4 w-4" />
                         </RouterLink>
                       </Button>
@@ -1265,7 +1287,7 @@ const BugReportsPage: React.FC = () => {
                               size="icon"
                               className="h-8 w-8"
                             >
-                              <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                              <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
                                 <Eye className="h-4 w-4" />
                               </RouterLink>
                             </Button>
@@ -1281,7 +1303,7 @@ const BugReportsPage: React.FC = () => {
                               size="icon"
                               className="h-8 w-8"
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/qa/bug-reports/${bug.id}`);
+                                navigator.clipboard.writeText(`${window.location.origin}/qa/bug-reports/${bug.bugKey}`);
                                 showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
                               }}
                             >
@@ -1472,7 +1494,7 @@ const BugReportsPage: React.FC = () => {
         }}
         onOpenFullPage={(bug) => {
           setDetailModalOpen(false);
-          navigate(`/qa/bug-reports/${bug.id}`);
+          navigate(`/qa/bug-reports/${bug.bugKey}`);
         }}
         onUpdate={(updated) => setSelectedBug(updated)}
       />

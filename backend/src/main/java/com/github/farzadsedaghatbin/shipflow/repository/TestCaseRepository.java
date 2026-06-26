@@ -92,15 +92,17 @@ public interface TestCaseRepository extends JpaRepository<TestCase, Long> {
   List<TestCase> findByImportJobId(@Param("importJobId") Long importJobId);
 
   // Multi-filter query
-  @Query("SELECT tc FROM TestCase tc WHERE tc.deletedAt IS NULL " + "AND (:cycleId IS NULL OR tc.cycle.id = :cycleId) "
+  @Query("SELECT tc FROM TestCase tc WHERE tc.deletedAt IS NULL "
+      + "AND (:projectId IS NULL OR tc.project.id = :projectId) "
+      + "AND (:cycleId IS NULL OR tc.cycle.id = :cycleId) "
       + "AND (:pitchId IS NULL OR tc.pitch.id = :pitchId) " + "AND (:statuses IS NULL OR tc.status IN :statuses) "
       + "AND (:types IS NULL OR tc.type IN :types) " + "AND (:priorities IS NULL OR tc.priority IN :priorities) "
       + "AND (:createdById IS NULL OR tc.createdBy.id = :createdById) "
       + "AND (:aiGenerated IS NULL OR tc.aiGenerated = :aiGenerated)")
-  List<TestCase> findWithFilters(@Param("cycleId") Long cycleId, @Param("pitchId") Long pitchId,
-      @Param("statuses") List<TestCaseStatus> statuses, @Param("types") List<TestCaseType> types,
-      @Param("priorities") List<TestCasePriority> priorities, @Param("createdById") Long createdById,
-      @Param("aiGenerated") Boolean aiGenerated);
+  List<TestCase> findWithFilters(@Param("projectId") Long projectId, @Param("cycleId") Long cycleId,
+      @Param("pitchId") Long pitchId, @Param("statuses") List<TestCaseStatus> statuses,
+      @Param("types") List<TestCaseType> types, @Param("priorities") List<TestCasePriority> priorities,
+      @Param("createdById") Long createdById, @Param("aiGenerated") Boolean aiGenerated);
 
   // Scope and task queries for traceability
   List<TestCase> findByScopeId(Long scopeId);
