@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-06-27
+
 ### Added — Wiki / Docs Space (v1.8.0)
 
 #### Built-in Wiki

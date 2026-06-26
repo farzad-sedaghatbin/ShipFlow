@@ -79,9 +79,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.8.0',
-    date: 'In Development',
+    date: 'June 27, 2026',
     title: 'Custom Fields, Wiki & Object Storage',
-    upcoming: true,
     highlights: [
       {
         icon: <BookOpen className="h-5 w-5" />,
