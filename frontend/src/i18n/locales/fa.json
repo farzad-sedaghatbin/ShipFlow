@@ -7108,7 +7108,15 @@
     "shipped190Item2Title": "اسناد متصل به هوش مصنوعی",
     "shipped190Item2Desc": "صفحات ویکی به‌طور خودکار به مرکز دانش خوراک می‌دهند تا Q&A و Wise Architecture از اسناد تیم شما به‌طور خودکار پاسخ دهند.",
     "shipped190Item3Title": "ذخیره‌سازی شیء قابل تنظیم",
-    "shipped190Item3Desc": "پیوست‌ها را روی AWS S3، MinIO یا دیسک محلی ذخیره کنید که از تنظیمات سازمان انتخاب می‌شود؛ اعتبارنامه‌های رمزگذاری‌شده، تست اتصال و مهاجرت یک‌کلیکی بین بکندها."
+    "shipped190Item3Desc": "پیوست‌ها را روی AWS S3، MinIO یا دیسک محلی ذخیره کنید که از تنظیمات سازمان انتخاب می‌شود؛ همراه با تست اتصال و مهاجرت یک‌کلیکی بین بکندها.",
+    "shipped180Title": "فیلدهای سفارشی، ویکی و ذخیره‌سازی شیء",
+    "phaseShTheme": "میزبانی شخصی در سطح تولید",
+    "phaseShItem0Title": "Helm Chart و Kubernetes",
+    "phaseShItem0Desc": "یک Helm chart نگه‌داری‌شده برای استقرار درجه‌یک روی Kubernetes — میزبانی شخصی تولیدی بدون نوشتن دستی manifestها.",
+    "phaseShItem1Title": "مشاهده‌پذیری داخلی",
+    "phaseShItem1Desc": "ردگیری و متریک‌های OpenTelemetry همراه با داشبوردهای آماده‌ی Prometheus و Grafana.",
+    "phaseShItem2Title": "خروجی گرفتن از ممیزی",
+    "phaseShItem2Desc": "خروجی گرفتن کامل از تاریخچه‌ی ممیزی Hibernate Envers برای انطباق و نگه‌داری بلندمدت."
   },
   "shortcuts": {
     "title": "میانبرهای صفحه‌کلید",

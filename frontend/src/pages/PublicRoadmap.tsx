@@ -41,9 +41,6 @@ import {
   FileSpreadsheet,
   FolderInput,
   BookOpen,
-  Building2,
-  Link2,
-  MessageSquare,
   Key,
   Wand2,
   Zap,
@@ -89,6 +86,18 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.8.0',
+      date: 'June 27, 2026',
+      title: t('publicRoadmap.shipped180Title'),
+      highlights: [
+        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
+        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item0Title'), description: t('publicRoadmap.shipped190Item0Desc') },
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item2Title'), description: t('publicRoadmap.shipped190Item2Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item3Title'), description: t('publicRoadmap.shipped190Item3Desc') },
+      ],
+    },
     {
       version: '1.7.0',
       date: 'June 15, 2026',
@@ -254,21 +263,13 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.8.0',
-      theme: t('publicRoadmap.phaseKcTheme'),
+      version: 'v1.9.0',
+      theme: t('publicRoadmap.phaseShTheme'),
       status: 'in-progress',
       items: [
-        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.phaseKcItem0Title'), description: t('publicRoadmap.phaseKcItem0Desc') },
-        { icon: <Building2 className="h-5 w-5" />, title: t('publicRoadmap.phaseKcItem1Title'), description: t('publicRoadmap.phaseKcItem1Desc') },
-        { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.phaseKcItem2Title'), description: t('publicRoadmap.phaseKcItem2Desc') },
-        { icon: <BookmarkCheck className="h-5 w-5" />, title: t('publicRoadmap.phase190Item0Title'), description: t('publicRoadmap.phase190Item0Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase190Item1Title'), description: t('publicRoadmap.phase190Item1Desc') },
-        { icon: <Rss className="h-5 w-5" />, title: t('publicRoadmap.phase190Item2Title'), description: t('publicRoadmap.phase190Item2Desc') },
-        { icon: <MessageSquare className="h-5 w-5" />, title: t('publicRoadmap.phase190Item3Title'), description: t('publicRoadmap.phase190Item3Desc') },
-        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
-        { icon: <Layout className="h-5 w-5" />, title: t('publicRoadmap.phase180Item2Title'), description: t('publicRoadmap.phase180Item2Desc') },
-        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.phase180Item3Title'), description: t('publicRoadmap.phase180Item3Desc') },
+        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem0Title'), description: t('publicRoadmap.phaseShItem0Desc') },
+        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem1Title'), description: t('publicRoadmap.phaseShItem1Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem2Title'), description: t('publicRoadmap.phaseShItem2Desc') },
       ],
     },
   ];

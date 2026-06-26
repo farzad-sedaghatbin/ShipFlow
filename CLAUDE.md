@@ -5,12 +5,12 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.8.0 — "Custom Fields, Advanced RBAC, Wiki & Object Storage"
+## Current Milestone: v1.9.0 — "Production-Grade Self-Hosting"
 
-**Current version**: v1.7.0 (released 2026-06-16)
+**Current version**: v1.8.0 (released 2026-06-27)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. **In development (v1.8.0, unreleased):** Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage.
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Next: Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export (v1.9.0).
 
 ### v1.3.0 session map
 
@@ -116,8 +116,8 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 | Version | Theme | Sessions |
 |---------|-------|----------|
-| v1.8.0 (current, unreleased) | Custom Fields & Advanced RBAC + Wiki / Docs Space + pluggable Object Storage — custom fields on tasks/pitches, project-level permissions, built-in wiki, attachment storage (LOCAL_FS/S3/MinIO) | S48–S53 |
-| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
+| v1.8.0 ✅ shipped 2026-06-27 | Custom Fields & Advanced RBAC + Wiki / Docs Space + pluggable Object Storage — custom fields on tasks/pitches, project-level permissions, built-in wiki, attachment storage (LOCAL_FS/S3/MinIO) | S48–S53 |
+| v1.9.0 (current) | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
 | v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
 | v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
 | v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |

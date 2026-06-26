@@ -1,6 +1,6 @@
 # ShipFlow — Competitive Analysis
 
-_Last updated: 2026-06-18 (v1.8.0 in development, unreleased — Custom Fields & Advanced RBAC, Wiki / Docs Space, Pluggable Object Storage; latest released: v1.7.0)_
+_Last updated: 2026-06-27 (v1.8.0 shipped — Custom Fields & Advanced RBAC, Wiki / Docs Space, Pluggable Object Storage; next: v1.9.0 Production-Grade Self-Hosting)_
 
 This document positions ShipFlow against the tools teams most commonly evaluate before adopting it.
 It is written factually to help evaluators make an informed decision.

@@ -5387,7 +5387,15 @@
     "shipped190Item2Title": "AI-connected docs",
     "shipped190Item2Desc": "Wiki pages auto-feed the Knowledge Center, so AI Q&A and Wise Architecture answer from your team's docs automatically.",
     "shipped190Item3Title": "Pluggable Object Storage",
-    "shipped190Item3Desc": "Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; encrypted-by-config credentials, connection test, and one-click migration between backends."
+    "shipped190Item3Desc": "Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; with a connection test and one-click migration between backends.",
+    "shipped180Title": "Custom Fields, Wiki & Object Storage",
+    "phaseShTheme": "Production-Grade Self-Hosting",
+    "phaseShItem0Title": "Helm Chart & Kubernetes",
+    "phaseShItem0Desc": "A maintained Helm chart for first-class Kubernetes deployment — production self-hosting without hand-rolled manifests.",
+    "phaseShItem1Title": "Built-in Observability",
+    "phaseShItem1Desc": "OpenTelemetry traces and metrics with ready-made Prometheus and Grafana dashboards.",
+    "phaseShItem2Title": "Audit Export",
+    "phaseShItem2Desc": "Export the full Hibernate Envers audit trail for compliance and long-term retention."
   },
   "releaseNotes": {
     "title": "Release Notes",
