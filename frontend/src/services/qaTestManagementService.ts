@@ -62,10 +62,12 @@ export const qaTestManagementService = {
     sortBy: string = 'createdAt',
     sortOrder: string = 'desc',
     createdById?: number,
-    aiGenerated?: boolean
+    aiGenerated?: boolean,
+    projectId?: number
   ) =>
     api.get<Page<TestCase>>('/qa/test-cases/filter', {
       params: {
+        projectId,
         cycleId,
         pitchId,
         statuses: statuses?.join(','),

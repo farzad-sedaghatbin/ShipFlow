@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — Test cases now scoped to the selected project
+
+- Test cases had no direct project link, so the Test Cases page showed **every** project's cases regardless of the selected project. Added a direct `project` association to `TestCase` (migration `V2026_06_25_0002`, backfilled from each case's cycle then pitch); the list endpoint now accepts a `projectId` filter and the page passes the current project (all cases when "All Projects" is selected). New test cases inherit the project from the current selection / linked pitch / cycle.
+
 ### Added — QA: test-case filters & bulk execution
 
 - **Test-case filters by source and creator**: the Test Cases page can now filter by source (**Manual** vs **AI-generated**) and by **creator**. Backend `GET /api/qa/test-cases/filter` accepts `aiGenerated` and `createdById` query params; the source filter is applied server-side and the creator filter client-side (stable dropdown derived from loaded cases).
