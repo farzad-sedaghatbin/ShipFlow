@@ -9,12 +9,14 @@ import com.github.farzadsedaghatbin.shipflow.dto.wiki.MovePageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.UpdateWikiPageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.UpdateWikiSpaceRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageLinkDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageSearchDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiRevisionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpacePermissionDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiTreeNodeDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.KnowledgeSource;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpacePermission;
@@ -24,6 +26,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceStatus;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeSourceRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
@@ -33,9 +36,13 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -54,6 +61,14 @@ public class WikiService {
   private final ApplicationEventPublisher eventPublisher;
   private final ObjectMapper objectMapper;
   private final KnowledgeSourceRepository knowledgeSourceRepository;
+  private final UserRepository userRepository;
+  private final DashboardNotificationService notificationService;
+
+  // @mention pattern (shared shape with CommentService): @Name or @"Full Name".
+  private static final Pattern MENTION_PATTERN =
+      Pattern.compile("@\"([^\"]+)\"|@([\\p{L}\\p{N}]+(?:[._][\\p{L}\\p{N}]+)*)");
+  // Internal page-link token: [[123]] (optional surrounding whitespace).
+  private static final Pattern WIKI_LINK_PATTERN = Pattern.compile("\\[\\[\\s*(\\d+)\\s*\\]\\]");
 
   public WikiService(
       WikiSpaceRepository spaceRepository,
@@ -63,7 +78,9 @@ public class WikiService {
       WikiHistoryReader historyReader,
       ApplicationEventPublisher eventPublisher,
       ObjectMapper objectMapper,
-      KnowledgeSourceRepository knowledgeSourceRepository) {
+      KnowledgeSourceRepository knowledgeSourceRepository,
+      UserRepository userRepository,
+      DashboardNotificationService notificationService) {
     this.spaceRepository = spaceRepository;
     this.pageRepository = pageRepository;
     this.permissionRepository = permissionRepository;
@@ -72,6 +89,8 @@ public class WikiService {
     this.eventPublisher = eventPublisher;
     this.objectMapper = objectMapper;
     this.knowledgeSourceRepository = knowledgeSourceRepository;
+    this.userRepository = userRepository;
+    this.notificationService = notificationService;
   }
 
   // --- Space operations ---
@@ -175,6 +194,9 @@ public class WikiService {
     page.setCreatedBy(userId);
     page = pageRepository.save(page);
 
+    // Notify everyone mentioned in the brand-new page body.
+    notifyNewMentions(page, space, extractMentions(page.getContentText()), userId);
+
     eventPublisher.publishEvent(
         new WikiPageChangedEvent(
             page.getId(), page.getSpaceId(), WikiPageChangedEvent.ChangeType.CREATED));
@@ -186,6 +208,9 @@ public class WikiService {
     WikiSpace space = requireSpace(page.getSpaceId());
     permissionService.requireWrite(userId, space);
 
+    // Capture mentions present before the edit so we only notify newly-added ones.
+    Set<String> previousMentions = extractMentions(page.getContentText());
+
     if (req.title() != null) {
       page.setTitle(req.title());
       page.setSlug(toSlug(req.title()));
@@ -195,6 +220,10 @@ public class WikiService {
       page.setContentText(extractText(req.content()));
     }
     page = pageRepository.save(page);
+
+    Set<String> addedMentions = extractMentions(page.getContentText());
+    addedMentions.removeAll(previousMentions);
+    notifyNewMentions(page, space, addedMentions, userId);
 
     eventPublisher.publishEvent(
         new WikiPageChangedEvent(
@@ -582,6 +611,99 @@ public class WikiService {
         page.getPosition() != null ? page.getPosition() : 0,
         page.getCreatedBy(),
         page.getCreatedAt(),
-        page.getUpdatedAt());
+        page.getUpdatedAt(),
+        resolvePageLinks(page.getContentText()));
+  }
+
+  // --- Internal links & mentions (v1.8.1) ---
+
+  /**
+   * Extract distinct person names from {@code @Name} / {@code @"Full Name"} mentions in the given
+   * text. Mirrors {@code CommentService} so page-body and comment mentions behave identically.
+   */
+  Set<String> extractMentions(String content) {
+    Set<String> mentions = new HashSet<>();
+    if (content == null || content.isBlank()) {
+      return mentions;
+    }
+    Matcher matcher = MENTION_PATTERN.matcher(content);
+    while (matcher.find()) {
+      String name = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+      if (name != null && !name.trim().isEmpty()) {
+        mentions.add(name.trim());
+      }
+    }
+    return mentions;
+  }
+
+  /**
+   * Resolve mentioned person names to users and notify each (skipping users who can't read the
+   * page's space). Failures to notify one user never abort the save.
+   */
+  private void notifyNewMentions(WikiPage page, WikiSpace space, Set<String> mentionedNames, Long authorId) {
+    if (mentionedNames == null || mentionedNames.isEmpty()) {
+      return;
+    }
+    User author = userRepository.findById(authorId).orElse(null);
+    if (author == null) {
+      return;
+    }
+    List<User> mentionedUsers = userRepository.findByPersonNameIn(new ArrayList<>(mentionedNames));
+    for (User mentionedUser : mentionedUsers) {
+      try {
+        if (!permissionService.canRead(mentionedUser.getId(), space)) {
+          continue;
+        }
+        notificationService.notifyWikiPageMention(
+            mentionedUser, author, page.getId(), page.getSpaceId(), page.getContentText());
+      } catch (Exception e) {
+        log.error("Failed to send wiki mention notification to {}: {}",
+            mentionedUser.getUsername(), e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * Parse {@code [[pageId]]} tokens from page text and resolve each to a link DTO. Distinct ids are
+   * returned in first-seen order; a missing or soft-deleted target is marked {@code exists=false}.
+   */
+  List<WikiPageLinkDTO> resolvePageLinks(String content) {
+    if (content == null || content.isBlank() || !content.contains("[[")) {
+      return List.of();
+    }
+    List<Long> ids = new ArrayList<>();
+    Set<Long> seen = new HashSet<>();
+    Matcher matcher = WIKI_LINK_PATTERN.matcher(content);
+    while (matcher.find()) {
+      try {
+        Long id = Long.parseLong(matcher.group(1));
+        if (seen.add(id)) {
+          ids.add(id);
+        }
+      } catch (NumberFormatException ignore) {
+        // skip non-numeric tokens
+      }
+    }
+    if (ids.isEmpty()) {
+      return List.of();
+    }
+    Map<Long, WikiPage> found = new LinkedHashMap<>();
+    for (WikiPage p : pageRepository.findAllById(ids)) {
+      if (p.getDeletedAt() == null) {
+        found.put(p.getId(), p);
+      }
+    }
+    List<WikiPageLinkDTO> links = new ArrayList<>();
+    for (Long id : ids) {
+      WikiPage target = found.get(id);
+      if (target != null) {
+        links.add(new WikiPageLinkDTO(
+            id, target.getTitle(), target.getSpaceId(), true,
+            "/wiki/" + target.getSpaceId() + "/" + id));
+      } else {
+        links.add(new WikiPageLinkDTO(id, null, null, false, "/wiki/pages/" + id));
+      }
+    }
+    return links;
   }
 }

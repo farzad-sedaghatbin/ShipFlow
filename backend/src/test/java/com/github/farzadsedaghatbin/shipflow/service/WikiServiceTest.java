@@ -15,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeSourceRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
@@ -41,6 +42,8 @@ class WikiServiceTest {
   private WikiHistoryReader historyReader;
   private ApplicationEventPublisher eventPublisher;
   private KnowledgeSourceRepository knowledgeSourceRepository;
+  private UserRepository userRepository;
+  private DashboardNotificationService notificationService;
   private WikiService wikiService;
 
   @BeforeEach
@@ -52,6 +55,8 @@ class WikiServiceTest {
     historyReader = mock(WikiHistoryReader.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
     knowledgeSourceRepository = mock(KnowledgeSourceRepository.class);
+    userRepository = mock(UserRepository.class);
+    notificationService = mock(DashboardNotificationService.class);
     wikiService =
         new WikiService(
             spaceRepository,
@@ -61,7 +66,9 @@ class WikiServiceTest {
             historyReader,
             eventPublisher,
             new ObjectMapper(),
-            knowledgeSourceRepository);
+            knowledgeSourceRepository,
+            userRepository,
+            notificationService);
   }
 
   @Test
@@ -700,5 +707,114 @@ class WikiServiceTest {
 
     assertThat(ks.getDeletedAt()).isNotNull();
     verify(knowledgeSourceRepository).save(ks);
+  }
+
+  // --- v1.8.1: internal links & page-body mentions ---
+
+  @Test
+  void extractMentions_parsesQuotedAndUnquotedNames() {
+    var mentions = wikiService.extractMentions("Ping @alice and @\"Bob Smith\" about @alice again");
+    assertThat(mentions).containsExactlyInAnyOrder("alice", "Bob Smith");
+  }
+
+  @Test
+  void resolvePageLinks_resolvesExistingAndFlagsMissing() {
+    WikiPage target = new WikiPage();
+    target.setId(100L);
+    target.setSpaceId(10L);
+    target.setTitle("Target Page");
+
+    when(pageRepository.findAllById(any())).thenReturn(List.of(target));
+
+    var links = wikiService.resolvePageLinks("See [[100]] and the dead [[999]] and [[100]] again");
+
+    assertThat(links).hasSize(2);
+    assertThat(links.get(0).pageId()).isEqualTo(100L);
+    assertThat(links.get(0).exists()).isTrue();
+    assertThat(links.get(0).title()).isEqualTo("Target Page");
+    assertThat(links.get(0).url()).isEqualTo("/wiki/10/100");
+    assertThat(links.get(1).pageId()).isEqualTo(999L);
+    assertThat(links.get(1).exists()).isFalse();
+    assertThat(links.get(1).url()).isEqualTo("/wiki/pages/999");
+  }
+
+  @Test
+  void resolvePageLinks_returnsEmptyWhenNoTokens() {
+    assertThat(wikiService.resolvePageLinks("plain text, no links")).isEmpty();
+    verify(pageRepository, never()).findAllById(any());
+  }
+
+  @Test
+  void createPage_notifiesMentionedUsersWhoCanRead() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    String json =
+        "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":"
+            + "[{\"type\":\"text\",\"text\":\"Hi @\\\"Alice\\\" please review\"}]}]}";
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setName("Space");
+    space.setSpaceKey("space");
+    space.setCreatedBy(userId);
+
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    when(pageRepository.findBySpaceIdAndParentIdIsNullAndDeletedAtIsNullOrderByPositionAsc(spaceId))
+        .thenReturn(Collections.emptyList());
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+
+    WikiPage saved = new WikiPage();
+    saved.setId(100L);
+    saved.setSpaceId(spaceId);
+    saved.setTitle("My Page");
+    saved.setContentText("Hi @\"Alice\" please review");
+    when(pageRepository.save(any(WikiPage.class))).thenReturn(saved);
+
+    var author = mock(com.github.farzadsedaghatbin.shipflow.entity.User.class);
+    var alice = mock(com.github.farzadsedaghatbin.shipflow.entity.User.class);
+    when(alice.getId()).thenReturn(2L);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(author));
+    when(userRepository.findByPersonNameIn(List.of("Alice"))).thenReturn(List.of(alice));
+    when(permissionService.canRead(2L, space)).thenReturn(true);
+
+    wikiService.createPage(new CreateWikiPageRequest(spaceId, null, "My Page", json), userId);
+
+    verify(notificationService).notifyWikiPageMention(alice, author, 100L, spaceId, "Hi @\"Alice\" please review");
+  }
+
+  @Test
+  void createPage_skipsMentionedUsersWithoutReadAccess() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    String json =
+        "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":"
+            + "[{\"type\":\"text\",\"text\":\"Hi @\\\"Alice\\\"\"}]}]}";
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("space");
+    space.setCreatedBy(userId);
+
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    when(pageRepository.findBySpaceIdAndParentIdIsNullAndDeletedAtIsNullOrderByPositionAsc(spaceId))
+        .thenReturn(Collections.emptyList());
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+
+    WikiPage saved = new WikiPage();
+    saved.setId(100L);
+    saved.setSpaceId(spaceId);
+    saved.setContentText("Hi @\"Alice\"");
+    when(pageRepository.save(any(WikiPage.class))).thenReturn(saved);
+
+    var author = mock(com.github.farzadsedaghatbin.shipflow.entity.User.class);
+    var alice = mock(com.github.farzadsedaghatbin.shipflow.entity.User.class);
+    when(alice.getId()).thenReturn(2L);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(author));
+    when(userRepository.findByPersonNameIn(List.of("Alice"))).thenReturn(List.of(alice));
+    when(permissionService.canRead(2L, space)).thenReturn(false);
+
+    wikiService.createPage(new CreateWikiPageRequest(spaceId, null, "My Page", json), userId);
+
+    verify(notificationService, never()).notifyWikiPageMention(any(), any(), anyLong(), anyLong(), any());
   }
 }

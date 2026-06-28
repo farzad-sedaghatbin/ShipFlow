@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed — Wiki internal links & page-body @mentions (v1.8.1)
+- **`[[pageId]]` internal links now resolve.** v1.8.0 advertised internal wiki links but never implemented them. `WikiService` now parses `[[pageId]]` tokens from a page body and returns resolved targets on `WikiPageDTO.pageLinks` (`{pageId, title, spaceId, exists, url}`) — distinct ids in first-seen order, with missing/soft-deleted targets flagged `exists=false` so the UI can show a broken-link state. URLs use the canonical `/wiki/{spaceId}/{pageId}` route.
+- **@mentions in the wiki page body now notify.** v1.8.0 advertised page @mentions but they only worked in the comments thread. Mentioning a user (`@Name` or `@"Full Name"`) in a page body now sends a dashboard/Slack/Teams/email notification deep-linking to `/wiki/{spaceId}/{pageId}`, reusing the same mention pattern as comments. On edit, only **newly added** mentions notify (diffed against the previous revision), and users without read access to the page's space are skipped.
+- New `DashboardNotificationService.notifyWikiPageMention(...)`; `WikiServiceTest` adds coverage for mention extraction/notification (incl. permission skip) and `[[pageId]]` resolution.
+
 ## [1.8.0] - 2026-06-27
 
 ### Added — Wiki / Docs Space (v1.8.0)
