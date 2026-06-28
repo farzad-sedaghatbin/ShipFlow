@@ -8481,7 +8481,13 @@
     "loadingRevision": "Loading revision…",
     "noTextChanges": "No text differences — this revision matches the current page.",
     "legendAdded": "Added by this revision",
-    "legendRemoved": "Removed by this revision"
+    "legendRemoved": "Removed by this revision",
+    "linkedPages": "Linked pages",
+    "mentions": "Mentions",
+    "pageFallback": "Page {{id}}",
+    "missingPageTooltip": "This linked page no longer exists.",
+    "insertPageLink": "Insert page link",
+    "insertPageLinkHint": "Search for a page to insert a [[link]] at the cursor. Type @ in the editor to mention a teammate."
   },
   "moveToProject": {
     "title": "Move {{type}} to another project",
