@@ -8429,6 +8429,27 @@
     "saveFailed": "Failed to save storage settings",
     "loadFailed": "Failed to load storage settings"
   },
+  "auditExport": {
+    "tabLabel": "Audit Export",
+    "title": "Audit Trail Export",
+    "subtitle": "Download the change history for tasks, bugs, pitches, and test cases.",
+    "entityType": "Entity Type",
+    "entityTask": "Task",
+    "entityBug": "Bug Report",
+    "entityPitch": "Pitch",
+    "entityTestCase": "Test Case",
+    "entityAll": "All",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "format": "Format",
+    "formatCsv": "CSV",
+    "formatJson": "JSON",
+    "export": "Export",
+    "exporting": "Exporting…",
+    "helperText": "Exports the Envers audit trail — the full change history of tasks, bug reports, pitches, and test cases — for the selected entity type and date range. Leave the dates empty to export all history.",
+    "exportFailed": "Failed to export audit trail",
+    "dateRangeError": "The \"From\" date must be on or before the \"To\" date."
+  },
   "wiki": {
     "title": "Wiki",
     "subtitle": "Team knowledge base and documentation",

@@ -23,9 +23,10 @@ import {
   Puzzle,
   HardDrive,
   Sliders,
+  FileDown,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useToast } from '../contexts';
+import { useAuth, useToast } from '../contexts';
 import { organizationSettingsService } from '../services/organizationSettingsService';
 import { OrganizationSettings, RiskThresholds, ColorSettings } from '../types/organizationSettings';
 import { usePermission } from '../hooks/usePermission';
@@ -48,6 +49,7 @@ import {
   PluginsSettingsTab,
   StorageSettingsTab,
   CustomFieldsSettingsTab,
+  AuditExportSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -76,6 +78,7 @@ type SectionId =
   | 'scim'
   | 'storage'
   | 'import'
+  | 'auditExport'
   | 'customFields';
 
 interface SidebarItem {
@@ -89,7 +92,12 @@ interface SidebarGroup {
   items: SidebarItem[];
 }
 
-const SIDEBAR_GROUPS: SidebarGroup[] = [
+/**
+ * Build the sidebar groups. The Audit Export section is admin-only — it is
+ * appended to the Data group only when `isAdmin` is true so it never renders
+ * (nor becomes reachable via the mobile selector) for non-admins.
+ */
+const buildSidebarGroups = (isAdmin: boolean): SidebarGroup[] => [
   {
     headerKey: 'organizationSettings.sectionGeneral',
     items: [
@@ -149,14 +157,20 @@ const SIDEBAR_GROUPS: SidebarGroup[] = [
     headerKey: 'organizationSettings.sectionData',
     items: [
       { id: 'import', labelKey: 'organizationSettings.importData', icon: Upload },
+      ...(isAdmin
+        ? [{ id: 'auditExport' as SectionId, labelKey: 'auditExport.tabLabel', icon: FileDown }]
+        : []),
     ],
   },
 ];
 
 export default function OrganizationSettingsPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'ADMIN';
+  const SIDEBAR_GROUPS = buildSidebarGroups(isAdmin);
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -326,6 +340,8 @@ export default function OrganizationSettingsPage() {
         return <ScimSettingsTab formData={formData} setFormData={setFormData} />;
       case 'storage':
         return <StorageSettingsTab />;
+      case 'auditExport':
+        return isAdmin ? <AuditExportSettingsTab /> : null;
       case 'import':
         return (
           <div className="space-y-4">

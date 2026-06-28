@@ -54,6 +54,8 @@ ShipFlow targets teams that:
 | **Multi-layer caching (ETag + Redis + React Query)** | ✅ | Partial | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **RTL language support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-hosted** | ✅ | ❌ | ✅ (Data Center) | ❌ | ❌ | ❌ | ❌ |
+| **Helm chart + Prometheus/Grafana observability** | ✅ (v1.9.0) | ❌ | ✅ (Data Center) | ❌ | ❌ | ❌ | ❌ |
+| **Audit-trail export (CSV/JSON)** | ✅ (v1.9.0) | ❌ | ✅ (enterprise) | ❌ | ❌ | ❌ | Partial |
 | **Open source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Free (self-hosted)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **CSV import from Jira / Linear / Asana** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
