@@ -8509,7 +8509,39 @@
     "pageFallback": "Page {{id}}",
     "missingPageTooltip": "This linked page no longer exists.",
     "insertPageLink": "Insert page link",
-    "insertPageLinkHint": "Search for a page to insert a [[link]] at the cursor. Type @ in the editor to mention a teammate."
+    "insertPageLinkHint": "Search for a page to insert a [[link]] at the cursor. Type @ in the editor to mention a teammate.",
+    "share": {
+      "button": "Share",
+      "title": "Manage Access",
+      "subtitle": "Grant teammates or roles access to \"{{space}}\".",
+      "currentAccess": "Current access",
+      "empty": "No explicit grants yet. Access falls back to organization roles.",
+      "loadError": "Failed to load access list.",
+      "addAccess": "Add access",
+      "granteeUser": "User",
+      "granteeRole": "Role",
+      "accessLevel": "Access level",
+      "levelRead": "Can view",
+      "levelWrite": "Can edit",
+      "searchUserPlaceholder": "Search teammates by name…",
+      "noUsers": "No matching users.",
+      "change": "Change",
+      "grant": "Grant access",
+      "granting": "Granting…",
+      "revoke": "Revoke access",
+      "done": "Done",
+      "grantSuccess": "Access granted.",
+      "grantError": "Could not grant access. Please try again.",
+      "revokeSuccess": "Access revoked.",
+      "revokeError": "Could not revoke access. Please try again.",
+      "userFallback": "User #{{id}}",
+      "role": {
+        "ADMIN": "Admins",
+        "MANAGER": "Managers",
+        "MEMBER": "Members",
+        "READONLY": "Read-only"
+      }
+    }
   },
   "moveToProject": {
     "title": "Move {{type}} to another project",

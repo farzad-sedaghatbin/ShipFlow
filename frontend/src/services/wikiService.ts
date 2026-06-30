@@ -75,13 +75,6 @@ export interface WikiAttachmentDTO {
   createdAt: string;
 }
 
-export interface WikiSpacePermissionDTO {
-  id: number;
-  spaceId: number;
-  userId: number | null;
-  role: string;
-}
-
 // ─── Requests ─────────────────────────────────────────────────────────────────
 
 export interface CreateWikiSpaceRequest {
@@ -111,11 +104,6 @@ export interface UpdateWikiPageRequest {
 export interface MovePageRequest {
   newParentId?: number | null;
   newIndex: number;
-}
-
-export interface GrantPermissionRequest {
-  userId: number;
-  role: string;
 }
 
 export interface WikiPageSearchDTO {
@@ -148,15 +136,6 @@ export const wikiService = {
 
   getSpaceTree: (id: number) =>
     api.get<WikiTreeNodeDTO[]>(`/wiki/spaces/${id}/tree`),
-
-  getSpacePermissions: (id: number) =>
-    api.get<WikiSpacePermissionDTO[]>(`/wiki/spaces/${id}/permissions`),
-
-  grantPermission: (id: number, req: GrantPermissionRequest) =>
-    api.post<WikiSpacePermissionDTO>(`/wiki/spaces/${id}/permissions`, req),
-
-  revokePermission: (permId: number) =>
-    api.delete(`/wiki/permissions/${permId}`),
 
   // Pages
   createPage: (req: CreateWikiPageRequest) =>
