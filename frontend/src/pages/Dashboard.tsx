@@ -94,7 +94,8 @@ export default function Dashboard() {
 
   const loading = cyclesQuery.isLoading || pitchesQuery.isLoading || teamsQuery.isLoading || widgetsQuery.isLoading;
   const activeCycles: Cycle[] = cyclesQuery.data ?? [];
-  const recentPitches: Pitch[] = (pitchesQuery.data ?? []).slice(0, 5);
+  const allPitches: Pitch[] = pitchesQuery.data ?? [];
+  const recentPitches: Pitch[] = allPitches.slice(0, 5);
   const teams: Team[] = teamsQuery.data ?? [];
   const widgets: DashboardWidget[] = widgetsQuery.data ?? [];
 
@@ -104,11 +105,18 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
-  const totalPitches = recentPitches.length;
-  const completedPitches = recentPitches.filter((p) => p.status === 'DONE').length;
-  const inProgressPitches = recentPitches.filter((p) => ['STARTED', 'IN_PROGRESS', 'TESTING'].includes(p.status)).length;
+  // Stat cards reflect ALL pitches in scope (full data), not just the 5 shown
+  // in the "recent pitches" list. Scope = currently selected project, or every
+  // project when "All projects" is selected.
+  const totalPitches = allPitches.length;
+  const completedPitches = allPitches.filter((p) => p.status === 'DONE').length;
+  const inProgressPitches = allPitches.filter((p) => ['STARTED', 'IN_PROGRESS', 'TESTING'].includes(p.status)).length;
 
-  const isNewUser = activeCycles.length === 0 && recentPitches.length === 0 && teams.length === 0;
+  const statScopeLabel = isAllProjectsSelected
+    ? t('dashboard.statScopeAllProjects')
+    : t('dashboard.statScopeProject', { name: currentProject?.name });
+
+  const isNewUser = activeCycles.length === 0 && allPitches.length === 0 && teams.length === 0;
 
   // Welcome screen for new users
   if (isNewUser) {
@@ -214,6 +222,7 @@ export default function Dashboard() {
       </MotionContainer>
 
       {/* Stats Cards */}
+      <p className="text-xs text-muted-foreground mb-2">{statScopeLabel}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4 items-stretch">
         {!isKanbanProject && (
         <AnimatedCard
@@ -222,7 +231,7 @@ export default function Dashboard() {
           hoverEffect
           className="bg-gradient-to-br from-primary/8 to-primary/2 border-l-4 border-l-primary"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-4" title={statScopeLabel}>
             <div className="flex items-center mb-2">
               <div className="bg-gradient-to-br from-primary to-primary/80 rounded-xl p-2.5 me-2 shadow-lg shadow-primary/30">
                 <RefreshCw className="w-5 h-5 text-primary-foreground" />
@@ -241,7 +250,7 @@ export default function Dashboard() {
           hoverEffect
           className="bg-gradient-to-br from-violet-500/8 to-violet-500/2 border-l-4 border-l-violet-500"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-4" title={statScopeLabel}>
             <div className="flex items-center mb-2">
               <div className="bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl p-2.5 me-2 shadow-lg shadow-violet-500/30">
                 <FileText className="w-5 h-5 text-white" />
@@ -259,7 +268,7 @@ export default function Dashboard() {
           hoverEffect
           className="bg-gradient-to-br from-emerald-500/8 to-emerald-500/2 border-l-4 border-l-emerald-500"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-4" title={statScopeLabel}>
             <div className="flex items-center mb-2">
               <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-2.5 me-2 shadow-lg shadow-emerald-500/30">
                 <TrendingUp className="w-5 h-5 text-white" />
@@ -276,7 +285,7 @@ export default function Dashboard() {
           hoverEffect
           className="bg-gradient-to-br from-amber-500/8 to-amber-500/2 border-l-4 border-l-amber-500"
         >
-          <CardContent className="p-4">
+          <CardContent className="p-4" title={statScopeLabel}>
             <div className="flex items-center mb-2">
               <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-2.5 me-2 shadow-lg shadow-amber-500/30">
                 <Users className="w-5 h-5 text-white" />

@@ -511,7 +511,7 @@ public class TaskController {
   }
 
   @DeleteMapping("/{id}/attachments/{attachmentId}")
-  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Delete attachment", description = "Delete a task attachment (uploader or ADMIN only)")
   @ApiResponses({@ApiResponse(responseCode = "204", description = "Attachment deleted"),
       @ApiResponse(responseCode = "403", description = "Not the uploader or ADMIN"),
