@@ -394,6 +394,8 @@
     "inProgress": "In Progress",
     "showingAllProjects": "Showing data from all projects",
     "showingProject": "Showing data for {{name}}",
+    "statScopeAllProjects": "Counts reflect all pitches across every project",
+    "statScopeProject": "Counts reflect all pitches in {{name}}",
     "customizeWidgets": "Customize Widgets",
     "hideWidgets": "Hide Widgets",
     "noActiveCycles": "No active cycles",
@@ -740,6 +742,23 @@
     "reorderBlocked": "Cannot reorder: this task is blocked by a dependency",
     "reorderSuccess": "Task order saved",
     "reorderError": "Failed to save task order"
+  },
+  "teamDetail": {
+    "backToTeams": "Back to Teams",
+    "archived": "Archived",
+    "notFound": "Team not found",
+    "notFoundDescription": "This team may have been deleted or you don't have access to it.",
+    "membersSummary": "{{active}} of {{total}} members active",
+    "totalMembers": "Total Members",
+    "activeMembers": "Active Members",
+    "inactiveMembers": "Inactive Members",
+    "membersAndWorkload": "Members & Workload",
+    "noMembers": "No members yet",
+    "noMembersDescription": "This team has no assignments yet.",
+    "unknownPerson": "Unknown",
+    "hoursPerDay": "{{hours}}h/day",
+    "active": "Active",
+    "inactive": "Inactive"
   },
   "teams": {
     "title": "Teams",
