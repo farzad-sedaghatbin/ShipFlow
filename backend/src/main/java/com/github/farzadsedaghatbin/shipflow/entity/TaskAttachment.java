@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -39,6 +40,19 @@ public class TaskAttachment {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "uploaded_by")
   private User uploadedBy;
+
+  /** Which storage backend holds the file bytes. Defaults to LOCAL_FS for existing attachments. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "storage_provider", length = 16)
+  @Builder.Default
+  private StorageProviderType storageProvider = StorageProviderType.LOCAL_FS;
+
+  /**
+   * Provider-specific key used to retrieve the file (e.g. S3 object key, MinIO path). Nullable —
+   * LOCAL_FS attachments use {@code filePath} instead.
+   */
+  @Column(name = "storage_key", columnDefinition = "TEXT")
+  private String storageKey;
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;

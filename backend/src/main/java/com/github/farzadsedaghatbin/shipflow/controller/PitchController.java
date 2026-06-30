@@ -283,4 +283,11 @@ public class PitchController {
   public ResponseEntity<Boolean> isEnhancementAvailable() {
     return ResponseEntity.ok(enhancementService.isEnhancementAvailable());
   }
+
+  @PatchMapping("/{id}/move-to-project/{projectId}")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Move a pitch to a different project (admin only)")
+  public ResponseEntity<PitchDTO> movePitchToProject(@PathVariable Long id, @PathVariable Long projectId) {
+    return ResponseEntity.ok(pitchService.movePitchToProject(id, projectId));
+  }
 }

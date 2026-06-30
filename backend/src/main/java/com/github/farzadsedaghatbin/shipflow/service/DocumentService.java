@@ -2,9 +2,16 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.DocumentUploadResponse;
 import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
+import com.github.farzadsedaghatbin.shipflow.event.DocumentUploadedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository;
+import com.github.farzadsedaghatbin.shipflow.service.storage.DownloadResource;
+import com.github.farzadsedaghatbin.shipflow.service.storage.ObjectStorageService;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageKeyGenerator;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StoredObjectRef;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,10 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +32,7 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -76,6 +82,21 @@ public class DocumentService {
 
   private final UploadedDocumentRepository documentRepository;
   private final LocalizationService localizationService;
+  private final ObjectStorageService objectStorageService;
+  private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+
+  /**
+   * Object-storage key prefix for an uploaded document/attachment, grouped by category. Shared with
+   * {@link StorageMigrationService} so migrated objects land under the same structure (single source
+   * of truth — no drift).
+   */
+  public static String storageKeyHint(String entityType, Long entityId) {
+    String type = entityType == null ? "misc" : entityType.trim().toUpperCase();
+    if ("BUG_REPORT".equals(type)) {
+      return "attachments/bug/" + entityId;
+    }
+    return "documents/" + type.toLowerCase() + "/" + entityId;
+  }
 
   @Autowired(required = false)
   private KnowledgeIngestionService knowledgeIngestionService;
@@ -111,55 +132,47 @@ public class DocumentService {
             .build();
       }
 
-      // Sanitize original filename to prevent path traversal
-      String sanitizedFileName = sanitizeFileName(originalFileName);
+      // Buffer the bytes once: the stream is consumed by BOTH the storage backend and text
+      // extraction, so we cannot reuse a single InputStream for both.
+      byte[] bytes = file.getBytes();
+      String contentType = resolveContentType(file, fileType);
 
-      // Generate unique file name
-      String uniqueFileName = UUID.randomUUID().toString() + "_" + sanitizedFileName;
+      // Persist through the object-storage SPI (LOCAL_FS / S3 / MinIO). DocumentService has
+      // already enforced its own size + extension policy above, so we use the non-validating
+      // entry point — the façade's stricter allowlist would otherwise reject some doc types.
+      StoredObjectRef ref = objectStorageService.storeWithoutValidation(
+          storageKeyHint(entityType, entityId), originalFileName, contentType, bytes.length,
+          new ByteArrayInputStream(bytes));
 
-      // Save file to disk
-      Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-      Files.createDirectories(uploadPath);
-      Path filePath = uploadPath.resolve(uniqueFileName);
-
-      // Verify the resolved path is still within the upload directory (additional
-      // security check)
-      if (!filePath.normalize().startsWith(uploadPath)) {
-        throw new SecurityException("Invalid file path detected");
-      }
-
-      Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-      // Extract text from document
-      String extractedText = extractText(file.getInputStream(), fileType);
+      // Extract text from document (separate stream — the store consumed its own copy)
+      String extractedText = extractText(new ByteArrayInputStream(bytes), fileType);
       boolean textExtracted = extractedText != null && !extractedText.isEmpty();
 
-      // Save document metadata to database
-      UploadedDocument document = UploadedDocument.builder().fileName(uniqueFileName)
+      // Save document metadata to database. storagePath is left null for new rows; reads/deletes
+      // resolve via storageProvider + storageKey.
+      UploadedDocument document = UploadedDocument.builder()
+          .fileName(StorageKeyGenerator.sanitize(originalFileName))
           .originalFileName(originalFileName).fileType(fileType).fileSize(file.getSize())
-          .storagePath(uniqueFileName) // Store only filename, not absolute path
+          .storageProvider(objectStorageService.activeProvider()).storageKey(ref.getKey())
           .extractedText(extractedText).textExtracted(textExtracted)
           .entityType(entityType).entityId(entityId).uploaderId(uploaderId).uploaderUsername(uploaderUsername)
           .indexedForQA(false).build();
 
       document = documentRepository.save(document);
 
-      // Index for Q&A if text was extracted and knowledge service is available
-      if (textExtracted && knowledgeIngestionService != null) {
-        try {
-          knowledgeIngestionService.ingestDocument(document);
-          document.setIndexedForQA(true);
-          documentRepository.save(document);
-        } catch (Exception e) {
-          log.warn("Failed to index document for Q&A: {}", e.getMessage());
-        }
+      // Index for Q&A in the BACKGROUND, after this upload transaction commits. Embedding
+      // generation is slow (a large PDF can take a minute+); running it inline blocked the upload
+      // response so long the UI appeared frozen — the file was already in storage but nothing came
+      // back. DocumentKnowledgeListener handles the event off the request thread.
+      if (textExtracted) {
+        eventPublisher.publishEvent(new DocumentUploadedEvent(document.getId()));
       }
 
       log.info("Document uploaded successfully: {} ({})", originalFileName, fileType);
 
       return DocumentUploadResponse.builder().id(document.getId()).fileName(originalFileName).fileType(fileType)
           .fileSize(file.getSize()).extractedText(textExtracted ? extractedText : null)
-          .storagePath(uniqueFileName).textExtracted(textExtracted).build();
+          .storagePath(ref.getKey()).textExtracted(textExtracted).build();
 
     } catch (Exception e) {
       log.error("Error uploading document: {}", e.getMessage(), e);
@@ -207,31 +220,24 @@ public class DocumentService {
             .build();
       }
 
-      // Sanitize original filename to prevent path traversal
-      String sanitizedFileName = sanitizeFileName(originalFileName);
+      String contentType = resolveContentType(file, fileType);
 
-      // Generate unique file name
-      String uniqueFileName = UUID.randomUUID().toString() + "_" + sanitizedFileName;
+      // Persist through the object-storage SPI. Media (images + video, up to ~50MB) exceeds the
+      // façade's image/PDF/doc allowlist and 10MB limit, so we use the non-validating entry point;
+      // the size + media-type policy has already been enforced above.
+      StoredObjectRef ref = objectStorageService.storeWithoutValidation(
+          storageKeyHint(entityType, entityId), originalFileName, contentType, file.getSize(),
+          file.getInputStream());
 
-      // Save file to disk
-      Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-      Files.createDirectories(uploadPath);
-      Path filePath = uploadPath.resolve(uniqueFileName);
-
-      // Verify the resolved path is still within the upload directory
-      if (!filePath.normalize().startsWith(uploadPath)) {
-        throw new SecurityException("Invalid file path detected");
-      }
-
-      Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-      // Save document metadata to database (no text extraction for media)
+      // Save document metadata to database (no text extraction for media). storagePath is left
+      // null for new rows; reads/deletes resolve via storageProvider + storageKey.
       UploadedDocument document = UploadedDocument.builder()
-          .fileName(uniqueFileName)
+          .fileName(StorageKeyGenerator.sanitize(originalFileName))
           .originalFileName(originalFileName)
           .fileType(fileType)
           .fileSize(file.getSize())
-          .storagePath(uniqueFileName)
+          .storageProvider(objectStorageService.activeProvider())
+          .storageKey(ref.getKey())
           .extractedText(null)
           .textExtracted(false)
           .entityType(entityType)
@@ -250,7 +256,7 @@ public class DocumentService {
           .fileName(originalFileName)
           .fileType(fileType)
           .fileSize(file.getSize())
-          .storagePath(uniqueFileName)
+          .storagePath(ref.getKey())
           .textExtracted(false)
           .build();
 
@@ -409,12 +415,23 @@ public class DocumentService {
   public void deleteDocument(Long id) {
     UploadedDocument document = getDocumentById(id);
 
-    // Delete file from disk
-    try {
-      Path filePath = Paths.get(document.getStoragePath());
-      Files.deleteIfExists(filePath);
-    } catch (IOException e) {
-      log.warn("Failed to delete file from disk: {}", e.getMessage());
+    if (document.getStorageKey() != null && !document.getStorageKey().isBlank()) {
+      // New row: best-effort delete through the object-storage SPI.
+      try {
+        StorageProviderType provider = document.getStorageProvider() != null
+            ? document.getStorageProvider() : StorageProviderType.LOCAL_FS;
+        objectStorageService.delete(provider, document.getStorageKey());
+      } catch (Exception e) {
+        log.warn("Failed to delete object from storage backend: {}", e.getMessage());
+      }
+    } else if (document.getStoragePath() != null) {
+      // Legacy row: delete the file directly from disk.
+      try {
+        Path filePath = Paths.get(document.getStoragePath());
+        Files.deleteIfExists(filePath);
+      } catch (IOException e) {
+        log.warn("Failed to delete file from disk: {}", e.getMessage());
+      }
     }
 
     documentRepository.delete(document);
@@ -423,41 +440,114 @@ public class DocumentService {
   /** Download a document. */
   public ResponseEntity<Resource> downloadDocument(Long id) {
     UploadedDocument document = getDocumentById(id);
+    String contentType = determineContentType(document.getFileType());
 
-    try {
-      // Construct full path from upload directory and stored filename
-      Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-      Path filePath = uploadPath.resolve(document.getStoragePath()).normalize();
-      
-      // Security check: ensure resolved path is within upload directory
-      if (!filePath.startsWith(uploadPath)) {
-        log.error("Security violation: Attempted path traversal for document ID {}: {}", id, document.getStoragePath());
+    Resource resource;
+    if (document.getStorageKey() != null && !document.getStorageKey().isBlank()) {
+      // New row: stream from the object-storage SPI.
+      StorageProviderType provider = document.getStorageProvider() != null
+          ? document.getStorageProvider() : StorageProviderType.LOCAL_FS;
+      try {
+        DownloadResource dr = objectStorageService.retrieve(provider, document.getStorageKey());
+        resource = new InputStreamResource(dr.getStream());
+      } catch (ResourceNotFoundException e) {
+        throw e;
+      } catch (Exception e) {
+        log.warn("Failed to retrieve document ID {} from storage: {}", id, e.getMessage());
         throw new ResourceNotFoundException(
             localizationService.getMessage("document.not.found", document.getOriginalFileName()));
       }
-      
+    } else {
+      // Legacy row: serve from the local filesystem (storagePath fallback).
+      resource = legacyDiskResource(id, document);
+    }
+
+    return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+        .header(HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + document.getOriginalFileName() + "\"")
+        .body(resource);
+  }
+
+  /**
+   * Resolves a legacy document on the local filesystem, applying a path-traversal guard. Used only
+   * for rows uploaded before the object-storage SPI migration (storageKey null).
+   */
+  private Resource legacyDiskResource(Long id, UploadedDocument document) {
+    try {
+      Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+      Path filePath = uploadPath.resolve(document.getStoragePath()).normalize();
+
+      // Security check: ensure resolved path is within upload directory
+      if (!filePath.startsWith(uploadPath)) {
+        log.error("Security violation: Attempted path traversal for document ID {}: {}", id,
+            document.getStoragePath());
+        throw new ResourceNotFoundException(
+            localizationService.getMessage("document.not.found", document.getOriginalFileName()));
+      }
+
       Resource resource = new UrlResource(filePath.toUri());
 
       if (!resource.exists() || !resource.isReadable()) {
-        log.warn("Document file not found or not readable. Document ID: {}, Original name: {}, Storage path: {}, Resolved path: {}", 
-            id, document.getOriginalFileName(), document.getStoragePath(), filePath);
+        log.warn("Document file not found or not readable. Document ID: {}, Original name: {}, "
+            + "Storage path: {}, Resolved path: {}", id, document.getOriginalFileName(),
+            document.getStoragePath(), filePath);
         throw new ResourceNotFoundException(
             localizationService.getMessage("document.not.found", document.getOriginalFileName()));
       }
-
-      // Determine content type
-      String contentType = determineContentType(document.getFileType());
-
-      return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
-          .header(HttpHeaders.CONTENT_DISPOSITION,
-              "attachment; filename=\"" + document.getOriginalFileName() + "\"")
-          .body(resource);
-
+      return resource;
     } catch (MalformedURLException e) {
       log.error("Malformed URL for document: {}", document.getOriginalFileName(), e);
       throw new ResourceNotFoundException(
           localizationService.getMessage("document.read.error", e.getMessage()), e);
     }
+  }
+
+  /**
+   * Read the raw bytes of a stored document. Routes through the object-storage SPI for new rows and
+   * falls back to the local filesystem (with a path-traversal guard) for legacy rows. Used by
+   * non-HTTP consumers (e.g. the MCP server) that need the file content in-memory rather than as a
+   * streamed HTTP resource.
+   */
+  public byte[] getDocumentBytes(Long id) {
+    UploadedDocument document = getDocumentById(id);
+
+    if (document.getStorageKey() != null && !document.getStorageKey().isBlank()) {
+      StorageProviderType provider = document.getStorageProvider() != null
+          ? document.getStorageProvider() : StorageProviderType.LOCAL_FS;
+      try (InputStream in = objectStorageService.retrieve(provider, document.getStorageKey()).getStream()) {
+        return in.readAllBytes();
+      } catch (ResourceNotFoundException e) {
+        throw e;
+      } catch (Exception e) {
+        throw new ResourceNotFoundException(
+            localizationService.getMessage("document.read.error", e.getMessage()), e);
+      }
+    }
+
+    // Legacy row: read from the local filesystem with a path-traversal guard.
+    Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+    Path filePath = uploadPath.resolve(document.getStoragePath()).normalize();
+    if (!filePath.startsWith(uploadPath)) {
+      log.error("Security violation: Attempted path traversal for document ID {}: {}", id,
+          document.getStoragePath());
+      throw new ResourceNotFoundException(
+          localizationService.getMessage("document.not.found", document.getOriginalFileName()));
+    }
+    try {
+      return Files.readAllBytes(filePath);
+    } catch (IOException e) {
+      throw new ResourceNotFoundException(
+          localizationService.getMessage("document.read.error", e.getMessage()), e);
+    }
+  }
+
+  /**
+   * Returns the MIME content type for a file extension (e.g. "png" → "image/png"), or
+   * "application/octet-stream" if unknown. Public so non-HTTP consumers (MCP server) can label
+   * binary content.
+   */
+  public String getContentType(String fileType) {
+    return determineContentType(fileType);
   }
 
   /**
@@ -512,25 +602,17 @@ public class DocumentService {
   }
 
   /**
-   * Sanitizes a filename to prevent path traversal attacks. Removes all path
-   * separators and only keeps the filename portion.
+   * Resolves the MIME content type to record against a stored object. Prefers the type declared by
+   * the upload client; falls back to mapping the file extension (covers documents, images, and
+   * video) and finally {@code application/octet-stream}.
    */
-  private String sanitizeFileName(String filename) {
-    if (filename == null || filename.isEmpty()) {
-      return "unnamed";
+  private String resolveContentType(MultipartFile file, String fileType) {
+    String ct = file.getContentType();
+    if (ct != null && !ct.isBlank()) {
+      return ct;
     }
-
-    // Get just the filename, removing any path components
-    String name = Paths.get(filename).getFileName().toString();
-
-    // Remove any remaining path traversal sequences and null bytes
-    name = name.replaceAll("\\.\\.", "").replaceAll("[\\/\\\\]", "").replaceAll("\\x00", "").trim();
-
-    // If nothing is left after sanitization, use a default name
-    if (name.isEmpty()) {
-      return "unnamed";
-    }
-
-    return name;
+    return fileType == null
+        ? "application/octet-stream"
+        : CONTENT_TYPE_MAP.getOrDefault(fileType.toLowerCase(), "application/octet-stream");
   }
 }

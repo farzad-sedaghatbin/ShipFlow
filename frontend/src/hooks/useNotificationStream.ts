@@ -15,10 +15,11 @@ const RECONNECT_DELAY_MS = 5_000;
  * scheduled after {@link RECONNECT_DELAY_MS} milliseconds — this provides
  * graceful degradation while avoiding infinite tight loops.
  *
- * @param onNewNotification called with the raw parsed payload each time a
- *   {@code notification} SSE event is received
+ * @param onNewNotification called with the raw parsed payload (and the SSE
+ *   event name, when supplied by the server) each time a non-{@code connected}
+ *   event arrives
  */
-export function useNotificationStream(onNewNotification: (payload: unknown) => void): void {
+export function useNotificationStream(onNewNotification: (eventName: string, payload: unknown) => void): void {
   // Use a ref so the callback can be updated without restarting the stream
   const callbackRef = useRef(onNewNotification);
   callbackRef.current = onNewNotification;
@@ -85,7 +86,7 @@ export function useNotificationStream(onNewNotification: (payload: unknown) => v
               try {
                 const payload = JSON.parse(data);
                 if (eventName !== 'connected') {
-                  callbackRef.current(payload);
+                  callbackRef.current(eventName || 'notification', payload);
                 }
               } catch {
                 // Ignore malformed JSON frames

@@ -15,6 +15,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,9 @@ public class OrganizationSettingsService {
     if (request.getDefaultCooldownWeeks() != null) {
       settings.setDefaultCooldownWeeks(request.getDefaultCooldownWeeks());
     }
+    if (request.getDefaultSprintLengthWeeks() != null) {
+      settings.setDefaultSprintLengthWeeks(request.getDefaultSprintLengthWeeks());
+    }
     if (request.getRiskThresholds() != null) {
       settings.setRiskThresholdsJson(toJson(request.getRiskThresholds()));
     }
@@ -78,9 +82,13 @@ public class OrganizationSettingsService {
       settings.setColorsJson(toJson(request.getColors()));
     }
     if (request.getBugStatuses() != null) {
+      validateStatusNames("Bug status", request.getBugStatuses().stream()
+          .map(OrganizationSettingsDTO.BugStatusConfig::getName).toList());
       settings.setBugStatusesJson(toJson(request.getBugStatuses()));
     }
     if (request.getSeverityLevels() != null) {
+      validateStatusNames("Severity level", request.getSeverityLevels().stream()
+          .map(OrganizationSettingsDTO.SeverityLevelConfig::getName).toList());
       settings.setSeverityLevelsJson(toJson(request.getSeverityLevels()));
     }
     if (request.getMeetingTypes() != null) {
@@ -148,6 +156,44 @@ public class OrganizationSettingsService {
       settings.setGithubAccessToken(request.getGithubAccessToken());
     }
 
+    // Notion MCP Configuration (token only, managed via MCP settings API)
+    if (request.getNotionAccessToken() != null) {
+      settings.setNotionAccessToken(
+          request.getNotionAccessToken().isBlank() ? null : request.getNotionAccessToken());
+    }
+
+    // Confluence MCP Configuration
+    if (request.getConfluenceAccessToken() != null) {
+      settings.setConfluenceAccessToken(
+          request.getConfluenceAccessToken().isBlank() ? null : request.getConfluenceAccessToken());
+    }
+    if (request.getDefaultConfluenceDomain() != null) {
+      settings.setDefaultConfluenceDomain(
+          request.getDefaultConfluenceDomain().isBlank() ? null : request.getDefaultConfluenceDomain());
+    }
+    if (request.getDefaultConfluenceSpaceKey() != null) {
+      settings.setDefaultConfluenceSpaceKey(
+          request.getDefaultConfluenceSpaceKey().isBlank() ? null : request.getDefaultConfluenceSpaceKey());
+    }
+
+    // SharePoint Graph API credentials
+    if (request.getSharepointTenantId() != null) {
+      settings.setSharepointTenantId(
+          request.getSharepointTenantId().isBlank() ? null : request.getSharepointTenantId());
+    }
+    if (request.getSharepointClientId() != null) {
+      settings.setSharepointClientId(
+          request.getSharepointClientId().isBlank() ? null : request.getSharepointClientId());
+    }
+    if (request.getSharepointClientSecret() != null) {
+      settings.setSharepointClientSecret(
+          request.getSharepointClientSecret().isBlank() ? null : request.getSharepointClientSecret());
+    }
+    if (request.getSharepointSiteUrl() != null) {
+      settings.setSharepointSiteUrl(
+          request.getSharepointSiteUrl().isBlank() ? null : request.getSharepointSiteUrl());
+    }
+
     // MCP Server runtime toggle (null = leave unchanged)
     if (request.getMcpServerEnabled() != null) {
       settings.setMcpServerEnabled(request.getMcpServerEnabled());
@@ -195,6 +241,85 @@ public class OrganizationSettingsService {
   public String getGithubAccessToken() {
     return settingsRepository.findFirstByOrderByIdAsc()
         .map(OrganizationSettings::getGithubAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get Notion access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Notion access token or null if not configured
+   */
+  public String getNotionAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getNotionAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get Confluence access token for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Confluence access token or null if not configured
+   */
+  public String getConfluenceAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getConfluenceAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get the default Confluence space key for MCP integration.
+   * @return the default Confluence space key or null if not configured
+   */
+  public String getConfluenceSpaceKey() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getDefaultConfluenceSpaceKey)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint tenant ID for Graph API integration.
+   * @return the tenant ID or null if not configured
+   */
+  public String getSharepointTenantId() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointTenantId)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint client ID for Graph API integration.
+   * @return the client ID or null if not configured
+   */
+  public String getSharepointClientId() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointClientId)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint client secret for Graph API integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext secret.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the client secret or null if not configured
+   */
+  public String getSharepointClientSecret() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointClientSecret)
+        .orElse(null);
+  }
+
+  /**
+   * Get SharePoint site URL for Graph API integration.
+   * @return the site URL or null if not configured
+   */
+  public String getSharepointSiteUrl() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getSharepointSiteUrl)
         .orElse(null);
   }
 
@@ -325,7 +450,7 @@ public class OrganizationSettingsService {
     List<OrganizationSettingsDTO.MeetingTypeConfig> defaultMeetingTypes = createDefaultMeetingTypes();
 
     OrganizationSettings settings = OrganizationSettings.builder().organizationName("My Organization")
-        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
+        .defaultCycleLengthWeeks(6).defaultCooldownWeeks(2).defaultSprintLengthWeeks(2).riskThresholdsJson(toJson(defaultRiskThresholds))
         .riskWeightsJson(toJson(defaultRiskWeights)).taskCategoriesJson(toJson(defaultTaskCategories))
         .pitchCategoriesJson(toJson(defaultPitchCategories)).colorsJson(toJson(defaultColors))
         .bugStatusesJson(toJson(defaultBugStatuses)).severityLevelsJson(toJson(defaultSeverityLevels))
@@ -500,6 +625,7 @@ public class OrganizationSettingsService {
     return OrganizationSettingsDTO.builder().id(entity.getId()).organizationName(entity.getOrganizationName())
         .defaultCycleLengthWeeks(entity.getDefaultCycleLengthWeeks())
         .defaultCooldownWeeks(entity.getDefaultCooldownWeeks())
+        .defaultSprintLengthWeeks(entity.getDefaultSprintLengthWeeks())
         .riskThresholds(fromJson(entity.getRiskThresholdsJson(),
             new TypeReference<OrganizationSettingsDTO.RiskThresholds>() {
             }))
@@ -533,6 +659,14 @@ public class OrganizationSettingsService {
         // MCP Configuration (tokens not exposed, only presence flags)
         .hasFigmaAccessToken(entity.getFigmaAccessToken() != null && !entity.getFigmaAccessToken().isBlank())
         .hasGithubAccessToken(entity.getGithubAccessToken() != null && !entity.getGithubAccessToken().isBlank())
+        .hasNotionAccessToken(entity.getNotionAccessToken() != null && !entity.getNotionAccessToken().isBlank())
+        .hasConfluenceAccessToken(entity.getConfluenceAccessToken() != null && !entity.getConfluenceAccessToken().isBlank())
+        .defaultConfluenceDomain(entity.getDefaultConfluenceDomain())
+        .defaultConfluenceSpaceKey(entity.getDefaultConfluenceSpaceKey())
+        .hasSharepointClientSecret(entity.getSharepointClientSecret() != null && !entity.getSharepointClientSecret().isBlank())
+        .sharepointTenantId(entity.getSharepointTenantId())
+        .sharepointClientId(entity.getSharepointClientId())
+        .sharepointSiteUrl(entity.getSharepointSiteUrl())
         // MCP Server runtime toggle — effective value: DB override if set, else env default.
         // Write mode is only effective when the server itself is enabled, mirroring
         // McpServerSettingsService.isWriteEnabled() so the DTO never reports a misleading
@@ -556,6 +690,20 @@ public class OrganizationSettingsService {
     return entity.getMcpServerWriteEnabled() != null
         ? entity.getMcpServerWriteEnabled()
         : mcpServerProperties.isWriteEnabled();
+  }
+
+  private static final Pattern UPPER_SNAKE_CASE = Pattern.compile("^[A-Z][A-Z0-9_]*$");
+
+  private void validateStatusNames(String kind, List<String> names) {
+    for (String name : names) {
+      if (name == null || name.isBlank()) {
+        throw new IllegalArgumentException(kind + " name must not be blank");
+      }
+      if (!UPPER_SNAKE_CASE.matcher(name).matches()) {
+        throw new IllegalArgumentException(
+            kind + " name \"" + name + "\" must be UPPER_SNAKE_CASE (e.g. IN_PROGRESS)");
+      }
+    }
   }
 
   /** Convert object to JSON string. */
