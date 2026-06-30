@@ -29,9 +29,9 @@ public class CommentMcpTools {
         "name",
         TOOL_ADD_COMMENT,
         "description",
-            "Add a comment to a task or bug report. "
+            "Add a comment to a task, bug report, or wiki page. "
                 + "Requires WRITE API key scope. "
-                + "entityType must be TASK or BUG_REPORT.",
+                + "entityType must be TASK, BUG_REPORT, or WIKI_PAGE.",
         "inputSchema",
             Map.of(
                 "type",
@@ -43,9 +43,9 @@ public class CommentMcpTools {
                             "type",
                             "string",
                             "description",
-                            "Entity type: TASK or BUG_REPORT",
+                            "Entity type: TASK, BUG_REPORT, or WIKI_PAGE",
                             "enum",
-                            List.of("TASK", "BUG_REPORT")),
+                            List.of("TASK", "BUG_REPORT", "WIKI_PAGE")),
                         "entityId",
                         Map.of("type", "integer", "description", "The numeric entity ID"),
                         "content",
@@ -81,7 +81,7 @@ public class CommentMcpTools {
       entityType = CommentEntityType.valueOf(entityTypeStr.toUpperCase());
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
-          "Invalid entityType '" + entityTypeStr + "'. Must be TASK or BUG_REPORT");
+          "Invalid entityType '" + entityTypeStr + "'. Must be TASK, BUG_REPORT, or WIKI_PAGE");
     }
 
     long entityId = toLong(args.get("entityId"), "entityId");

@@ -1,0 +1,51 @@
+# Observability add-on for local/self-hosted ShipFlow.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+#
+# Prometheus scrapes the app's /actuator/prometheus endpoint; Grafana is
+# pre-provisioned with the Prometheus datasource and the ShipFlow overview
+# dashboard. Grafana: http://localhost:3001  (admin / admin by default).
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: shipflow-prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    ports:
+      - "9090:9090"
+    networks:
+      - shipflow-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: shipflow-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - shipflow-network
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+# Shares the same network as docker-compose.yml when both files are supplied
+# together (-f docker-compose.yml -f docker-compose.monitoring.yml).
+networks:
+  shipflow-network:
+    driver: bridge

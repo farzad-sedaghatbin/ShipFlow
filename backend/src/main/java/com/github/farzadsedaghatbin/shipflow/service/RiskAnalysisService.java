@@ -214,9 +214,10 @@ public class RiskAnalysisService {
       RiskLevel riskLevel = determineRiskLevel(finalRiskScore);
 
       PitchRiskDTO result = PitchRiskDTO.builder().pitchId(pitch.getId()).pitchTitle(pitch.getTitle())
-          .riskScore(finalRiskScore).riskLevel(riskLevel).riskFactors(riskFactors).insights(insights)
-          .recommendations(recommendations).confidenceScore(confidenceScore).analyzedAt(LocalDateTime.now())
-          .aiEnabled(aiEnabled).build();
+          .riskScore(finalRiskScore).riskLevel(riskLevel)
+          .explanation(buildScoreExplanation(finalRiskScore, riskFactors)).riskFactors(riskFactors)
+          .insights(insights).recommendations(recommendations).confidenceScore(confidenceScore)
+          .analyzedAt(LocalDateTime.now()).aiEnabled(aiEnabled).build();
 
       // Cache the result
       cacheService.cachePitchRisk(pitch.getId(), useAI, result, dataHash);
@@ -243,7 +244,8 @@ public class RiskAnalysisService {
     } catch (Exception e) {
       log.error("Error analyzing pitch risk: {}", e.getMessage(), e);
       return PitchRiskDTO.builder().pitchId(pitch.getId()).pitchTitle(pitch.getTitle()).riskScore(50)
-          .riskLevel(RiskLevel.MEDIUM).riskFactors(Collections.emptyList()).insights(Collections.emptyList())
+          .riskLevel(RiskLevel.MEDIUM).explanation(buildScoreExplanation(50, Collections.emptyList()))
+          .riskFactors(Collections.emptyList()).insights(Collections.emptyList())
           .recommendations(Collections.emptyList()).confidenceScore(0).analyzedAt(LocalDateTime.now())
           .aiEnabled(aiEnabled).errorMessage("Failed to analyze risk: " + e.getMessage()).build();
     }
@@ -926,33 +928,93 @@ public class RiskAnalysisService {
     return recommendations.stream().distinct().limit(5).collect(Collectors.toList());
   }
 
+  // Default risk-level boundaries, used when organization settings are
+  // unavailable. Kept in sync with OrganizationSettingsService defaults.
+  static final int DEFAULT_LOW_MAX = 30;
+  static final int DEFAULT_MEDIUM_MAX = 60;
+  static final int DEFAULT_HIGH_MAX = 85;
+
   /**
    * Determine risk level from score using configurable thresholds. Falls back to
    * defaults if organization settings are unavailable.
    */
   private RiskLevel determineRiskLevel(int score) {
+    int[] b = resolveBandBoundaries();
+    if (score > b[2])
+      return RiskLevel.CRITICAL;
+    if (score > b[1])
+      return RiskLevel.HIGH;
+    if (score > b[0])
+      return RiskLevel.MEDIUM;
+    return RiskLevel.LOW;
+  }
+
+  /**
+   * Resolve the three risk-level boundaries (lowMax, mediumMax, highMax) from
+   * organization settings, falling back to defaults if settings are unavailable.
+   *
+   * @return a 3-element array {@code [lowMax, mediumMax, highMax]}
+   */
+  private int[] resolveBandBoundaries() {
     try {
       OrganizationSettingsDTO settings = organizationSettingsService.getSettings();
       OrganizationSettingsDTO.RiskThresholds thresholds = settings.getRiskThresholds();
-
-      if (score > thresholds.getHighMax())
-        return RiskLevel.CRITICAL;
-      if (score > thresholds.getMediumMax())
-        return RiskLevel.HIGH;
-      if (score > thresholds.getLowMax())
-        return RiskLevel.MEDIUM;
-      return RiskLevel.LOW;
+      return new int[] {thresholds.getLowMax(), thresholds.getMediumMax(), thresholds.getHighMax()};
     } catch (Exception e) {
       log.warn("Failed to fetch risk thresholds, using defaults: {}", e.getMessage());
-      // Default thresholds: LOW<=30, MEDIUM=31-60, HIGH=61-85, CRITICAL>85
-      if (score > 85)
-        return RiskLevel.CRITICAL;
-      if (score > 60)
-        return RiskLevel.HIGH;
-      if (score > 30)
-        return RiskLevel.MEDIUM;
-      return RiskLevel.LOW;
+      return new int[] {DEFAULT_LOW_MAX, DEFAULT_MEDIUM_MAX, DEFAULT_HIGH_MAX};
     }
+  }
+
+  /**
+   * Build a structured, UI-legible explanation of a score: the four-band
+   * threshold legend (with the active band flagged) plus each risk factor's
+   * weighted contribution. The factor weighting mirrors the
+   * {@code impactLevel * probability / 10} term summed in
+   * {@link #calculateBaseRiskScore}, so the numbers are derived from the real
+   * scoring pipeline rather than fabricated.
+   *
+   * <p>
+   * Package-private for unit testing.
+   */
+  RiskScoreExplanation buildScoreExplanation(int score, List<RiskFactor> factors) {
+    int[] b = resolveBandBoundaries();
+    int lowMax = b[0];
+    int mediumMax = b[1];
+    int highMax = b[2];
+
+    RiskLevel active = determineRiskLevel(score);
+
+    List<RiskScoreExplanation.RiskBand> bands = new ArrayList<>();
+    bands.add(band(RiskLevel.LOW, 0, lowMax, active));
+    bands.add(band(RiskLevel.MEDIUM, lowMax + 1, mediumMax, active));
+    bands.add(band(RiskLevel.HIGH, mediumMax + 1, highMax, active));
+    bands.add(band(RiskLevel.CRITICAL, highMax + 1, 100, active));
+
+    List<RiskScoreExplanation.FactorContribution> contributions = (factors == null
+        ? Collections.<RiskFactor>emptyList()
+        : factors).stream()
+            .map(f -> RiskScoreExplanation.FactorContribution.builder().category(f.getCategory())
+                .description(f.getDescription()).impactLevel(f.getImpactLevel())
+                .probability(f.getProbability()).weightedPoints(weightedPoints(f)).build())
+            // Heaviest contributors first so the UI surfaces what drives the score.
+            .sorted(Comparator.comparing(RiskScoreExplanation.FactorContribution::getWeightedPoints,
+                Comparator.nullsLast(Comparator.reverseOrder())))
+            .collect(Collectors.toList());
+
+    return RiskScoreExplanation.builder().score(score).activeBand(active).bands(bands)
+        .factorContributions(contributions).build();
+  }
+
+  private RiskScoreExplanation.RiskBand band(RiskLevel level, int min, int max, RiskLevel active) {
+    return RiskScoreExplanation.RiskBand.builder().level(level).minScore(min).maxScore(max)
+        .active(level == active).build();
+  }
+
+  private Double weightedPoints(RiskFactor f) {
+    int impact = f.getImpactLevel() != null ? f.getImpactLevel() : 0;
+    int probability = f.getProbability() != null ? f.getProbability() : 0;
+    return Math.round((impact * probability / 10.0) * 10.0) / 10.0;
   }
 
   private int calculateOverallRiskScore(List<PitchRiskDTO> pitchRisks) {

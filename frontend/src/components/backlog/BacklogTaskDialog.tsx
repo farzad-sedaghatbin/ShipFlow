@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { LocalizedDateInput } from '../LocalizedDateInput';
 import { Task, CreateTaskRequest, TaskStatus, TaskPriority, TaskCategory, Person, Pitch, Team } from '../../types';
 import { statusOptions, priorityOptions } from './backlogTypes';
@@ -150,42 +151,28 @@ export function BacklogTaskDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="assignee">{t('backlogPage.assignee')}</Label>
-              <Select
+              <Label>{t('backlogPage.assignee')}</Label>
+              <Combobox
+                options={[
+                  { value: 'unassigned', label: t('backlogPage.unassigned') },
+                  ...persons.map((person) => ({ value: person.id.toString(), label: person.name })),
+                ]}
                 value={formData.assigneeId?.toString() || 'unassigned'}
                 onValueChange={(value) => onFormDataChange({ ...formData, assigneeId: value === 'unassigned' ? undefined : Number(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('backlogPage.selectAssignee')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">{t('backlogPage.unassigned')}</SelectItem>
-                  {persons.map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('backlogPage.selectAssignee')}
+              />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="pairAssignee">{t('backlogPage.pairAssignee')}</Label>
-              <Select
+              <Label>{t('backlogPage.pairAssignee')}</Label>
+              <Combobox
+                options={[
+                  { value: 'none', label: t('backlogPage.none') },
+                  ...persons.filter((p) => p.id !== formData.assigneeId).map((person) => ({ value: person.id.toString(), label: person.name })),
+                ]}
                 value={formData.pairAssigneeId?.toString() || 'none'}
                 onValueChange={(value) => onFormDataChange({ ...formData, pairAssigneeId: value === 'none' ? undefined : Number(value) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('backlogPage.selectPair')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('backlogPage.none')}</SelectItem>
-                  {persons.filter(p => p.id !== formData.assigneeId).map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('backlogPage.selectPair')}
+              />
             </div>
           </div>
           {teams.length > 0 && (

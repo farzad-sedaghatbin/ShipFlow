@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Upload,
@@ -60,6 +60,70 @@ export const MediaAttachmentUpload: React.FC<MediaAttachmentUploadProps> = ({
   const isImageFile = (fileType: string) => IMAGE_EXTENSIONS.includes(fileType.toLowerCase());
   const isVideoFile = (fileType: string) => VIDEO_EXTENSIONS.includes(fileType.toLowerCase());
 
+  // Authenticated blob URLs for existing attachments (avoid 401 on bare <img src>)
+  const [blobUrls, setBlobUrls] = useState<Record<number, string>>({});
+  const blobUrlsRef = useRef<Record<number, string>>({});
+  useEffect(() => { blobUrlsRef.current = blobUrls; }, [blobUrls]);
+
+  // In edit mode (bugId present) fetch the bug's current attachments so they can
+  // be previewed and removed. The modal mounts us with just a bugId, so the
+  // component owns this load instead of relying on an `existingAttachments` prop.
+  useEffect(() => {
+    let cancelled = false;
+    if (bugId) {
+      documentService
+        .getBugAttachments(bugId)
+        .then((res) => { if (!cancelled) setAttachments(res.data); })
+        .catch((err) => console.error('Failed to load bug attachments:', err));
+    }
+    return () => { cancelled = true; };
+  }, [bugId]);
+
+  // Load authenticated blob URLs for any attachment we don't have one for yet.
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const missing = attachments.filter((a) => !blobUrlsRef.current[a.id]);
+      if (missing.length === 0) return;
+      const entries = await Promise.all(
+        missing.map(async (a) => {
+          try {
+            const url = await documentService.fetchAttachmentBlobUrl(a.id);
+            return [a.id, url] as [number, string];
+          } catch {
+            return null;
+          }
+        })
+      );
+      if (!cancelled) {
+        const resolved = entries.filter((e): e is [number, string] => e !== null);
+        if (resolved.length > 0) {
+          setBlobUrls((prev) => ({ ...prev, ...Object.fromEntries(resolved) }));
+        }
+      }
+    };
+    if (attachments.length > 0) load();
+    return () => { cancelled = true; };
+  }, [attachments]);
+
+  // Revoke all object URLs on unmount to avoid leaks.
+  useEffect(() => () => {
+    Object.values(blobUrlsRef.current).forEach((url) => URL.revokeObjectURL(url));
+  }, []);
+
+  // Stable object URLs for pending-file previews (creation mode). Built in an
+  // effect and revoked when the pending list changes, instead of calling
+  // URL.createObjectURL inline on every render (which leaked a URL per render).
+  const [pendingPreviews, setPendingPreviews] = useState<string[]>([]);
+  useEffect(() => {
+    const urls = pendingFiles.map((file) => {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      return IMAGE_EXTENSIONS.includes(ext) ? URL.createObjectURL(file) : '';
+    });
+    setPendingPreviews(urls);
+    return () => { urls.forEach((url) => url && URL.revokeObjectURL(url)); };
+  }, [pendingFiles]);
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -74,22 +138,31 @@ export const MediaAttachmentUpload: React.FC<MediaAttachmentUploadProps> = ({
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback(async (e: React.DragEvent) => {
+  // NOTE: not memoized — these must always close over the latest `pendingFiles`
+  // and `uploadFiles`. Memoizing with a `[bugId]` dep made them capture a stale
+  // empty pending list in creation mode (bugId never changes), which broke
+  // accumulation and let duplicate selections slip through.
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    
+
     if (disabled) return;
 
     const files = Array.from(e.dataTransfer.files);
     uploadFiles(files);
-  }, [disabled, bugId]);
+  };
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     uploadFiles(files);
     e.target.value = ''; // Reset input
-  }, [bugId]);
+  };
+
+  // Stable identity for a File so we can de-duplicate selections. macOS Chrome
+  // can hand back the same file multiple times in one pick / drop, which used to
+  // show up as 3–4 copies of the same image in the pending list.
+  const fileKey = (f: File) => `${f.name}|${f.size}|${f.lastModified}`;
 
   const validateFile = (file: File): { valid: boolean; error?: string } => {
     const ext = file.name.split('.').pop()?.toLowerCase() || '';
@@ -153,9 +226,22 @@ export const MediaAttachmentUpload: React.FC<MediaAttachmentUploadProps> = ({
         }, 3000);
       }
       
-      // Add valid files to pending list
+      // Add valid files to pending list, de-duplicating both within this batch
+      // and against files already pending (guards the macOS Chrome duplicate-pick
+      // quirk where the same File can appear several times).
       if (validFiles.length > 0 && onPendingFilesChange) {
-        onPendingFilesChange([...pendingFiles, ...validFiles]);
+        const seen = new Set(pendingFiles.map(fileKey));
+        const additions: File[] = [];
+        for (const file of validFiles) {
+          const key = fileKey(file);
+          if (!seen.has(key)) {
+            seen.add(key);
+            additions.push(file);
+          }
+        }
+        if (additions.length > 0) {
+          onPendingFilesChange([...pendingFiles, ...additions]);
+        }
       }
       return;
     }
@@ -263,9 +349,7 @@ export const MediaAttachmentUpload: React.FC<MediaAttachmentUploadProps> = ({
     return <ImageIcon className="h-4 w-4" />;
   };
 
-  const getAttachmentUrl = (attachment: UploadedDocument) => {
-    return `/api/documents/${attachment.id}/download`;
-  };
+  const getAttachmentUrl = (attachment: UploadedDocument) => blobUrls[attachment.id] ?? '';
 
   return (
     <div className="space-y-3">
@@ -399,7 +483,7 @@ export const MediaAttachmentUpload: React.FC<MediaAttachmentUploadProps> = ({
                 >
                   {isImage ? (
                     <img
-                      src={URL.createObjectURL(file)}
+                      src={pendingPreviews[index]}
                       alt={file.name}
                       className="w-full h-20 object-cover"
                     />

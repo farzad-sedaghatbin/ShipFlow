@@ -22,6 +22,14 @@ Scopes are the individual items tracked on the hill chart:
 3. Name the scope (e.g., "User authentication flow")
 4. The scope appears at the far left (beginning of uphill)
 
+## Dot Colors
+Progress is shown by a dot's **position** on the hill, not by turning it green early. Color is used sparingly so "done" stays unambiguous:
+- **Amber** = uphill (still figuring things out)
+- **Blue** = downhill, in progress
+- **Green** = complete (100% only)
+
+A dot at, say, 75% is blue (well into execution) — it only goes green once it reaches the finish.
+
 ## Reading the Hill Chart
 - **Stuck dots** (not moving for days) = potential blockers, need attention
 - **All dots downhill** = pitch is on track for completion

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Send,
   MessageCircle,
@@ -15,6 +16,7 @@ import {
   Loader2,
   AlertCircle,
   Info,
+  BookOpen,
 } from 'lucide-react';
 import { qaService, QAResponse, QAFeedbackType, SourceCitation } from '../services/qaService';
 import { Button } from './ui/button';
@@ -43,7 +45,9 @@ import {
 import { cn } from '../lib/utils';
 
 interface QAPanelProps {
-  contextType: 'pitch' | 'meeting' | 'team' | 'cycle';
+  // 'knowledge' = the global Knowledge Center assistant: no entity scoping, so the
+  // backend retrieves across the whole KC (wiki, pitches, docs…) without filtering.
+  contextType: 'pitch' | 'meeting' | 'team' | 'cycle' | 'knowledge';
   contextId?: number;
   contextName?: string;
   cycleId?: number;
@@ -192,6 +196,18 @@ export const QAPanel: React.FC<QAPanelProps> = ({
 
   const suggestedQuestions = getSuggestedQuestions(contextType);
 
+  // Human-readable scope label for the header / empty state. The global assistant
+  // ('knowledge') reads as "the Knowledge Center"; entity-scoped panels use the
+  // entity name when provided, otherwise the type.
+  const scopeLabel =
+    contextType === 'knowledge'
+      ? 'the Knowledge Center'
+      : contextName || contextType;
+  const emptyStateLabel =
+    contextType === 'knowledge'
+      ? 'the Knowledge Center'
+      : contextName || `this ${contextType}`;
+
   const getConfidenceStyle = (score: number) => {
     if (score >= 70) return 'bg-green-500/10 text-green-500 border-green-500/20';
     if (score >= 40) return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
@@ -221,7 +237,7 @@ export const QAPanel: React.FC<QAPanelProps> = ({
             )} />
           </div>
           <span className="font-semibold">
-            Ask about {contextName || contextType}
+            Ask about {scopeLabel}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -250,7 +266,7 @@ export const QAPanel: React.FC<QAPanelProps> = ({
             {messages.length === 0 ? (
               <div>
                 <p className="text-sm text-muted-foreground mb-2">
-                  Ask me anything about {contextName || `this ${contextType}`}. I can help you understand:
+                  Ask me anything about {emptyStateLabel}. I can help you understand:
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {suggestedQuestions.map((q, idx) => (
@@ -338,18 +354,32 @@ export const QAPanel: React.FC<QAPanelProps> = ({
                               <CollapsibleContent>
                                 <div className="mt-2 p-2 bg-muted rounded-lg break-words">
                                   <span className="text-xs font-semibold">Sources:</span>
-                                  {msg.sources?.map((source, sIdx) => (
-                                    <div key={sIdx} className="mt-1">
-                                      <span className="text-xs text-primary break-words">
-                                        • {source.title || source.entityType}
-                                      </span>
-                                      {source.snippet && (
-                                        <p className="text-xs text-muted-foreground pl-3 italic break-words whitespace-normal">
-                                          "{source.snippet}"
-                                        </p>
-                                      )}
-                                    </div>
-                                  ))}
+                                  {msg.sources?.map((source, sIdx) => {
+                                    const isKnowledgeSource =
+                                      source.entityType === 'KNOWLEDGE_SOURCE';
+                                    return (
+                                      <div key={sIdx} className="mt-1">
+                                        {isKnowledgeSource && source.entityId ? (
+                                          <Link
+                                            to={`/knowledge?focus=${source.entityId}`}
+                                            className="text-xs text-purple-700 dark:text-purple-400 break-words inline-flex items-center gap-1 hover:underline"
+                                          >
+                                            <BookOpen className="h-3 w-3 shrink-0" />
+                                            {source.title || source.entityType}
+                                          </Link>
+                                        ) : (
+                                          <span className="text-xs text-primary break-words">
+                                            • {source.title || source.entityType}
+                                          </span>
+                                        )}
+                                        {source.snippet && (
+                                          <p className="text-xs text-muted-foreground pl-3 italic break-words whitespace-normal">
+                                            "{source.snippet}"
+                                          </p>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </CollapsibleContent>
                             </Collapsible>
@@ -565,6 +595,13 @@ function getSuggestedQuestions(contextType: string): string[] {
         'How is the cycle progressing?',
         'Are there any at-risk pitches?',
         'What is the timeline?',
+      ];
+    case 'knowledge':
+      return [
+        'Search the wiki for a topic',
+        'Summarize a documented process',
+        'What does a specific term mean?',
+        'Find docs about a feature',
       ];
     default:
       return [

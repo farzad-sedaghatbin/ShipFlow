@@ -66,6 +66,7 @@ export function PitchTeamCapacity({ pitch }: PitchTeamCapacityProps) {
                   {pitch.busiestPerson.utilizationPercent?.toFixed(0)}% {t('pitchDetailPage.utilizationPercent')}
                 </div>
               </div>
+
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
                   <p className="text-muted-foreground">{t('pitchDetailPage.hoursPerDay')}</p>
@@ -86,7 +87,7 @@ export function PitchTeamCapacity({ pitch }: PitchTeamCapacityProps) {
               </div>
               {pitch.busiestPerson.isOverBudget && (
                 <div className="mt-3 p-2 bg-destructive/10 rounded text-sm text-destructive">
-                  ⚠️ {t('pitchDetailPage.overBudget')} - This team member has exceeded their individual budget
+                  ⚠️ {t('pitchDetailPage.overBudget')} - This person has exceeded their individual budget
                 </div>
               )}
             </div>

@@ -43,5 +43,6 @@ public class BettingTableDTO {
     private Integer totalCapacityWeeks;
     private Integer usedCapacityWeeks;
     private Integer availableCapacityWeeks;
+    private Double workingDaysPerWeek;
   }
 }

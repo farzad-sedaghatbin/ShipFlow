@@ -53,7 +53,12 @@ import {
   Upload,
   FileSpreadsheet,
   FolderInput,
+  BookOpen,
+  Link2,
+  Building2,
   Wand2,
+  Zap,
+  Sliders,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -72,6 +77,176 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.9.0',
+    date: 'In progress',
+    title: 'Production-Grade Self-Hosting',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Helm Chart & Kubernetes',
+        description:
+          'A first-party Helm chart deploys ShipFlow to any Kubernetes cluster — configurable replicas, HPA autoscaling, ingress, secrets, persistent uploads, and probes wired to Spring Boot health groups.',
+      },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'Observability — Prometheus, Grafana & Tracing',
+        description:
+          'A Prometheus scrape endpoint (/actuator/prometheus), a ready-to-import Grafana dashboard, and optional OpenTelemetry distributed tracing over OTLP. Ships a docker-compose monitoring profile and structured JSON logging with traceId/spanId.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Audit Trail Export',
+        description:
+          'Admins can export the full Envers change history (tasks, pitches, bug reports, test cases) as CSV or JSON, filtered by entity type and date range, from Organization Settings — for compliance and offline review.',
+      },
+    ],
+  },
+  {
+    version: '1.8.0',
+    date: 'June 27, 2026',
+    title: 'Custom Fields, Wiki & Object Storage',
+    highlights: [
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Upload Docs & Add URLs',
+        description:
+          'Upload PDFs, DOCX, and Markdown files or paste URLs that ShipFlow indexes and feeds into Q&A, AI test generation, Wise Architecture, and risk analysis — one knowledge layer reused across every AI surface.',
+      },
+      {
+        icon: <Building2 className="h-5 w-5" />,
+        title: 'Org / Team / Project Scope',
+        description:
+          'Every source belongs to an Org, Team, or Project scope so AI answers stay grounded in the right context. Citation chips on AI answers link back to the original source.',
+      },
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Pluggable Provider SPI',
+        description:
+          'File upload and URL providers ship today. The provider SPI lets you drop in a new source type (GitHub, Confluence, Notion, Drive) by implementing a single Spring bean — Spring auto-registers it via KnowledgeSourceRegistry.',
+      },
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Built-in Wiki',
+        description:
+          'Hierarchical spaces → pages tree with a Notion-style block editor (headings, lists, checkboxes, tables, code blocks, callouts, slash menu). Drag pages to reorganize.',
+      },
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Page comments & discussion',
+        description:
+          'Every wiki page has a comments thread — the same one used on tasks and bugs — with Markdown, emoji reactions, and @mention autocomplete that notifies and deep-links teammates back to the page.',
+      },
+      {
+        icon: <Clock className="h-5 w-5" />,
+        title: 'Versioned docs with history',
+        description:
+          'Every edit is versioned; compare any past revision against the current page in a side-by-side diff, then restore it. Breadcrumbs, auto table-of-contents, full-text search, @mentions, internal page links, and file attachments.',
+      },
+      {
+        icon: <Brain className="h-5 w-5" />,
+        title: 'AI-connected docs',
+        description:
+          'Wiki pages auto-feed the Knowledge Center, so AI Q&A and Wise Architecture answer from your team\'s docs automatically.',
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Pluggable Object Storage',
+        description:
+          'Store attachments on AWS S3, MinIO, or local disk, chosen via Org Settings; encrypted-by-config credentials, connection test, and one-click migration between backends.',
+      },
+      {
+        icon: <Sliders className="h-5 w-5" />,
+        title: 'Custom Fields on Tasks, Pitches & Bugs',
+        description: 'Add your own fields — text, number, date, URL, checkbox, single-select, multi-select — to tasks, pitches, and bug reports. Define fields org-wide or per-project. Values appear on every detail page.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Project-Level Permissions',
+        description: 'Grant access at the project level, not just the organization. Give a contractor read access to one project without touching global roles.',
+      },
+      {
+        icon: <Layout className="h-5 w-5" />,
+        title: 'Custom Fields Settings',
+        description: 'Manage field definitions in Organization Settings → Custom Fields. Separate tabs for Tasks, Pitches, and Bug Reports. Create and edit fields via a guided dialog.',
+      },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'MCP Usage Report',
+        description: 'Admin dashboard showing per-user and per-tool MCP call analytics — 30-day timeline, success rate, failure breakdown, and a recent-log feed. Accessible from Integrations → MCP → View Usage Report.',
+      },
+    ],
+  },
+  {
+    version: '1.7.0',
+    date: 'June 15, 2026',
+    title: 'Workflow Automations',
+    highlights: [
+      {
+        icon: <Zap className="h-5 w-5" />,
+        title: 'Trigger/Action Engine',
+        description: 'Define automation rules that fire on events like task completion, pitch status changes, cycle starts, and Shape Up-specific triggers like appetite exceeded or scope creep detected.',
+      },
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: '20 Built-in Templates',
+        description: 'Start in seconds with 20 curated templates across Tasks, Shape Up, Automation, and Notifications categories. One click adds a fully configured rule you can customize.',
+      },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'Shape Up-Specific Triggers',
+        description: 'Four new triggers designed for Shape Up teams: Betting Table Locked, Hill Chart Moved, Appetite Exceeded, and Scope Creep Detected — automate the moments that matter most.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Execution Log',
+        description: 'Every automation run is recorded with status, trigger event data, and result message. Browse per-rule or project-wide history to audit what fired and when.',
+      },
+      {
+        icon: <RefreshCw className="h-5 w-5" />,
+        title: 'Live Retro Board',
+        description: 'Retro boards now auto-refresh every 5 seconds while open — no more manual reloads to see what teammates added or voted on.',
+      },
+      {
+        icon: <MessageSquare className="h-5 w-5" />,
+        title: 'Reactions & Discuss Timer',
+        description: 'New 👎 disagree reaction alongside existing votes. Per-item countdown timer (3 min default) auto-marks items as discussed. Vote fill bars show relative signal at a glance.',
+      },
+      {
+        icon: <Clock className="h-5 w-5" />,
+        title: 'Persistent Discussed State & Ownership',
+        description: 'Discussed items are persisted server-side (green badge + strikethrough synced across all participants). Edit/delete now restricted to item authors; admins/managers can manage any item.',
+      },
+    ],
+  },
+  {
+    version: '1.6.0',
+    date: 'June 15, 2026',
+    title: 'MCP Ecosystem',
+    highlights: [
+      {
+        icon: <Wrench className="h-5 w-5" />,
+        title: 'update_task & update_pitch MCP write tools',
+        description: 'AI editors (Claude Code, Cursor) can now update task and pitch fields in-place with PATCH semantics — only the fields you supply change. Supply a solution and wireframeLinks to a pitch, or update a task\'s title, priority, and due date, without touching any other field.',
+      },
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'Plugin SDK',
+        description: 'Maven archetype, plugin registry, and first-party plugin scaffold — build and distribute ShipFlow extensions without forking the core.',
+      },
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Notion & Confluence MCP Clients',
+        description: 'Connect ShipFlow to your Notion workspace or Confluence Cloud space. AI features can now pull design docs and meeting notes directly into context — configure tokens in MCP Integration settings.',
+      },
+      {
+        icon: <Network className="h-5 w-5" />,
+        title: 'Rich Link Previews',
+        description: 'Shared task, pitch, and cycle URLs now render meaningful og:title / og:description in Slack, iMessage, and any chat that unfurls links — without exposing protected data.',
+      },
+    ],
+  },
   {
     version: '1.5.0',
     date: 'June 7, 2026',

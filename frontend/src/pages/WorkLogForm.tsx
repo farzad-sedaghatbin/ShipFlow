@@ -31,10 +31,11 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
-import { useToast } from '../contexts';
+import { useToast, useAuth } from '../contexts';
 
 export default function WorkLogForm() {
   const { t, i18n } = useTranslation();
+  const { user } = useAuth();
   const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
@@ -79,6 +80,10 @@ export default function WorkLogForm() {
         personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsData.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsData);
       if (cyclesRes.data.length > 0) {
         setSelectedCycle(cyclesRes.data[0].id);
@@ -94,8 +99,8 @@ export default function WorkLogForm() {
     try {
       const response = await workLogService.getByCycleId(cycleId, page, WL_PAGE_SIZE);
       setWorkLogs(response.data.content);
-      setWlTotalPages(response.data.totalPages);
-      setWlTotalElements(response.data.totalElements);
+      setWlTotalPages(response.data.page?.totalPages ?? response.data.totalPages ?? 0);
+      setWlTotalElements(response.data.page?.totalElements ?? response.data.totalElements ?? 0);
     } catch (error) {
       console.error('Failed to load work logs:', error);
     }

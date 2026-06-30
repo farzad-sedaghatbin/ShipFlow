@@ -17,7 +17,7 @@ COPY --from=frontend-builder /app/frontend/dist ./src/main/resources/static
 RUN mvn clean package -DskipTests -B
 
 # Runtime stage (glibc-based for onnxruntime)
-FROM eclipse-temurin:21.0.10_7-jre-jammy
+FROM eclipse-temurin:21.0.11_10-jre-jammy
 WORKDIR /app
 
 # Install runtime deps needed by onnxruntime-java (and healthcheck tool)
@@ -32,6 +32,9 @@ RUN groupadd -r shipflow && useradd -r -g shipflow shipflow
 
 # Copy the built jar
 COPY --from=backend-builder /app/backend/target/shipflow-*.jar app.jar
+
+# Create uploads directory so the named volume inherits shipflow ownership on first mount
+RUN mkdir -p /app/uploads
 
 # Change ownership
 RUN chown -R shipflow:shipflow /app

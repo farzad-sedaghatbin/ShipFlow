@@ -1,0 +1,18 @@
+apiVersion: v2
+name: shipflow
+description: ShipFlow — Shape Up project management platform (production self-hosting chart)
+type: application
+# Chart version is independent of the app version; bump on chart changes.
+version: 0.1.0
+# The application version this chart deploys by default.
+appVersion: "1.9.0"
+home: https://shipflow.dev
+sources:
+  - https://github.com/farzad-sedaghatbin/shipflow
+maintainers:
+  - name: Farzad Sedaghatbin
+keywords:
+  - shape-up
+  - project-management
+  - kanban
+  - scrum

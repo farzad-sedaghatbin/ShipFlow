@@ -30,6 +30,8 @@ public class CreateBugReportRequest {
 
   private String environment;
 
+  private String component;
+
   /** Direct project association - required for Kanban, optional for Shape Up. */
   private Long projectId;
 
@@ -53,4 +55,9 @@ public class CreateBugReportRequest {
   private String attachments;
 
   private Long assigneeId;
+
+  /** Person assigned to QA/test this bug. */
+  private Long qaAssigneeId;
+
+  private Long targetReleaseId;
 }

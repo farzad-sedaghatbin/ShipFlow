@@ -3,3 +3,8 @@ export { ToastProvider, useToast, setToastHandler, showGlobalToast } from './Toa
 export { ProjectProvider, useProject } from './ProjectContext';
 export { ThemeProvider, useTheme, type ThemeMode } from './ThemeContext';
 export { TourProvider, useTour } from './TourContext';
+export {
+  BreadcrumbProvider,
+  useBreadcrumbLabel,
+  useBreadcrumbLabels,
+} from './BreadcrumbContext';

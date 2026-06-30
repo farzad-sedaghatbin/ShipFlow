@@ -25,6 +25,16 @@ public class McpConfig {
      */
     private FigmaMcpConfig figma = new FigmaMcpConfig();
 
+    /**
+     * Notion MCP server configuration.
+     */
+    private NotionMcpConfig notion = new NotionMcpConfig();
+
+    /**
+     * Confluence MCP server configuration.
+     */
+    private ConfluenceMcpConfig confluence = new ConfluenceMcpConfig();
+
     @Getter
     @Setter
     public static class GitHubMcpConfig {
@@ -58,6 +68,48 @@ public class McpConfig {
         /**
          * Figma MCP server URL.
          * Environment variable: MCP_FIGMA_SERVER_URL
+         */
+        private String serverUrl;
+
+        /**
+         * Connection timeout in seconds.
+         */
+        private int timeoutSeconds = 30;
+    }
+
+    @Getter
+    @Setter
+    public static class NotionMcpConfig {
+        /**
+         * Whether Notion MCP integration is enabled.
+         * Environment variable: MCP_NOTION_ENABLED
+         */
+        private boolean enabled = false;
+
+        /**
+         * Notion MCP server URL.
+         * Environment variable: MCP_NOTION_SERVER_URL
+         */
+        private String serverUrl;
+
+        /**
+         * Connection timeout in seconds.
+         */
+        private int timeoutSeconds = 30;
+    }
+
+    @Getter
+    @Setter
+    public static class ConfluenceMcpConfig {
+        /**
+         * Whether Confluence MCP integration is enabled.
+         * Environment variable: MCP_CONFLUENCE_ENABLED
+         */
+        private boolean enabled = false;
+
+        /**
+         * Confluence MCP server URL.
+         * Environment variable: MCP_CONFLUENCE_SERVER_URL
          */
         private String serverUrl;
 

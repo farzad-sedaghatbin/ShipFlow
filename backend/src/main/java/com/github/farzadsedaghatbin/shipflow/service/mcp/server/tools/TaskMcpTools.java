@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.TaskService;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,6 +32,7 @@ public class TaskMcpTools {
   public static final String TOOL_UPDATE_TASK_STATUS = "update_task_status";
   public static final String TOOL_UPDATE_TASK_ASSIGNEE = "update_task_assignee";
   public static final String TOOL_CREATE_TASK = "create_task";
+  public static final String TOOL_UPDATE_TASK = "update_task";
 
   public static Map<String, Object> getTasksDefinition() {
     return Map.of(
@@ -225,6 +227,45 @@ public class TaskMcpTools {
                             "enum",
                                 List.of("TODO", "IN_PROGRESS", "IN_REVIEW", "DONE", "BLOCKED"))),
                 "required", List.of("taskId", "status")));
+  }
+
+  public static Map<String, Object> updateTaskDefinition() {
+    return Map.of(
+        "name",
+        TOOL_UPDATE_TASK,
+        "description",
+            "Update editable fields on an existing task. Only the fields you supply are changed — "
+                + "omitted fields keep their current values (PATCH semantics). "
+                + "To change status use update_task_status; to reassign use update_task_assignee. "
+                + "Requires WRITE API key scope.",
+        "inputSchema",
+            Map.of(
+                "type",
+                "object",
+                "properties",
+                    Map.of(
+                        "taskId",
+                        Map.of("type", "integer", "description", "The numeric task ID (required)"),
+                        "title",
+                        Map.of("type", "string", "description", "New task title"),
+                        "description",
+                        Map.of("type", "string", "description", "New task description"),
+                        "priority",
+                        Map.of(
+                            "type",
+                            "string",
+                            "description",
+                            "New priority: LOW, MEDIUM, HIGH, URGENT",
+                            "enum",
+                            List.of("LOW", "MEDIUM", "HIGH", "URGENT")),
+                        "dueDate",
+                        Map.of(
+                            "type",
+                            "string",
+                            "description",
+                            "New due date in ISO format (YYYY-MM-DD), or null to clear")),
+                "required",
+                List.of("taskId")));
   }
 
   // ── Implementations ───────────────────────────────────────────────────────
@@ -428,6 +469,65 @@ public class TaskMcpTools {
 
     TaskDTO created = taskService.createTask(request);
     return McpTaskDTO.from(created);
+  }
+
+  public McpTaskDTO updateTask(Map<String, Object> args) {
+    long taskId = toLong(args.get("taskId"));
+    TaskDTO current = taskService.getTaskById(taskId);
+
+    // Build request from current state to achieve PATCH semantics — updateTask is a full replace.
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setCycleId(current.getCycleId());
+    request.setPitchId(current.getPitchId());
+    request.setScopeId(current.getScopeId());
+    request.setParentTaskId(current.getParentTaskId());
+    request.setAssigneeId(current.getAssigneeId());
+    request.setStatus(current.getStatus());
+    request.setPriority(current.getPriority());
+    request.setTitle(current.getTitle());
+    request.setDescription(current.getDescription());
+    request.setDueDate(current.getDueDate());
+    request.setTeamId(current.getTeamId());
+    request.setTags(current.getTags());
+
+    // Apply only the fields explicitly provided by the caller.
+    Object titleArg = args.get("title");
+    if (titleArg != null) {
+      String title = titleArg.toString().trim();
+      if (title.isBlank()) {
+        throw new IllegalArgumentException("title cannot be blank");
+      }
+      request.setTitle(title);
+    }
+    Object descriptionArg = args.get("description");
+    if (descriptionArg != null) {
+      request.setDescription(descriptionArg.toString());
+    }
+    Object priorityArg = args.get("priority");
+    if (priorityArg != null) {
+      try {
+        request.setPriority(TaskPriority.valueOf(priorityArg.toString().toUpperCase()));
+      } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(
+            "Invalid priority '" + priorityArg + "'. Must be LOW, MEDIUM, HIGH, or URGENT");
+      }
+    }
+    Object dueDateArg = args.get("dueDate");
+    if (dueDateArg != null) {
+      String dueDateStr = dueDateArg.toString().trim();
+      if (dueDateStr.isEmpty()) {
+        request.setDueDate(null);
+      } else {
+        try {
+          request.setDueDate(LocalDate.parse(dueDateStr));
+        } catch (Exception e) {
+          throw new IllegalArgumentException(
+              "dueDate must be ISO format YYYY-MM-DD, got: " + dueDateStr);
+        }
+      }
+    }
+
+    return McpTaskDTO.from(taskService.updateTask(taskId, request));
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

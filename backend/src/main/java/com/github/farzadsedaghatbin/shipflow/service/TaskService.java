@@ -81,6 +81,7 @@ public class TaskService {
   private final PermissionService permissionService;
   private final ProjectService projectService;
   private final ScopeProgressService scopeProgressService;
+  private final ProjectPermissionService projectPermissionService;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -148,6 +149,7 @@ public class TaskService {
   }
 
   public List<TaskDTO> getTasksByProjectId(Long projectId) {
+    projectPermissionService.requireProjectAccess(projectId);
     return taskRepository.findByProjectIdNotDeleted(projectId).stream().map(this::toDTO).collect(Collectors.toList());
   }
 
@@ -1289,5 +1291,33 @@ public class TaskService {
     return hillChartPointRepository.findByLinkedTaskId(task.getId())
         .map(HillChartPoint::getId)
         .orElse(null);
+  }
+
+  /** Move a task (and all its subtasks) to a different project, landing in the backlog. */
+  public TaskDTO moveTaskToProject(Long taskId, Long targetProjectId) {
+    Task task = taskRepository.findById(taskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
+    Project target = projectRepository.findById(targetProjectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + targetProjectId));
+
+    if (task.getProject() != null && targetProjectId.equals(task.getProject().getId())) {
+      throw new BadRequestException("Task is already in the target project");
+    }
+
+    moveTaskAndSubtasks(task, target);
+    return toDTO(taskRepository.findById(taskId).orElseThrow());
+  }
+
+  private void moveTaskAndSubtasks(Task task, Project target) {
+    task.setProject(target);
+    task.setCycle(null);
+    task.setPitch(null);
+    task.setScope(null);
+    task.setParentTask(null);
+    task.setUpdatedAt(java.time.LocalDateTime.now());
+    taskRepository.save(task);
+    for (Task child : taskRepository.findByParentTaskId(task.getId())) {
+      moveTaskAndSubtasks(child, target);
+    }
   }
 }

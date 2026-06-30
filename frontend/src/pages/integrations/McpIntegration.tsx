@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Save,
   Eye,
@@ -15,6 +16,7 @@ import {
   KeyRound,
   Copy,
   Trash2,
+  BarChart2,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -58,6 +60,7 @@ const ALL_SCOPES = ['READ', 'WRITE', 'ADMIN'] as const;
 
 export default function McpIntegration() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [tabValue, setTabValue] = useState('github');
@@ -76,8 +79,21 @@ export default function McpIntegration() {
   // Form states for tokens (we need separate state since they're not returned)
   const [githubToken, setGithubToken] = useState('');
   const [figmaToken, setFigmaToken] = useState('');
+  const [notionToken, setNotionToken] = useState('');
+  const [confluenceToken, setConfluenceToken] = useState('');
+  const [confluenceDomain, setConfluenceDomain] = useState('');
+  const [confluenceSpaceKey, setConfluenceSpaceKey] = useState('');
   const [showGithubToken, setShowGithubToken] = useState(false);
   const [showFigmaToken, setShowFigmaToken] = useState(false);
+  const [showNotionToken, setShowNotionToken] = useState(false);
+  const [showConfluenceToken, setShowConfluenceToken] = useState(false);
+
+  // SharePoint Graph API form state
+  const [spTenantId, setSpTenantId] = useState('');
+  const [spClientId, setSpClientId] = useState('');
+  const [spClientSecret, setSpClientSecret] = useState('');
+  const [spSiteUrl, setSpSiteUrl] = useState('');
+  const [showSpClientSecret, setShowSpClientSecret] = useState(false);
 
   // Built-in MCP server runtime toggle
   const [serverSettings, setServerSettings] = useState<McpServerSettings | null>(null);
@@ -114,6 +130,10 @@ export default function McpIntegration() {
       const [status, orgSettings] = await Promise.all([getMcpStatus(), getMcpSettings()]);
       setMcpStatus(status);
       setSettings(orgSettings);
+      // Pre-fill non-secret SharePoint fields from saved settings
+      if (orgSettings.sharepointTenantId) setSpTenantId(orgSettings.sharepointTenantId);
+      if (orgSettings.sharepointClientId) setSpClientId(orgSettings.sharepointClientId);
+      if (orgSettings.sharepointSiteUrl) setSpSiteUrl(orgSettings.sharepointSiteUrl);
       // The MCP server runtime toggle is part of the same /settings payload — derive it
       // here instead of making a second identical request.
       setServerSettings({
@@ -194,6 +214,111 @@ export default function McpIntegration() {
       const updated = await updateMcpSettings({ figmaAccessToken: '' });
       setSettings(updated);
       setFigmaToken('');
+      setSuccess(t('mcpIntegration.tokenCleared'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveNotion = async () => {
+    if (!notionToken.trim()) return;
+    try {
+      setSaving(true);
+      const updated = await updateMcpSettings({ notionAccessToken: notionToken });
+      setSettings(updated);
+      setNotionToken('');
+      setSuccess(t('mcpIntegration.tokenSaved'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClearNotionToken = async () => {
+    try {
+      setSaving(true);
+      const updated = await updateMcpSettings({ notionAccessToken: '' });
+      setSettings(updated);
+      setNotionToken('');
+      setSuccess(t('mcpIntegration.tokenCleared'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveConfluence = async () => {
+    if (!confluenceToken.trim() && !confluenceDomain.trim() && !confluenceSpaceKey.trim()) return;
+    try {
+      setSaving(true);
+      const req: { confluenceAccessToken?: string; defaultConfluenceDomain?: string; defaultConfluenceSpaceKey?: string } = {};
+      if (confluenceToken.trim()) req.confluenceAccessToken = confluenceToken;
+      if (confluenceDomain.trim()) req.defaultConfluenceDomain = confluenceDomain;
+      if (confluenceSpaceKey.trim()) req.defaultConfluenceSpaceKey = confluenceSpaceKey;
+      const updated = await updateMcpSettings(req);
+      setSettings(updated);
+      setConfluenceToken('');
+      setSuccess(t('mcpIntegration.tokenSaved'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClearConfluenceToken = async () => {
+    try {
+      setSaving(true);
+      const updated = await updateMcpSettings({ confluenceAccessToken: '' });
+      setSettings(updated);
+      setConfluenceToken('');
+      setSuccess(t('mcpIntegration.tokenCleared'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // --- SharePoint Graph API handlers ---
+  const handleSaveSharePoint = async () => {
+    if (!spTenantId.trim() && !spClientId.trim() && !spClientSecret.trim() && !spSiteUrl.trim()) return;
+    try {
+      setSaving(true);
+      const req: UpdateMcpSettingsRequest = {};
+      if (spTenantId.trim()) req.sharepointTenantId = spTenantId;
+      if (spClientId.trim()) req.sharepointClientId = spClientId;
+      if (spClientSecret.trim()) req.sharepointClientSecret = spClientSecret;
+      if (spSiteUrl.trim()) req.sharepointSiteUrl = spSiteUrl;
+      const updated = await updateMcpSettings(req);
+      setSettings(updated);
+      setSpClientSecret('');
+      setSuccess(t('mcpIntegration.tokenSaved'));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClearSharePoint = async () => {
+    try {
+      setSaving(true);
+      const updated = await updateMcpSettings({
+        sharepointTenantId: '',
+        sharepointClientId: '',
+        sharepointClientSecret: '',
+        sharepointSiteUrl: '',
+      });
+      setSettings(updated);
+      setSpTenantId('');
+      setSpClientId('');
+      setSpClientSecret('');
+      setSpSiteUrl('');
       setSuccess(t('mcpIntegration.tokenCleared'));
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.saveFailed'));
@@ -387,7 +512,7 @@ export default function McpIntegration() {
 
       {/* Tabs */}
       <Tabs value={tabValue} onValueChange={setTabValue}>
-        <TabsList className="grid w-full max-w-2xl grid-cols-4">
+        <TabsList className="grid w-full max-w-4xl grid-cols-7">
           <TabsTrigger value="github" className="flex items-center gap-2">
             <Github className="h-4 w-4" />
             GitHub
@@ -395,6 +520,18 @@ export default function McpIntegration() {
           <TabsTrigger value="figma" className="flex items-center gap-2">
             <Figma className="h-4 w-4" />
             Figma
+          </TabsTrigger>
+          <TabsTrigger value="notion" className="flex items-center gap-2">
+            <span className="font-bold text-xs">N</span>
+            Notion
+          </TabsTrigger>
+          <TabsTrigger value="confluence" className="flex items-center gap-2">
+            <span className="font-bold text-xs">C</span>
+            {t('mcpIntegration.confluenceTab')}
+          </TabsTrigger>
+          <TabsTrigger value="sharepoint" className="flex items-center gap-2">
+            <span className="font-bold text-xs">SP</span>
+            {t('mcpIntegration.sharepointTab')}
           </TabsTrigger>
           <TabsTrigger value="server" className="flex items-center gap-2">
             <Server className="h-4 w-4" />
@@ -576,6 +713,288 @@ export default function McpIntegration() {
           </div>
         </TabsContent>
 
+        {/* Notion Tab */}
+        <TabsContent value="notion" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                {t('mcpIntegration.serverStatus')}
+              </CardTitle>
+              <CardDescription>{t('mcpIntegration.notionServerStatusDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {mcpStatus?.notion && renderServerStatus(mcpStatus.notion)}
+              {mcpStatus?.notion?.enabled && mcpStatus.notion?.configured && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {t('mcpIntegration.timeout')}: {mcpStatus.notion.timeoutSeconds}s
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('mcpIntegration.accessToken')}</CardTitle>
+              <CardDescription>{t('mcpIntegration.notionTokenDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant={settings?.hasNotionAccessToken ? 'default' : 'secondary'}>
+                  {settings?.hasNotionAccessToken
+                    ? t('mcpIntegration.tokenConfigured')
+                    : t('mcpIntegration.tokenNotConfigured')}
+                </Badge>
+                {settings?.hasNotionAccessToken && (
+                  <Button variant="ghost" size="sm" onClick={handleClearNotionToken} disabled={saving}>
+                    {t('mcpIntegration.clearToken')}
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notion-token">
+                  {settings?.hasNotionAccessToken
+                    ? t('mcpIntegration.updateToken')
+                    : t('mcpIntegration.enterToken')}
+                </Label>
+                <div className="relative flex-1">
+                  <Input
+                    id="notion-token"
+                    type={showNotionToken ? 'text' : 'password'}
+                    value={notionToken}
+                    onChange={(e) => setNotionToken(e.target.value)}
+                    placeholder="secret_xxxxxxxxxxxxxxxxxxxx"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowNotionToken(!showNotionToken)}
+                  >
+                    {showNotionToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.notionTokenHint')}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSaveNotion} disabled={saving || !notionToken.trim()}>
+              {saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {t('common.save')}
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* Confluence Tab */}
+        <TabsContent value="confluence" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                {t('mcpIntegration.serverStatus')}
+              </CardTitle>
+              <CardDescription>{t('mcpIntegration.confluenceServerStatusDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {mcpStatus?.confluence && renderServerStatus(mcpStatus.confluence)}
+              {mcpStatus?.confluence?.enabled && mcpStatus.confluence?.configured && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {t('mcpIntegration.timeout')}: {mcpStatus.confluence.timeoutSeconds}s
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('mcpIntegration.accessToken')}</CardTitle>
+              <CardDescription>{t('mcpIntegration.confluenceTokenDescription')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge variant={settings?.hasConfluenceAccessToken ? 'default' : 'secondary'}>
+                  {settings?.hasConfluenceAccessToken
+                    ? t('mcpIntegration.tokenConfigured')
+                    : t('mcpIntegration.tokenNotConfigured')}
+                </Badge>
+                {settings?.hasConfluenceAccessToken && (
+                  <Button variant="ghost" size="sm" onClick={handleClearConfluenceToken} disabled={saving}>
+                    {t('mcpIntegration.clearToken')}
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confluence-token">
+                  {settings?.hasConfluenceAccessToken
+                    ? t('mcpIntegration.updateToken')
+                    : t('mcpIntegration.enterToken')}
+                </Label>
+                <div className="relative flex-1">
+                  <Input
+                    id="confluence-token"
+                    type={showConfluenceToken ? 'text' : 'password'}
+                    value={confluenceToken}
+                    onChange={(e) => setConfluenceToken(e.target.value)}
+                    placeholder="xxxxxxxxxxxxxxxxxxxx"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowConfluenceToken(!showConfluenceToken)}
+                  >
+                    {showConfluenceToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confluence-domain">{t('mcpIntegration.confluenceDomain')}</Label>
+                <Input
+                  id="confluence-domain"
+                  value={confluenceDomain}
+                  onChange={(e) => setConfluenceDomain(e.target.value)}
+                  placeholder="yourcompany.atlassian.net"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.confluenceDomainHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confluence-space">{t('mcpIntegration.confluenceSpaceKey')}</Label>
+                <Input
+                  id="confluence-space"
+                  value={confluenceSpaceKey}
+                  onChange={(e) => setConfluenceSpaceKey(e.target.value)}
+                  placeholder="ENG"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.confluenceSpaceKeyHint')}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSaveConfluence}
+              disabled={saving || (!confluenceToken.trim() && !confluenceDomain.trim() && !confluenceSpaceKey.trim())}
+            >
+              {saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {t('common.save')}
+            </Button>
+          </div>
+        </TabsContent>
+
+        {/* SharePoint Tab */}
+        <TabsContent value="sharepoint" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                {t('mcpIntegration.sharepointTitle')}
+              </CardTitle>
+              <CardDescription>{t('mcpIntegration.sharepointDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge variant={settings?.hasSharepointClientSecret ? 'default' : 'secondary'}>
+                  {settings?.hasSharepointClientSecret
+                    ? t('mcpIntegration.tokenConfigured')
+                    : t('mcpIntegration.tokenNotConfigured')}
+                </Badge>
+                {settings?.hasSharepointClientSecret && (
+                  <Button variant="ghost" size="sm" onClick={handleClearSharePoint} disabled={saving}>
+                    {t('mcpIntegration.clearToken')}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('mcpIntegration.sharepointCredentialsTitle')}</CardTitle>
+              <CardDescription>{t('mcpIntegration.sharepointCredentialsDesc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="sp-tenant-id">{t('mcpIntegration.sharepointTenantId')}</Label>
+                <Input
+                  id="sp-tenant-id"
+                  value={spTenantId}
+                  onChange={(e) => setSpTenantId(e.target.value)}
+                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointTenantIdHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sp-client-id">{t('mcpIntegration.sharepointClientId')}</Label>
+                <Input
+                  id="sp-client-id"
+                  value={spClientId}
+                  onChange={(e) => setSpClientId(e.target.value)}
+                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointClientIdHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sp-client-secret">{t('mcpIntegration.sharepointClientSecret')}</Label>
+                <div className="relative flex-1">
+                  <Input
+                    id="sp-client-secret"
+                    type={showSpClientSecret ? 'text' : 'password'}
+                    value={spClientSecret}
+                    onChange={(e) => setSpClientSecret(e.target.value)}
+                    placeholder={settings?.hasSharepointClientSecret ? '••••••••••••••••' : t('mcpIntegration.sharepointClientSecretPlaceholder')}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={() => setShowSpClientSecret(!showSpClientSecret)}
+                  >
+                    {showSpClientSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointClientSecretHint')}</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sp-site-url">{t('mcpIntegration.sharepointSiteUrl')}</Label>
+                <Input
+                  id="sp-site-url"
+                  value={spSiteUrl}
+                  onChange={(e) => setSpSiteUrl(e.target.value)}
+                  placeholder="contoso.sharepoint.com:/sites/Engineering"
+                />
+                <p className="text-sm text-muted-foreground">{t('mcpIntegration.sharepointSiteUrlHint')}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSaveSharePoint}
+              disabled={saving || (!spTenantId.trim() && !spClientId.trim() && !spClientSecret.trim() && !spSiteUrl.trim())}
+            >
+              {saving ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {t('common.save')}
+            </Button>
+          </div>
+        </TabsContent>
+
         {/* Built-in MCP Server Tab */}
         <TabsContent value="server" className="space-y-6">
           <Card>
@@ -648,6 +1067,20 @@ export default function McpIntegration() {
                   {t('mcpIntegration.connectNoRestart')}
                 </p>
               </div>
+
+              {isAdmin && (
+                <div className="flex justify-end pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/integrations/mcp-usage')}
+                    className="gap-2"
+                  >
+                    <BarChart2 className="h-4 w-4" />
+                    {t('mcpIntegration.viewUsageReport')}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
