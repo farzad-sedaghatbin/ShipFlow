@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 // Static imports — always loaded immediately (structural / auth components)
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
+import { useToast, setToastHandler, ProjectProvider, TourProvider, BreadcrumbProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
 
 // ── Page-level code splitting ─────────────────────────────────────────────────
@@ -223,6 +223,7 @@ function App() {
             <ProtectedRoute>
               <ProjectProvider>
                 <TourProvider>
+                  <BreadcrumbProvider>
                   <Layout>
                     <Routes>
                       {/* Main Navigation - paths are relative to parent "/*" route */}
@@ -406,6 +407,7 @@ function App() {
                        */}
                     </Routes>
                   </Layout>
+                  </BreadcrumbProvider>
                 </TourProvider>
               </ProjectProvider>
             </ProtectedRoute>

@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Hill Chart banner showed a raw `{count}` token**: the "Showing all scopes from … pitch(es)" info banner on the Cycle Hill Chart leaked the literal `{count}` placeholder because the i18n string used single-brace (`{count}`) instead of i18next's double-brace (`{{count}}`) interpolation syntax. The pitch count now renders correctly in both `en` and `fa`.
+- **Breadcrumbs showed numeric IDs instead of names** (e.g. "Cycle #1", "Wiki › #1 › #1"): added a lightweight `BreadcrumbContext` so detail pages publish a human-readable label for their route. Cycle, pitch, and wiki space/page breadcrumbs now resolve to the entity name; the wiki root also gets a proper "Wiki" crumb.
+- **Wiki "Space Key" was not auto-derived**: creating a wiki space required manually typing a key or the first save failed with "Space key is required". The key now auto-derives from the space name (uppercase alphanumeric, max 10 chars) until the user edits it manually.
 ### Added — Production-Grade Self-Hosting (v1.9.0 S54 — Observability backend)
 - **Prometheus metrics endpoint**: Added `micrometer-registry-prometheus`; the actuator surface now exposes `health`, `info`, and `prometheus` (`/actuator/prometheus`). Every series is stamped with the common tag `application="shipflow"` so multiple instances are distinguishable in Prometheus/Grafana. The raw `/actuator/metrics` JSON browser is intentionally left unexposed. Endpoint set is overridable via `MANAGEMENT_ENDPOINTS`.
 - **Distributed tracing (OpenTelemetry)**: Added `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp`. Tracing is off by default (`TRACING_ENABLED=false`) and ships spans over OTLP to `OTLP_ENDPOINT` (default `http://localhost:4318/v1/traces`) when enabled, with a configurable sample rate (`TRACING_SAMPLE_RATE`, default `0.1`). With the tracing bridge on the classpath, `traceId`/`spanId` are also added to the plain console log pattern automatically, so local-dev logs stay correlated.

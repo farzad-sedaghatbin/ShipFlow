@@ -20,6 +20,7 @@ import WikiInsertLinkDialog from "../components/wiki/WikiInsertLinkDialog";
 import type { WikiEditorHandle } from "../components/wiki/WikiEditor";
 import { extractPlainText } from "../components/wiki/wikiTokens";
 import Comments from "../components/Comments";
+import { useBreadcrumbLabel } from "../contexts";
 import {
   wikiService,
   type WikiPageDTO,
@@ -82,6 +83,13 @@ export default function WikiPage() {
     queryFn: () => wikiService.getAttachments(numPageId).then((r) => r.data),
     enabled: !!numPageId,
   });
+
+  // Resolve both breadcrumb crumbs by name: the parent space and this page.
+  useBreadcrumbLabel(spaceId ? `/wiki/${spaceId}` : undefined, space?.name);
+  useBreadcrumbLabel(
+    spaceId && pageId ? `/wiki/${spaceId}/${pageId}` : undefined,
+    page?.title,
+  );
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 

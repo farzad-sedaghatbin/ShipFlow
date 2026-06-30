@@ -224,7 +224,8 @@
     "hillChart": "Hill Chart",
     "generate": "Generate",
     "run": "Run",
-    "importData": "Import Data"
+    "importData": "Import Data",
+    "wiki": "Wiki"
   },
   "integrations": {
     "title": "Integrations",
@@ -6049,7 +6050,7 @@
     "invalidId": "Invalid cycle ID",
     "loadFailed": "Failed to load hill chart data",
     "noPoints": "No hill chart points found for this cycle. Add scopes to individual pitches to see them here.",
-    "showingScopes": "Showing all scopes from {count} pitch(es) in this cycle. Click on any point to view the pitch details.",
+    "showingScopes": "Showing all scopes from {{count}} pitch(es) in this cycle. Click on any point to view the pitch details.",
     "scopesByPitch": "Scopes by Pitch"
   },
   "pitchComparison": {
