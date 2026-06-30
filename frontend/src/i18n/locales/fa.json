@@ -1571,6 +1571,8 @@
     "recentPitches": "پیچ‌های اخیر",
     "showingAllProjects": "نمایش داده‌ها از همه پروژه‌ها",
     "showingProject": "نمایش داده‌ها برای {{name}}",
+    "statScopeAllProjects": "شمارش‌ها همه پیچ‌ها را در همه پروژه‌ها نشان می‌دهد",
+    "statScopeProject": "شمارش‌ها همه پیچ‌ها را در {{name}} نشان می‌دهد",
     "teamVelocity": "سرعت تیم",
     "title": "داشبورد",
     "totalPitches": "کل پیچ‌ها",
@@ -5509,6 +5511,23 @@
     "taskTitle": "عنوان وظیفه",
     "title": "وظایف",
     "todo": "انجام نشده"
+  },
+  "teamDetail": {
+    "backToTeams": "بازگشت به تیم‌ها",
+    "archived": "بایگانی‌شده",
+    "notFound": "تیم پیدا نشد",
+    "notFoundDescription": "این تیم ممکن است حذف شده باشد یا به آن دسترسی ندارید.",
+    "membersSummary": "{{active}} از {{total}} عضو فعال",
+    "totalMembers": "کل اعضا",
+    "activeMembers": "اعضای فعال",
+    "inactiveMembers": "اعضای غیرفعال",
+    "membersAndWorkload": "اعضا و بار کاری",
+    "noMembers": "هنوز عضوی نیست",
+    "noMembersDescription": "این تیم هنوز هیچ تخصیصی ندارد.",
+    "unknownPerson": "نامشخص",
+    "hoursPerDay": "{{hours}} ساعت در روز",
+    "active": "فعال",
+    "inactive": "غیرفعال"
   },
   "teams": {
     "add": "افزودن",
