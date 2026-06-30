@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { TabsList, TabsTrigger } from '../ui/tabs';
+import { MultiCombobox } from '../ui/multi-combobox';
 import { TaskStatus, TaskPriority, Person } from '../../types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '../../constants/backlogConstants';
 
@@ -51,7 +52,6 @@ export function BacklogFilters({
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
-  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-3 mb-4">
@@ -142,32 +142,28 @@ export function BacklogFilters({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Assignee Filter */}
+        {/* Assignee Filter — searchable so typing a name filters the list instead of
+            leaking keystrokes to the global keyboard shortcuts (the old DropdownMenu had
+            no text input, so isTyping() stayed false and single-key shortcuts fired). */}
         {persons.length > 0 && (
-          <DropdownMenu open={assigneeDropdownOpen} onOpenChange={setAssigneeDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                {t('backlogPage.filters.assignee')} {assigneeFilter.length > 0 && `(${assigneeFilter.length})`}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 max-h-60 overflow-y-auto">
-              {persons.filter(p => p.isActive).map((person) => (
-                <DropdownMenuItem
-                  key={person.id}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    onAssigneeFilterChange(person.id);
-                  }}
-                >
-                  <Checkbox
-                    checked={assigneeFilter.includes(person.id)}
-                    className="mr-2"
-                  />
-                  {person.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <MultiCombobox
+            options={persons.filter((p) => p.isActive).map((p) => ({ value: String(p.id), label: p.name }))}
+            value={assigneeFilter.map(String)}
+            onValueChange={(vals) => {
+              // MultiCombobox emits the full next selection; the page state toggles a
+              // single id at a time, so forward only the one that changed.
+              const next = vals.map(Number);
+              const toggled =
+                next.find((id) => !assigneeFilter.includes(id)) ??
+                assigneeFilter.find((id) => !next.includes(id));
+              if (toggled !== undefined) onAssigneeFilterChange(toggled);
+            }}
+            placeholder={t('backlogPage.filters.assignee')}
+            searchPlaceholder={t('backlogPage.filters.searchAssignee', 'Search people...')}
+            emptyText={t('backlogPage.filters.noAssignee', 'No people found')}
+            triggerClassName="h-9 min-h-9 w-[200px]"
+            maxDisplay={2}
+          />
         )}
 
         {hasActiveFilters && (

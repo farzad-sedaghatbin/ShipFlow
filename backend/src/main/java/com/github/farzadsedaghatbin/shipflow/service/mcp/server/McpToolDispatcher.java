@@ -244,6 +244,12 @@ public class McpToolDispatcher {
       SecurityContextHolder.clearContext();
     }
 
+    // Tools that need native MCP content blocks (e.g. an image the client can render) bypass the
+    // default JSON-as-text wrapping and provide their own content array.
+    if (result instanceof McpContentResult contentResult) {
+      return Map.of("content", contentResult.content(), "isError", false);
+    }
+
     String json;
     try {
       json = objectMapper.writeValueAsString(result);
@@ -320,6 +326,7 @@ public class McpToolDispatcher {
       case BugReportMcpTools.TOOL_GET_BUG_REPORTS -> bugReportTools.getBugReports(args);
       case BugReportMcpTools.TOOL_GET_BUG_REPORT -> bugReportTools.getBugReport(args);
       case BugReportMcpTools.TOOL_GET_BUG_ATTACHMENTS -> bugReportTools.getBugAttachments(args);
+      case BugReportMcpTools.TOOL_DOWNLOAD_BUG_ATTACHMENT -> bugReportTools.downloadBugAttachment(args);
       case BugReportMcpTools.TOOL_UPDATE_BUG_STATUS -> bugReportTools.updateBugStatus(args, auth);
 
       default -> throw new McpToolException("Unknown tool: " + name);
@@ -350,7 +357,8 @@ public class McpToolDispatcher {
         TestCaseMcpTools.getTestRunsDefinition(),
         BugReportMcpTools.getBugReportsDefinition(),
         BugReportMcpTools.getBugReportDefinition(),
-        BugReportMcpTools.getBugAttachmentsDefinition());
+        BugReportMcpTools.getBugAttachmentsDefinition(),
+        BugReportMcpTools.downloadBugAttachmentDefinition());
   }
 
   /**

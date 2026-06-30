@@ -1,6 +1,6 @@
 # ShipFlow — Competitive Analysis
 
-_Last updated: 2026-06-16 (v1.7.0 shipped — Workflow Automations: 14 triggers, 7 actions, 20 built-in templates)_
+_Last updated: 2026-06-27 (v1.8.0 shipped — Custom Fields & Advanced RBAC, Wiki / Docs Space, Pluggable Object Storage; next: v1.9.0 Production-Grade Self-Hosting)_
 
 This document positions ShipFlow against the tools teams most commonly evaluate before adopting it.
 It is written factually to help evaluators make an informed decision.
@@ -12,7 +12,7 @@ It is written factually to help evaluators make an informed decision.
 ShipFlow targets teams that:
 
 - Practice or want to adopt the **Shape Up methodology** (Basecamp's 6-week cycle framework)
-- Need **AI-native** project management — not bolted-on AI, but AI woven into the workflow
+- Need AI in the workflow — and, increasingly, **private / air-gapped AI**: a fully self-hosted LLM stack (Ollama) with zero data egress, which no cloud-only competitor (Linear, Jira/Rovo, Asana) can offer
 - Run **self-hosted** infrastructure and need full data ownership
 - Want **editor-first project context** — developers shouldn't need to switch apps to know what they're building
 
@@ -30,7 +30,7 @@ ShipFlow targets teams that:
 | **Hill charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Circuit breaker (appetite enforcement)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Pitch lifecycle (IDEA→DRAFT→SHAPED→BET)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **MCP server (AI editor integration)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Self-hosted / open MCP server** | ✅ | Partial⁵ | Partial⁵ | Partial⁵ | ❌ | ❌ | ❌ |
 | **Figma MCP client** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A on project docs (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A multi-turn context + entity disambiguation** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -54,6 +54,8 @@ ShipFlow targets teams that:
 | **Multi-layer caching (ETag + Redis + React Query)** | ✅ | Partial | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **RTL language support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Self-hosted** | ✅ | ❌ | ✅ (Data Center) | ❌ | ❌ | ❌ | ❌ |
+| **Helm chart + Prometheus/Grafana observability** | ✅ (v1.9.0) | ❌ | ✅ (Data Center) | ❌ | ❌ | ❌ | ❌ |
+| **Audit-trail export (CSV/JSON)** | ✅ (v1.9.0) | ❌ | ✅ (enterprise) | ❌ | ❌ | ❌ | Partial |
 | **Open source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Free (self-hosted)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **CSV import from Jira / Linear / Asana** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -63,10 +65,15 @@ ShipFlow targets teams that:
 | **Shape Up–aware automation triggers (hill chart, appetite, betting table)** | ✅ (v1.7.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Automation execution log (per-run status, payload, result)** | ✅ (v1.7.0) | Partial | Partial | ❌ | Partial | ❌ | ❌ |
 | **Unified Knowledge Center wired into AI features** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Built-in team wiki (block editor, version history, @mentions, search)** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Wiki auto-ingested into AI context** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Pluggable object storage (S3 / MinIO / local disk, one-click migration)** | ✅ (v1.8.0) | ❌ | Partial⁴ | ❌ | ❌ | Partial⁴ | ❌ |
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
 ³ Linear has a "Triage" view for overdue issues but no proactive AI-computed insight panel with scope-creep detection or velocity trend analysis.
+⁴ Jira and Confluence support S3 attachment storage in their Data Center editions but do not expose a UI-driven backend switcher or one-click migration.
+⁵ **MCP and embedded AI are no longer ShipFlow-only.** Linear (hosted MCP 2025 + MCP agents Apr 2026), Atlassian/Jira (Rovo MCP server + Agents in Jira, GA May 2026), and Asana (MCP + AI Teammates 2026) all shipped these. The ✅/❌ marks on the AI rows above reflect *specific* ShipFlow features (e.g. Shape Up–aware risk scoring, pitch writer); competitors now have their own AI suites (Rovo, Work Graph, AI Studio) — but **all are cloud-only and paid (per-seat or metered AI credits).** ShipFlow's structural, un-copyable edge is the combination: native Shape Up + self-hosted/open-source + **private, air-gapped AI (Ollama) with zero data egress.** See §4 for the full re-benchmark.
 
 ---
 
@@ -79,7 +86,7 @@ ShipFlow targets teams that:
 **ShipFlow wins**:
 - The only tool with a complete Shape Up workflow (pitches, betting, hill charts, circuit breaker)
 - **Workflow Automations with Shape Up–aware triggers** — Linear's automation triggers are generic; ShipFlow uniquely fires on hill chart movement, appetite exceeded, scope creep detected, and betting table locked
-- MCP server — Linear has no way to expose project data to AI editors as structured tool calls
+- Self-hosted, open MCP server — Linear shipped a hosted MCP server (2025) and native MCP agent support (April 2026), but both are SaaS-only; ShipFlow's MCP server runs on your own infrastructure
 - Self-hosted / open source — Linear is SaaS-only
 - Pluggable AI stack — Ollama for local/private deployments, OpenAI for production
 - RTL support (Persian, Arabic)
@@ -97,7 +104,7 @@ ShipFlow targets teams that:
 **ShipFlow wins**:
 - Zero configuration overhead — Shape Up workflow is first-class, not a custom template
 - **Workflow Automations built-in** — "Automation for Jira" is a paid plugin sold separately; ShipFlow ships 20 automation templates out of the box with no plugin purchase
-- MCP server — Jira has no concept of exposing project data as AI tool calls
+- Self-hosted, open MCP server — Atlassian shipped the Rovo MCP server and Agents in Jira (GA at Team '26, May 2026), but they require the Jira + Confluence + Bitbucket cloud suite and metered AI credits; ShipFlow's MCP server is standalone, self-hostable, and free
 - AI features built-in (no plugins needed): RAG Q&A, technical solution generator, test generation, risk scoring
 - Multi-layer caching for snappy performance (Jira is notoriously slow at scale)
 - Open source (auditable, no license cost)
@@ -112,7 +119,7 @@ ShipFlow targets teams that:
 
 Both are general-purpose work management tools with strong project templates and dashboards.
 
-**ShipFlow wins on every Shape Up dimension** — neither Asana nor Monday.com has pitches, hill charts, betting tables, or circuit breakers. Both are adding AI features but none expose structured MCP interfaces for AI editors.
+**ShipFlow wins on every Shape Up dimension** — neither Asana nor Monday.com has pitches, hill charts, betting tables, or circuit breakers. Asana shipped MCP integration and assignable "AI Teammates" (2026) and Monday has AI assistants, so MCP/AI is no longer a ShipFlow-only capability — but both are cloud-only, general-purpose tools with no Shape Up support and no self-hosted or private-LLM option.
 
 **They win on**: richer reporting dashboards, enterprise tier support, non-technical stakeholder adoption. **Note**: ShipFlow v1.7.0 now ships its own no-code workflow automation engine (14 triggers, 7 actions, 20 templates), closing the automation gap that previously favoured Asana/Monday.
 
@@ -129,27 +136,33 @@ Basecamp invented Shape Up but their own product does not implement the methodol
 
 ---
 
-## 4. The MCP Server Differentiator (v0.7.0+)
+## 4. MCP: Open & Self-Hostable, Not Just "First"
 
-As of v0.7.0, ShipFlow is the **only project management tool** that implements the [Model Context Protocol](https://modelcontextprotocol.io) as a server — meaning AI coding assistants (Claude Code, Cursor, GitHub Copilot) can query your project board as a first-class tool call.
+> **Honest update (June 2026):** ShipFlow was the first PM tool to ship an MCP server (v0.7.0), but it is **no longer the only one.** During 2025–26 the majors caught up: **Linear** shipped a hosted MCP server (2025) plus native MCP agents (April 2026), **Atlassian** made the **Rovo MCP server** and **Agents in Jira** GA at Team '26 (May 2026), and **Asana** shipped MCP integration plus assignable AI Teammates (2026). MCP is now table stakes, not a differentiator. We've corrected the older "only one with MCP" framing throughout this doc — claiming it today would mislead anyone who follows the market.
 
-Atlassian launched their "Teamwork Graph CLI" for Claude Code in 2026, which indexes Jira, Confluence, and Bitbucket into a single graph. ShipFlow's `get_work_context` tool (added alongside this) offers the same relationship-graph pattern natively for Shape Up teams — cycle + pitches + tasks + blockers + hill chart + retros in one call.
+ShipFlow implements the [Model Context Protocol](https://modelcontextprotocol.io) as a server, so AI coding assistants (Claude Code, Cursor, etc.) can query and mutate your project as first-class tool calls. The `get_work_context` tool returns the whole Shape Up graph — cycle + pitches + tasks + blockers + hill chart + retros — in a single call.
 
-### What this enables that no competitor offers
+**What remains genuinely differentiated is not *that* ShipFlow has MCP, but *how* it's delivered:**
 
-| Workflow | With ShipFlow MCP | Without MCP (every other tool) |
-|----------|------------------|--------------------------------|
-| Full context for a cycle or pitch | `get_work_context(pitchId)` returns the entire graph | Open 4–5 browser tabs |
-| Know your tasks while coding | Ask Claude Code in the terminal | Open browser tab, navigate to board |
-| Find blockers before writing code | `get_blockers(cycleId)` returns live list | Manual check in the tool |
-| Understand pitch scope before implementing | `get_pitch_detail` returns full Shape Up fields + Figma URL | Copy-paste from browser |
-| Update task status after a commit | `update_task_status` from the editor | Manual click in the UI |
-| Design context while coding | Pitch → Figma MCP chain, automatic | Open Figma manually |
-| Run AI architecture analysis from editor | `wise_architecture_analyze` returns Markdown guides | Open ShipFlow UI |
+1. **Self-hosted and open.** Every competitor's MCP server is cloud-only (Rovo and Asana AI run on US-hosted LLM partners). ShipFlow's runs on your own infrastructure with no per-seat or AI-credit cost.
+2. **Private / local LLMs.** Pointed at Ollama, the entire AI + MCP stack runs air-gapped with zero data egress — the one AI posture the cloud giants structurally cannot offer. This is the sharpest durable wedge for regulated buyers (finance, gov, defence, healthcare).
+3. **Shape Up–native graph.** `get_work_context` models pitches/betting/hill-charts/circuit-breaker — concepts no competitor's graph (Teamwork Graph, Work Graph) represents.
 
-### Why competitors haven't matched this yet
+### What ShipFlow's MCP server enables in-editor
 
-MCP is an emerging standard (2024). Most PM tools are building AI features **inside** their UI (AI-assisted summaries, auto-prioritization). Atlassian's Teamwork Graph is the first serious competitor move into editor-native context — but it requires Jira + Confluence + Bitbucket. ShipFlow's bet is that the most valuable AI surface is **the developer's editor**, and the full relationship graph should be a single tool call, not a product suite.
+| Workflow | With ShipFlow MCP |
+|----------|------------------|
+| Full context for a cycle or pitch | `get_work_context(pitchId)` returns the entire graph |
+| Know your tasks while coding | Ask Claude Code in the terminal — no tab switch |
+| Find blockers before writing code | `get_blockers(cycleId)` returns a live list |
+| Understand pitch scope before implementing | `get_pitch_detail` returns full Shape Up fields + Figma URL |
+| Update task status after a commit | `update_task_status` from the editor |
+| Design context while coding | Pitch → Figma MCP chain, automatic |
+| Run AI architecture analysis from editor | `wise_architecture_analyze` returns Markdown guides |
+
+### Positioning takeaway
+
+Don't sell "we have MCP" — that race is over. Sell **"the only self-hostable, open-source, Shape Up–native PM tool with fully-private, air-gapped AI."** That is the corner of the market the cloud majors cannot enter, and it's where the roadmap (see [ROADMAP.md](./ROADMAP.md) — v1.9 production self-hosting, then security hardening) is deliberately deepening.
 
 ---
 

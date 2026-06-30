@@ -21,10 +21,10 @@ export function MyTasksWidget() {
   const { data, isLoading: loading } = useQuery<MyTasksData>({
     queryKey: ['widgets', 'my-tasks'],
     queryFn: async () => {
-      const response = await taskService.getAll(0, 100);
+      // Use the current-user endpoint (/tasks/my) so the widget only shows the
+      // logged-in user's tasks, not every task in the org.
+      const response = await taskService.getMy(0, 100);
       const allTasks: Task[] = response.data.content || [];
-      // Filter tasks assigned to current user (you'd need user context for this)
-      // For now, showing all non-completed tasks
       const myTasks = allTasks.filter(
         (task) => task.status !== 'DONE' && task.status !== 'CANCELLED'
       );

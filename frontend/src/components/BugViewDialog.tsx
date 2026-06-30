@@ -269,6 +269,21 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
     }
   }, [localBug, bug, onUpdate]);
 
+  const handleQaAssigneeUpdate = useCallback(async (qaAssigneeId: number | null) => {
+    const current = localBug ?? bug;
+    if (!current) return;
+    setIsSaving(true);
+    try {
+      const res = await qaTestManagementService.updateBugQaAssignee(current.id, qaAssigneeId);
+      setLocalBug(res.data);
+      onUpdate?.(res.data);
+    } catch {
+      setLocalBug(bug);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [localBug, bug, onUpdate]);
+
   if (!bug) return null;
   // After the guard, bug is non-null so effectiveBug is also non-null.
   const effectiveBug = localBug ?? bug;
@@ -463,7 +478,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                 type="button"
                 title={t('common.openInNewTab', 'Open in new tab')}
                 className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.id}`, '_blank')}
+                onClick={() => window.open(`/qa/bug-reports/${effectiveBug.bugKey}`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4" />
               </button>
@@ -592,13 +607,42 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                             <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
                             {members.filter(m => m.personId != null).map((m) => (
                               <SelectItem key={m.userId} value={m.personId!.toString()}>
-                                {m.username}
+                                {m.personName || m.username}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       ) : (
                         <div className="font-medium">{effectiveBug.assigneeName || t('common.unassigned')}</div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {t('bugs.qaAssignee')}
+                      </Label>
+                      {members.length > 0 ? (
+                        <Select
+                          value={effectiveBug.qaAssigneeId?.toString() ?? '__none__'}
+                          onValueChange={(v) =>
+                            handleQaAssigneeUpdate(v === '__none__' ? null : Number(v))
+                          }
+                          disabled={isSaving}
+                        >
+                          <SelectTrigger className="h-7 text-sm font-medium border-0 px-0 shadow-none focus:ring-0 -ml-0.5 w-full">
+                            <SelectValue placeholder={t('common.unassigned')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
+                            {members.filter(m => m.personId != null).map((m) => (
+                              <SelectItem key={m.userId} value={m.personId!.toString()}>
+                                {m.personName || m.username}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="font-medium">{effectiveBug.qaAssigneeName || t('common.unassigned')}</div>
                       )}
                     </div>
                     <div className="space-y-1">

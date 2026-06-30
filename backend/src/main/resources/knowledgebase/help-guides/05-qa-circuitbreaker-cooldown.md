@@ -16,6 +16,23 @@ ShipFlow includes a built-in QA test management system for tracking test cases l
 3. Add notes or evidence (screenshots, logs)
 4. Failed tests can be linked to bug reports
 
+## Bulk Test Execution (record many runs at once)
+When you've run the same suite against a build/environment, you don't have to record each result one by one:
+1. On the **Test Cases** page, tick the checkboxes next to the cases you ran (or the header checkbox to select all).
+2. Click **Record runs** in the bulk action bar.
+3. Choose the result (Passed/Failed/Blocked/…) and optionally an environment (e.g. "Chrome / staging").
+4. ShipFlow creates one test run per selected case in a single step.
+
+## Linking Defects to a Test Run
+A failed (or flaky) test execution can be tied to **multiple** bug reports — the same idea as attaching defects to an execution in other test tools, using ShipFlow's own bug reports instead of an external tracker:
+- Filing a bug from a failed run links it to that run automatically.
+- You can also link existing bug reports to a run, and unlink them. A run shows all of its linked defects.
+
+## Filtering Test Cases
+The Test Cases page can be filtered by status, type, priority, cycle, and pitch, plus:
+- **Source** — show only **Manual** or **AI-generated** test cases.
+- **Created by** — show only test cases authored by a specific person.
+
 ## QA Dashboard
 The **QA Dashboard** provides an overview of:
 - Total test cases per cycle

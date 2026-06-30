@@ -4,6 +4,133 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Hill Chart banner showed a raw `{count}` token**: the "Showing all scopes from … pitch(es)" info banner on the Cycle Hill Chart leaked the literal `{count}` placeholder because the i18n string used single-brace (`{count}`) instead of i18next's double-brace (`{{count}}`) interpolation syntax. The pitch count now renders correctly in both `en` and `fa`.
+- **Breadcrumbs showed numeric IDs instead of names** (e.g. "Cycle #1", "Wiki › #1 › #1"): added a lightweight `BreadcrumbContext` so detail pages publish a human-readable label for their route. Cycle, pitch, and wiki space/page breadcrumbs now resolve to the entity name; the wiki root also gets a proper "Wiki" crumb.
+- **Wiki "Space Key" was not auto-derived**: creating a wiki space required manually typing a key or the first save failed with "Space key is required". The key now auto-derives from the space name (uppercase alphanumeric, max 10 chars) until the user edits it manually.
+
+### Added — Bug Reports reporter filter
+- **Filter bug reports by reporter** on `/qa/bug-reports`: a new multi-select **Reporter** filter sits alongside the existing multi-select Status / Severity / Assignee filters. Selections are reflected in the URL (`?reporter=…`, repeatable), persisted across navigations, included in saved named filters, and applied to both the list and the overview stat cards. Backend: `getBugReportsWithFilters` / `getBugStats` accept a `reporterIds` list threaded into `BugReportSpecification` (predicate on the `reporter` relation); the `/qa/bug-reports/filter` and `/stats` endpoints take a repeatable `reporterIds` query param, mirroring `assigneeIds`.
+
+### Added — Production-Grade Self-Hosting (v1.9.0 S54 — Observability backend)
+- **Prometheus metrics endpoint**: Added `micrometer-registry-prometheus`; the actuator surface now exposes `health`, `info`, and `prometheus` (`/actuator/prometheus`). Every series is stamped with the common tag `application="shipflow"` so multiple instances are distinguishable in Prometheus/Grafana. The raw `/actuator/metrics` JSON browser is intentionally left unexposed. Endpoint set is overridable via `MANAGEMENT_ENDPOINTS`.
+- **Distributed tracing (OpenTelemetry)**: Added `micrometer-tracing-bridge-otel` + `opentelemetry-exporter-otlp`. Tracing is off by default (`TRACING_ENABLED=false`) and ships spans over OTLP to `OTLP_ENDPOINT` (default `http://localhost:4318/v1/traces`) when enabled, with a configurable sample rate (`TRACING_SAMPLE_RATE`, default `0.1`). With the tracing bridge on the classpath, `traceId`/`spanId` are also added to the plain console log pattern automatically, so local-dev logs stay correlated.
+- **Structured JSON logging**: Uses Spring Boot 3.4's native structured logging — set `LOG_FORMAT=logstash` (or `ecs`/`gelf`) in containerized/self-hosted deployments to emit JSON logs (with traceId/spanId) for aggregation. Default stays human-readable; a blank value is treated as "not set".
+- Tests: `ObservabilityEndpointsIntegrationTest` verifies the health probe is public and `UP`, the Prometheus endpoint is scrapable (carries the `application="shipflow"` tag and baseline JVM metrics), and the raw metrics browser is not exposed.
+
+### Added — Production-Grade Self-Hosting (v1.9.0 S55 — Helm chart & monitoring stack)
+- **Helm chart** (`charts/shipflow`): first-party chart to deploy ShipFlow to Kubernetes — Deployment, Service, Ingress (optional), ConfigMap, Secret (or `existingSecret`), ServiceAccount, uploads PVC, HorizontalPodAutoscaler (optional), and a Prometheus Operator ServiceMonitor (optional). Liveness/readiness probes target Spring Boot health groups; config is split into a non-secret ConfigMap and a Secret, with backing services (PostgreSQL/Redis/Qdrant) referenced as external services via `values.yaml`. `helm lint` and `helm template` are clean.
+- **Monitoring stack**: a `docker-compose.monitoring.yml` add-on runs Prometheus (scraping `/actuator/prometheus`) and Grafana, pre-provisioned with the Prometheus datasource and a **ShipFlow — Overview** dashboard (`monitoring/grafana/dashboards/shipflow-overview.json`: app up/down, JVM heap, HTTP request rate, p95 latency, AI Q&A query & cache-hit rates). Run with `docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d` (Grafana on :3001, Prometheus on :9090).
+- Help guide: `21-self-hosting-observability.md`.
+
+### Added — Production-Grade Self-Hosting (v1.9.0 S56 — Audit trail export)
+- **Audit export API**: `GET /api/audit/export` (admin-only) exports the Hibernate Envers change history for `task` / `bug` / `pitch` / `testcase` / `all` as **CSV** or **JSON**, filtered by an inclusive `from`/`to` date range. CSV is RFC-4180 quoted and formula-injection safe (reusing the backlog-export escaping), one row per changed field; deletions emit a single row. Returns 400 for an unknown entity type or an inverted date range. Built on the existing `AuditService` — the full revision chain is always walked so field diffs stay correct even when the date window starts mid-history; usernames are batch-resolved to display names.
+- **Audit export UI**: an admin-only **Audit Export** section in Organization Settings (entity-type, date range, CSV/JSON) that downloads through the authenticated client.
+- Tests: `AuditExportControllerIntegrationTest` covers CSV/JSON contract, unknown-type and inverted-range 400s, and non-admin 403. Help guide: `22-audit-export.md`.
+### Fixed — Wiki internal links & page-body @mentions (v1.8.1)
+- **`[[pageId]]` internal links now resolve.** v1.8.0 advertised internal wiki links but never implemented them. `WikiService` now parses `[[pageId]]` tokens from a page body and returns resolved targets on `WikiPageDTO.pageLinks` (`{pageId, title, spaceId, exists, url}`) — distinct ids in first-seen order, with missing/soft-deleted targets flagged `exists=false` so the UI can show a broken-link state. URLs use the canonical `/wiki/{spaceId}/{pageId}` route.
+- **@mentions in the wiki page body now notify.** v1.8.0 advertised page @mentions but they only worked in the comments thread. Mentioning a user (`@Name` or `@"Full Name"`) in a page body now sends a dashboard/Slack/Teams/email notification deep-linking to `/wiki/{spaceId}/{pageId}`, reusing the same mention pattern as comments. On edit, only **newly added** mentions notify (diffed against the previous revision), and users without read access to the page's space are skipped.
+- New `DashboardNotificationService.notifyWikiPageMention(...)`; `WikiServiceTest` adds coverage for mention extraction/notification (incl. permission skip) and `[[pageId]]` resolution.
+
+## [1.8.0] - 2026-06-27
+
+### Added — Wiki / Docs Space (v1.8.0)
+
+#### Built-in Wiki
+- **Hierarchical spaces → pages**: Create named spaces (e.g. "Engineering", "Product") and organize pages in a nested tree of any depth. Drag pages to reorganize.
+- **Notion-style block editor**: Slash-command menu for headings, bullet/numbered/checkbox lists, tables, fenced code blocks (with language selector), callout boxes, dividers, and file/image embeds.
+- **Per-space ACL**: Space-level permission grants (`WikiPermissionLevel.READ` / `WRITE`) to a USER or ROLE grantee, layered over project RBAC. The global `ADMIN` role always has full access; an explicit per-space grant is authoritative for that space, otherwise access falls back to the `WIKI` RBAC permissions.
+- **REST API**: A single `WikiController` at `/api/wiki` — `/spaces` and `/pages` with full CRUD, move, tree listing, permissions, history/restore, attachments, and `/pages/search`.
+- **File attachments on pages**: Attach files to any wiki page; storage is routed through the pluggable object storage facade. Image attachments show an **inline thumbnail preview** (click to open full-size). Uploads, downloads, and previews all go through the authenticated axios client — a JWT-secured endpoint can't be reached by a raw `<a href>`/`<img src>` (those omit the bearer token and 401), so downloads fetch the file as a blob and trigger a save, and previews load the blob into an object URL.
+- **Page comments & discussion**: Wiki pages now have a comments thread — the same component used on tasks and bug reports — with Markdown, emoji reactions, `@mention` autocomplete, and edit/delete. Comments reuse the polymorphic `CommentEntityType.WIKI_PAGE` on the existing `/api/comments` endpoints (no new table — migration `V2026_06_26_0001` widens the `comments.entity_type` CHECK constraint to allow `WIKI_PAGE`); `@mentions` deep-link the recipient to `/wiki/{spaceId}/{pageId}`. The `add_comment` MCP write tool now accepts `WIKI_PAGE` too.
+
+#### Versioned Docs
+- **Revision history**: Page history is reconstructed from Hibernate Envers audit data. `GET /api/wiki/pages/{id}/history` lists all revisions; `POST /api/wiki/pages/{id}/restore/{revision}` overwrites the page from a past snapshot (and itself becomes a new audited revision).
+- **Compare before restore**: Choosing a revision in the history panel now opens a **side-by-side diff** (current vs. that revision) with added/removed/changed lines highlighted and a title diff, so you confirm the change before restoring. New `GET /api/wiki/pages/{id}/revisions/{revision}` returns a single revision's full content; the diff is computed client-side per BlockNote block (`wikiDiff.ts`, LCS-based) since the stored `contentText` is space-joined.
+- **Breadcrumbs + auto table-of-contents**: Returned by the page API so the frontend can render navigation context without extra round-trips.
+- **Title search**: `GET /api/wiki/pages/search?q=…` — searches page titles across spaces the user can read (blank query returns nothing). Org-wide wiki content is also reachable from global search (`/api/search/global`), which uses the PostgreSQL trigram index on title + body. H2 test profile executes the SQL shape but skips ranked search.
+- **@mention notifications**: Mentioning `@user` in a page body fires an `ApplicationEvent` that routes through the existing notification pipeline.
+- **Internal page links**: Pages support `[[pageId]]` link tokens resolved by the backend to stable `/wiki/pages/{id}` URLs.
+
+#### AI-connected docs
+- **Auto Knowledge Center ingestion**: `WikiPageChangedEvent` triggers `KnowledgeSourceService` to upsert a chunk keyed `(WIKI_PAGE, pageId)` on every save. AI Q&A, Wise Architecture, and risk analysis draw on wiki content automatically.
+- **Known follow-up**: wiki attachment text-extraction into the Knowledge Center is deferred (pages are ingested today; binary files are not yet parsed).
+
+### Added — Pluggable Object Storage (v1.8.0)
+- **`ObjectStorageProvider` SPI**: Spring-bean interface — `store(StorePutContext)` / `retrieve(bucket, key, config)` / `delete(...)` / `presignUrl(...)` / `testConnection(config)` / `validateConfig(config)`. Implementations: `LocalFsStorageProvider`, `S3StorageProvider`, `MinioStorageProvider`; `ObjectStorageRegistry` selects the active backend and `ObjectStorageService` is the façade callers use.
+- **Org Settings → Storage tab**: Admin UI for selecting `LOCAL_FS`, `S3`, or `MinIO`; filling credentials; running a connection test; and triggering one-click migration between backends.
+- **Credential handling**: Access keys / secrets are stored as plaintext `TEXT`, consistent with existing integration secrets (Figma/GitHub/Notion/SMTP) — no at-rest encryption subsystem exists yet. Compensating controls: secrets are never returned in any DTO (`hasAccessKey`/`hasSecretKey` booleans only) and never logged. Secret columns are isolated so a future AES-GCM `AttributeConverter` can be dropped in with no schema change.
+- **Authenticated streaming downloads**: All downloads (LOCAL_FS, S3, MinIO) stream through the authenticated backend endpoint as an `InputStreamResource`. Pre-signed-URL generation is implemented as a provider capability (`ObjectStorageService.presignUrl`, `supportsPresign()` for S3/MinIO) but is not yet wired into the download flow.
+- **Online backend migration**: An admin-triggered action (`StorageMigrationService`) re-stores task/wiki attachments and uploaded documents onto the newly selected backend while the application is live — each object is copy-verified before the source is deleted — and returns a summary (migrated / skipped / failed counts). Runs in the request; there is no separate progress-tracking table.
+- **Migration**: `V2026_06_18_0005__add_object_storage.sql` (org-level storage backend config + migration tracking).
+- **Grouped, category-based object keys**: New uploads are stored under a consistent folder structure so a bucket is browsable by entity type — `attachments/task/{taskId}/…`, `attachments/bug/{bugId}/…`, `attachments/wiki/{pageId}/…`, `documents/{type}/{entityId}/…` (type = pitch/meeting/cycle/note), and `knowledge/{sourceId}/…` for Knowledge Center uploads. The document/bug key prefix lives in one place (`DocumentService.storageKeyHint`) shared by `DocumentService` and `StorageMigrationService` so migrated objects land under the same structure. Existing objects are not relocated (dev-only change); only new uploads use the new prefixes.
+- **Knowledge Center uploads now persist the original file**: the File Upload knowledge provider previously parsed text with Tika but discarded the binary — uploaded files never reached the storage bucket. It now stores the original through the object-storage SPI (`storeWithoutValidation`, under `knowledge/{sourceId}/`) and records `storageKey` + `storageProvider` in the source's existing `config` JSON via `sourceMetadata` — **no schema change**.
+- **Documents & bug-report attachments now route through the storage SPI**: `DocumentService` (pitch/meeting/cycle/note documents and bug-report image/video media) no longer writes to the local filesystem directly — uploads, downloads, and deletes all go through `ObjectStorageService`, the same façade used by task and wiki attachments. They are included in the **Migrate attachments** action (`StorageMigrationService.migrateDocuments()`), so switching backends moves them too. Existing files uploaded before this change keep working: rows with a legacy `storage_path` and no `storage_key` are served from disk via a read/delete fallback until migrated. A non-validating store path (`ObjectStorageService.storeWithoutValidation`) lets the document layer keep its own broader policy (video + ~50MB bug media) without the façade's stricter image/PDF/10MB allowlist regressing bug attachments. Migration: `V2026_06_26_0002__add_storage_to_uploaded_documents.sql` (adds nullable `storage_provider` + `storage_key` to `uploaded_documents`).
+
+### Fixed
+- **Document/pitch/meeting uploads no longer hang for a minute**: `DocumentService.uploadDocument` ran Q&A indexing (embedding generation) **synchronously inside the HTTP request** — `KnowledgeIngestionService.ingestDocument` was `@Transactional(REQUIRES_NEW)` but, unlike the other `ingest*` methods, **not `@Async`**. A ~1.5 MB document took ~45 s to return (a large PDF, minutes); since the file is stored before indexing, the object appeared in the bucket while the UI sat frozen with nothing coming back, so users re-uploaded the same file repeatedly. Indexing is now deferred to a background `@TransactionalEventListener(AFTER_COMMIT)` listener (`DocumentKnowledgeListener`, mirroring `WikiKnowledgeListener`) via a new `DocumentUploadedEvent`. The upload now returns in ~1–2 s and the document appears immediately; the **In Knowledge Base** badge (`indexedForQA`) flips on once background indexing finishes. Text extraction stays inline (fast). No schema change.
+
+### Fixed — Wiki & Object Storage review hardening
+- **Cross-space page corruption**: `WikiService.createPage`/`movePage` now validate that the target `parentId`/`newParentId` exists, is not soft-deleted, and belongs to the **same space**. Previously a parent in another space could be set, giving the page a cross-space parent pointer — it then disappeared from every space tree (which filters parents within one space) while still existing in the database. The move cycle-check only scanned the page's own space, so it didn't catch this.
+- **Global search wiki ACL bypass**: `/api/search/global` filtered wiki spaces/pages by `project_id` only, so an authenticated user with no read grant on a restricted org-global space could retrieve its page titles. Wiki results are now post-filtered through `WikiPermissionService.canRead` (fail-closed when there's no user context); non-wiki results are unaffected.
+- **S3/MinIO download memory blow-up**: `AwsS3BaseStorageProvider.retrieve` buffered the entire object into a `byte[]` before returning, pinning the full file size in heap per concurrent download (bug-report videos allow ~50 MB). It now streams the object straight through; ownership of the response stream + S3 client transfers to the `DownloadResource`, which is now `Closeable` and closes the client's connection pool when the stream closes. Migration paths close the resource via try-with-resources.
+- **Comments on deleted wiki pages**: comment validation used `existsById`, which returns true for soft-deleted pages, so a comment could be attached to a deleted page. It now uses `existsByIdAndDeletedAtIsNull`.
+- **`movePage` 500 on negative index**: a negative `newIndex` threw `IndexOutOfBoundsException` (HTTP 500); the insert position is now clamped with `Math.max(0, …)`.
+- **Wiki search match-all on blank query**: `searchPages` treated a blank `q` as a match-all (`contains("")`), returning every page in every readable space. A blank query now returns no results.
+
+### Known follow-ups
+- (a) Wiki attachment text-extraction into the Knowledge Center is deferred — page body content is ingested on every save; binary file content (PDF, DOCX) within wiki attachments is not yet extracted.
+- (b) Wiki global-search trigram index requires PostgreSQL (`pg_trgm` extension). The feature is verified manually against Postgres; H2 integration tests cover the SQL shape but not ranked relevance scoring.
+
+### Fixed — Bug assignee dropdowns show the person's name
+
+- The QA/Developer assignee selects in the bug view dialog listed members by their login `username` instead of their display name. They now show `personName` (falling back to `username` when no display name is set), matching how members are labelled elsewhere in the app.
+### Fixed — Bug attachment upload duplicates and missing attachments when editing
+
+- **Duplicate pending images**: selecting an image for a new bug could show the same file 3–4 times (notably on macOS Chrome, which can hand back duplicate `File` entries in one pick/drop). The pending-file handlers were memoized with a stale `[bugId]` dependency, so in creation mode they captured an empty pending list and never de-duplicated. The handlers now always read the current pending list and de-duplicate by name/size/last-modified, both within a selection and against already-pending files. Pending previews are also built once per file (and revoked) instead of calling `URL.createObjectURL` inline on every render.
+- **Editing a bug ignored existing attachments**: the edit dialog mounted the uploader with only a `bugId` and never loaded the bug's current attachments, so they couldn't be previewed or removed. `MediaAttachmentUpload` now fetches the bug's attachments when given a `bugId`, so editing shows existing attachments and supports adding and removing them. Object URLs are revoked on unmount.
+
+### Fixed — Bug detail URL now uses the bugKey, not the DB id
+
+- Opening a bug's full page showed a URL like `/qa/bug-reports/165` (the database primary key) while the dialog displayed `BUG-150` (the human-friendly `bugKey`) — two independent sequences that drift apart, which read as a mismatch. All in-app bug-detail links (list view, kanban, view-dialog "open in new tab", copy-link, pitch test page) now use the `bugKey`, so the address bar matches the key shown in the UI (Jira/Linear-style). `BugReportDetailPage` resolves by key, still accepts legacy numeric ids (old notification / shared links) via the existing `GET /api/qa/bug-reports/key/{key}` endpoint, and rewrites a numeric URL to its canonical key. Also fixed a dead link on the pitch test page that pointed at the non-existent `/qa/bugs/{id}` route.
+### Fixed — Test cases now scoped to the selected project
+
+- Test cases had no direct project link, so the Test Cases page showed **every** project's cases regardless of the selected project. Added a direct `project` association to `TestCase` (migration `V2026_06_25_0002`, backfilled from each case's cycle then pitch); the list endpoint now accepts a `projectId` filter and the page passes the current project (all cases when "All Projects" is selected). New test cases inherit the project from the current selection / linked pitch / cycle.
+
+### Added — QA: test-case filters & bulk execution
+
+- **Test-case filters by source and creator**: the Test Cases page can now filter by source (**Manual** vs **AI-generated**) and by **creator**. Backend `GET /api/qa/test-cases/filter` accepts `aiGenerated` and `createdById` query params; the source filter is applied server-side and the creator filter client-side (stable dropdown derived from loaded cases).
+- **Bulk test execution (Zephyr-style)**: multi-select test cases on the Test Cases page and record the same run result (with an optional environment) against all of them at once. New `POST /api/qa/test-runs/bulk` (one run per case, atomic) and `PATCH /api/qa/test-runs/bulk/status` (bulk status update) endpoints.
+- **Multiple defects per test run**: a test execution can now link **multiple** bug reports (the ShipFlow-native equivalent of attaching defects to an execution — no external tracker). `TestRun.bugReport` (one) became `bugReports` (many) over the existing `bug_reports.test_run_id` FK (no migration); `TestRunDTO` gains a `linkedBugs` list (the legacy `bugReportId`/`bugReportKey` still return the first). New `PATCH /api/qa/test-runs/{runId}/defects/{bugId}` and `DELETE …/defects/{bugId}` endpoints; the execution panel renders all linked defects.
+
+### Added — Open a project in a new tab
+
+- The top-bar project selector now supports opening a project in a new browser tab — Cmd/Ctrl-click a project, or use the new "open in new tab" button on each row. New tabs deep-link via `?project=<id>`, which `ProjectContext` honors on load.
+
+### Changed — Hill chart dot color
+
+- Hill-chart progress indicators no longer turn **green at 75%** (which read as "done"). Green is now reserved for **100%/complete**; in-progress downhill work is blue and uphill is amber — position already conveys progress.
+
+### Fixed — Kanban worklog overview label
+
+- For Kanban projects the worklog overview summary card no longer says "This Cycle" (Kanban has no cycles) — it now shows "Total". `MyWorkLogs` likewise relabeled (the figure was an all-time total, not a cycle total).
+
+### Added — Bug Report QA Assignee & Sharing
+
+- **QA assignee on bug reports**: a bug can now have a dedicated *QA tester* (who verifies the fix), separate from the *assignee* (who fixes it). Set it inline from the bug detail dialog or in the create/edit form. New `qaAssignee` field (audited via Envers), `qaAssigneeId`/`qaAssigneeName` on the DTO, and a lightweight `PATCH /api/qa/bug-reports/{id}/qa-assignee` endpoint (pass `null` to unassign).
+- **Copy bug link**: a "Copy link" action on every bug card (kanban menu) and list-view row copies a direct `/qa/bug-reports/{id}` URL to the clipboard for sharing.
+- New Flyway migration `V2026_06_25_0001__add_qa_assignee_to_bug_reports.sql` (adds `qa_assignee_id` to `bug_reports` and `bug_reports_aud`).
+
+### Added — MCP can view bug image attachments
+
+- New **`download_bug_attachment`** MCP read tool returns an image attachment (PNG/JPEG/GIF/WebP) as a native MCP `image` content block, so AI clients (Claude Code, etc.) can actually *see* design mockups/screenshots attached to a bug — previously only metadata and extracted text were exposed. Scoped to bug attachments, image types only, 8 MB cap.
+- `get_bug_attachments` now includes an `isImage` flag per attachment to signal which ones can be downloaded for viewing.
+- MCP tool results can now carry native content blocks (e.g. images) via the new `McpContentResult` return type, instead of always being JSON-as-text.
+
+### Changed — MCP bug lookup by key
+
+- The `get_bug_report`, `get_bug_attachments`, and `update_bug_status` MCP tools now accept the human-facing **`bugKey`** (e.g. `"BUG-125"`) in addition to the numeric `bugReportId`. A key passed in the `bugReportId` slot is also resolved by key, so an agent asking for "bug 125" no longer fetches the wrong record by numeric ID.
+
 ### Added — MCP Usage Report (admin)
 
 - **Per-user MCP/API usage tracking**: every `tools/call` invocation is recorded in `mcp_usage_log` (tool name, success/failure, duration, API key prefix, user, timestamp).
@@ -16,6 +143,7 @@ All notable changes to this project will be documented in this file.
 - `McpUsageReportServiceTest` — 8 unit tests covering all service methods.
 
 ### Fixed
+- Bug Reports kanban view now loads **all** matching bugs into the status columns instead of only the first page — the board fetches the full result set (page size is reserved for the paginated list view), and switching between list/kanban now re-fetches with the correct page size
 - Jira CSV import: fixed `null value in column "source_format"` DB error — the `ImportJob` was saved before the format was detected; now parses the file and resolves the format before the first `save()` so the `NOT NULL` constraint is never violated
 - Risk history endpoint: fixed `LazyInitializationException` on `GET /api/risk/pitch/{id}/history` — Jackson was serialising `pitch.project` as a Hibernate proxy after the transaction closed; added `"project"` to `@JsonIgnoreProperties` on `PitchRiskHistory.pitch`
 - MCP Usage Report: "View Usage Report" button now navigates to `/integrations/mcp-usage` instead of the non-existent `/app/integrations/mcp-usage` path (was silently redirecting to dashboard)

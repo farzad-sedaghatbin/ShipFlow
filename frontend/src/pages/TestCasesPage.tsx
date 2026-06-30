@@ -19,6 +19,15 @@ import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Label } from '../components/ui/label';
+import { Checkbox } from '../components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from '../components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -39,7 +48,7 @@ import qaTestManagementService from '../services/qaTestManagementService';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
-import { useProject } from '../contexts';
+import { useProject, useToast } from '../contexts';
 import { useListLoader } from '../hooks';
 import { TestCasesSkeleton } from '../components/Skeletons';
 import {
@@ -47,9 +56,12 @@ import {
   TestCaseStatus,
   TestCaseType,
   TestCasePriority,
+  TestRunStatus,
   Cycle,
   Pitch,
 } from '../types';
+
+const TEST_RUN_STATUSES: TestRunStatus[] = ['PASSED', 'FAILED', 'BLOCKED', 'SKIPPED', 'RUNNING', 'PENDING'];
 
 const priorityVariants: Record<TestCasePriority, 'secondary' | 'default' | 'warning' | 'destructive'> = {
   LOW: 'secondary',
@@ -84,7 +96,14 @@ const TestCasesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
+  const { showToast } = useToast();
   const { loading, refreshing, startLoad, finishLoad, resetInitial } = useListLoader();
+  // Bulk test execution (Zephyr-style): multi-select test cases and record a run for each at once.
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkStatus, setBulkStatus] = useState<TestRunStatus>('PASSED');
+  const [bulkEnvironment, setBulkEnvironment] = useState('');
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -97,8 +116,20 @@ const TestCasesPage: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<TestCasePriority | 'all'>('all');
   const [cycleFilter, setCycleFilter] = useState<number | 'all'>('all');
   const [pitchFilter, setPitchFilter] = useState<number | 'all'>('all');
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'manual' | 'ai'>('all');
+  const [creatorFilter, setCreatorFilter] = useState<number | 'all'>('all');
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+
+  // Distinct creators present in the loaded test cases — drives the "Created by" filter without a
+  // separate user-list fetch. The creator filter is applied client-side so these options stay stable.
+  const creatorOptions = useMemo(() => {
+    const map = new Map<number, string>();
+    testCases.forEach((tc) => {
+      if (tc.createdById != null) map.set(tc.createdById, tc.createdByName || `#${tc.createdById}`);
+    });
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [testCases]);
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -134,7 +165,7 @@ const TestCasesPage: React.FC = () => {
 
   useEffect(() => {
     loadTestCases();
-  }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter, currentProject?.id, page, rowsPerPage, debouncedSearch]);
+  }, [statusFilter, typeFilter, priorityFilter, cycleFilter, pitchFilter, sourceFilter, currentProject?.id, page, rowsPerPage, debouncedSearch]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -166,7 +197,10 @@ const TestCasesPage: React.FC = () => {
         page,
         rowsPerPage,
         'createdAt',
-        'desc'
+        'desc',
+        undefined,
+        sourceFilter === 'ai' ? true : sourceFilter === 'manual' ? false : undefined,
+        isAllProjectsSelected ? undefined : currentProject?.id
       );
 
       // Handle both paginated (Page<TestCase>) and plain array responses
@@ -190,8 +224,9 @@ const TestCasesPage: React.FC = () => {
     }
   };
 
-  // Client-side search filtering on the current page
+  // Client-side search + creator filtering on the loaded set
   const filteredTestCases = testCases.filter((tc) => {
+    if (creatorFilter !== 'all' && tc.createdById !== creatorFilter) return false;
     if (!debouncedSearch) return true;
     const q = debouncedSearch.toLowerCase();
     return (
@@ -200,6 +235,48 @@ const TestCasesPage: React.FC = () => {
       (tc.description?.toLowerCase().includes(q) ?? false)
     );
   });
+
+  const toggleSelected = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const allVisibleSelected = filteredTestCases.length > 0 && filteredTestCases.every((tc) => selectedIds.has(tc.id));
+  const toggleSelectAllVisible = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        filteredTestCases.forEach((tc) => next.delete(tc.id));
+      } else {
+        filteredTestCases.forEach((tc) => next.add(tc.id));
+      }
+      return next;
+    });
+  };
+
+  const handleBulkRecord = async () => {
+    setBulkSubmitting(true);
+    try {
+      await qaTestManagementService.recordTestRunsBulk({
+        testCaseIds: Array.from(selectedIds),
+        status: bulkStatus,
+        environment: bulkEnvironment.trim() || undefined,
+      });
+      showToast(t('testCases.bulkRun.success', { count: selectedIds.size }), 'success');
+      setBulkDialogOpen(false);
+      setSelectedIds(new Set());
+      setBulkEnvironment('');
+      loadTestCases();
+    } catch (err) {
+      console.error(err);
+      showToast(t('testCases.bulkRun.failed', 'Failed to record test runs'), 'error');
+    } finally {
+      setBulkSubmitting(false);
+    }
+  };
 
   // Stats derived from current page
   const approvedCount = testCases.filter((tc) => tc.status === 'APPROVED').length;
@@ -348,6 +425,35 @@ const TestCasesPage: React.FC = () => {
           />
         </div>
 
+        {/* Source Combobox — manual vs AI-generated */}
+        <div className="min-w-[150px]">
+          <Combobox
+            options={[
+              { value: 'all', label: t('testCases.allSources', 'All sources') },
+              { value: 'manual', label: t('testCases.sourceManual', 'Manual') },
+              { value: 'ai', label: t('testCases.sourceAi', 'AI-generated') },
+            ]}
+            value={sourceFilter}
+            onValueChange={(v) => { setSourceFilter(v as 'all' | 'manual' | 'ai'); setPage(0); }}
+            placeholder={t('testCases.source', 'Source')}
+            searchPlaceholder={t('testCases.source', 'Source')}
+          />
+        </div>
+
+        {/* Created-by Combobox */}
+        <div className="min-w-[160px]">
+          <Combobox
+            options={[
+              { value: 'all', label: t('testCases.allCreators', 'All creators') },
+              ...creatorOptions.map((c) => ({ value: c.id.toString(), label: c.name })),
+            ]}
+            value={creatorFilter.toString()}
+            onValueChange={(v) => { setCreatorFilter(v === 'all' ? 'all' : parseInt(v)); setPage(0); }}
+            placeholder={t('testCases.createdBy', 'Created by')}
+            searchPlaceholder={t('testCases.createdBy', 'Created by')}
+          />
+        </div>
+
         {/* Hide cycle and pitch filters for Kanban projects - Shape Up concepts */}
         {!isKanbanProject && (
           <>
@@ -388,11 +494,36 @@ const TestCasesPage: React.FC = () => {
         )}
       </div>
 
+      {/* Bulk action bar — appears when test cases are selected */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-md border bg-accent/40 px-4 py-2">
+          <span className="text-sm font-medium">
+            {t('testCases.bulkRun.selectedCount', { count: selectedIds.size })}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              {t('testCases.bulkRun.clear', 'Clear')}
+            </Button>
+            <Button size="sm" onClick={() => setBulkDialogOpen(true)}>
+              <Play className="h-4 w-4 mr-2" />
+              {t('testCases.bulkRun.recordRuns', 'Record runs')}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Test Cases Table */}
       <Card className={`transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={allVisibleSelected}
+                  onCheckedChange={toggleSelectAllVisible}
+                  aria-label={t('testCases.bulkRun.selectAll', 'Select all')}
+                />
+              </TableHead>
               <TableHead>{t('testCases.key')}</TableHead>
               <TableHead>{t('testCases.tableTitle')}</TableHead>
               <TableHead>{t('testCases.type')}</TableHead>
@@ -405,7 +536,14 @@ const TestCasesPage: React.FC = () => {
           </TableHeader>
           <TableBody>
             {filteredTestCases.map((tc) => (
-              <TableRow key={tc.id}>
+              <TableRow key={tc.id} data-state={selectedIds.has(tc.id) ? 'selected' : undefined}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(tc.id)}
+                    onCheckedChange={() => toggleSelected(tc.id)}
+                    aria-label={t('testCases.bulkRun.selectOne', 'Select test case')}
+                  />
+                </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{tc.testCaseKey}</span>
@@ -518,7 +656,7 @@ const TestCasesPage: React.FC = () => {
             ))}
             {filteredTestCases.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <span className="text-muted-foreground">
                     {searchQuery || statusFilter !== 'all' || typeFilter !== 'all' || priorityFilter !== 'all'
                       ? t('testCases.noMatch')
@@ -622,6 +760,48 @@ const TestCasesPage: React.FC = () => {
           </div>
         </div>
       </Card>
+
+      {/* Bulk record-runs dialog */}
+      <Dialog open={bulkDialogOpen} onOpenChange={setBulkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('testCases.bulkRun.title', 'Record test runs')}</DialogTitle>
+            <DialogDescription>
+              {t('testCases.bulkRun.description', { count: selectedIds.size })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>{t('testCases.bulkRun.status', 'Result')}</Label>
+              <Combobox
+                options={TEST_RUN_STATUSES.map((s) => ({ value: s, label: t(`testRuns.statusValues.${s}`, s) }))}
+                value={bulkStatus}
+                onValueChange={(v) => setBulkStatus(v as TestRunStatus)}
+                placeholder={t('testCases.bulkRun.status', 'Result')}
+                searchPlaceholder={t('testCases.bulkRun.status', 'Result')}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>{t('testCases.bulkRun.environment', 'Environment (optional)')}</Label>
+              <Input
+                value={bulkEnvironment}
+                onChange={(e) => setBulkEnvironment(e.target.value)}
+                placeholder={t('testCases.bulkRun.environmentPlaceholder', 'e.g. Chrome / staging')}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialogOpen(false)} disabled={bulkSubmitting}>
+              {t('common.cancel', 'Cancel')}
+            </Button>
+            <Button onClick={handleBulkRecord} disabled={bulkSubmitting || selectedIds.size === 0}>
+              {bulkSubmitting
+                ? t('testCases.bulkRun.recording', 'Recording…')
+                : t('testCases.bulkRun.recordRuns', 'Record runs')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

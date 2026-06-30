@@ -117,6 +117,7 @@ export interface ProjectMember {
   userId: number;
   personId?: number;
   username: string;
+  personName?: string;
   email?: string;
   projectRole: ProjectRole;
   grantedAt: string;
@@ -1033,6 +1034,9 @@ export interface TestCase {
   preconditions?: string;
   steps?: string;
   expectedResult?: string;
+  projectId?: number;
+  projectName?: string;
+  projectKey?: string;
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -1071,6 +1075,7 @@ export interface CreateTestCaseRequest {
   preconditions?: string;
   steps?: string;
   expectedResult?: string;
+  projectId?: number;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
@@ -1139,6 +1144,8 @@ export interface BugReport {
   reporterName?: string;
   assigneeId?: number;
   assigneeName?: string;
+  qaAssigneeId?: number;
+  qaAssigneeName?: string;
   resolution?: string;
   resolvedAt?: string;
   createdAt: string;
@@ -1175,6 +1182,7 @@ export interface CreateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   targetReleaseId?: number;
 }
 
@@ -1196,6 +1204,7 @@ export interface UpdateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   resolution?: string;
   targetReleaseId?: number;
   fixedInReleaseId?: number;
@@ -1230,7 +1239,16 @@ export interface TestRun {
   attachments?: string;
   bugReportId?: number;
   bugReportKey?: string;
+  /** All bug reports (defects) linked to this run. A failed execution may have several. */
+  linkedBugs?: LinkedBugReport[];
   createdAt: string;
+}
+
+export interface LinkedBugReport {
+  id: number;
+  bugKey: string;
+  title?: string;
+  status?: BugStatus;
 }
 
 export interface CreateTestRunRequest {
@@ -1808,7 +1826,14 @@ export interface BulkUpdateResult {
 }
 
 // Global Search
-export type GlobalSearchEntityType = 'TASK' | 'SUBTASK' | 'BUG_REPORT' | 'PITCH' | 'EPIC';
+export type GlobalSearchEntityType =
+  | 'TASK'
+  | 'SUBTASK'
+  | 'BUG_REPORT'
+  | 'PITCH'
+  | 'EPIC'
+  | 'WIKI_SPACE'
+  | 'WIKI_PAGE';
 
 export interface GlobalSearchResult {
   entityType: GlobalSearchEntityType;

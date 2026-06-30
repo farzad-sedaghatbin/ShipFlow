@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 // Static imports — always loaded immediately (structural / auth components)
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
+import { useToast, setToastHandler, ProjectProvider, TourProvider, BreadcrumbProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
 
 // ── Page-level code splitting ─────────────────────────────────────────────────
@@ -72,6 +72,7 @@ const MeetingList = lazy(() => import('./pages/MeetingList'));
 // Organisation
 const People = lazy(() => import('./pages/People'));
 const Teams = lazy(() => import('./pages/Teams'));
+const TeamDetailPage = lazy(() => import('./pages/TeamDetailPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 
 // Admin
@@ -125,6 +126,11 @@ const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter'));
 
 // Workflow Automations
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
+
+// Wiki
+const WikiSpaceList = lazy(() => import('./pages/WikiSpaceList'));
+const WikiSpace = lazy(() => import('./pages/WikiSpace'));
+const WikiPage = lazy(() => import('./pages/WikiPage'));
 
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
@@ -218,6 +224,7 @@ function App() {
             <ProtectedRoute>
               <ProjectProvider>
                 <TourProvider>
+                  <BreadcrumbProvider>
                   <Layout>
                     <Routes>
                       {/* Main Navigation - paths are relative to parent "/*" route */}
@@ -285,6 +292,7 @@ function App() {
                       {/* Organisation */}
                       <Route path="people" element={<People />} />
                       <Route path="teams" element={<Teams />} />
+                      <Route path="teams/:id" element={<TeamDetailPage />} />
 
                       {/* Workflow Automations */}
                       <Route path="automations" element={<AutomationsPage />} />
@@ -355,6 +363,11 @@ function App() {
                       {/* Knowledge Center */}
                       <Route path="knowledge" element={<KnowledgeCenter />} />
 
+                      {/* Wiki */}
+                      <Route path="wiki" element={<WikiSpaceList />} />
+                      <Route path="wiki/:spaceId" element={<WikiSpace />} />
+                      <Route path="wiki/:spaceId/:pageId" element={<WikiPage />} />
+
                       {/* Help & Guides */}
                       <Route path="help" element={<HelpGuides />} />
                       <Route path="help/getting-started" element={<GettingStartedGuide />} />
@@ -396,6 +409,7 @@ function App() {
                        */}
                     </Routes>
                   </Layout>
+                  </BreadcrumbProvider>
                 </TourProvider>
               </ProjectProvider>
             </ProtectedRoute>

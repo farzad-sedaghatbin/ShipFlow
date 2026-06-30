@@ -10,6 +10,8 @@ import {
   Loader2,
   ArrowRight,
   ExternalLink,
+  BookOpen,
+  BookText,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -38,10 +40,20 @@ const ENTITY_CONFIG: Record<GlobalSearchEntityType, {
   BUG_REPORT: { icon: Bug, groupKey: 'globalSearch.bugReports' },
   PITCH: { icon: FileText, groupKey: 'globalSearch.pitches' },
   EPIC: { icon: Layers, groupKey: 'globalSearch.epics' },
+  WIKI_SPACE: { icon: BookOpen, groupKey: 'globalSearch.wikiSpaces' },
+  WIKI_PAGE: { icon: BookText, groupKey: 'globalSearch.wikiPages' },
 };
 
 // Order for display groups
-const ENTITY_ORDER: GlobalSearchEntityType[] = ['TASK', 'SUBTASK', 'BUG_REPORT', 'PITCH', 'EPIC'];
+const ENTITY_ORDER: GlobalSearchEntityType[] = [
+  'TASK',
+  'SUBTASK',
+  'BUG_REPORT',
+  'PITCH',
+  'EPIC',
+  'WIKI_SPACE',
+  'WIKI_PAGE',
+];
 
 export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearchCommandProps) {
   const { t } = useTranslation();
@@ -81,7 +93,9 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
   const doSearch = useCallback((q: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (q.trim().length < 2 || !currentProject?.id) {
+    // Wiki is org-global, so search runs even with no project selected ("All Projects");
+    // projectId is passed only when a project is chosen, scoping the project-only entities.
+    if (q.trim().length < 2) {
       setResults([]);
       setLoading(false);
       return;
@@ -90,7 +104,7 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
     setLoading(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const res = await searchService.globalSearch(q.trim(), currentProject.id, 20);
+        const res = await searchService.globalSearch(q.trim(), currentProject?.id, 20);
         setResults(res.data);
       } catch {
         setResults([]);
@@ -132,56 +146,42 @@ export default function GlobalSearchCommand({ open, onOpenChange }: GlobalSearch
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput
-        placeholder={
-          isAllProjectsSelected
-            ? t('globalSearch.selectProject', 'Select a project to search')
-            : t('globalSearch.placeholder', 'Search tasks, bugs, pitches, epics...')
-        }
+        placeholder={t('globalSearch.placeholder', 'Search tasks, bugs, pitches, epics...')}
         value={query}
         onValueChange={setQuery}
-        disabled={isAllProjectsSelected}
       />
       <CommandList>
-        {/* Project not selected state */}
-        {isAllProjectsSelected && (
-          <CommandEmpty>
-            <div className="flex flex-col items-center gap-2 py-4">
-              <Search className="h-8 w-8 text-muted-foreground/50" />
-              <p className="text-muted-foreground">
-                {t('globalSearch.selectProject', 'Select a project to search')}
-              </p>
-            </div>
-          </CommandEmpty>
-        )}
-
         {/* Loading state */}
-        {!isAllProjectsSelected && loading && query.trim().length >= 2 && (
+        {loading && query.trim().length >= 2 && (
           <div className="flex items-center justify-center py-6">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {/* Min chars hint */}
-        {!isAllProjectsSelected && !loading && query.trim().length > 0 && query.trim().length < 2 && (
+        {!loading && query.trim().length > 0 && query.trim().length < 2 && (
           <CommandEmpty>
             {t('globalSearch.minChars', 'Type at least 2 characters')}
           </CommandEmpty>
         )}
 
         {/* No results */}
-        {!isAllProjectsSelected && !loading && query.trim().length >= 2 && results.length === 0 && (
+        {!loading && query.trim().length >= 2 && results.length === 0 && (
           <CommandEmpty>
             {t('globalSearch.noResults', 'No results found')}
           </CommandEmpty>
         )}
 
-        {/* Empty state (no query) */}
-        {!isAllProjectsSelected && query.trim().length === 0 && (
+        {/* Empty state (no query) — when "All Projects" is selected, only the org-global
+            wiki is searched; selecting a project adds its tasks/pitches/bugs/epics. */}
+        {query.trim().length === 0 && (
           <CommandEmpty>
             <div className="flex flex-col items-center gap-2 py-4">
               <Search className="h-8 w-8 text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">
-                {t('globalSearch.placeholder', 'Search tasks, bugs, pitches, epics...')}
+                {isAllProjectsSelected
+                  ? t('globalSearch.wikiOnlyHint', 'Search the wiki. Select a project to also search its tasks, pitches, and bugs.')
+                  : t('globalSearch.placeholder', 'Search tasks, bugs, pitches, epics...')}
               </p>
             </div>
           </CommandEmpty>

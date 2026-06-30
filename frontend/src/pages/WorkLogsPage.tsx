@@ -421,7 +421,9 @@ export default function WorkLogsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="h-5 w-5 text-secondary-foreground" />
-              <span className="text-sm text-muted-foreground">{t('workLogs.thisCycle')}</span>
+              <span className="text-sm text-muted-foreground">
+                {isKanbanProject ? t('workLogs.total', 'Total') : t('workLogs.thisCycle')}
+              </span>
             </div>
             <div className="text-3xl font-bold">{summaryTotalHours.toFixed(1)}h</div>
             <p className="text-xs text-muted-foreground">{t('workLogs.logsCount', { count: summaryTotalCount })}</p>

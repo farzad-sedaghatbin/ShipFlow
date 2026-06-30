@@ -4,6 +4,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.feedback.RiskFeedbackDTO.Feedba
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.*;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -68,15 +69,24 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final IdentityProviderRepository identityProviderRepository;
   private final WorkflowAutomationRepository workflowAutomationRepository;
   private final WorkflowAutomationTemplateRepository workflowAutomationTemplateRepository;
+  private final WikiSpaceRepository wikiSpaceRepository;
+  private final WikiPageRepository wikiPageRepository;
+  private final StorageConfigRepository storageConfigRepository;
+  private final CommentRepository commentRepository;
   private final CustomFieldDefinitionRepository customFieldDefinitionRepository;
   private final CustomFieldValueRepository customFieldValueRepository;
   private final McpUsageLogRepository mcpUsageLogRepository;
+  private final BettingSlotRepository bettingSlotRepository;
+  private final WorkflowAutomationExecutionRepository workflowAutomationExecutionRepository;
 
   @Override
   @Transactional
   public void run(String... args) {
     // Always ensure a safe OrganizationSettings row exists (idempotent).
     seedOrganizationSettingsIfAbsent();
+
+    // Always ensure a default LOCAL_FS StorageConfig row exists (idempotent).
+    seedStorageConfigIfAbsent();
 
     // Always seed the Scrum demo project independently so it appears even when
     // the rest of the sample data was already seeded by an older version.
@@ -290,6 +300,9 @@ public class SampleDataInitializer implements CommandLineRunner {
             .updatedAt(LocalDateTime.now())
             .build();
     pitchRepository.save(spendingAnalytics);
+
+    // ── Betting Table slots ───────────────────────────────────────────────────
+    createBettingSlots(mbaActiveCycle, paymentsTeam, authTeam, instantTransfer, spendingAnalytics);
 
     // Pre-cycle pitches (no cycle — in betting or shaping queue)
     Pitch cardFreeze =
@@ -736,6 +749,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .team(paymentsTeam)
         .reporter(aliUser)
         .assignee(aliPerson)
+        .qaAssignee(minaPerson)
         .createdAt(LocalDateTime.of(2026, 4, 4, 11, 30))
         .build();
     bugReportRepository.save(criticalBug);
@@ -800,6 +814,7 @@ public class SampleDataInitializer implements CommandLineRunner {
             + "4. Verify 'Send new code' CTA appears\n"
             + "5. Request new OTP and verify counter resets")
         .expectedResult("OTP locked after 3 failures. New OTP request re-enables input.")
+        .project(bankingProject)
         .pitch(biometricLogin)
         .cycle(mbaCompletedCycle)
         .team(authTeam)
@@ -824,6 +839,7 @@ public class SampleDataInitializer implements CommandLineRunner {
             + "4. Tap Continue\n"
             + "5. Observe: inline error before OTP screen appears")
         .expectedResult("Error message 'Insufficient balance' shown inline. OTP screen never shown.")
+        .project(bankingProject)
         .pitch(instantTransfer)
         .cycle(mbaActiveCycle)
         .team(paymentsTeam)
@@ -949,6 +965,9 @@ public class SampleDataInitializer implements CommandLineRunner {
     if (adminUser != null) {
       createMcpUsageSampleData(adminUser);
     }
+
+    // ── Demo Wiki Space + Pages ───────────────────────────────────────────────
+    seedDemoWikiSpaceIfAbsent(bankingProject.getId(), adminUser);
 
     log.info(
         "Sample data initialized successfully — Mobile Banking App (Shape Up) + DevOps Platform (Kanban) + Mobile App Scrum Demo (Scrum)");
@@ -1863,6 +1882,75 @@ public class SampleDataInitializer implements CommandLineRunner {
     log.info("SSO sample data created: 2 demo identity providers (Okta OIDC, Azure AD SAML2) — both disabled by default");
   }
 
+  /**
+   * Seeds Betting Table slots for the active cycle so the slot-allocation UI renders with real
+   * tracks. Payments Team gets 3 slots (two assigned to in-cycle pitches, one open); Auth Team gets
+   * 2 open slots. Idempotent — guarded by row count.
+   */
+  private void createBettingSlots(
+      Cycle activeCycle, Team paymentsTeam, Team authTeam, Pitch firstPitch, Pitch secondPitch) {
+    if (bettingSlotRepository.count() > 0) {
+      return;
+    }
+
+    LocalDate start = activeCycle.getStartDate();
+    LocalDate end = activeCycle.getEndDate();
+
+    // Payments Team track — 3 slots, first two filled with the active-cycle pitches
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(paymentsTeam)
+            .pitch(firstPitch)
+            .position(0)
+            .startDate(start)
+            .endDate(end)
+            .notes("Primary bet for the Payments track this cycle.")
+            .build());
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(paymentsTeam)
+            .pitch(secondPitch)
+            .position(1)
+            .startDate(start)
+            .endDate(end)
+            .notes("Secondary bet — derives from existing TransactionService, low risk.")
+            .build());
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(paymentsTeam)
+            .position(2)
+            .startDate(start)
+            .endDate(end)
+            .notes("Open slot — reserved for cooldown spillover.")
+            .build());
+
+    // Auth Team track — 2 open slots
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(authTeam)
+            .position(0)
+            .startDate(start)
+            .endDate(end)
+            .notes("Open slot — awaiting a shaped auth pitch.")
+            .build());
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(authTeam)
+            .position(1)
+            .startDate(start)
+            .endDate(end)
+            .build());
+
+    log.info(
+        "Betting slot sample data created: 5 slots (3 Payments Team, 2 Auth Team) for cycle '{}'",
+        activeCycle.getName());
+  }
+
   private void createWorkflowAutomationSampleData(Project project) {
     if (workflowAutomationRepository.count() > 0) return;
 
@@ -1874,7 +1962,7 @@ public class SampleDataInitializer implements CommandLineRunner {
     WorkflowAutomationTemplate notifyPitchChange = templates.size() > 5 ? templates.get(5) : templates.get(0);
     WorkflowAutomationTemplate cycleStart = templates.size() > 7 ? templates.get(7) : templates.get(0);
 
-    workflowAutomationRepository.save(WorkflowAutomation.builder()
+    WorkflowAutomation taskDoneRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
         .name("Notify team on task completion")
         .description("Fires when any task is marked done and notifies all project members.")
         .project(project)
@@ -1888,7 +1976,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .lastTriggeredAt(LocalDateTime.of(2026, 6, 14, 10, 22))
         .build());
 
-    workflowAutomationRepository.save(WorkflowAutomation.builder()
+    WorkflowAutomation pitchChangeRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
         .name("Alert on pitch status change")
         .description("Notifies team when a pitch moves to Shaped or Approved.")
         .project(project)
@@ -1902,7 +1990,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .lastTriggeredAt(LocalDateTime.of(2026, 6, 10, 15, 0))
         .build());
 
-    workflowAutomationRepository.save(WorkflowAutomation.builder()
+    WorkflowAutomation cycleStartRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
         .name("Cycle kick-off notification")
         .description("Sends a kick-off message when a cycle transitions to In Progress.")
         .project(project)
@@ -1928,10 +2016,272 @@ public class SampleDataInitializer implements CommandLineRunner {
         .executionCount(0L)
         .build());
 
+    createWorkflowAutomationExecutions(taskDoneRule, pitchChangeRule, cycleStartRule);
+
     log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
   }
 
+  /**
+   * Seeds a realistic sample of execution-history rows for the demo automation rules so the
+   * "Execution History" tab renders instead of an empty state. Not every counted execution is
+   * materialised (the rules advertise 47/8/3); ~18 representative rows spread across the two weeks
+   * leading up to each rule's lastTriggeredAt are enough for the UI. Idempotent via the rules-block
+   * count guard in the caller.
+   */
+  private void createWorkflowAutomationExecutions(
+      WorkflowAutomation taskDoneRule,
+      WorkflowAutomation pitchChangeRule,
+      WorkflowAutomation cycleStartRule) {
+
+    // ── "Notify team on task completion" — mostly SUCCESS, one FAILURE ──────────
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Wire OTP confirmation screen\",\"taskId\":101}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 2, 9, 14));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"IBAN validation service\",\"taskId\":104}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 4, 11, 30));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Transfer fee preview component\",\"taskId\":108}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 6, 16, 5));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Animated success state\",\"taskId\":112}",
+        AutomationExecutionStatus.FAILURE,
+        "Notification delivery failed: SMTP timeout after 3 retries.",
+        LocalDateTime.of(2026, 6, 8, 8, 42));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Spending category aggregation\",\"taskId\":118}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 9, 13, 20));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Donut chart for category split\",\"taskId\":121}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 11, 10, 55));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Biggest transactions list\",\"taskId\":125}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 12, 15, 10));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Beneficiary selection flow\",\"taskId\":130}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 13, 17, 48));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"OTP rate-limit guard\",\"taskId\":134}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 14, 10, 22));
+
+    // ── "Alert on pitch status change" — SUCCESS with one SKIPPED ──────────────
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Card Freeze & Unfreeze\",\"newStatus\":\"SHAPED\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 30, 9, 0));
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Instant Transfer UI\",\"newStatus\":\"APPROVED\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 3, 14, 30));
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Recurring Payment Support\",\"newStatus\":\"DRAFT\"}",
+        AutomationExecutionStatus.SKIPPED,
+        "Condition not met: toStatus filter excludes DRAFT.",
+        LocalDateTime.of(2026, 6, 7, 11, 15));
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Spending Analytics Dashboard\",\"newStatus\":\"APPROVED\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 10, 15, 0));
+
+    // ── "Cycle kick-off notification" — SUCCESS ────────────────────────────────
+    saveExecution(cycleStartRule, "CYCLE_STARTED",
+        "{\"cycleName\":\"v1.5 — Biometric Authentication\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 1, 9, 0));
+    saveExecution(cycleStartRule, "CYCLE_STARTED",
+        "{\"cycleName\":\"v2.0 — Payments Overhaul\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 15, 9, 0));
+    saveExecution(cycleStartRule, "CYCLE_STARTED",
+        "{\"cycleName\":\"Continuous Flow\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 28, 9, 0));
+
+    log.info("Workflow automation execution history created: 17 demo execution records");
+  }
+
+  private void saveExecution(
+      WorkflowAutomation automation,
+      String triggerEventType,
+      String triggerEventData,
+      AutomationExecutionStatus status,
+      String resultMessage,
+      LocalDateTime executedAt) {
+    workflowAutomationExecutionRepository.save(
+        WorkflowAutomationExecution.builder()
+            .automation(automation)
+            .triggerEventType(triggerEventType)
+            .triggerEventData(triggerEventData)
+            .status(status)
+            .resultMessage(resultMessage)
+            .executedAt(executedAt)
+            .build());
+  }
+
+  /**
+   * Seeds a default LOCAL_FS StorageConfig row if none exists yet. Idempotent — skipped when the
+   * Flyway migration (V2026_06_18_0005) already inserted the row in real DBs.
+   */
+  private void seedStorageConfigIfAbsent() {
+    if (storageConfigRepository.findFirstByDeletedAtIsNullOrderByIdAsc().isPresent()) {
+      log.info("StorageConfig already exists — skipping seed");
+      return;
+    }
+    storageConfigRepository.save(
+        StorageConfig.builder()
+            .activeProvider(StorageProviderType.LOCAL_FS)
+            .config("{}")
+            .build());
+    log.info("StorageConfig seeded with LOCAL_FS defaults");
+  }
+
+  /**
+   * Seeds a demo wiki space ("DOCS") with a small nested page tree. Idempotent — guarded by
+   * spaceKey lookup so repeated startups never duplicate rows.
+   */
+  private void seedDemoWikiSpaceIfAbsent(Long projectId, User createdByUser) {
+    if (wikiSpaceRepository.findBySpaceKeyAndDeletedAtIsNull("DOCS").isPresent()) {
+      log.info("Demo wiki space (DOCS) already exists — skipping seed");
+      return;
+    }
+
+    long createdById = createdByUser != null ? createdByUser.getId() : 1L;
+
+    WikiSpace docsSpace =
+        WikiSpace.builder()
+            .name("Product Docs")
+            .spaceKey("DOCS")
+            .description(
+                "Central documentation space for the Mobile Banking App — architecture decisions, "
+                    + "team handbook, and onboarding guides.")
+            .projectId(projectId)
+            .createdBy(createdById)
+            .build();
+    wikiSpaceRepository.save(docsSpace);
+    Long spaceId = docsSpace.getId();
+
+    // ── Root page 1: Getting Started (position 0) ─────────────────────────────
+    WikiPage gettingStarted =
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(null)
+            .title("Getting Started")
+            .slug("getting-started")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Getting Started\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Welcome to ShipFlow Product Docs. This space contains everything "
+                    + "you need to contribute to the Mobile Banking App.\"}]}]")
+            .contentText(
+                "Getting Started Welcome to ShipFlow Product Docs. This space contains "
+                    + "everything you need to contribute to the Mobile Banking App.")
+            .position(0)
+            .createdBy(createdById)
+            .build();
+    wikiPageRepository.save(gettingStarted);
+
+    // Child 1.1: Installation (position 0 under Getting Started)
+    wikiPageRepository.save(
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(gettingStarted.getId())
+            .title("Installation")
+            .slug("installation")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Installation\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Prerequisites: Java 21, Node 18 LTS, Docker. "
+                    + "Run docker compose up -d to start PostgreSQL and Redis, "
+                    + "then ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev "
+                    + "for the backend and npm run dev for the frontend.\"}]}]")
+            .contentText(
+                "Installation Prerequisites: Java 21, Node 18 LTS, Docker. "
+                    + "Run docker compose up -d to start PostgreSQL and Redis, "
+                    + "then ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev "
+                    + "for the backend and npm run dev for the frontend.")
+            .position(0)
+            .createdBy(createdById)
+            .build());
+
+    // Child 1.2: Architecture Overview (position 1 under Getting Started)
+    wikiPageRepository.save(
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(gettingStarted.getId())
+            .title("Architecture Overview")
+            .slug("architecture-overview")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Architecture Overview\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"ShipFlow is a Spring Boot 3 + React 18 monorepo. "
+                    + "The backend follows a Controller → Service → Repository layering convention. "
+                    + "PostgreSQL is the primary store; Redis is used for caching and session data.\"}]}]")
+            .contentText(
+                "Architecture Overview ShipFlow is a Spring Boot 3 + React 18 monorepo. "
+                    + "The backend follows a Controller → Service → Repository layering convention. "
+                    + "PostgreSQL is the primary store; Redis is used for caching and session data.")
+            .position(1)
+            .createdBy(createdById)
+            .build());
+
+    // ── Root page 2: Team Handbook (position 1) ───────────────────────────────
+    wikiPageRepository.save(
+        WikiPage.builder()
+            .spaceId(spaceId)
+            .parentId(null)
+            .title("Team Handbook")
+            .slug("team-handbook")
+            .content(
+                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Team Handbook\"}]},"
+                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                    + "\"text\":\"Our working agreements, code-review checklist, on-call rotation, "
+                    + "and communication norms. Keep this document up to date as the team evolves.\"}]}]")
+            .contentText(
+                "Team Handbook Our working agreements, code-review checklist, on-call rotation, "
+                    + "and communication norms. Keep this document up to date as the team evolves.")
+            .position(1)
+            .createdBy(createdById)
+            .build());
+
+    // ── Demo discussion thread on the Getting Started page ────────────────────
+    if (createdByUser != null) {
+      commentRepository.save(
+          Comment.builder()
+              .content("Welcome aboard! Ping me if anything here is out of date. 🙌")
+              .entityType(CommentEntityType.WIKI_PAGE)
+              .entityId(gettingStarted.getId())
+              .author(createdByUser)
+              .build());
+      commentRepository.save(
+          Comment.builder()
+              .content("Should we add a section on the local Redis setup? It tripped me up.")
+              .entityType(CommentEntityType.WIKI_PAGE)
+              .entityId(gettingStarted.getId())
+              .author(createdByUser)
+              .build());
+    }
+
+    log.info(
+        "Demo wiki space seeded: space DOCS with 4 pages "
+            + "(Getting Started → Installation, Architecture Overview; Team Handbook)");
+  }
+
   private void createCustomFieldSampleData(Project project) {
+    if (customFieldDefinitionRepository.count() > 0) {
+      return;
+    }
     // Org-wide TEXT field applicable to all tasks
     CustomFieldDefinition sprintNotes =
         customFieldDefinitionRepository.save(

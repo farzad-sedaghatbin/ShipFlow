@@ -24,6 +24,7 @@ public class TestRunService {
   private final PitchRepository pitchRepository;
   private final CycleRepository cycleRepository;
   private final UserRepository userRepository;
+  private final BugReportRepository bugReportRepository;
   private final LocalizationService localizationService;
 
   @Value("${app.qa.test-management.enabled:true}")
@@ -70,6 +71,41 @@ public class TestRunService {
         request.getStatus());
 
     return toDTO(testRun);
+  }
+
+  /**
+   * Record the same execution result against many test cases at once (Zephyr-style bulk execution).
+   * Creates one test run per test case in a single transaction — if any case is invalid the whole
+   * batch rolls back.
+   */
+  @Transactional
+  public List<TestRunDTO> recordTestRunsBulk(BulkRecordTestRunsRequest request, Long userId) {
+    checkFeatureEnabled();
+
+    List<TestRunDTO> results = new java.util.ArrayList<>();
+    for (Long testCaseId : request.getTestCaseIds()) {
+      CreateTestRunRequest single = CreateTestRunRequest.builder().testCaseId(testCaseId)
+          .status(request.getStatus()).environment(request.getEnvironment())
+          .buildVersion(request.getBuildVersion()).notes(request.getNotes()).cycleId(request.getCycleId())
+          .pitchId(request.getPitchId()).build();
+      results.add(createTestRun(single, userId));
+    }
+    log.info("Bulk-recorded {} test runs by user {} with status {}", results.size(), userId,
+        request.getStatus());
+    return results;
+  }
+
+  /** Update the status of many test runs at once (Zephyr-style bulk update). */
+  @Transactional
+  public List<TestRunDTO> updateTestRunStatusBulk(BulkUpdateTestRunStatusRequest request) {
+    checkFeatureEnabled();
+
+    List<TestRunDTO> results = new java.util.ArrayList<>();
+    for (Long id : request.getTestRunIds()) {
+      results.add(updateTestRunStatus(id, request.getStatus(), request.getNotes()));
+    }
+    log.info("Bulk-updated {} test runs to status {}", results.size(), request.getStatus());
+    return results;
   }
 
   /** Update test run status. */
@@ -183,7 +219,15 @@ public class TestRunService {
 
   /** Convert entity to DTO. */
   public TestRunDTO toDTO(TestRun testRun) {
-    BugReport bugReport = testRun.getBugReport();
+    // Query the defects fresh rather than relying on the lazy inverse collection — it can be stale
+    // after linking/unlinking within the same transaction.
+    List<BugReport> bugReports = bugReportRepository.findByTestRunId(testRun.getId());
+    List<LinkedBugReportDTO> linkedBugs = bugReports.stream()
+        .map(b -> LinkedBugReportDTO.builder().id(b.getId()).bugKey(b.getBugKey()).title(b.getTitle())
+            .status(b.getStatus()).build())
+        .collect(Collectors.toList());
+    // The first linked defect doubles as the legacy single bugReportId/Key for older consumers.
+    BugReport primary = bugReports.isEmpty() ? null : bugReports.get(0);
 
     return TestRunDTO.builder().id(testRun.getId()).testCaseId(testRun.getTestCase().getId())
         .testCaseKey(testRun.getTestCase().getTestCaseKey()).testCaseTitle(testRun.getTestCase().getTitle())
@@ -196,8 +240,39 @@ public class TestRunService {
         .durationSeconds(testRun.getDurationSeconds()).notes(testRun.getNotes())
         .actualResult(testRun.getActualResult()).buildVersion(testRun.getBuildVersion())
         .environment(testRun.getEnvironment()).attachments(testRun.getAttachments())
-        .bugReportId(bugReport != null ? bugReport.getId() : null)
-        .bugReportKey(bugReport != null ? bugReport.getBugKey() : null).createdAt(testRun.getCreatedAt())
-        .build();
+        .bugReportId(primary != null ? primary.getId() : null)
+        .bugReportKey(primary != null ? primary.getBugKey() : null).linkedBugs(linkedBugs)
+        .createdAt(testRun.getCreatedAt()).build();
+  }
+
+  /**
+   * Link an existing bug report (defect) to a test run — the ShipFlow-native equivalent of attaching
+   * a defect to an execution. A run can have several linked defects.
+   */
+  @Transactional
+  public TestRunDTO linkDefect(Long runId, Long bugReportId) {
+    checkFeatureEnabled();
+    TestRun testRun = testRunRepository.findById(runId)
+        .orElseThrow(() -> new RuntimeException("Test run not found: " + runId));
+    BugReport bug = bugReportRepository.findById(bugReportId)
+        .orElseThrow(() -> new RuntimeException("Bug report not found: " + bugReportId));
+    bug.setTestRun(testRun);
+    bugReportRepository.save(bug);
+    log.info("Linked bug {} to test run {}", bug.getBugKey(), runId);
+    return getTestRunById(runId);
+  }
+
+  /** Unlink a bug report (defect) from a test run. */
+  @Transactional
+  public TestRunDTO unlinkDefect(Long runId, Long bugReportId) {
+    checkFeatureEnabled();
+    BugReport bug = bugReportRepository.findById(bugReportId)
+        .orElseThrow(() -> new RuntimeException("Bug report not found: " + bugReportId));
+    if (bug.getTestRun() != null && bug.getTestRun().getId().equals(runId)) {
+      bug.setTestRun(null);
+      bugReportRepository.save(bug);
+      log.info("Unlinked bug {} from test run {}", bug.getBugKey(), runId);
+    }
+    return getTestRunById(runId);
   }
 }

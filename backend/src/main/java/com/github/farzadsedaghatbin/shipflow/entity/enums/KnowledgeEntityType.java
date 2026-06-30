@@ -15,5 +15,6 @@ public enum KnowledgeEntityType {
   INITIATIVE, // Strategic themes spanning multiple quarters
   EPIC, // Feature grouping layer between initiatives and pitches
   RELEASE, // Delivery milestones that can span multiple cycles
-  KNOWLEDGE_SOURCE // Content imported via the Knowledge Center
+  KNOWLEDGE_SOURCE, // Content imported via the Knowledge Center
+  WIKI_PAGE // Content ingested from an in-app Wiki page
 }

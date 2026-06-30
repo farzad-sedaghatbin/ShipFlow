@@ -147,6 +147,12 @@ public class BugReport {
   @JoinColumn(name = "assignee_id")
   private Person assignee;
 
+  /** Person assigned to QA/test this bug (who verifies the fix). */
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "qa_assignee_id")
+  private Person qaAssignee;
+
   /** Resolution notes. */
   @Column(columnDefinition = "TEXT")
   private String resolution;

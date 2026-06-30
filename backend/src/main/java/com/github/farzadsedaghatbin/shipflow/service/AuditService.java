@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import com.github.farzadsedaghatbin.shipflow.dto.audit.AuditExportRow;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO.RevisionType;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.FieldChangeDTO;
@@ -8,10 +9,13 @@ import com.github.farzadsedaghatbin.shipflow.entity.audit.AuditRevisionEntity;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -287,6 +291,175 @@ public class AuditService {
    */
   private LocalDateTime convertToLocalDateTime(long timestamp) {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault());
+  }
+
+  // ========== Audit trail export (v1.9.0 — Production-Grade Self-Hosting) ==========
+
+  /** Entity-type keys supported by the audit export. */
+  private static final List<String> EXPORTABLE_TYPES = List.of("task", "bug", "pitch", "testcase");
+
+  /**
+   * Export the audit trail as flattened rows (one row per changed field) for the
+   * given entity type and inclusive date range. Pass {@code "all"} (or null) to
+   * export every supported type. Rows are returned newest-first.
+   *
+   * @param entityType task | bug | pitch | testcase | all
+   * @param from       inclusive lower bound on revision date (nullable = no bound)
+   * @param to         inclusive upper bound on revision date (nullable = no bound)
+   */
+  public List<AuditExportRow> exportAuditTrail(String entityType, LocalDate from, LocalDate to) {
+    String key = entityType == null || entityType.isBlank() ? "all" : entityType.trim().toLowerCase();
+    if (!"all".equals(key) && !EXPORTABLE_TYPES.contains(key)) {
+      throw new IllegalArgumentException(
+          "Unsupported audit entity type: " + entityType + ". Allowed: task, bug, pitch, testcase, all");
+    }
+    if (from != null && to != null && from.isAfter(to)) {
+      throw new IllegalArgumentException("'from' date must not be after 'to' date");
+    }
+
+    Instant fromInstant = from != null ? from.atStartOfDay(ZoneId.systemDefault()).toInstant() : null;
+    // 'to' is inclusive of the whole day — use an exclusive upper bound at next midnight.
+    Instant toExclusive = to != null ? to.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant() : null;
+
+    List<String> types = "all".equals(key) ? EXPORTABLE_TYPES : List.of(key);
+    List<AuditExportRow> rows = new ArrayList<>();
+    for (String type : types) {
+      switch (type) {
+        case "task" -> rows.addAll(
+            collectAuditRows(Task.class, "task", Task::getId, this::getTaskFieldValue, fromInstant, toExclusive));
+        case "bug" -> rows.addAll(collectAuditRows(BugReport.class, "bug", BugReport::getId,
+            this::getBugReportFieldValue, fromInstant, toExclusive));
+        case "pitch" -> rows.addAll(collectAuditRows(Pitch.class, "pitch", Pitch::getId, this::getPitchFieldValue,
+            fromInstant, toExclusive));
+        case "testcase" -> rows.addAll(collectAuditRows(TestCase.class, "testcase", TestCase::getId,
+            this::getTestCaseFieldValue, fromInstant, toExclusive));
+        default -> { /* unreachable — validated above */ }
+      }
+    }
+
+    resolveModifiedByDisplayNames(rows);
+    rows.sort(Comparator.comparing(AuditExportRow::getRevisionDate,
+        Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+    return rows;
+  }
+
+  /**
+   * Serialize the audit trail to CSV bytes (RFC-4180, formula-injection safe).
+   */
+  public byte[] exportAuditTrailCsv(String entityType, LocalDate from, LocalDate to) {
+    List<AuditExportRow> rows = exportAuditTrail(entityType, from, to);
+    StringBuilder sb = new StringBuilder();
+    sb.append("entityType,entityId,revision,timestamp,modifiedBy,changeType,field,oldValue,newValue\n");
+    for (AuditExportRow r : rows) {
+      sb.append(csvEscape(r.getEntityType())).append(',')
+          .append(r.getEntityId() != null ? r.getEntityId() : "").append(',')
+          .append(r.getRevision() != null ? r.getRevision() : "").append(',')
+          .append(csvEscape(r.getRevisionDate() != null ? r.getRevisionDate().toString() : "")).append(',')
+          .append(csvEscape(r.getModifiedBy())).append(',')
+          .append(csvEscape(r.getChangeType() != null ? r.getChangeType().name() : "")).append(',')
+          .append(csvEscape(r.getField())).append(',').append(csvEscape(r.getOldValue())).append(',')
+          .append(csvEscape(r.getNewValue())).append('\n');
+    }
+    return sb.toString().getBytes(StandardCharsets.UTF_8);
+  }
+
+  /**
+   * Query all Envers revisions for an entity class, group by entity id, compute
+   * chronological field diffs, and emit one row per changed field whose revision
+   * date falls within [fromInstant, toExclusive). The full revision chain is always
+   * walked so diffs stay correct even when the date window starts mid-history.
+   */
+  private <T> List<AuditExportRow> collectAuditRows(Class<T> entityClass, String typeLabel,
+      Function<T, Long> idExtractor, FieldValueExtractor<T> fieldExtractor, Instant fromInstant,
+      Instant toExclusive) {
+
+    AuditReader auditReader = AuditReaderFactory.get(entityManager);
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> revisions = auditReader.createQuery().forRevisionsOfEntity(entityClass, false, true)
+        .addOrder(AuditEntity.revisionNumber().asc()).getResultList();
+
+    // Group revisions per entity id, preserving chronological order.
+    Map<Long, List<Object[]>> byId = new LinkedHashMap<>();
+    for (Object[] rev : revisions) {
+      @SuppressWarnings("unchecked")
+      T entity = (T) rev[0];
+      if (entity == null) {
+        continue;
+      }
+      Long id = idExtractor.apply(entity);
+      byId.computeIfAbsent(id, k -> new ArrayList<>()).add(rev);
+    }
+
+    List<AuditExportRow> rows = new ArrayList<>();
+    for (List<Object[]> entityRevs : byId.values()) {
+      T previous = null;
+      for (Object[] rev : entityRevs) {
+        @SuppressWarnings("unchecked")
+        T current = (T) rev[0];
+        AuditRevisionEntity revEntity = (AuditRevisionEntity) rev[1];
+        org.hibernate.envers.RevisionType enversType = (org.hibernate.envers.RevisionType) rev[2];
+        Instant ts = Instant.ofEpochMilli(revEntity.getTimestamp());
+
+        boolean inRange = (fromInstant == null || !ts.isBefore(fromInstant))
+            && (toExclusive == null || ts.isBefore(toExclusive));
+
+        if (inRange) {
+          LocalDateTime when = convertToLocalDateTime(revEntity.getTimestamp());
+          String modifiedBy = revEntity.getModifiedBy() != null ? revEntity.getModifiedBy() : "system";
+          RevisionType changeType = convertRevisionType(enversType);
+          Long revNo = (long) revEntity.getId();
+          Long entityId = idExtractor.apply(current);
+
+          List<FieldChangeDTO> changes = computeFieldChanges(previous, current, fieldExtractor, enversType);
+          if (changes.isEmpty()) {
+            // Deletion or a revision with no audited-field change — record the revision itself.
+            rows.add(AuditExportRow.builder().entityType(typeLabel).entityId(entityId).revision(revNo)
+                .revisionDate(when).modifiedBy(modifiedBy).changeType(changeType).build());
+          } else {
+            for (FieldChangeDTO change : changes) {
+              rows.add(AuditExportRow.builder().entityType(typeLabel).entityId(entityId).revision(revNo)
+                  .revisionDate(when).modifiedBy(modifiedBy).changeType(changeType).field(change.getFieldName())
+                  .oldValue(change.getOldValue()).newValue(change.getNewValue()).build());
+            }
+          }
+        }
+        previous = current;
+      }
+    }
+    return rows;
+  }
+
+  /** Batch-resolve stored usernames to display names, mutating the rows in place. */
+  private void resolveModifiedByDisplayNames(List<AuditExportRow> rows) {
+    List<String> usernames = rows.stream().map(AuditExportRow::getModifiedBy)
+        .filter(name -> name != null && !"system".equals(name)).distinct().collect(Collectors.toList());
+    if (usernames.isEmpty()) {
+      return;
+    }
+    Map<String, String> displayNames = userRepository.findByUsernameIn(usernames).stream().collect(
+        Collectors.toMap(User::getUsername, u -> u.getPerson() != null ? u.getPerson().getName() : u.getUsername()));
+    rows.forEach(r -> {
+      String resolved = displayNames.get(r.getModifiedBy());
+      if (resolved != null) {
+        r.setModifiedBy(resolved);
+      }
+    });
+  }
+
+  /** CSV-escape a value: RFC-4180 quoting plus spreadsheet formula-injection guard. */
+  private static String csvEscape(String val) {
+    if (val == null || val.isEmpty()) {
+      return "";
+    }
+    String safe = val;
+    if ("=+-@\t\r".indexOf(safe.charAt(0)) >= 0) {
+      safe = "'" + safe;
+    }
+    if (safe.contains(",") || safe.contains("\"") || safe.contains("\n") || safe.contains("\r")) {
+      return "\"" + safe.replace("\"", "\"\"") + "\"";
+    }
+    return safe;
   }
 
   /**

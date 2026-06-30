@@ -1,0 +1,81 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "title": "ShipFlow — Overview",
+  "uid": "shipflow-overview",
+  "tags": ["shipflow"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "App up",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }] }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "max(up{job=\"shipflow\"})", "datasource": { "type": "prometheus", "uid": "${datasource}" } }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "JVM heap used",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 9, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum(jvm_memory_used_bytes{application=\"shipflow\", area=\"heap\"})", "legendFormat": "heap used", "datasource": { "type": "prometheus", "uid": "${datasource}" } }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "HTTP request rate (req/s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 9, "x": 15, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "sum by (status) (rate(http_server_requests_seconds_count{application=\"shipflow\"}[5m]))", "legendFormat": "{{status}}", "datasource": { "type": "prometheus", "uid": "${datasource}" } }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "HTTP p95 latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{application=\"shipflow\"}[5m])))", "legendFormat": "{{uri}}", "datasource": { "type": "prometheus", "uid": "${datasource}" } }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "AI Q&A query rate & cache hits",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "rate(qa_query_total{application=\"shipflow\"}[5m])", "legendFormat": "queries", "datasource": { "type": "prometheus", "uid": "${datasource}" } },
+        { "refId": "B", "expr": "rate(qa_cache_hits_total{application=\"shipflow\"}[5m])", "legendFormat": "cache hits", "datasource": { "type": "prometheus", "uid": "${datasource}" } }
+      ]
+    }
+  ]
+}

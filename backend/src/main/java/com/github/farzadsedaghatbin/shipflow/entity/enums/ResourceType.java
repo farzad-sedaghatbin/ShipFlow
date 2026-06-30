@@ -74,6 +74,9 @@ public enum ResourceType {
   /** WISE architecture / R&D resource */
   WISE_ARCHITECTURE,
 
+  /** Wiki documentation space resource */
+  WIKI,
+
   /** Custom field definition and value management resource */
   CUSTOM_FIELD
 }

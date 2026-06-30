@@ -56,5 +56,8 @@ public class CreateBugReportRequest {
 
   private Long assigneeId;
 
+  /** Person assigned to QA/test this bug. */
+  private Long qaAssigneeId;
+
   private Long targetReleaseId;
 }

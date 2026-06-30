@@ -27,6 +27,7 @@ public class McpBugReportDTO {
   private String cycleName;
   private String reporterName;
   private String assigneeName;
+  private String qaAssigneeName;
   private String resolution;
 
   public static McpBugReportDTO from(BugReportDTO dto) {
@@ -49,6 +50,7 @@ public class McpBugReportDTO {
         .cycleName(dto.getCycleName())
         .reporterName(dto.getReporterName())
         .assigneeName(dto.getAssigneeName())
+        .qaAssigneeName(dto.getQaAssigneeName())
         .resolution(dto.getResolution())
         .build();
   }

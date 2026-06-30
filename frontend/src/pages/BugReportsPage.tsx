@@ -41,6 +41,7 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { Combobox } from '../components/ui/combobox';
+import { MultiCombobox } from '../components/ui/multi-combobox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,7 +74,7 @@ import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
 import { BugReportsSkeleton } from '../components/Skeletons';
 
-const FILTER_KEYS = ['q', 'status', 'severity', 'assignee', 'cycle', 'pitch', 'release', 'exclude', 'sortBy', 'sortOrder', 'page', 'size'];
+const FILTER_KEYS = ['q', 'status', 'severity', 'assignee', 'reporter', 'cycle', 'pitch', 'release', 'exclude', 'sortBy', 'sortOrder', 'page', 'size'];
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -140,7 +141,8 @@ type SavedBugFilter = {
   searchQuery: string;
   statusFilter: BugStatus[];
   severityFilter: BugSeverity[];
-  assigneeFilter?: number;
+  assigneeFilter: number[];
+  reporterFilter: number[];
   excludeMode: boolean;
   sortBy: 'createdAt' | 'severity' | 'status' | 'title';
   sortOrder: 'asc' | 'desc';
@@ -185,8 +187,13 @@ const BugReportsPage: React.FC = () => {
   const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() =>
     searchParams.getAll('severity').length > 0 ? searchParams.getAll('severity') as BugSeverity[] : readSavedBugFilter('severityFilter', [])
   );
-  const [assigneeFilter, setAssigneeFilter] = useState<number | undefined>(() => {
-    const v = searchParams.get('assignee'); return v ? parseInt(v) : readSavedBugFilter('assigneeFilter', undefined);
+  const [assigneeFilter, setAssigneeFilter] = useState<number[]>(() => {
+    const urlVals = searchParams.getAll('assignee');
+    return urlVals.length > 0 ? urlVals.map((v) => parseInt(v)) : readSavedBugFilter('assigneeFilter', []);
+  });
+  const [reporterFilter, setReporterFilter] = useState<number[]>(() => {
+    const urlVals = searchParams.getAll('reporter');
+    return urlVals.length > 0 ? urlVals.map((v) => parseInt(v)) : readSavedBugFilter('reporterFilter', []);
   });
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(() => {
     const v = searchParams.get('cycle'); return v ? parseInt(v) : undefined;
@@ -243,6 +250,20 @@ const BugReportsPage: React.FC = () => {
     return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
+  // Reporters are User accounts (not the Person directory used for assignees), and the
+  // all-users endpoint is admin-only — so we build the reporter filter options from the
+  // reporters that actually appear in loaded bug reports. The directory accumulates across
+  // page/filter changes so previously-seen reporters stay selectable, and currently-selected
+  // ids are always retained even if they fall off the visible page.
+  const [reporterDirectory, setReporterDirectory] = useState<Record<number, string>>({});
+  const reporterOptions = useMemo(
+    () =>
+      Object.entries(reporterDirectory)
+        .map(([id, name]) => ({ value: id, label: name }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [reporterDirectory]
+  );
+
   // Keep URL in sync with filter state so the address bar is always shareable
   // and browser Back/Forward restores the exact filter view.
   useEffect(() => {
@@ -253,7 +274,8 @@ const BugReportsPage: React.FC = () => {
       if (searchQuery) next.set('q', searchQuery);
       statusFilter.forEach(s => next.append('status', s));
       severityFilter.forEach(s => next.append('severity', s));
-      if (assigneeFilter !== undefined) next.set('assignee', String(assigneeFilter));
+      assigneeFilter.forEach(a => next.append('assignee', String(a)));
+      reporterFilter.forEach(r => next.append('reporter', String(r)));
       if (cycleFilter !== undefined) next.set('cycle', String(cycleFilter));
       if (pitchFilter !== undefined) next.set('pitch', String(pitchFilter));
       if (releaseFilter !== undefined) next.set('release', String(releaseFilter));
@@ -265,7 +287,7 @@ const BugReportsPage: React.FC = () => {
       return next;
     }, { replace: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, severityFilter, assigneeFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
+  }, [statusFilter, severityFilter, assigneeFilter, reporterFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
 
   // Reset cycle and pitch filters when project changes to ensure clean filtering
   useEffect(() => {
@@ -284,6 +306,7 @@ const BugReportsPage: React.FC = () => {
         statusFilter,
         severityFilter,
         assigneeFilter,
+        reporterFilter,
         excludeMode,
         sortBy,
         sortOrder,
@@ -291,7 +314,7 @@ const BugReportsPage: React.FC = () => {
         viewMode,
       }));
     } catch { /* quota exceeded — ignore */ }
-  }, [searchQuery, statusFilter, severityFilter, assigneeFilter, excludeMode, sortBy, sortOrder, rowsPerPage, viewMode]);
+  }, [searchQuery, statusFilter, severityFilter, assigneeFilter, reporterFilter, excludeMode, sortBy, sortOrder, rowsPerPage, viewMode]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -303,7 +326,7 @@ const BugReportsPage: React.FC = () => {
 
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, currentProject?.id, isAllProjectsSelected, debouncedSearch]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, reporterFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, viewMode, currentProject?.id, isAllProjectsSelected, debouncedSearch]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -340,24 +363,27 @@ const BugReportsPage: React.FC = () => {
       const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
       const activeStatuses = statusFilter.length > 0 ? statusFilter : undefined;
       const activeSeverities = severityFilter.length > 0 ? severityFilter : undefined;
-      const activeAssignees = assigneeFilter !== undefined ? [assigneeFilter] : undefined;
+      const activeAssignees = assigneeFilter.length > 0 ? assigneeFilter : undefined;
+      const activeReporters = reporterFilter.length > 0 ? reporterFilter : undefined;
 
-      // When release filter is active, fetch a large page so client-side
-      // filtering covers all records (no reliable backend support yet).
-      const effectivePage = releaseFilter !== undefined ? 0 : page;
-      const effectiveSize = releaseFilter !== undefined ? 1000 : rowsPerPage;
+      // The kanban board groups every matching bug into status columns, so it needs the full
+      // result set rather than a single page. The release filter is applied client-side and also
+      // needs all records. In both cases fetch a large page; otherwise honor list pagination.
+      const fetchAll = releaseFilter !== undefined || viewMode === 'kanban';
+      const effectivePage = fetchAll ? 0 : page;
+      const effectiveSize = fetchAll ? 1000 : rowsPerPage;
 
       // Fire page data and aggregate stats in parallel
       const [response, statsResponse] = await Promise.all([
         qaTestManagementService.getBugReportsWithFilters(
           projectId, cycleFilter, pitchFilter,
-          activeStatuses, activeSeverities, activeAssignees,
+          activeStatuses, activeSeverities, activeAssignees, activeReporters,
           excludeMode, effectivePage, effectiveSize,
           sortBy, sortOrder, debouncedSearch || undefined
         ),
         qaTestManagementService.getBugStats(
           projectId, cycleFilter, pitchFilter,
-          activeStatuses, activeSeverities, activeAssignees,
+          activeStatuses, activeSeverities, activeAssignees, activeReporters,
           excludeMode, debouncedSearch || undefined
         ),
       ]);
@@ -368,6 +394,18 @@ const BugReportsPage: React.FC = () => {
       }
 
       setBugReports(bugData);
+      // Accumulate any reporters seen in this result set into the reporter filter directory.
+      setReporterDirectory((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const bug of bugData) {
+          if (bug.reporterId !== undefined && bug.reporterName && next[bug.reporterId] !== bug.reporterName) {
+            next[bug.reporterId] = bug.reporterName;
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
       setTotalElements(releaseFilter !== undefined ? bugData.length : getPageTotal(response.data));
       // The release filter is applied client-side, so the server stats endpoint can't account
       // for it — recompute the overview cards from the filtered set to keep them in sync.
@@ -403,6 +441,7 @@ const BugReportsPage: React.FC = () => {
       statusFilter,
       severityFilter,
       assigneeFilter,
+      reporterFilter,
       excludeMode,
       sortBy,
       sortOrder,
@@ -419,7 +458,14 @@ const BugReportsPage: React.FC = () => {
     setDebouncedSearch(f.searchQuery);
     setStatusFilter(f.statusFilter);
     setSeverityFilter(f.severityFilter);
-    setAssigneeFilter(f.assigneeFilter);
+    // Older saved filters may have stored a single assignee number — normalize to an array.
+    const savedAssignee = f.assigneeFilter as unknown;
+    setAssigneeFilter(Array.isArray(savedAssignee) ? (savedAssignee as number[])
+      : typeof savedAssignee === 'number' ? [savedAssignee] : []);
+    // Older saved filters predate the reporter filter — default to empty.
+    const savedReporter = f.reporterFilter as unknown;
+    setReporterFilter(Array.isArray(savedReporter) ? (savedReporter as number[])
+      : typeof savedReporter === 'number' ? [savedReporter] : []);
     setExcludeMode(f.excludeMode);
     setSortBy(f.sortBy);
     setSortOrder(f.sortOrder);
@@ -519,6 +565,20 @@ const BugReportsPage: React.FC = () => {
   const toggleSeverityFilter = (severity: BugSeverity) => {
     setSeverityFilter((prev) =>
       prev.includes(severity) ? prev.filter((s) => s !== severity) : [...prev, severity]
+    );
+    setPage(0);
+  };
+
+  const toggleAssigneeFilter = (personId: number) => {
+    setAssigneeFilter((prev) =>
+      prev.includes(personId) ? prev.filter((p) => p !== personId) : [...prev, personId]
+    );
+    setPage(0);
+  };
+
+  const toggleReporterFilter = (reporterId: number) => {
+    setReporterFilter((prev) =>
+      prev.includes(reporterId) ? prev.filter((r) => r !== reporterId) : [...prev, reporterId]
     );
     setPage(0);
   };
@@ -871,18 +931,64 @@ const BugReportsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Assignee filter */}
+          {/* Assignee multi-select — searchable so typing a name filters the list instead
+              of leaking keystrokes to the global keyboard shortcuts (the old dropdown had
+              no text input, so isTyping() stayed false and single-key shortcuts fired). */}
           {persons.length > 0 && (
-            <div className="min-w-[160px]">
-              <Combobox
-                options={[
-                  { value: 'all', label: t('bugReports.filters.allAssignees', 'All Assignees') },
-                  ...persons.map(p => ({ value: p.id.toString(), label: p.name })),
-                ]}
-                value={assigneeFilter?.toString() ?? 'all'}
-                onValueChange={(v) => setAssigneeFilter(v === 'all' ? undefined : parseInt(v))}
+            <div className="min-w-[200px]">
+              <MultiCombobox
+                options={persons.map((p) => ({ value: String(p.id), label: p.name }))}
+                value={assigneeFilter.map(String)}
+                onValueChange={(vals) => {
+                  // MultiCombobox emits the full next selection; toggleAssigneeFilter flips a
+                  // single id, so forward only the one that changed.
+                  const next = vals.map(Number);
+                  const toggled =
+                    next.find((id) => !assigneeFilter.includes(id)) ??
+                    assigneeFilter.find((id) => !next.includes(id));
+                  if (toggled !== undefined) toggleAssigneeFilter(toggled);
+                }}
                 placeholder={t('bugReports.filters.allAssignees', 'All Assignees')}
                 searchPlaceholder={t('bugReports.filters.searchAssignee', 'Search people...')}
+                emptyText={t('bugReports.filters.noAssignee', 'No people found')}
+                triggerClassName="h-9 min-h-9"
+                maxDisplay={2}
+              />
+            </div>
+          )}
+
+          {/* Reporter multi-select — mirrors the assignee filter. Options are the reporters
+              that have appeared in loaded bug reports (the all-users list is admin-only). Any
+              currently-selected reporter is always shown so a deep-linked/saved filter stays
+              readable even before its reporter appears in the visible page. */}
+          {(reporterOptions.length > 0 || reporterFilter.length > 0) && (
+            <div className="min-w-[200px]">
+              <MultiCombobox
+                options={(() => {
+                  const opts = [...reporterOptions];
+                  const known = new Set(opts.map((o) => o.value));
+                  reporterFilter.forEach((id) => {
+                    if (!known.has(String(id))) {
+                      opts.push({ value: String(id), label: reporterDirectory[id] ?? `#${id}` });
+                    }
+                  });
+                  return opts;
+                })()}
+                value={reporterFilter.map(String)}
+                onValueChange={(vals) => {
+                  // MultiCombobox emits the full next selection; toggleReporterFilter flips a
+                  // single id, so forward only the one that changed.
+                  const next = vals.map(Number);
+                  const toggled =
+                    next.find((id) => !reporterFilter.includes(id)) ??
+                    reporterFilter.find((id) => !next.includes(id));
+                  if (toggled !== undefined) toggleReporterFilter(toggled);
+                }}
+                placeholder={t('bugReports.filters.allReporters', 'All Reporters')}
+                searchPlaceholder={t('bugReports.filters.searchReporter', 'Search reporters...')}
+                emptyText={t('bugReports.filters.noReporter', 'No reporters found')}
+                triggerClassName="h-9 min-h-9"
+                maxDisplay={2}
               />
             </div>
           )}
@@ -960,7 +1066,8 @@ const BugReportsPage: React.FC = () => {
               onClick={() => {
                 setStatusFilter([]);
                 setSeverityFilter([]);
-                setAssigneeFilter(undefined);
+                setAssigneeFilter([]);
+                setReporterFilter([]);
                 setCycleFilter(undefined);
                 setPitchFilter(undefined);
                 setReleaseFilter(undefined);
@@ -1011,7 +1118,7 @@ const BugReportsPage: React.FC = () => {
                   actions: (
                     <>
                       <Button asChild variant="ghost" size="icon-sm" title={t('bugReports.actions.openFullPage', 'Open full page')}>
-                        <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                        <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
                           <Eye className="h-4 w-4" />
                         </RouterLink>
                       </Button>
@@ -1263,12 +1370,30 @@ const BugReportsPage: React.FC = () => {
                               size="icon"
                               className="h-8 w-8"
                             >
-                              <RouterLink to={`/qa/bug-reports/${bug.id}`}>
+                              <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
                                 <Eye className="h-4 w-4" />
                               </RouterLink>
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>{t('bugReports.actions.openFullPage', 'Open full page')}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/qa/bug-reports/${bug.bugKey}`);
+                                showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
+                              }}
+                            >
+                              <Link className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('bugReports.copyBugLink', 'Copy link')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -1452,7 +1577,7 @@ const BugReportsPage: React.FC = () => {
         }}
         onOpenFullPage={(bug) => {
           setDetailModalOpen(false);
-          navigate(`/qa/bug-reports/${bug.id}`);
+          navigate(`/qa/bug-reports/${bug.bugKey}`);
         }}
         onUpdate={(updated) => setSelectedBug(updated)}
       />
