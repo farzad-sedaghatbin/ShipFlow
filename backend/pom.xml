@@ -102,7 +102,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.44</version>
+            <version>1.18.46</version>
             <scope>provided</scope>
         </dependency>
 
@@ -123,17 +123,17 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.12.3</version>
+            <version>0.13.0</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.12.3</version>
+            <version>0.13.0</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.3</version>
+            <version>0.13.0</version>
         </dependency>
 
         <!-- Test -->
@@ -224,7 +224,7 @@
         <dependency>
             <groupId>io.qdrant</groupId>
             <artifactId>client</artifactId>
-            <version>1.7.0</version>
+            <version>1.18.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.grpc</groupId>
@@ -287,7 +287,7 @@
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>itext-core</artifactId>
-            <version>9.5.0</version>
+            <version>9.6.0</version>
             <type>pom</type>
         </dependency>
 
@@ -302,7 +302,7 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.2.5</version>
+            <version>5.5.1</version>
         </dependency>
 
         <!-- Bucket4j - In-memory rate limiting (no Redis required) -->
@@ -328,7 +328,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.11.0</version>
+            <version>1.14.1</version>
         </dependency>
 
         <!-- Apache Tika — text extraction for Knowledge Center file uploads.
@@ -405,7 +405,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.44</version>
+                            <version>1.18.46</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
