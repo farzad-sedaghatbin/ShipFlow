@@ -50,8 +50,9 @@ docker compose up -d
 | **Pluggable Object Storage** *(v1.8.0)* | Attachments on AWS S3, MinIO, or local disk — chosen in Org Settings with one-click backend migration and a connection test |
 | **Knowledge Center** | Upload docs and paste URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis — scoped Org / Team / Project, pluggable provider SPI |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
-| **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
+| **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs; admin **CSV/JSON export** of the whole trail by entity type and date range *(v1.9.0)* |
 | **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
+| **Production self-hosting** *(v1.9.0)* | First-party **Helm chart** for Kubernetes; **Prometheus** metrics (`/actuator/prometheus`) + a ready-to-import **Grafana** dashboard; optional **OpenTelemetry** tracing and structured JSON logging |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -313,6 +314,7 @@ docker compose up -d
   - **Visual Timeline**: Timeline with colored dots (green=created, blue=modified, red=deleted)
   - **Relative Time Display**: Shows "5 minutes ago", "2 hours ago" for recent changes
   - **Field Change Display**: Color-coded old → new value comparisons with strikethrough
+  - **Audit Export (v1.9.0)**: Admins export the full audit trail as CSV or JSON from Organization Settings — filtered by entity type and date range, one row per changed field
   - **Internationalization**: Full i18n support (English/Persian) for history labels
 - **Circuit Breaker**: Shape Up's fixed-time safety valve for overflow detection
   - **Automated Overflow Detection**: Real-time budget monitoring with configurable thresholds (50-150%)
@@ -539,7 +541,7 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **MCP Server (AI editor tools + graph context)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Self-hosted / open MCP server** | ✅ | Partial¹ | Partial¹ | ❌ | Partial¹ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Pluggable VCS Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
@@ -552,11 +554,13 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
+> ¹ **MCP & AI are no longer ShipFlow-only.** Linear (2025), Atlassian/Jira Rovo, and Asana (2026) all shipped MCP servers and embedded agentic AI — so on the AI rows above, treat ✅ as "**built-in, free, and able to run on a fully-private / local LLM**" rather than "competitors have nothing." Every competitor's MCP and AI is **cloud-only and paid** (per-seat or metered AI credits). ShipFlow's durable, structural edge is the *combination* the cloud majors can't match: **native Shape Up + self-hosted + open-source + private, air-gapped AI (Ollama) with zero data egress.** See [COMPETITOR_ANALYSIS.md](COMPETITOR_ANALYSIS.md) §4 for the full June-2026 re-benchmark.
+
 **Why Choose ShipFlow?**
 - **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
 - **Fixed-Time, Variable-Scope**: Circuit breaker enforces appetite constraints and prevents scope creep
 - **Visual Progress**: Hill charts provide intuitive progress visibility (figuring it out → making it happen)
-- **AI-Native Workflows**: The only PM tool that connects to your editor via MCP — ask Claude Code "what's blocking my tasks?" without leaving the terminal
+- **Private, in-editor AI**: A self-hostable, open MCP server lets Claude Code / Cursor query your Shape Up board ("what's blocking my tasks?") without leaving the terminal — and, pointed at Ollama, the whole AI stack runs air-gapped with zero data egress, which no cloud-only competitor can offer
 - **AI-Powered**: Pluggable LLM architecture with provider flexibility
   - **Local AI (Ollama)**: Privacy-first, no API costs, perfect for local development or self-hosted deployments
   - **Cloud AI (OpenAI)**: Production-grade GPT-4o/GPT-4o-mini for complex reasoning and high-quality responses

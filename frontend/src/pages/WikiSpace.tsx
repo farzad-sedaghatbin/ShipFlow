@@ -7,6 +7,7 @@ import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { Plus, FileText } from "lucide-react";
 import WikiTree from "../components/wiki/WikiTree";
+import { useBreadcrumbLabel } from "../contexts";
 import {
   wikiService,
   type CreateWikiPageRequest,
@@ -49,6 +50,9 @@ export default function WikiSpace() {
     queryFn: () => wikiService.getSpace(numSpaceId).then((r) => r.data),
     enabled: !!numSpaceId,
   });
+
+  // Show the space name (not "#N") in the global breadcrumb.
+  useBreadcrumbLabel(spaceId ? `/wiki/${spaceId}` : undefined, space?.name);
 
   const { data: tree, isLoading: treeLoading } = useQuery({
     queryKey: ["wiki-tree", numSpaceId],

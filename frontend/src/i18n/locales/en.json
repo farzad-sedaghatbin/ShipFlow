@@ -224,7 +224,8 @@
     "hillChart": "Hill Chart",
     "generate": "Generate",
     "run": "Run",
-    "importData": "Import Data"
+    "importData": "Import Data",
+    "wiki": "Wiki"
   },
   "integrations": {
     "title": "Integrations",
@@ -6049,7 +6050,7 @@
     "invalidId": "Invalid cycle ID",
     "loadFailed": "Failed to load hill chart data",
     "noPoints": "No hill chart points found for this cycle. Add scopes to individual pitches to see them here.",
-    "showingScopes": "Showing all scopes from {count} pitch(es) in this cycle. Click on any point to view the pitch details.",
+    "showingScopes": "Showing all scopes from {{count}} pitch(es) in this cycle. Click on any point to view the pitch details.",
     "scopesByPitch": "Scopes by Pitch"
   },
   "pitchComparison": {
@@ -8429,6 +8430,27 @@
     "saveFailed": "Failed to save storage settings",
     "loadFailed": "Failed to load storage settings"
   },
+  "auditExport": {
+    "tabLabel": "Audit Export",
+    "title": "Audit Trail Export",
+    "subtitle": "Download the change history for tasks, bugs, pitches, and test cases.",
+    "entityType": "Entity Type",
+    "entityTask": "Task",
+    "entityBug": "Bug Report",
+    "entityPitch": "Pitch",
+    "entityTestCase": "Test Case",
+    "entityAll": "All",
+    "fromDate": "From Date",
+    "toDate": "To Date",
+    "format": "Format",
+    "formatCsv": "CSV",
+    "formatJson": "JSON",
+    "export": "Export",
+    "exporting": "Exporting…",
+    "helperText": "Exports the Envers audit trail — the full change history of tasks, bug reports, pitches, and test cases — for the selected entity type and date range. Leave the dates empty to export all history.",
+    "exportFailed": "Failed to export audit trail",
+    "dateRangeError": "The \"From\" date must be on or before the \"To\" date."
+  },
   "wiki": {
     "title": "Wiki",
     "subtitle": "Team knowledge base and documentation",
@@ -8481,7 +8503,13 @@
     "loadingRevision": "Loading revision…",
     "noTextChanges": "No text differences — this revision matches the current page.",
     "legendAdded": "Added by this revision",
-    "legendRemoved": "Removed by this revision"
+    "legendRemoved": "Removed by this revision",
+    "linkedPages": "Linked pages",
+    "mentions": "Mentions",
+    "pageFallback": "Page {{id}}",
+    "missingPageTooltip": "This linked page no longer exists.",
+    "insertPageLink": "Insert page link",
+    "insertPageLinkHint": "Search for a page to insert a [[link]] at the cursor. Type @ in the editor to mention a teammate."
   },
   "moveToProject": {
     "title": "Move {{type}} to another project",

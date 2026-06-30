@@ -21,6 +21,19 @@ export interface WikiTreeNodeDTO {
   children: WikiTreeNodeDTO[];
 }
 
+/**
+ * A resolved internal `[[pageId]]` link found in a page's body.
+ * `exists=false` means the target page was deleted/missing; `url` then points at
+ * the canonical id route (`/wiki/pages/{id}`) and the UI renders a broken link.
+ */
+export interface WikiPageLinkDTO {
+  pageId: number;
+  title: string | null;
+  spaceId: number | null;
+  exists: boolean;
+  url: string;
+}
+
 export interface WikiPageDTO {
   id: number;
   spaceId: number;
@@ -33,7 +46,17 @@ export interface WikiPageDTO {
   createdBy: number;
   createdAt: string;
   updatedAt: string;
+  /**
+   * Internal `[[pageId]]` links resolved by the backend from the page body.
+   * Used by the view to render the "Linked pages" affordance.
+   */
+  pageLinks: WikiPageLinkDTO[];
 }
+
+/**
+ * Convenience alias used across the wiki UI. Identical to {@link WikiPageDTO}.
+ */
+export type WikiPage = WikiPageDTO;
 
 export interface WikiRevisionDTO {
   revision: number;

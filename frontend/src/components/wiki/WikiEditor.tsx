@@ -8,7 +8,7 @@ import { useCreateBlockNote } from "@blocknote/react";
 // BlockNoteViewRaw, which leaves those components undefined and crashes in the
 // production bundle ("undefined is not an object (evaluating '…SideMenu')").
 import { BlockNoteView } from "@blocknote/mantine";
-import { useEffect } from "react";
+import { forwardRef, useEffect, useImperativeHandle } from "react";
 import { useTheme } from "../../contexts";
 
 // ─── Pure helpers (exported for unit tests without mounting the editor) ───────
@@ -46,11 +46,18 @@ interface WikiEditorProps {
   onChange: (json: string) => void;
 }
 
-export default function WikiEditor({
-  initialContent,
-  editable,
-  onChange,
-}: WikiEditorProps) {
+/**
+ * Imperative handle exposed to parents (e.g. WikiPage) so they can insert an
+ * internal `[[pageId]]` link token at the editor's current cursor position.
+ */
+export interface WikiEditorHandle {
+  insertText: (text: string) => void;
+}
+
+const WikiEditor = forwardRef<WikiEditorHandle, WikiEditorProps>(function WikiEditor(
+  { initialContent, editable, onChange },
+  ref,
+) {
   // Create the editor with an empty document. We deliberately do NOT pass
   // initialContent here: useCreateBlockNote throws synchronously if the stored
   // JSON is not a structurally valid BlockNote document (e.g. legacy/imported/
@@ -61,6 +68,24 @@ export default function WikiEditor({
   // keeps whatever color scheme it mounted with (e.g. a dark editor surface
   // lingering after switching the app back to light mode).
   const { actualMode } = useTheme();
+
+  // Expose an imperative insert so the page-link picker can drop a `[[id]]`
+  // token at the cursor. After inserting, push the change up immediately so the
+  // draft content reflects the new token without waiting for another keystroke.
+  useImperativeHandle(
+    ref,
+    () => ({
+      insertText: (text: string) => {
+        try {
+          editor.insertInlineContent([text]);
+          onChange(serializeBlockNoteContent(editor.document));
+        } catch (e) {
+          console.warn("WikiEditor: could not insert text", e);
+        }
+      },
+    }),
+    [editor, onChange],
+  );
 
   useEffect(() => {
     const blocks = parseBlockNoteContent(initialContent);
@@ -85,4 +110,6 @@ export default function WikiEditor({
       }}
     />
   );
-}
+});
+
+export default WikiEditor;
