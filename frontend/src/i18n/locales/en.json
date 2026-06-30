@@ -2385,6 +2385,9 @@
       "allAssignees": "All Assignees",
       "searchAssignee": "Search people...",
       "noAssignee": "No people found",
+      "allReporters": "All Reporters",
+      "searchReporter": "Search reporters...",
+      "noReporter": "No reporters found",
       "excludeLabel": "Exclude filters",
       "excludeTooltip": "When ON, shows bugs that do NOT match the selected filters (inverts the filter)"
     },

@@ -186,6 +186,7 @@ public class QATestManagementController {
       @RequestParam(required = false) List<BugStatus> statuses,
       @RequestParam(required = false) List<BugSeverity> severities,
       @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) List<Long> reporterIds,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude,
       @RequestParam(required = false) String search,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
@@ -195,7 +196,7 @@ public class QATestManagementController {
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     return ResponseEntity.ok(bugReportService.getBugReportsWithFilters(projectId, cycleId, pitchId, statuses,
-        severities, assigneeIds, exclude, search, pageable));
+        severities, assigneeIds, reporterIds, exclude, search, pageable));
   }
 
   @GetMapping("/bug-reports/stats")
@@ -206,11 +207,12 @@ public class QATestManagementController {
       @RequestParam(required = false) List<BugStatus> statuses,
       @RequestParam(required = false) List<BugSeverity> severities,
       @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) List<Long> reporterIds,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude,
       @RequestParam(required = false) String search) {
     checkFeatureEnabled();
-    return ResponseEntity.ok(
-        bugReportService.getBugStats(projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, search));
+    return ResponseEntity.ok(bugReportService.getBugStats(projectId, cycleId, pitchId, statuses, severities,
+        assigneeIds, reporterIds, exclude, search));
   }
 
   @GetMapping("/bug-reports/{id}")

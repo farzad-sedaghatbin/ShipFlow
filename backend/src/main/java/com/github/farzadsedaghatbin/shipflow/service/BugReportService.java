@@ -374,17 +374,17 @@ public class BugReportService {
   /** Get bug reports with multi-selection filters. */
   @Transactional(readOnly = true)
   public Page<BugReportDTO> getBugReportsWithFilters(Long projectId, Long cycleId, Long pitchId,
-      List<BugStatus> statuses, List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude, String search,
-      Pageable pageable) {
+      List<BugStatus> statuses, List<BugSeverity> severities, List<Long> assigneeIds, List<Long> reporterIds,
+      Boolean exclude, String search, Pageable pageable) {
     if (projectId != null) {
       projectPermissionService.requireProjectAccess(projectId);
     }
     checkFeatureEnabled();
 
     log.info(
-        "getBugReportsWithFilters called - projectId: {}, cycleId: {}, pitchId: {}, statuses: {}, severities: {}, assigneeIds: {}, exclude: {}, search: {}, page: {}, size: {}",
-        projectId, cycleId, pitchId, statuses, severities, assigneeIds, exclude, search, pageable.getPageNumber(),
-        pageable.getPageSize());
+        "getBugReportsWithFilters called - projectId: {}, cycleId: {}, pitchId: {}, statuses: {}, severities: {}, assigneeIds: {}, reporterIds: {}, exclude: {}, search: {}, page: {}, size: {}",
+        projectId, cycleId, pitchId, statuses, severities, assigneeIds, reporterIds, exclude, search,
+        pageable.getPageNumber(), pageable.getPageSize());
 
     // Normalise empty lists to null so the spec treats them as "no filter"
     List<BugStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
@@ -399,6 +399,7 @@ public class BugReportService {
 
     List<BugSeverity> severityList = (severities != null && !severities.isEmpty()) ? severities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    List<Long> reporterList = (reporterIds != null && !reporterIds.isEmpty()) ? reporterIds : null;
     String searchParam = (search != null && !search.isBlank()) ? search.trim() : null;
 
     // Build a JPA Specification so both the data and count queries use the same predicates.
@@ -406,9 +407,9 @@ public class BugReportService {
     // unreliable for collection parameters in Hibernate 6.
     Specification<BugReport> spec = Boolean.TRUE.equals(exclude)
         ? BugReportSpecification.withExclusionFilters(
-            projectId, cycleId, pitchId, statusList, severityList, assigneeList, searchParam)
+            projectId, cycleId, pitchId, statusList, severityList, assigneeList, reporterList, searchParam)
         : BugReportSpecification.withInclusionFilters(
-            projectId, cycleId, pitchId, statusList, severityList, assigneeList, searchParam);
+            projectId, cycleId, pitchId, statusList, severityList, assigneeList, reporterList, searchParam);
 
     Page<BugReport> result = bugReportRepository.findAll(spec, pageable);
 
@@ -422,7 +423,7 @@ public class BugReportService {
   /** Aggregate stat counts for the current filter context (used by overview stat cards). */
   @Transactional(readOnly = true)
   public BugStatsDTO getBugStats(Long projectId, Long cycleId, Long pitchId, List<BugStatus> statuses,
-      List<BugSeverity> severities, List<Long> assigneeIds, Boolean exclude, String search) {
+      List<BugSeverity> severities, List<Long> assigneeIds, List<Long> reporterIds, Boolean exclude, String search) {
     if (projectId != null) {
       projectPermissionService.requireProjectAccess(projectId);
     }
@@ -434,13 +435,14 @@ public class BugReportService {
     }
     List<BugSeverity> severityList = (severities != null && !severities.isEmpty()) ? severities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    List<Long> reporterList = (reporterIds != null && !reporterIds.isEmpty()) ? reporterIds : null;
     String searchParam = (search != null && !search.isBlank()) ? search.trim() : null;
 
     Specification<BugReport> base = Boolean.TRUE.equals(exclude)
         ? BugReportSpecification.withExclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
-            assigneeList, searchParam)
+            assigneeList, reporterList, searchParam)
         : BugReportSpecification.withInclusionFilters(projectId, cycleId, pitchId, statusList, severityList,
-            assigneeList, searchParam);
+            assigneeList, reporterList, searchParam);
 
     long total = bugReportRepository.count(base);
     long open = bugReportRepository.count(
