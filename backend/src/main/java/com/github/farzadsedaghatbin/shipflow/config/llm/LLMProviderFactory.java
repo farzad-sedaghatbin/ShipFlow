@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.config.llm;
 
+import com.github.farzadsedaghatbin.shipflow.config.AirGappedProperties;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import java.util.HashMap;
 import java.util.List;
@@ -39,12 +40,14 @@ import org.springframework.stereotype.Component;
 public class LLMProviderFactory {
 
   private final Map<LLMProviderType, LLMProvider> providers;
+  private final AirGappedProperties airGappedProperties;
 
   /**
    * Constructor with auto-discovery of all LLMProvider implementations. Spring
    * will inject all beans implementing LLMProvider.
    */
-  public LLMProviderFactory(List<LLMProvider> providerList) {
+  public LLMProviderFactory(List<LLMProvider> providerList, AirGappedProperties airGappedProperties) {
+    this.airGappedProperties = airGappedProperties;
     this.providers = new HashMap<>();
 
     for (LLMProvider provider : providerList) {
@@ -74,6 +77,15 @@ public class LLMProviderFactory {
    *             if model creation fails
    */
   public ChatLanguageModel createModel(LLMProviderType providerType, LLMProviderConfig config) {
+    // Air-gapped guard: never build a model for a provider that requires external network egress.
+    // This stops an admin from switching to a cloud provider at runtime after a boot-time validation.
+    if (airGappedProperties.isEnabled() && !providerType.isLocal()) {
+      throw new IllegalStateException("Air-gapped mode is enabled but provider '"
+          + providerType.getConfigValue()
+          + "' requires external network egress. Only local providers (ollama) are permitted. "
+          + "Set AI_PROVIDER=ollama or disable air-gapped mode (AIR_GAPPED_MODE=false).");
+    }
+
     LLMProvider provider = providers.get(providerType);
 
     if (provider == null) {

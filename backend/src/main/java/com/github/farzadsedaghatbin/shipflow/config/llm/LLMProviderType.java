@@ -26,6 +26,20 @@ public enum LLMProviderType {
   }
 
   /**
+   * Whether this provider runs entirely locally with no external network egress, making it safe for
+   * air-gapped deployments.
+   *
+   * <p>Only {@link #OLLAMA} qualifies: it needs no API key and points at a configurable, typically
+   * local, base URL. Every other provider (OpenAI, Anthropic, RunPod, Google, Azure OpenAI) calls a
+   * vendor-hosted endpoint.
+   *
+   * @return true if the provider is air-gap-safe (local)
+   */
+  public boolean isLocal() {
+    return this == OLLAMA;
+  }
+
+  /**
    * Parse provider type from configuration string.
    *
    * @param value

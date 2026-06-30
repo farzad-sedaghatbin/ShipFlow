@@ -253,6 +253,10 @@
     "myProfile": "My Profile",
     "openNavigation": "Open navigation menu"
   },
+  "airGapped": {
+    "badge": "Air-gapped",
+    "tooltip": "Air-gapped AI mode is active: only the local model is used and all external integrations are disabled — no data leaves this network."
+  },
   "welcomeTour": {
     "title": "Welcome to ShipFlow! 👋",
     "description": "ShipFlow helps you manage projects using the Shape Up methodology - with cycles, pitches, and hill charts to track progress.",

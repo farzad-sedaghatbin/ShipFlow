@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.config.llm;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.github.farzadsedaghatbin.shipflow.config.AirGappedProperties;
 import com.github.farzadsedaghatbin.shipflow.config.llm.providers.OllamaLLMProvider;
 import com.github.farzadsedaghatbin.shipflow.config.llm.providers.OpenAILLMProvider;
 import com.github.farzadsedaghatbin.shipflow.config.llm.providers.RunPodLLMProvider;
@@ -15,13 +16,21 @@ import org.junit.jupiter.api.Test;
 class LLMProviderFactoryTest {
 
   private LLMProviderFactory factory;
+  private AirGappedProperties airGappedProperties;
 
   @BeforeEach
   void setUp() {
     // Create factory with test providers
     List<LLMProvider> providers = List.of(new OllamaLLMProvider(), new OpenAILLMProvider(),
         new RunPodLLMProvider());
-    factory = new LLMProviderFactory(providers);
+    airGappedProperties = new AirGappedProperties();
+    factory = new LLMProviderFactory(providers, airGappedProperties);
+  }
+
+  private static AirGappedProperties props(boolean enabled) {
+    AirGappedProperties p = new AirGappedProperties();
+    p.setEnabled(enabled);
+    return p;
   }
 
   @Test
@@ -113,6 +122,32 @@ class LLMProviderFactoryTest {
     LLMProviderConfig config = LLMProviderConfig.builder().build();
 
     assertThrows(IllegalArgumentException.class, () -> factory.createModel("invalid-provider", config));
+  }
+
+  @Test
+  void createModel_airGapped_shouldThrowForNonLocalProvider() {
+    List<LLMProvider> providers = List.of(new OllamaLLMProvider(), new OpenAILLMProvider(),
+        new RunPodLLMProvider());
+    LLMProviderFactory airGappedFactory = new LLMProviderFactory(providers, props(true));
+
+    LLMProviderConfig config = LLMProviderConfig.builder().apiKey("sk-test-key-12345")
+        .modelName("gpt-4o-mini").timeout(Duration.ofSeconds(120)).temperature(0.3).build();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class,
+        () -> airGappedFactory.createModel(LLMProviderType.OPENAI, config));
+    assertTrue(ex.getMessage().contains("Air-gapped"));
+  }
+
+  @Test
+  void createModel_airGapped_shouldAllowLocalProvider() {
+    List<LLMProvider> providers = List.of(new OllamaLLMProvider(), new OpenAILLMProvider());
+    LLMProviderFactory airGappedFactory = new LLMProviderFactory(providers, props(true));
+
+    LLMProviderConfig config = LLMProviderConfig.builder().baseUrl("http://localhost:11434")
+        .modelName("mistral:instruct").timeout(Duration.ofSeconds(180)).temperature(0.3).build();
+
+    ChatLanguageModel model = airGappedFactory.createModel(LLMProviderType.OLLAMA, config);
+    assertNotNull(model);
   }
 
   @Test
