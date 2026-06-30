@@ -1,10 +1,13 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiAttachmentDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiAttachment;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,6 +40,7 @@ public class WikiAttachmentService {
   private final WikiSpaceRepository spaceRepository;
   private final WikiPermissionService wikiPermissionService;
   private final ObjectStorageService objectStorageService;
+  private final UserRepository userRepository;
 
   @Transactional
   public WikiAttachmentDTO upload(Long pageId, MultipartFile file, Long userId) {
@@ -131,7 +136,11 @@ public class WikiAttachmentService {
 
     WikiPage page = requirePage(att.getPageId());
     WikiSpace space = requireSpace(page.getSpaceId());
-    wikiPermissionService.requireWrite(userId, space);
+    // The caller must at least be able to view the space, then deletion is
+    // governed by the same rule as task attachments: only the original uploader
+    // or an ADMIN may delete an attachment.
+    wikiPermissionService.requireRead(userId, space);
+    requireUploaderOrAdmin(att, userId);
 
     att.setDeletedAt(OffsetDateTime.now());
     attachmentRepository.save(att);
@@ -143,6 +152,27 @@ public class WikiAttachmentService {
           "Best-effort delete from storage failed for key={}: {}",
           att.getStorageKey(),
           e.getMessage());
+    }
+  }
+
+  /**
+   * Enforces the attachment-deletion policy: only the original uploader or an ADMIN may delete a
+   * wiki attachment. Throws {@link AccessDeniedException} (HTTP 403) otherwise.
+   */
+  private void requireUploaderOrAdmin(WikiAttachment att, Long userId) {
+    boolean isUploader = att.getUploadedBy() != null && att.getUploadedBy().equals(userId);
+    if (isUploader) {
+      return;
+    }
+    boolean isAdmin =
+        userRepository
+            .findById(userId)
+            .map(User::getRole)
+            .map(role -> role == UserRole.ADMIN)
+            .orElse(false);
+    if (!isAdmin) {
+      throw new AccessDeniedException(
+          "Only the uploader or an ADMIN may delete this attachment");
     }
   }
 
