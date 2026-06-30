@@ -45,4 +45,10 @@ public class ConvertRetroToPitchRequest {
    */
   @Builder.Default
   private Integer appetiteDays = 1;
+
+  /**
+   * Optional override project ID. When provided, the pitch and cycle lookup use
+   * this project instead of the retrospective's own project.
+   */
+  private Long targetProjectId;
 }

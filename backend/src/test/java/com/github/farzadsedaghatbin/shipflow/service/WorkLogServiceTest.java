@@ -235,4 +235,107 @@ class WorkLogServiceTest {
 
     assertThat(result.getContent()).hasSize(1);
   }
+
+  // ========== getWorkLogsFiltered tests ==========
+
+  @Test
+  void getWorkLogsFiltered_NoFilters_ShouldReturnAll() {
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findAll(pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFiltered(null, null, null, null, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findAll(pageable);
+  }
+
+  @Test
+  void getWorkLogsFiltered_ByPersonIdOnly_ShouldCallPersonIdQuery() {
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPersonId(1L, pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFiltered(1L, null, null, null, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonId(1L, pageable);
+  }
+
+  @Test
+  void getWorkLogsFiltered_ByPersonAndProjectId_ShouldCallCombinedQuery() {
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPersonIdAndProjectId(1L, 2L, pageable))
+        .thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFiltered(1L, 2L, null, null, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonIdAndProjectId(1L, 2L, pageable);
+  }
+
+  @Test
+  void getWorkLogsFiltered_ByPersonIdAndDateRange_ShouldCallDateBetweenQuery() {
+    LocalDate from = LocalDate.now().minusDays(7);
+    LocalDate to = LocalDate.now();
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPersonIdAndDateBetween(1L, from, to, pageable))
+        .thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFiltered(1L, null, from, to, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonIdAndDateBetween(1L, from, to, pageable);
+  }
+
+  @Test
+  void getWorkLogsFiltered_AllFilters_ShouldCallFullCombinedQuery() {
+    LocalDate from = LocalDate.now().minusDays(7);
+    LocalDate to = LocalDate.now();
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPersonIdAndProjectIdAndDateBetween(1L, 2L, from, to, pageable))
+        .thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFiltered(1L, 2L, from, to, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonIdAndProjectIdAndDateBetween(1L, 2L, from, to, pageable);
+  }
+
+  // ========== getWorkLogsFilteredByCycle tests ==========
+
+  @Test
+  void getWorkLogsFilteredByCycle_NoPersonFilter_ShouldCallCycleOnlyQuery() {
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByCycleId(5L, pageable)).thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFilteredByCycle(5L, null, null, null, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByCycleId(5L, pageable);
+  }
+
+  @Test
+  void getWorkLogsFilteredByCycle_ByPersonId_ShouldCallPersonAndCycleQuery() {
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPersonIdAndCycleId(1L, 5L, pageable))
+        .thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFilteredByCycle(5L, 1L, null, null, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonIdAndCycleId(1L, 5L, pageable);
+  }
+
+  @Test
+  void getWorkLogsFilteredByCycle_ByPersonIdAndDateRange_ShouldCallFullCombinedQuery() {
+    LocalDate from = LocalDate.now().minusDays(14);
+    LocalDate to = LocalDate.now();
+    Pageable pageable = PageRequest.of(0, 20);
+    when(workLogRepository.findByPersonIdAndCycleIdAndDateBetween(1L, 5L, from, to, pageable))
+        .thenReturn(new PageImpl<>(Arrays.asList(testWorkLog)));
+
+    Page<WorkLogDTO> result = workLogService.getWorkLogsFilteredByCycle(5L, 1L, from, to, pageable);
+
+    assertThat(result.getContent()).hasSize(1);
+    verify(workLogRepository).findByPersonIdAndCycleIdAndDateBetween(1L, 5L, from, to, pageable);
+  }
 }

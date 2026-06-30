@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.entity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import lombok.*;
 
 /**
@@ -81,11 +82,23 @@ public class KnowledgeItem {
   @Column(length = 64)
   private String contentHash;
 
+  /** Optional link to the KnowledgeSource this item was ingested from. */
+  @Column(name = "knowledge_source_id")
+  private Long knowledgeSourceId;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "knowledge_source_id", insertable = false, updatable = false)
+  private KnowledgeSource knowledgeSource;
+
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
   @Column(nullable = false)
   private LocalDateTime updatedAt;
+
+  /** Soft-delete timestamp. Null means active. */
+  @Column(name = "deleted_at")
+  private OffsetDateTime deletedAt;
 
   @PrePersist
   protected void onCreate() {

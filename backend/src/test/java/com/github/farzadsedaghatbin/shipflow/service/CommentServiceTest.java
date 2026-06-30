@@ -48,6 +48,9 @@ class CommentServiceTest {
   private BugReportRepository bugReportRepository;
 
   @Mock
+  private WikiPageRepository wikiPageRepository;
+
+  @Mock
   private MessageService messageService;
 
   @Mock
@@ -171,6 +174,49 @@ class CommentServiceTest {
       // Assert
       assertThat(result).isNotNull();
       assertThat(result.getEntityType()).isEqualTo(CommentEntityType.BUG_REPORT);
+    }
+
+    @Test
+    @DisplayName("Should create comment on wiki page")
+    void shouldCreateCommentOnWikiPage() {
+      // Arrange
+      CreateCommentRequest request = CreateCommentRequest.builder().content("Wiki comment")
+          .entityType(CommentEntityType.WIKI_PAGE).entityId(1L).build();
+
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(wikiPageRepository.existsByIdAndDeletedAtIsNull(1L)).thenReturn(true);
+      when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> {
+        Comment c = inv.getArgument(0);
+        c.setId(3L);
+        c.setCreatedAt(LocalDateTime.now());
+        return c;
+      });
+      when(reactionRepository.getReactionCountsByCommentId(anyLong())).thenReturn(Collections.emptyList());
+      when(reactionRepository.findUserReactionsByCommentIdAndUserId(anyLong(), anyLong()))
+          .thenReturn(Collections.emptyList());
+
+      // Act
+      CommentDTO result = commentService.createComment(request, 1L);
+
+      // Assert
+      assertThat(result).isNotNull();
+      assertThat(result.getEntityType()).isEqualTo(CommentEntityType.WIKI_PAGE);
+      verify(commentRepository).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("Should fail when wiki page not found")
+    void shouldFailWhenWikiPageNotFound() {
+      // Arrange
+      CreateCommentRequest request = CreateCommentRequest.builder().content("Wiki comment")
+          .entityType(CommentEntityType.WIKI_PAGE).entityId(999L).build();
+
+      when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+      when(wikiPageRepository.existsByIdAndDeletedAtIsNull(999L)).thenReturn(false);
+
+      // Act & Assert
+      assertThatThrownBy(() -> commentService.createComment(request, 1L))
+          .isInstanceOf(IllegalArgumentException.class);
     }
   }
 

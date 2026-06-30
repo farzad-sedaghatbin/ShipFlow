@@ -32,6 +32,10 @@ public class OrganizationSettings {
   @Builder.Default
   private Integer defaultCooldownWeeks = 2;
 
+  @Column(nullable = false, name = "default_sprint_length_weeks")
+  @Builder.Default
+  private Integer defaultSprintLengthWeeks = 2;
+
   // Risk Thresholds (stored as JSON in a single column for flexibility)
   @Column(columnDefinition = "TEXT")
   private String riskThresholdsJson;
@@ -187,6 +191,33 @@ public class OrganizationSettings {
 
   @Column(name = "scim_token_hash", length = 500)
   private String scimTokenHash;
+
+  // Notion MCP Configuration (V2026_06_15_0001)
+  @Column(name = "notion_access_token", columnDefinition = "TEXT")
+  private String notionAccessToken;
+
+  // Confluence MCP Configuration (V2026_06_15_0001)
+  @Column(name = "confluence_access_token", columnDefinition = "TEXT")
+  private String confluenceAccessToken;
+
+  @Column(name = "default_confluence_space_key", length = 100)
+  private String defaultConfluenceSpaceKey;
+
+  @Column(name = "default_confluence_domain", length = 255)
+  private String defaultConfluenceDomain;
+
+  // SharePoint Graph API — Azure AD client credentials
+  @Column(name = "sharepoint_tenant_id", length = 255)
+  private String sharepointTenantId;
+
+  @Column(name = "sharepoint_client_id", length = 255)
+  private String sharepointClientId;
+
+  @Column(name = "sharepoint_client_secret", columnDefinition = "TEXT")
+  private String sharepointClientSecret;
+
+  @Column(name = "sharepoint_site_url", length = 500)
+  private String sharepointSiteUrl;
 
   @PrePersist
   protected void onCreate() {

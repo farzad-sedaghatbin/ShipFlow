@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shipflow.fullname" . }}
+  labels:
+    {{- include "shipflow.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "shipflow.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        # Roll pods when config/secret content changes.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "shipflow.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "shipflow.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: shipflow
+          image: {{ include "shipflow.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "shipflow.fullname" . }}
+          env:
+            - name: DB_HOST
+              value: {{ .Values.externalServices.postgres.host | quote }}
+            - name: DB_PORT
+              value: {{ .Values.externalServices.postgres.port | quote }}
+            - name: DB_NAME
+              value: {{ .Values.externalServices.postgres.database | quote }}
+            - name: SPRING_DATA_REDIS_HOST
+              value: {{ .Values.externalServices.redis.host | quote }}
+            - name: SPRING_DATA_REDIS_PORT
+              value: {{ .Values.externalServices.redis.port | quote }}
+            - name: QDRANT_HOST
+              value: {{ .Values.externalServices.qdrant.host | quote }}
+            - name: QDRANT_PORT
+              value: {{ .Values.externalServices.qdrant.port | quote }}
+            - name: UPLOAD_DIR
+              value: {{ .Values.persistence.mountPath | quote }}
+            - name: LOG_FORMAT
+              value: {{ .Values.observability.logFormat | quote }}
+            - name: TRACING_ENABLED
+              value: {{ .Values.observability.tracing.enabled | quote }}
+            - name: TRACING_SAMPLE_RATE
+              value: {{ .Values.observability.tracing.sampleRate | quote }}
+            - name: OTLP_ENDPOINT
+              value: {{ .Values.observability.tracing.otlpEndpoint | quote }}
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "shipflow.secretName" . }}
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "shipflow.secretName" . }}
+                  key: DB_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "shipflow.secretName" . }}
+                  key: REDIS_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "shipflow.secretName" . }}
+                  key: JWT_SECRET
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "shipflow.secretName" . }}
+                  key: QDRANT_API_KEY
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: uploads
+              mountPath: {{ .Values.persistence.mountPath }}
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ include "shipflow.fullname" . }}-uploads
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

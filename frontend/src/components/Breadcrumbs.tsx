@@ -21,9 +21,10 @@ import {
   MessageSquare,
   Beaker,
   Upload,
+  BookOpenText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useProject } from '../contexts';
+import { useProject, useBreadcrumbLabels } from '../contexts';
 
 interface BreadcrumbItem {
   label: string;
@@ -62,6 +63,7 @@ const routeConfig: Record<string, { key: string; icon: React.ReactNode }> = {
   '/time/logs': { key: 'breadcrumbs.timeLogs', icon: <Clock className="h-4 w-4" /> },
   '/backlog': { key: 'breadcrumbs.backlog', icon: <FileText className="h-4 w-4" /> },
   '/import': { key: 'breadcrumbs.importData', icon: <Upload className="h-4 w-4" /> },
+  '/wiki': { key: 'breadcrumbs.wiki', icon: <BookOpenText className="h-4 w-4" /> },
 };
 
 // Parse dynamic route segments
@@ -109,6 +111,9 @@ export default function Breadcrumbs() {
   const { t } = useTranslation();
   const location = useLocation();
   const { isScrumProject } = useProject();
+  // Resolved names published by detail pages (e.g. /cycles/12 → "Q3 Cycle"),
+  // used to replace raw numeric-ID labels in the breadcrumb trail.
+  const resolvedLabels = useBreadcrumbLabels();
   
   // Don't show breadcrumbs on dashboard
   if (location.pathname === '/dashboard' || location.pathname === '/') {
@@ -129,11 +134,14 @@ export default function Breadcrumbs() {
     
     // Check if we have a static config for this path
     const config = routeConfig[currentPath];
-    
+    // A name published by a detail page takes precedence over both the static
+    // label and the numeric-ID fallback.
+    const resolved = resolvedLabels[currentPath];
+
     if (config) {
       // Swap cycle labels to sprint labels for Scrum projects
-      let label = t(config.key);
-      if (isScrumProject) {
+      let label = resolved ?? t(config.key);
+      if (!resolved && isScrumProject) {
         if (config.key === 'breadcrumbs.cycles') label = t('breadcrumbs.sprints');
         else if (config.key === 'breadcrumbs.newCycle') label = t('breadcrumbs.newSprint');
         else if (config.key === 'breadcrumbs.cycleNumber') label = t('breadcrumbs.sprintNumber', { number: '' }).trim();
@@ -146,9 +154,10 @@ export default function Breadcrumbs() {
     } else {
       // Parse dynamic segment
       const dynamicConfig = parseDynamicSegment(t, segment, currentPath);
-      // For Scrum projects, "Cycle #N" becomes "Sprint #N"
-      let dynLabel = dynamicConfig.label;
-      if (isScrumProject && currentPath.includes('/cycles/') && /^\d+$/.test(segment)) {
+      // A registered name wins; otherwise fall back to the parsed label.
+      let dynLabel = resolved ?? dynamicConfig.label;
+      // For Scrum projects, "Cycle #N" becomes "Sprint #N" (only when unresolved).
+      if (!resolved && isScrumProject && currentPath.includes('/cycles/') && /^\d+$/.test(segment)) {
         dynLabel = t('breadcrumbs.sprintNumber', { number: segment });
       }
       breadcrumbs.push({

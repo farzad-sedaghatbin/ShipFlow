@@ -16,6 +16,7 @@ import {
   Target,
   Loader2,
   Zap,
+  Link2,
 } from 'lucide-react';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
@@ -28,7 +29,7 @@ import ProgressBar from '../components/ProgressBar';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import TaskStatisticsCard from '../components/TaskStatisticsCard';
-import { useToast, useProject } from '../contexts';
+import { useToast, useProject, useBreadcrumbLabel } from '../contexts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -61,6 +62,9 @@ export default function CycleDetail() {
 
   const { hasPermissionSync } = usePermission();
   const canManageCycle = hasPermissionSync('CYCLE', 'MANAGE');
+
+  // Show the cycle name (not "Cycle #N") in the global breadcrumb.
+  useBreadcrumbLabel(idParam ? `/cycles/${idParam}` : undefined, cycle?.name);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -102,6 +106,13 @@ export default function CycleDetail() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopyPreviewLink = () => {
+    if (!cycle) return;
+    const url = `${window.location.origin}/preview/cycle/${cycle.id}`;
+    navigator.clipboard.writeText(url);
+    showSuccess(t('common.linkCopied'));
   };
 
   const handleCloseCycle = async () => {
@@ -177,6 +188,9 @@ export default function CycleDetail() {
           <Badge variant={cycle.isActive ? 'default' : 'secondary'} className={cycle.isActive ? 'bg-green-500/10 text-green-400 border-green-500/20' : ''}>
             {cycle.isActive ? t('cycleDetailPage.active') : t('cycleDetailPage.completed')}
           </Badge>
+          <Button variant="ghost" size="icon" onClick={handleCopyPreviewLink} title={t('common.copyLink')}>
+            <Link2 className="h-4 w-4" />
+          </Button>
           {!isScrumProject && (
             <Button variant="outline" size="sm" asChild>
               <Link to={`/cycles/${cycle.id}/hill-chart`}>

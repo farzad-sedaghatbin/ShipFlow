@@ -148,7 +148,7 @@ export function useBacklogTasks(params: TaskQueryParams) {
         );
         return applyClientFilters(
           response?.data?.content || [],
-          response?.data?.totalElements || 0,
+          (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
           { statusFilter, priorityFilter, assigneeFilter, dependencyFilter, excludeMode, tabValue, userId }
         );
       }
@@ -159,7 +159,7 @@ export function useBacklogTasks(params: TaskQueryParams) {
       }
 
       let response: any;
-      
+
       if (tabValue === 'my') {
         if (cycleId === 'all') {
           response = await taskService.getMy(page, pageSize, sortBy, sortOrder);
@@ -173,7 +173,7 @@ export function useBacklogTasks(params: TaskQueryParams) {
         });
         return { tasks: filteredTasks, totalElements: filteredTasks.length };
       }
-      
+
       if (cycleId === 'all') {
         response = await taskService.getAll(page, pageSize, sortBy, sortOrder);
         const allTasks = response?.data?.content || [];
@@ -183,16 +183,16 @@ export function useBacklogTasks(params: TaskQueryParams) {
         });
         return applyClientFilters(
           filteredByCategory,
-          response?.data?.totalElements || 0,
+          (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
           { statusFilter, priorityFilter, assigneeFilter, dependencyFilter, excludeMode, tabValue, userId }
         );
       }
-      
+
       // Use filter endpoint or category endpoint
-      const hasFilters = (statusFilter && statusFilter.length > 0) || 
-                        (priorityFilter && priorityFilter.length > 0) || 
+      const hasFilters = (statusFilter && statusFilter.length > 0) ||
+                        (priorityFilter && priorityFilter.length > 0) ||
                         (assigneeFilter && assigneeFilter.length > 0);
-      
+
       if (hasFilters) {
         response = await taskService.getWithFilters(
           cycleId,
@@ -209,9 +209,9 @@ export function useBacklogTasks(params: TaskQueryParams) {
       } else {
         response = await taskService.getByCycleIdAndCategory(cycleId, category, page, pageSize, sortBy, sortOrder);
       }
-      
+
       const tasks = response?.data?.content || [];
-      return applyDependencyFilter(tasks, response?.data?.totalElements || 0, dependencyFilter);
+      return applyDependencyFilter(tasks, (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0), dependencyFilter);
     },
     enabled,
     staleTime: STALE_TIMES.tasks,

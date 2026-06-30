@@ -200,9 +200,12 @@ public class BettingTableService {
     // Validate the pitch fits in the slot
     validatePitchFits(pitch, slot);
 
-    // Calculate the new end date for this slot based on pitch appetite
+    // Calculate the new end date for this slot based on pitch appetite.
+    // Appetite is in working days; convert to calendar days so the slot spans the correct
+    // wall-clock range (e.g. 20 working days = 4 weeks = 28 calendar days, not 20).
     LocalDate slotStart = slot.getStartDate();
-    LocalDate newSlotEndDate = slotStart.plusDays(pitch.getAppetiteDays());
+    long calendarDaysForPitch = appetiteToCalendarDays(pitch.getAppetiteDays(), slot.getTeam());
+    LocalDate newSlotEndDate = slotStart.plusDays(calendarDaysForPitch);
     LocalDate originalSlotEndDate = slot.getEndDate();
 
     // If the slot was bigger than the pitch needs, create a new empty slot for
@@ -350,7 +353,8 @@ public class BettingTableService {
     if (pitch == null || slot == null || pitch.getAppetiteDays() == null)
       return false;
 
-    return slot.canFitPitch(pitch.getAppetiteDays());
+    long calendarDays = appetiteToCalendarDays(pitch.getAppetiteDays(), slot.getTeam());
+    return slot.canFitPitch((int) calendarDays);
   }
 
   // === Helper Methods ===
@@ -360,23 +364,32 @@ public class BettingTableService {
       throw new IllegalArgumentException(
           messageService.getMessage("error.betting.pitch.no.appetite", pitch.getTitle()));
     }
-    if (!slot.canFitPitch(pitch.getAppetiteDays())) {
+    long calendarDays = appetiteToCalendarDays(pitch.getAppetiteDays(), slot.getTeam());
+    if (!slot.canFitPitch((int) calendarDays)) {
       long slotDays = ChronoUnit.DAYS.between(slot.getStartDate(), slot.getEndDate());
       throw new IllegalArgumentException(messageService.getMessage("error.betting.pitch.doesnt.fit",
           pitch.getTitle(), pitch.getAppetiteDays(), slotDays));
     }
   }
 
+  private long appetiteToCalendarDays(int appetiteWorkingDays, Team team) {
+    double workingDaysPerWeek = team != null
+        ? capacityConfigService.getEffectiveWorkingDaysPerWeek(team).value()
+        : 5.0;
+    return Math.round((double) appetiteWorkingDays / workingDaysPerWeek * 7);
+  }
+
   private BettingTableDTO.TeamTrackDTO buildTeamTrack(Team team, List<BettingSlot> slots, int cycleDurationWeeks) {
     List<BettingSlotDTO> slotDTOs = slots.stream().sorted(Comparator.comparing(BettingSlot::getPosition))
         .map(this::toDTO).collect(Collectors.toList());
 
+    double workingDaysPerWeek = capacityConfigService.getEffectiveWorkingDaysPerWeek(team).value();
     int usedWeeks = slots.stream().filter(s -> s.getPitch() != null)
-        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / 7.0)).sum();
+        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / workingDaysPerWeek)).sum();
 
     return BettingTableDTO.TeamTrackDTO.builder().teamId(team.getId()).teamName(team.getName()).slots(slotDTOs)
         .totalCapacityWeeks(cycleDurationWeeks).usedCapacityWeeks(usedWeeks)
-        .availableCapacityWeeks(cycleDurationWeeks - usedWeeks).build();
+        .availableCapacityWeeks(cycleDurationWeeks - usedWeeks).workingDaysPerWeek(workingDaysPerWeek).build();
   }
 
   private BettingSlotDTO toDTO(BettingSlot slot) {
@@ -610,13 +623,14 @@ public class BettingTableService {
     // Get current slots for this team
     List<BettingSlot> teamSlots = bettingSlotRepository.findByCycleIdAndTeamId(cycle.getId(), team.getId());
 
+    double workingDaysPerWeek = capacityConfigService.getEffectiveWorkingDaysPerWeek(team).value();
     int usedWeeks = teamSlots.stream().filter(s -> s.getPitch() != null)
-        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / 7.0)).sum();
+        .mapToInt(s -> (int) Math.ceil(s.getPitch().getAppetiteDays() / workingDaysPerWeek)).sum();
 
     long cycleDays = ChronoUnit.DAYS.between(cycle.getStartDate(), cycle.getEndDate());
     int totalWeeks = (int) Math.ceil(cycleDays / 7.0);
     int availableWeeks = totalWeeks - usedWeeks;
-    int pitchWeeks = (int) Math.ceil(pitch.getAppetiteDays() / 7.0);
+    int pitchWeeks = (int) Math.ceil(pitch.getAppetiteDays() / workingDaysPerWeek);
 
     boolean canFit = availableWeeks >= pitchWeeks;
     String capacityStatus;

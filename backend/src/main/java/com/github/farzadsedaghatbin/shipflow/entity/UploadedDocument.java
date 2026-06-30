@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.entity;
 
+import com.github.farzadsedaghatbin.shipflow.service.storage.StorageProviderType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -30,6 +31,21 @@ public class UploadedDocument {
 
   @Column(length = 500)
   private String storagePath;
+
+  /**
+   * Object-storage provider that holds this file. {@code null} for legacy rows written directly to
+   * the filesystem (those are served via the {@code storagePath} fallback).
+   */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "storage_provider", length = 20)
+  private StorageProviderType storageProvider;
+
+  /**
+   * Key returned by the object-storage provider at store time. {@code null} for legacy rows — reads
+   * and deletes fall back to {@code storagePath} on the local filesystem.
+   */
+  @Column(name = "storage_key", length = 512)
+  private String storageKey;
 
   @Column(columnDefinition = "TEXT")
   private String extractedText;

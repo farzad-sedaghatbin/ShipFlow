@@ -66,6 +66,11 @@ public class BugReport {
   @Column(columnDefinition = "TEXT")
   private String environment;
 
+  /** Component/area where the bug was found (e.g., Frontend, Backend, Mobile). */
+  @NotAudited
+  @Column(length = 100)
+  private String component;
+
   /**
    * The project this bug belongs to. Direct project association allows bugs to
    * exist without requiring a cycle, pitch, or task - useful for Kanban projects
@@ -141,6 +146,12 @@ public class BugReport {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "assignee_id")
   private Person assignee;
+
+  /** Person assigned to QA/test this bug (who verifies the fix). */
+  @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "qa_assignee_id")
+  private Person qaAssignee;
 
   /** Resolution notes. */
   @Column(columnDefinition = "TEXT")

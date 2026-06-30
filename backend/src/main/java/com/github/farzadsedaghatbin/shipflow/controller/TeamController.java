@@ -24,8 +24,11 @@ public class TeamController {
   @GetMapping
   @PreAuthorize("@permissionService.hasPermission('TEAM', 'READ')")
   @Operation(summary = "Get all teams")
-  public ResponseEntity<List<TeamDTO>> getAllTeams() {
-    return ResponseEntity.ok(teamService.getAllTeams());
+  public ResponseEntity<List<TeamDTO>> getAllTeams(
+      @RequestParam(defaultValue = "false") boolean includeArchived) {
+    return ResponseEntity.ok(includeArchived
+        ? teamService.getAllTeamsIncludingArchived()
+        : teamService.getAllTeams());
   }
 
   @GetMapping("/cycle/{cycleId}")
@@ -54,14 +57,6 @@ public class TeamController {
   @Operation(summary = "Update a team")
   public ResponseEntity<TeamDTO> updateTeam(@PathVariable Long id, @Valid @RequestBody CreateTeamRequest request) {
     return ResponseEntity.ok(teamService.updateTeam(id, request));
-  }
-
-  @DeleteMapping("/{id}")
-  @PreAuthorize("@permissionService.hasPermission('TEAM', 'DELETE')")
-  @Operation(summary = "Delete a team")
-  public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
-    teamService.deleteTeam(id);
-    return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/{id}/archive")

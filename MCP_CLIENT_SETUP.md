@@ -188,7 +188,9 @@ Once connected, your AI assistant has access to these tools:
 | `get_test_case` | Single test case by ID |
 | `get_test_runs` | Execution history of a test case — status, notes, actualResult, linked bug |
 | `get_bug_reports` | Bug reports linked to a task, pitch, or cycle — severity, status, repro steps |
-| `get_bug_report` | Single bug report by ID |
+| `get_bug_report` | Single bug report by `bugKey` (e.g. `"BUG-125"`) or numeric `bugReportId` |
+| `get_bug_attachments` | List a bug's attachments — fileName, type, size, `isImage`, and `extractedText` (for PDFs/docs) |
+| `download_bug_attachment` | Download an image attachment (by its `attachmentId`) as a **viewable image** so you can see design mockups/screenshots |
 | `get_pitches` | Pitches for a project (filterable by status) |
 | `get_pitch_detail` | Full pitch: problem, solution, risks, no-gos, **Figma wireframe URLs** |
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
@@ -197,16 +199,18 @@ Once connected, your AI assistant has access to these tools:
 | `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId`, `cycleId`, or `taskId` — `taskId` resolves to the task's parent pitch or cycle) |
 | `get_task_context` | **Task-rooted aggregator for coding agents** — given a single `taskId`, returns the task (with dependency graph and subtasks), its parent pitch (Shape Up fields + `wireframeLinks`), parent cycle, sibling tasks under the same pitch, and a server-generated `hints` array (Figma URL guidance, blocked-by detail, thin-context warnings). Use this instead of stitching `get_task` + `get_pitch_detail` + `get_tasks` when the goal is "implement this task". |
 
-### Write Tools (v0.9.0 S18 — 7 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
+### Write Tools (v1.6.0 S41 — 12 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
 | `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **parentTaskId** for subtasks, assigneeUsername, priority) |
+| `update_task` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, priority (LOW/MEDIUM/HIGH/URGENT), dueDate (YYYY-MM-DD). Omitted fields keep their current values. Use `update_task_status` / `update_task_assignee` for those specific fields. |
 | `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
 | `update_task_assignee` | Reassign an existing task — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true` |
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
+| `update_pitch` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, appetiteDays. Omitted fields keep their current values. Use `update_pitch_status` for status changes. |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
-| `add_comment` | Add a comment to a TASK or BUG_REPORT (entityType, entityId, content required) |
+| `add_comment` | Add a comment to a TASK, BUG_REPORT, or WIKI_PAGE (entityType, entityId, content required) |
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
 | `create_scope` | Create a Hill Chart scope for a pitch (pitchId, title required; optional: description, progress) |
 | `record_test_run` | Record the result of executing a test case — status (PASSED/FAILED/BLOCKED/SKIPPED/PENDING/RUNNING), notes, actualResult, buildVersion, environment |
@@ -352,8 +356,17 @@ get_test_runs(testCaseId: 1)
 get_bug_reports(taskId: 8)
 # → [{ bugKey, title, severity, status, stepsToReproduce, expectedBehavior, actualBehavior, ... }]
 
+# Fetch one bug by its human-facing key (what the user sees in the UI) — NOT the numeric id
+get_bug_report(bugKey: "BUG-125")
+
+# "Align with final design" bug? List attachments, then view the design image inline
+get_bug_attachments(bugKey: "BUG-135")
+# → [{ id: 42, fileName: "final-design.png", isImage: true, ... }]
+download_bug_attachment(attachmentId: 42)   # returns the image so you can see it
+
 # After fixing, update status (the resolvedAt timestamp is stamped automatically for RESOLVED/VERIFIED/CLOSED)
-update_bug_status(bugReportId: 1, status: "RESOLVED", resolution: "Fixed in commit abc123")
+# Identify the bug by bugKey or numeric bugReportId
+update_bug_status(bugKey: "BUG-125", status: "RESOLVED", resolution: "Fixed in commit abc123")
 ```
 
 **Subtask workflow:**
@@ -367,6 +380,29 @@ create_task(cycleId: 5, title: "Implement click tracking", pitchId: 10)
 create_task(cycleId: 5, parentTaskId: 8, title: "Wire frontend dispatcher")
 create_task(cycleId: 5, parentTaskId: 8, title: "Add backend ingestion endpoint")
 # Subtasks appear in get_task_context(taskId: 8).task.children
+```
+
+**Updating a task's fields (v1.6.0):**
+
+```
+# Rename a task and raise its priority — all other fields are untouched
+update_task(taskId: 8, title: "Implement click tracking (revised scope)", priority: "HIGH")
+
+# Set a due date
+update_task(taskId: 8, dueDate: "2026-07-01")
+
+# Clear the due date
+update_task(taskId: 8, dueDate: "")
+```
+
+**Enriching a pitch with Shape Up fields (v1.6.0):**
+
+```
+# Add the solution and wireframe link after the Figma design is ready
+update_pitch(pitchId: 10, solution: "Redesign auth flow using WebAuthn", wireframeLinks: "https://www.figma.com/design/AbCd/Auth")
+
+# Set the appetite once it's agreed in the betting table
+update_pitch(pitchId: 10, appetiteDays: 14)
 ```
 
 > **Planned tools** (future releases): `search_all`, `get_initiative`, `get_betting_table`.

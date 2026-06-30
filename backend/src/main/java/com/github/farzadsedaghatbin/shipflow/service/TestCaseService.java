@@ -29,6 +29,7 @@ public class TestCaseService {
   private final UserRepository userRepository;
   private final HillChartPointRepository hillChartPointRepository;
   private final TaskRepository taskRepository;
+  private final ProjectRepository projectRepository;
   private final LocalizationService localizationService;
 
   @Value("${app.qa.test-management.enabled:true}")
@@ -85,10 +86,33 @@ public class TestCaseService {
       testCase.setTask(task);
     }
 
+    // Resolve the direct project association: explicit request wins, else inherit from the
+    // linked pitch, then the linked cycle. Keeps test cases scoped to a project for filtering.
+    if (request.getProjectId() != null) {
+      Project project = projectRepository.findById(request.getProjectId())
+          .orElseThrow(() -> new IllegalArgumentException("Project not found: " + request.getProjectId()));
+      testCase.setProject(project);
+    } else if (testCase.getPitch() != null && testCase.getPitch().getProject() != null) {
+      testCase.setProject(testCase.getPitch().getProject());
+    } else if (testCase.getCycle() != null && testCase.getCycle().getProject() != null) {
+      testCase.setProject(testCase.getCycle().getProject());
+    }
+
     testCase = testCaseRepository.save(testCase);
     log.info("Created test case: {} by user: {}", testCase.getTestCaseKey(), userId);
 
     return toDTO(testCase);
+  }
+
+  /**
+   * Create multiple test cases in a single atomic transaction. If any item fails the whole batch
+   * rolls back.
+   */
+  @Transactional
+  public List<TestCaseDTO> createTestCasesBulk(BulkCreateTestCaseRequest request, Long userId) {
+    checkFeatureEnabled();
+    return request.getTestCases().stream().map(item -> createTestCase(item, userId))
+        .collect(Collectors.toList());
   }
 
   /** Update an existing test case. */
@@ -258,8 +282,9 @@ public class TestCaseService {
 
   /** Get test cases with filters. */
   @Transactional(readOnly = true)
-  public List<TestCaseDTO> getTestCasesWithFilters(Long cycleId, Long pitchId, List<TestCaseStatus> statuses,
-      List<TestCaseType> types, List<TestCasePriority> priorities) {
+  public List<TestCaseDTO> getTestCasesWithFilters(Long projectId, Long cycleId, Long pitchId,
+      List<TestCaseStatus> statuses, List<TestCaseType> types, List<TestCasePriority> priorities, Long createdById,
+      Boolean aiGenerated) {
     checkFeatureEnabled();
 
     // Convert empty lists to null for the query
@@ -267,8 +292,9 @@ public class TestCaseService {
     List<TestCaseType> typeList = (types != null && !types.isEmpty()) ? types : null;
     List<TestCasePriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
 
-    return testCaseRepository.findWithFilters(cycleId, pitchId, statusList, typeList, priorityList).stream()
-        .map(this::toDTO).collect(Collectors.toList());
+    return testCaseRepository
+        .findWithFilters(projectId, cycleId, pitchId, statusList, typeList, priorityList, createdById, aiGenerated)
+        .stream().map(this::toDTO).collect(Collectors.toList());
   }
 
   /** Get AI-generated test cases for a pitch. */
@@ -305,6 +331,9 @@ public class TestCaseService {
         .title(testCase.getTitle()).description(testCase.getDescription())
         .preconditions(testCase.getPreconditions()).steps(testCase.getSteps())
         .expectedResult(testCase.getExpectedResult())
+        .projectId(testCase.getProject() != null ? testCase.getProject().getId() : null)
+        .projectName(testCase.getProject() != null ? testCase.getProject().getName() : null)
+        .projectKey(testCase.getProject() != null ? testCase.getProject().getProjectKey() : null)
         .pitchId(testCase.getPitch() != null ? testCase.getPitch().getId() : null)
         .pitchTitle(testCase.getPitch() != null ? testCase.getPitch().getTitle() : null)
         .cycleId(testCase.getCycle() != null ? testCase.getCycle().getId() : null)

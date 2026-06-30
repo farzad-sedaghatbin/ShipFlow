@@ -149,6 +149,10 @@ public class ZephyrImportService {
               totalDataRows--;
               continue;
             }
+            if (testCaseRepository.existsByTestCaseKey(testCase.getTestCaseKey())) {
+              throw new IllegalArgumentException(
+                  "Duplicate test case key: " + testCase.getTestCaseKey());
+            }
             testCase.setImportJob(job);
             TestCase saved = testCaseRepository.save(testCase);
             imported++;

@@ -142,10 +142,12 @@ class TeamControllerIntegrationTest {
   }
 
   @Test
-  void deleteTeam_WhenExists_ShouldDeleteTeam() throws Exception {
-    mockMvc.perform(delete("/api/teams/{id}", testTeam.getId())).andExpect(status().isNoContent());
+  void archiveTeam_WhenExists_ShouldArchiveTeam() throws Exception {
+    mockMvc.perform(patch("/api/teams/{id}/archive", testTeam.getId())).andExpect(status().isNoContent());
 
-    mockMvc.perform(get("/api/teams/{id}", testTeam.getId())).andExpect(status().isBadRequest());
+    // After archiving, team should no longer appear in the active (default) list
+    mockMvc.perform(get("/api/teams")).andExpect(status().isOk())
+        .andExpect(jsonPath("$[?(@.id == " + testTeam.getId() + ")]").doesNotExist());
   }
 
   @Test
