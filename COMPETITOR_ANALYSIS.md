@@ -30,7 +30,7 @@ ShipFlow targets teams that:
 | **Hill charts** | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Circuit breaker (appetite enforcement)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Pitch lifecycle (IDEA→DRAFT→SHAPED→BET)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **MCP server (AI editor integration)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Self-hosted / open MCP server** | ✅ | Partial⁵ | Partial⁵ | Partial⁵ | ❌ | ❌ | ❌ |
 | **Figma MCP client** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A on project docs (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A multi-turn context + entity disambiguation** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -71,6 +71,7 @@ ShipFlow targets teams that:
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
 ³ Linear has a "Triage" view for overdue issues but no proactive AI-computed insight panel with scope-creep detection or velocity trend analysis.
 ⁴ Jira and Confluence support S3 attachment storage in their Data Center editions but do not expose a UI-driven backend switcher or one-click migration.
+⁵ **MCP and embedded AI are no longer ShipFlow-only.** Linear (hosted MCP 2025 + MCP agents Apr 2026), Atlassian/Jira (Rovo MCP server + Agents in Jira, GA May 2026), and Asana (MCP + AI Teammates 2026) all shipped these. The ✅/❌ marks on the AI rows above reflect *specific* ShipFlow features (e.g. Shape Up–aware risk scoring, pitch writer); competitors now have their own AI suites (Rovo, Work Graph, AI Studio) — but **all are cloud-only and paid (per-seat or metered AI credits).** ShipFlow's structural, un-copyable edge is the combination: native Shape Up + self-hosted/open-source + **private, air-gapped AI (Ollama) with zero data egress.** See §4 for the full re-benchmark.
 
 ---
 
