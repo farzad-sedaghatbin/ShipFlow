@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Hill Chart banner showed a raw `{count}` token**: the "Showing all scopes from … pitch(es)" info banner on the Cycle Hill Chart leaked the literal `{count}` placeholder because the i18n string used single-brace (`{count}`) instead of i18next's double-brace (`{{count}}`) interpolation syntax. The pitch count now renders correctly in both `en` and `fa`.
+- **Breadcrumbs showed numeric IDs instead of names** (e.g. "Cycle #1", "Wiki › #1 › #1"): added a lightweight `BreadcrumbContext` so detail pages publish a human-readable label for their route. Cycle, pitch, and wiki space/page breadcrumbs now resolve to the entity name; the wiki root also gets a proper "Wiki" crumb.
+- **Wiki "Space Key" was not auto-derived**: creating a wiki space required manually typing a key or the first save failed with "Space key is required". The key now auto-derives from the space name (uppercase alphanumeric, max 10 chars) until the user edits it manually.
+
 ## [1.8.0] - 2026-06-27
 
 ### Added — Wiki / Docs Space (v1.8.0)
