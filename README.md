@@ -50,8 +50,9 @@ docker compose up -d
 | **Pluggable Object Storage** *(v1.8.0)* | Attachments on AWS S3, MinIO, or local disk — chosen in Org Settings with one-click backend migration and a connection test |
 | **Knowledge Center** | Upload docs and paste URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis — scoped Org / Team / Project, pluggable provider SPI |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
-| **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
+| **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs; admin **CSV/JSON export** of the whole trail by entity type and date range *(v1.9.0)* |
 | **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
+| **Production self-hosting** *(v1.9.0)* | First-party **Helm chart** for Kubernetes; **Prometheus** metrics (`/actuator/prometheus`) + a ready-to-import **Grafana** dashboard; optional **OpenTelemetry** tracing and structured JSON logging |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -313,6 +314,7 @@ docker compose up -d
   - **Visual Timeline**: Timeline with colored dots (green=created, blue=modified, red=deleted)
   - **Relative Time Display**: Shows "5 minutes ago", "2 hours ago" for recent changes
   - **Field Change Display**: Color-coded old → new value comparisons with strikethrough
+  - **Audit Export (v1.9.0)**: Admins export the full audit trail as CSV or JSON from Organization Settings — filtered by entity type and date range, one row per changed field
   - **Internationalization**: Full i18n support (English/Persian) for history labels
 - **Circuit Breaker**: Shape Up's fixed-time safety valve for overflow detection
   - **Automated Overflow Detection**: Real-time budget monitoring with configurable thresholds (50-150%)

@@ -112,6 +112,14 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 **v1.7.0 released: 2026-06-16** ✅
 
+### v1.9.0 session map (in progress)
+
+| Session | Task | Status |
+|---------|------|--------|
+| S54 | Observability backend — `micrometer-registry-prometheus` + `/actuator/prometheus`, OpenTelemetry OTLP tracing (env-gated), native Spring Boot 3.4 structured JSON logging (`LOG_FORMAT`) with traceId/spanId | ✅ done |
+| S55 | Helm chart (`charts/shipflow`) + monitoring stack — Deployment/Service/Ingress/ConfigMap/Secret/HPA/ServiceMonitor; `docker-compose.monitoring.yml` with Prometheus + pre-provisioned Grafana dashboard | ✅ done |
+| S56 | Audit export — `GET /api/audit/export` (admin-only, CSV/JSON, entity-type + date-range filter) reusing the `csvEscape` pattern; Org-Settings UI | ✅ done |
+
 ### Future milestones overview
 
 | Version | Theme | Sessions |
