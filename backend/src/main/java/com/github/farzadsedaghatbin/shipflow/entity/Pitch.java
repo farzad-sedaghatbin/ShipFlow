@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.entity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BusinessValue;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -63,6 +64,12 @@ public class Pitch {
   @NotAudited
   @Column(columnDefinition = "TEXT")
   private String wireframeLinks;
+
+  /** Direct project association — canonical for pre-cycle pitches and admin move-to-project. */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project_id", nullable = true)
+  private Project project;
 
   /** Cycle this pitch is assigned to. Required for PENDING status and beyond. NULL for IDEA, DRAFT, SHAPED. */
   @NotAudited

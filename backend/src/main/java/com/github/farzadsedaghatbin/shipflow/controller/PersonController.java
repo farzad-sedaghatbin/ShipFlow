@@ -93,13 +93,6 @@ public class PersonController {
     return ResponseEntity.ok(activated);
   }
 
-  @DeleteMapping("/{id}")
-  @Operation(summary = "Delete a person permanently")
-  public ResponseEntity<Void> deletePerson(@PathVariable Long id) {
-    personService.deletePerson(id);
-    return ResponseEntity.noContent().build();
-  }
-
   // Team Assignment endpoints
 
   @PostMapping("/assignments")

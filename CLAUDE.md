@@ -5,12 +5,12 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.6.0 — "MCP Ecosystem"
+## Current Milestone: v1.9.0 — "Production-Grade Self-Hosting"
 
-**Current version**: v1.5.0 (released 2026-06-07)
+**Current version**: v1.8.0 (released 2026-06-27)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. Next: MCP Ecosystem (v1.6.0) — agentic write tools, plugin SDK, Notion/Confluence clients.
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Next: Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export (v1.9.0).
 
 ### v1.3.0 session map
 
@@ -95,21 +95,40 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 | Session | Task | Status |
 |---------|------|--------|
-| S41 | Agentic MCP write tools — create/update tasks and pitches via MCP tool calls from AI editors | 🔜 next |
-| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | 🔜 next |
-| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | 🔜 next |
+| S41 | Agentic MCP write tools — `update_task` + `update_pitch` (PATCH-semantic full-field MCP write tools) | ✅ done |
+| S42 | Plugin SDK — Maven archetype, plugin registry, first-party plugin scaffold | ✅ done |
+| S43 | Notion / Confluence MCP clients — read design docs and meeting notes into AI context | ✅ done |
+| S44 | Rich link preview (OG metadata) — server-rendered `og:title`/`og:description` for task/pitch/cycle URLs so shared links show meaningful previews in Slack, iMessage, etc. | ✅ done |
+
+**v1.6.0 released: 2026-06-15** ✅
+
+### v1.7.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S45 | Workflow Automations backend — TriggerType/ActionType enums, WorkflowAutomation/Template/Execution entities, engine, event listener, action dispatcher, 20 SQL-seeded templates | ✅ done |
+| S46 | Shape Up triggers & REST API — HILL_CHART_MOVED, APPETITE_EXCEEDED, SCOPE_CREEP_DETECTED, BETTING_TABLE_LOCKED triggers; WorkflowAutomationController (10 endpoints) | ✅ done |
+| S47 | Automations UI — AutomationsPage (Rules + History tabs), AutomationRuleForm, AutomationTemplateGallery, AutomationExecutionLog, sidebar nav, i18n | ✅ done |
+
+**v1.7.0 released: 2026-06-16** ✅
+
+### v1.9.0 session map (in progress)
+
+| Session | Task | Status |
+|---------|------|--------|
+| S54 | Observability backend — `micrometer-registry-prometheus` + `/actuator/prometheus`, OpenTelemetry OTLP tracing (env-gated), native Spring Boot 3.4 structured JSON logging (`LOG_FORMAT`) with traceId/spanId | ✅ done |
+| S55 | Helm chart (`charts/shipflow`) + monitoring stack — Deployment/Service/Ingress/ConfigMap/Secret/HPA/ServiceMonitor; `docker-compose.monitoring.yml` with Prometheus + pre-provisioned Grafana dashboard | ✅ done |
+| S56 | Audit export — `GET /api/audit/export` (admin-only, CSV/JSON, entity-type + date-range filter) reusing the `csvEscape` pattern; Org-Settings UI | ✅ done |
 
 ### Future milestones overview
 
 | Version | Theme | Sessions |
 |---------|-------|----------|
-| v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients | S41–S43 |
-| v1.7.0 | Workflow Automations — trigger/action engine, Shape Up triggers, 20 templates | S44–S46 |
-| v1.8.0 | Custom Fields & Advanced RBAC — custom fields on tasks/pitches, project-level permissions | S47–S49 |
-| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S50–S52 |
-| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S53–S55 |
-| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S56–S58 |
-| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S59–S61 |
+| v1.8.0 ✅ shipped 2026-06-27 | Custom Fields & Advanced RBAC + Wiki / Docs Space + pluggable Object Storage — custom fields on tasks/pitches, project-level permissions, built-in wiki, attachment storage (LOCAL_FS/S3/MinIO) | S48–S53 |
+| v1.9.0 (current) | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
+| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
+| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
+| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
@@ -126,9 +145,10 @@ Every session must complete ALL of these before creating the PR:
 7. Write unit or integration tests (JaCoCo gate: ≥ 80% line coverage). **The full suite must be at 0 failures** — if your change breaks existing tests (e.g. serialization format change, renamed field), fix those tests in the same commit before pushing.
 8. Update `SampleDataInitializer.java` with demo data for the new feature
 9. **If UI layout changed**: verify onboarding tour step selectors in `frontend/src/contexts/TourContext.tsx` still target correct elements. Update both the selector and the **Step Inventory** table in `TOUR_GUIDE.md`. See `TOUR_GUIDE.md` for the full maintenance contract.
-10. **If in-app help guides reference changed UI**: update the relevant help guide content
-11. **Keep public pages in sync** — `ReleaseNotes.tsx` (`/releases`) and `PublicRoadmap.tsx` (`/public-roadmap`) must always match each other. Any feature added to one must appear in the other. Version cards, item titles, descriptions, and milestone status ("upcoming" / "in-progress" / "planned") must be identical across both pages. See the [Public Pages Alignment rule](#public-pages-alignment) below.
-12. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
+10. **Help & Guides — mandatory for every new user-facing feature**: add or update a guide in `backend/src/main/resources/knowledgebase/help-guides/`. Name it `{NN}-{feature}.md` (next sequential number). The file is auto-loaded by `HelpGuideAIService` at startup — no registration needed. If an existing feature's UI changed, update the relevant existing guide. **A feature without a help guide is incomplete.**
+11. **If in-app help guides reference changed UI**: update the relevant help guide content
+12. **Keep public pages in sync** — `ReleaseNotes.tsx` (`/releases`) and `PublicRoadmap.tsx` (`/public-roadmap`) must always match each other. Any feature added to one must appear in the other. Version cards, item titles, descriptions, and milestone status ("upcoming" / "in-progress" / "planned") must be identical across both pages. See the [Public Pages Alignment rule](#public-pages-alignment) below.
+13. Create PR targeting `main` using `feat/fix/chore/refactor/test/docs` prefix
 
 ---
 
@@ -310,7 +330,7 @@ npm run storybook              # component explorer
 - **Layering**: Controller → Service → Repository. Never skip layers.
 - **DTOs**: Always use DTOs at the controller boundary. Never expose entities directly.
 - **Caching**: Use `@Cacheable` / `@CacheEvict` from Spring Cache. Redis is the production store.
-- **Events**: Use Spring `ApplicationEventPublisher` for cross-cutting side effects.
+- **Events**: Use Spring `ApplicationEventPublisher` for cross-cutting side effects. **A listener that reads an entity the publisher just created/updated MUST use `@TransactionalEventListener(phase = AFTER_COMMIT)` + `@Transactional(propagation = REQUIRES_NEW)`, never a plain `@EventListener`.** Publishers fire events *inside* their `@Transactional` method, so an `@Async @EventListener` runs before the row commits and its `findById` returns empty — the work is silently skipped (see the wiki-page-not-ingested bug). AFTER_COMMIT guarantees the row is visible; because there is no transaction to join after commit, the listener must open its own (`REQUIRES_NEW`) — a plain `@Transactional` fails at startup. Reference: `WikiKnowledgeListener` and `ScopeProgressListener`.
 - **Soft delete**: Use logical deletion (`deletedAt` timestamp). Never hard-delete user data.
 - **Auditing**: Hibernate Envers is enabled. Entity changes are versioned automatically.
 - **LLM calls**: Route through the pluggable LLM provider system in `service/llm/`. Never call HTTP directly.
@@ -352,6 +372,8 @@ See `PERMISSION_MATRIX.md` for the full matrix.
     e.g. `V1__init.sql`, `V99__add_index.sql`
   - **Date-based without underscores** (older files): `V{YYYYMMDD}{seq}__{description}.sql`
 - **Never edit an existing migration.** Always add a new file.
+- **Use the date-prefixed format for new migrations — NOT bare sequential `V{N}`.** Flyway parses the version numerically, so a sequential `V110` sorts to `110`, which is *lower* than every date-prefixed `V2026_*` migration (e.g. `V2026_03_30_0001` that creates `task_attachments`). On a **fresh** database Flyway applies in version order, so a `V110` that alters a table created by a later-sorting `V2026_*` migration fails. `spring.flyway.out-of-order=true` rescues already-migrated DBs but **not** fresh installs. The legacy `V{N}__` files exist for history only.
+- **Tests don't run Flyway** (H2 schema is generated from entities via create-drop), so a broken migration *order* or PostgreSQL-only DDL passes `./mvnw verify` and only fails at real startup — verify new migrations against PostgreSQL.
 - H2 is used for tests; PostgreSQL for dev/prod.
 
 ---
@@ -381,6 +403,7 @@ See `MCP_CLIENT_SETUP.md` for client configuration.
 | QA Test Generation | `AITestGenerationService` | Generates test cases from pitches |
 | RAG Q&A | `DocumentQAService` | Vector search + LLM answer |
 | AI Cache | `AICacheController` | Redis-backed response cache |
+| Knowledge Center | `KnowledgeSourceService` + `service/knowledge/source/provider/*` | Pluggable provider SPI; ingested chunks feed Q&A, Wise Architecture, test gen, and risk analysis |
 
 ---
 
@@ -419,6 +442,26 @@ The MCP server is live as of v0.7.0. To add a new tool:
 5. Add unit tests in `McpToolDispatcherTest` (no Spring context needed)
 6. Update `MCP_CLIENT_SETUP.md` tool reference table
 
+### Add a new Knowledge Center provider
+
+The Knowledge Center exposes a `KnowledgeSourceProvider` SPI in `service/knowledge/source/provider/` so a new ingestion source (Confluence, Notion, Google Drive, etc.) is a single Spring bean:
+
+1. Create `service/knowledge/source/provider/MyProvider.java` implementing `KnowledgeSourceProvider`.
+2. Set `getType() = KnowledgeProviderType.MY_TYPE` — add the enum value if it doesn't exist yet.
+3. Implement `validateConfig(JsonNode)` (throws on bad input) and `ingest(KnowledgeSource, IngestionContext)` returning an `IngestionResult` of `RawChunk`s.
+4. Override `supportsRefresh()` if the source can be re-fetched on a schedule (URL-like sources usually yes; one-shot uploads no).
+5. No other wiring needed — Spring auto-registers it via `KnowledgeSourceRegistry`. Add a `frontend/src/i18n/.../provider.MY_TYPE` label in `en.json` + `fa.json` so the UI renders the provider name.
+
+### Add a new object-storage provider
+
+Object storage uses the same provider-SPI shape as the Knowledge Center. The `ObjectStorageProvider` SPI lives in `service/storage/` so a new backend (Azure Blob, GCS, etc.) is a single Spring bean. **No controller or service may call a storage SDK directly — everything routes through `ObjectStorageService`** (same discipline as the LLM/vector-store abstractions).
+
+1. Add the enum value in `service/storage/StorageProviderType.java`.
+2. Create `service/storage/provider/MyProvider.java` implementing `ObjectStorageProvider` (`getType()`, `validateConfig(JsonNode)`, `store/retrieve/delete`, optional `testConnection`/`presignUrl`). S3-compatible backends can extend the shared AWS-SDK base provider.
+3. Reuse `StorageKeyGenerator` for object keys — never inline key logic.
+4. No other wiring — Spring auto-registers it via `ObjectStorageRegistry`. Add a `provider.MY_TYPE` i18n label and surface it in the Storage tab of Org Settings.
+5. Connection secrets follow the existing integration-secret convention (see the Architectural Decisions Log): stored write-only (never returned in a DTO, never logged); a future `AttributeConverter` can encrypt the isolated secret columns without a schema change.
+
 ### Debug an AI feature
 
 - Check `application-dev.properties` for active LLM provider
@@ -441,10 +484,11 @@ This project is **open source** — every significant feature must be documented
 | 5 | Update competitor positioning if relevant | `COMPETITOR_ANALYSIS.md` |
 | 6 | Update `CLAUDE.md` if the feature introduces a new repeatable task pattern | `CLAUDE.md` |
 | 7 | Add / update guide doc if users need setup instructions | relevant `*_GUIDE.md` or `MCP_CLIENT_SETUP.md` |
+| 7a | **Add in-app help guide** for every new user-facing feature — `{NN}-{feature}.md` in `backend/src/main/resources/knowledgebase/help-guides/`. Auto-loaded by `HelpGuideAIService`. **A feature without a help guide is incomplete.** | `knowledgebase/help-guides/` |
 | 8 | Add i18n keys to both `en.json` and `fa.json` | `frontend/src/i18n/` |
 | 9 | Update `SampleDataInitializer.java` with demo data for the new feature | `src/main/java/.../SampleDataInitializer.java` |
 | 10 | If UI layout changed: update `data-tour` selectors in `TourContext.tsx` AND the Step Inventory table in `TOUR_GUIDE.md` | `TOUR_GUIDE.md` |
-| 11 | If help guides reference changed UI: update guide content | relevant `*_GUIDE.md` |
+| 11 | If help guides reference changed UI: update guide content | `knowledgebase/help-guides/` |
 | 12 | Tests: ≥ 80% line coverage; **0 failures in the full suite** — fix any tests broken by your change (serialization, renamed fields, etc.) in the same PR | `src/test/` |
 | 13 | Run `./mvnw spotless:apply && ./mvnw verify` — must exit `BUILD SUCCESS, Failures: 0, Errors: 0` | CI must stay green |
 | 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
@@ -461,6 +505,12 @@ Key product/architecture decisions recorded here so future Claude Code sessions 
 |------|----------|-----------|
 | 2026-04-05 | Competitor migration tools ship in **v1.2.0**, after Scrum mode (v1.1.0) | 90% of Jira/Linear users work in Sprints. Without Scrum mode, imported sprint history would be dropped or wrongly mapped to Shape Up cycles. Once v1.1 ships, the mapping is clean: Sprint→Sprint, Epic→Pitch, Issue→Task. Migration sequence: CSV import → Linear API → Jira API. Always import into Kanban project by default; teams adopt Shape Up/Scrum at their own pace. |
 | 2026-06-05 | v1.4.0 merges original v1.4 (Enterprise Auth) + v1.5 (UX Depth) into one milestone | SSO and UX polish are both table-stakes before the AI/automation sprint; combining keeps the release train moving without fragmenting small polish fixes into a separate patch version. |
+| 2026-06-18 | v1.8.0 attachments go through a pluggable **object-storage SPI** (`service/storage/`, backends LOCAL_FS/S3/MinIO); LOCAL_FS stays the default so nothing breaks out of the box | Self-hosters need S3/MinIO without code changes. Mirrors the Knowledge Center provider pattern (registry over `List<Provider>`). All attachment I/O routes through `ObjectStorageService`; existing local files keep working and are migrated on backend switch (`StorageMigrationService`, copy-verified before source untouched). |
+| 2026-06-18 | Storage connection **credentials stored as plaintext TEXT**, consistent with existing integration secrets (Figma/GitHub/Notion/SMTP), rather than introducing at-rest encryption now | Consistency with the current codebase (no encryption subsystem exists yet) per product decision. Compensating controls: secrets never returned in any DTO (`hasSecretKey` boolean only), never logged. Secret columns are isolated so a future AES-GCM `AttributeConverter` can be dropped in with no schema change. |
+| 2026-06-25 | Wiki **revision comparison diffs are computed client-side per BlockNote block** (`frontend/src/components/wiki/wikiDiff.ts`: `blocksToLines` → LCS `diffLines`), NOT from the stored `contentText` | `WikiService.extractText` joins every text node with single spaces, so `contentText` is one space-delimited blob with no block/line boundaries — useless for a readable line diff. The fix: a new read-only `GET /wiki/pages/{id}/revisions/{revision}` returns a single revision's full BlockNote `content` JSON; the frontend extracts one line per block (descending into children) and runs an LCS line diff into side-by-side rows (same/added/removed/changed). Future "compare/diff revisions" work should reuse `wikiDiff.ts`, not diff `contentText`. The compare dialog reuses the `["wiki-page", pageId]` React Query cache for the current version (no extra fetch) and renders highlighted text lines rather than mounting a second BlockNote editor (avoids the cost of two live editors). |
+| 2026-06-25 | Wiki page **comments reuse the existing polymorphic comment system** (`CommentEntityType.WIKI_PAGE` on `/api/comments`), not a new wiki-specific table | The `Comment` entity is keyed by `(entityType, entityId)` with no FK, so adding a new commentable surface is purely additive — a new enum value, one `validateEntityExists` case, a notification action-URL case (`/wiki/{spaceId}/{pageId}`), and reusing the `Comments.tsx` component. **Gotcha (fixed in `V2026_06_26_0001`):** the `comments` table has a `CHECK (entity_type IN ('TASK','BUG_REPORT'))` constraint from `V64`, so a new enum value REQUIRES a migration to widen it — H2 tests generate the schema from entities (no CHECK) so they pass while real Postgres rejects the insert with a data-integrity violation. Any future commentable entity must both extend the enum AND add a constraint-widening migration. Note: wiki comments are `isAuthenticated()`-only (matching tasks/bugs), NOT gated by per-space wiki ACL — revisit if private-space comment confidentiality becomes a requirement. |
+| 2026-06-26 | **ALL persistent file storage routes through `ObjectStorageService`** (not just wiki/task attachments). `DocumentService` (pitch/meeting/cycle/note docs + bug-report media) and the Knowledge Center `FileUploadProvider` were migrated off direct filesystem writes. Transient/streamed flows (CSV/Zephyr imports, report/data exports, avatars-as-URL) persist no downloadable file, so they stay as-is. | Self-hosters expect every uploaded file in their S3/MinIO bucket. Key points future file-handling code MUST follow: (1) Use `ObjectStorageService.store(...)` (validates 10MB + image/PDF/doc MIME allowlist) for general attachments; use `storeWithoutValidation(...)` ONLY when the caller enforces its own broader policy (e.g. bug media allows video + ~50MB — the façade allowlist would wrongly reject it). (2) Buffer the multipart bytes ONCE (`file.getBytes()`) when both storage AND text-extraction consume the stream. (3) Entities that store files carry `storageProvider` (enum) + `storageKey`, with a legacy read/delete fallback while old rows still have only the pre-SPI path. (4) **Object keys follow a grouped folder convention** — `attachments/{task,bug,wiki}/{id}/…`, `documents/{type}/{id}/…`, `knowledge/{sourceId}/…` — generated by the shared `DocumentService.storageKeyHint(entityType, entityId)` helper; reuse it (and keep `StorageMigrationService` calling the same helper) so upload-time and migration-time keys never drift. (5) Knowledge Center file persistence needs NO schema change: `FileUploadProvider` returns `storageKey`/`storageProvider` in `IngestionResult.sourceMetadata`, which the ingest flow merges into the source's `config` JSON. |
+| 2026-06-26 | **Knowledge-Center indexing (embedding generation) MUST run in the background, never inline in an upload/save request.** Fixed: `DocumentService.uploadDocument` called `KnowledgeIngestionService.ingestDocument` synchronously — that method is `@Transactional(REQUIRES_NEW)` but was the one `ingest*` method NOT also `@Async`, so a ~1.5 MB doc blocked the HTTP response ~45 s (a large PDF, minutes). | Embedding generation uses a local CPU ONNX model and scales with content size; doing it on the request thread makes uploads look frozen (the file is already stored, so the object appears in the bucket while nothing returns → users re-upload repeatedly). Fix pattern (reuse it for any new "store + index" flow): the upload method only stores + saves + publishes a domain event (e.g. `DocumentUploadedEvent(id)`); a dedicated listener does the indexing with `@Async @TransactionalEventListener(AFTER_COMMIT) @Transactional(REQUIRES_NEW)` — see `DocumentKnowledgeListener` / `WikiKnowledgeListener`. AFTER_COMMIT guarantees the row is visible; `@Async` keeps embedding off the request thread; the `indexedForQA` flag flips when the listener finishes. Keep cheap, response-shaping work (text extraction, which feeds `textExtracted`/`extractedText`) inline; defer only the slow embedding. Note H2 tests don't exercise this latency, so it only shows up at runtime with a real upload — verify upload responsiveness live, not just via unit tests. |
 
 ---
 

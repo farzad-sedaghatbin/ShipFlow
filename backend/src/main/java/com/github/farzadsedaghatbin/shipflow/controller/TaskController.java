@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateStoryPointsRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.UpdateTaskAssigneeRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.audit.EntityHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
@@ -356,6 +357,18 @@ public class TaskController {
     return ResponseEntity.ok(taskService.updateTaskPriority(id, priority));
   }
 
+  @PatchMapping("/{id}/assignee")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(
+      summary = "Assign (or unassign) a task",
+      description =
+          "Lightweight PATCH that only changes the assignee. Pass a null assigneeId to unassign."
+              + " All other task fields are untouched.")
+  public ResponseEntity<TaskDTO> updateTaskAssignee(
+      @PathVariable Long id, @RequestBody UpdateTaskAssigneeRequest request) {
+    return ResponseEntity.ok(taskService.updateTaskAssignee(id, request.getAssigneeId()));
+  }
+
   @DeleteMapping("/{id}")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'DELETE')")
   @Operation(summary = "Delete a task")
@@ -498,7 +511,7 @@ public class TaskController {
   }
 
   @DeleteMapping("/{id}/attachments/{attachmentId}")
-  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @PreAuthorize("isAuthenticated()")
   @Operation(summary = "Delete attachment", description = "Delete a task attachment (uploader or ADMIN only)")
   @ApiResponses({@ApiResponse(responseCode = "204", description = "Attachment deleted"),
       @ApiResponse(responseCode = "403", description = "Not the uploader or ADMIN"),
@@ -507,5 +520,12 @@ public class TaskController {
       @PathVariable Long id, @PathVariable Long attachmentId) {
     attachmentService.deleteAttachment(id, attachmentId);
     return ResponseEntity.noContent().build();
+  }
+
+  @PatchMapping("/{id}/move-to-project/{projectId}")
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Move a task (and its subtasks) to a different project (admin only)")
+  public ResponseEntity<TaskDTO> moveTaskToProject(@PathVariable Long id, @PathVariable Long projectId) {
+    return ResponseEntity.ok(taskService.moveTaskToProject(id, projectId));
   }
 }

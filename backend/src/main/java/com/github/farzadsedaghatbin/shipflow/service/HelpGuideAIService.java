@@ -5,9 +5,10 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
+
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
-import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -42,7 +43,8 @@ public class HelpGuideAIService {
     private static final String HELP_GUIDE_SOURCE = "help-guide";
     private static final int CHUNK_SIZE = 500; // ~500 chars per chunk
     private static final int TOP_K = 5; // Retrieve top 5 relevant chunks
-    private static final double MIN_SCORE = 0.50; // Lower threshold for documentation
+    private static final int FALLBACK_MAX_RESULTS = 100; // Over-retrieve when metadata filtering is unavailable
+    private static final double MIN_SCORE = 0.40; // Recall-friendly threshold for documentation retrieval
 
     private final ChatLanguageModel chatLanguageModel;
     private final EmbeddingModel embeddingModel;
@@ -112,7 +114,11 @@ public class HelpGuideAIService {
      */
     private List<TextSegment> chunkDocument(String content, String filename) {
         List<TextSegment> chunks = new ArrayList<>();
-        String[] sections = content.split("(?=^## )", java.util.regex.Pattern.MULTILINE);
+        // Split before every H1 or H2 heading. Splitting on H1 too ensures a mid-file H1
+        // (e.g. "# Bug Reports" inside a multi-topic guide) correctly becomes the parent
+        // context for the H2 sections that follow it — previously only the very first H1
+        // was ever recorded, so later sections were mislabeled with the wrong title.
+        String[] sections = content.split("(?=^#{1,2} )", java.util.regex.Pattern.MULTILINE);
 
         String currentH1 = filename; // Fallback title
         for (String section : sections) {
@@ -120,33 +126,38 @@ public class HelpGuideAIService {
             if (trimmed.isEmpty())
                 continue;
 
-            // Extract heading if present
+            // An H1 heading (single "# ", not "## ") sets the parent context for the chunks
+            // that follow it.
             if (trimmed.startsWith("# ") && !trimmed.startsWith("## ")) {
-                // This is an H1 heading — set it as the parent context
                 int newlineIdx = trimmed.indexOf('\n');
                 currentH1 = newlineIdx > 0 ? trimmed.substring(2, newlineIdx).trim() : trimmed.substring(2).trim();
+
+                // Don't emit a tiny heading-only chunk — when an H1 has no body of its own it
+                // just updates the parent context for the next section.
+                String body = newlineIdx > 0 ? trimmed.substring(newlineIdx).trim() : "";
+                if (body.isEmpty())
+                    continue;
             }
 
             // If the section is too long, split into smaller sub-chunks
             if (trimmed.length() > CHUNK_SIZE * 2) {
                 List<String> subChunks = splitLargeSection(trimmed);
                 for (String subChunk : subChunks) {
-                    Metadata meta = new Metadata()
-                            .put("source", HELP_GUIDE_SOURCE)
-                            .put("filename", filename)
-                            .put("title", currentH1);
-                    chunks.add(TextSegment.from(subChunk, meta));
+                    chunks.add(TextSegment.from(subChunk, helpMetadata(filename, currentH1)));
                 }
             } else {
-                Metadata meta = new Metadata()
-                        .put("source", HELP_GUIDE_SOURCE)
-                        .put("filename", filename)
-                        .put("title", currentH1);
-                chunks.add(TextSegment.from(trimmed, meta));
+                chunks.add(TextSegment.from(trimmed, helpMetadata(filename, currentH1)));
             }
         }
 
         return chunks;
+    }
+
+    private Metadata helpMetadata(String filename, String title) {
+        return new Metadata()
+                .put("source", HELP_GUIDE_SOURCE)
+                .put("filename", filename)
+                .put("title", title);
     }
 
     private List<String> splitLargeSection(String section) {
@@ -217,25 +228,7 @@ public class HelpGuideAIService {
         try {
             Embedding questionEmbedding = embeddingModel.embed(question).content();
 
-            EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
-                    .queryEmbedding(questionEmbedding)
-                    .maxResults(TOP_K * 2) // Over-retrieve, then filter
-                    .minScore(MIN_SCORE)
-                    .build();
-
-            EmbeddingSearchResult<TextSegment> result = embeddingStore.search(searchRequest);
-            List<EmbeddingMatch<TextSegment>> matches = result.matches();
-
-            // Filter to only help-guide sourced documents
-            List<EmbeddingMatch<TextSegment>> helpMatches = matches.stream()
-                    .filter(match -> {
-                        if (match.embedded() == null || match.embedded().metadata() == null)
-                            return false;
-                        String source = match.embedded().metadata().getString("source");
-                        return HELP_GUIDE_SOURCE.equals(source);
-                    })
-                    .limit(TOP_K)
-                    .toList();
+            List<EmbeddingMatch<TextSegment>> helpMatches = searchHelpGuideChunks(questionEmbedding);
 
             if (helpMatches.isEmpty()) {
                 log.debug("No relevant help guide chunks found for question: {}", question);
@@ -255,9 +248,9 @@ public class HelpGuideAIService {
                 context.append(segment.text()).append("\n\n");
             }
 
-            log.info("Retrieved {} relevant help guide chunks for question (avg score: {:.2f})",
+            log.info("Retrieved {} relevant help guide chunks for question (avg score: {})",
                     helpMatches.size(),
-                    helpMatches.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0));
+                    String.format("%.2f", helpMatches.stream().mapToDouble(EmbeddingMatch::score).average().orElse(0)));
 
             return context.toString();
 
@@ -265,6 +258,44 @@ public class HelpGuideAIService {
             log.warn("Vector search failed for help guide: {}", e.getMessage());
             return "";
         }
+    }
+
+    /**
+     * Retrieve the top help-guide chunks for a query.
+     *
+     * <p>The vector store is shared with the business Q&A knowledge base, so a plain similarity
+     * search can return only higher-scoring business chunks and leave nothing once we filter by
+     * {@code source=help-guide}. To avoid that, we first restrict the search to help-guide chunks
+     * with a metadata filter. If the configured store does not support metadata filtering, we fall
+     * back to over-retrieving a large candidate set and filtering by source in memory.
+     */
+    private List<EmbeddingMatch<TextSegment>> searchHelpGuideChunks(Embedding queryEmbedding) {
+        try {
+            EmbeddingSearchRequest filtered = EmbeddingSearchRequest.builder()
+                    .queryEmbedding(queryEmbedding)
+                    .maxResults(TOP_K)
+                    .minScore(MIN_SCORE)
+                    .filter(metadataKey("source").isEqualTo(HELP_GUIDE_SOURCE))
+                    .build();
+            List<EmbeddingMatch<TextSegment>> matches = embeddingStore.search(filtered).matches();
+            if (!matches.isEmpty()) {
+                return matches.stream().limit(TOP_K).toList();
+            }
+        } catch (RuntimeException e) {
+            log.debug("Metadata-filtered help guide search unavailable ({}), falling back to over-retrieve",
+                    e.getMessage());
+        }
+
+        EmbeddingSearchRequest broad = EmbeddingSearchRequest.builder()
+                .queryEmbedding(queryEmbedding)
+                .maxResults(FALLBACK_MAX_RESULTS)
+                .minScore(MIN_SCORE)
+                .build();
+        return embeddingStore.search(broad).matches().stream()
+                .filter(match -> match.embedded() != null && match.embedded().metadata() != null
+                        && HELP_GUIDE_SOURCE.equals(match.embedded().metadata().getString("source")))
+                .limit(TOP_K)
+                .toList();
     }
 
     private String buildPromptWithContext(String question, String context) {
@@ -348,6 +379,36 @@ public class HelpGuideAIService {
         if (lower.contains("initiative") || lower.contains("epic") || lower.contains("roadmap"))
             return List.of("How do I create an initiative?", "How do epics relate to pitches?",
                     "How do I view the roadmap?");
+        if (lower.contains("plugin") || lower.contains("extension") || lower.contains("sdk"))
+            return List.of("How do I enable or disable a plugin?", "How do I build a custom plugin?",
+                    "What built-in plugins does ShipFlow include?");
+        if (lower.contains("mcp") || lower.contains("claude") || lower.contains("cursor") || lower.contains("ai tool"))
+            return List.of("How do I connect Claude Code to ShipFlow?", "How do I create an API key?",
+                    "How do I enable the MCP server?");
+        if (lower.contains("notion") || lower.contains("confluence"))
+            return List.of("How do I set up a Notion MCP connection?", "How do I set up a Confluence MCP connection?",
+                    "How do I configure MCP integrations?");
+        if (lower.contains("preview") || lower.contains("share") || lower.contains("slack") || lower.contains("whatsapp"))
+            return List.of("How do I share a task link with a preview?", "How do I copy a shareable link?",
+                    "How do I configure webhooks?");
+        if (lower.contains("import") || lower.contains("migrat") || lower.contains("jira") || lower.contains("linear")
+                || lower.contains("asana") || lower.contains("csv"))
+            return List.of("How do I import a CSV file?", "How do I import live from Jira?",
+                    "What gets created when I import?");
+        if (lower.contains("scrum") || lower.contains("sprint") || lower.contains("story point")
+                || lower.contains("velocity") || lower.contains("burndown") || lower.contains("kanban"))
+            return List.of("How does Sprint Planning work?", "How do I choose a project methodology?",
+                    "What's the difference between Shape Up, Kanban, and Scrum?");
+        if (lower.contains("knowledge"))
+            return List.of("How do I add a knowledge source?", "How do I refresh a knowledge source?",
+                    "What does the AI use my documents for?");
+        if (lower.contains("teams") || lower.contains("microsoft"))
+            return List.of("How do I connect Microsoft Teams?", "Which events notify a Teams channel?",
+                    "How do I send a Teams test notification?");
+        if (lower.contains("saved view") || lower.contains("filter view") || lower.contains("attach")
+                || lower.contains("@mention") || lower.contains("mention"))
+            return List.of("How do I save a backlog filter view?", "How do I attach a file to a task?",
+                    "How do I @mention a teammate?");
 
         return getDefaultSuggestions();
     }

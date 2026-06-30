@@ -1,0 +1,141 @@
+# Default values for the ShipFlow Helm chart.
+# This chart deploys the ShipFlow application and expects PostgreSQL, Redis, and
+# (optionally) Qdrant to be provided as external services — point the chart at
+# them via the `externalServices` block below. Bundling stateful datastores is
+# intentionally out of scope; use the upstream Bitnami/operator charts for those.
+
+replicaCount: 2
+
+image:
+  repository: ghcr.io/farzad-sedaghatbin/shipflow
+  # Defaults to the chart's appVersion when left blank.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations:
+  # Scraped by a vanilla (non-operator) Prometheus that honors pod annotations.
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/actuator/prometheus"
+  prometheus.io/port: "8080"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: ["ALL"]
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: shipflow.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+  targetMemoryUtilizationPercentage: 80
+
+# Liveness/readiness use Spring Boot Actuator health groups (probes enabled in app).
+probes:
+  liveness:
+    path: /actuator/health/liveness
+    initialDelaySeconds: 60
+    periodSeconds: 15
+  readiness:
+    path: /actuator/health/readiness
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+# Observability (v1.9.0).
+observability:
+  # Create a Prometheus Operator ServiceMonitor (requires the CRD to be installed).
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    # Namespace/labels the Prometheus Operator selects on.
+    labels: {}
+  tracing:
+    enabled: false
+    sampleRate: "0.1"
+    otlpEndpoint: "http://otel-collector:4318/v1/traces"
+  # logstash | ecs | gelf — leave blank for human-readable console logs.
+  logFormat: "logstash"
+
+# Non-secret application configuration (rendered into a ConfigMap).
+config:
+  SPRING_PROFILES_ACTIVE: prod
+  CORS_ALLOWED_ORIGINS: "https://shipflow.local"
+  AI_PROVIDER: ollama
+  QA_ENABLED: "true"
+  QA_VECTORSTORE_PROVIDER: qdrant
+  MANAGEMENT_ENDPOINTS: "health,info,prometheus"
+
+# External backing services. Hosts/ports go here; secrets go in `secrets`.
+externalServices:
+  postgres:
+    host: shipflow-postgresql
+    port: "5432"
+    database: shipflowdb
+  redis:
+    host: shipflow-redis-master
+    port: "6379"
+  qdrant:
+    host: shipflow-qdrant
+    port: "6334"
+
+# Secret values. In production prefer an existing Secret (set existingSecret) or
+# an external secrets operator over inlining these in values.yaml.
+existingSecret: ""
+secrets:
+  DB_USERNAME: shipflow
+  DB_PASSWORD: change-me
+  REDIS_PASSWORD: change-me
+  # Base64-encoded, min 32 bytes.
+  JWT_SECRET: change-me-base64-min-32-bytes
+  QDRANT_API_KEY: ""
+
+# Persistent volume for file uploads (attachments, documents).
+persistence:
+  enabled: true
+  storageClass: ""
+  accessMode: ReadWriteOnce
+  size: 10Gi
+  mountPath: /app/uploads
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

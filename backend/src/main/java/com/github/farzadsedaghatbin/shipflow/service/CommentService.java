@@ -12,6 +12,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.CommentReactionRepositor
 import com.github.farzadsedaghatbin.shipflow.repository.CommentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +38,7 @@ public class CommentService {
   private final UserRepository userRepository;
   private final TaskRepository taskRepository;
   private final BugReportRepository bugReportRepository;
+  private final WikiPageRepository wikiPageRepository;
   private final MessageService messageService;
   private final DashboardNotificationService notificationService;
 
@@ -195,6 +197,11 @@ public class CommentService {
       case BUG_REPORT :
         if (!bugReportRepository.existsById(entityId)) {
           throw new IllegalArgumentException(messageService.getMessage("comment.bug.not.found"));
+        }
+        break;
+      case WIKI_PAGE :
+        if (!wikiPageRepository.existsByIdAndDeletedAtIsNull(entityId)) {
+          throw new IllegalArgumentException(messageService.getMessage("comment.wiki.not.found"));
         }
         break;
     }

@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 // Static imports — always loaded immediately (structural / auth components)
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import { useToast, setToastHandler, ProjectProvider, TourProvider } from './contexts';
+import { useToast, setToastHandler, ProjectProvider, TourProvider, BreadcrumbProvider } from './contexts';
 import { isRTLLanguage } from './i18n';
 
 // ── Page-level code splitting ─────────────────────────────────────────────────
@@ -25,6 +25,7 @@ const BlogPost = lazy(() => import('./pages/BlogPost'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Projects = lazy(() => import('./pages/Projects'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
+const ProjectSettingsPage = lazy(() => import('./pages/ProjectSettingsPage'));
 
 // Cycle pages
 const CycleList = lazy(() => import('./pages/CycleList'));
@@ -71,6 +72,7 @@ const MeetingList = lazy(() => import('./pages/MeetingList'));
 // Organisation
 const People = lazy(() => import('./pages/People'));
 const Teams = lazy(() => import('./pages/Teams'));
+const TeamDetailPage = lazy(() => import('./pages/TeamDetailPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 
 // Admin
@@ -83,6 +85,7 @@ const SlackIntegration = lazy(() => import('./pages/SlackIntegration'));
 const GitHubIntegration = lazy(() => import('./pages/integrations/GitHubIntegration'));
 const TeamsIntegration = lazy(() => import('./pages/integrations/TeamsIntegration'));
 const McpIntegration = lazy(() => import('./pages/integrations/McpIntegration'));
+const McpUsageReport = lazy(() => import('./pages/integrations/McpUsageReport'));
 const ApiKeysPage = lazy(() => import('./pages/integrations/ApiKeysPage'));
 const InboundWebhooksIntegration = lazy(
   () => import('./pages/integrations/InboundWebhooksIntegration')
@@ -118,6 +121,17 @@ const ReleaseFormPage = lazy(() => import('./pages/ReleaseFormPage'));
 // Import
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 
+// Knowledge Center
+const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter'));
+
+// Workflow Automations
+const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
+
+// Wiki
+const WikiSpaceList = lazy(() => import('./pages/WikiSpaceList'));
+const WikiSpace = lazy(() => import('./pages/WikiSpace'));
+const WikiPage = lazy(() => import('./pages/WikiPage'));
+
 // Help & Guides
 const HelpGuides = lazy(() => import('./pages/HelpGuides'));
 const GettingStartedGuide = lazy(() => import('./pages/guides/GettingStartedGuide'));
@@ -140,6 +154,7 @@ const IdeaToRoadmapGuide = lazy(() => import('./pages/guides/IdeaToRoadmapGuide'
 const ImportGuide = lazy(() => import('./pages/guides/ImportGuide'));
 const ScrumModeGuide = lazy(() => import('./pages/guides/ScrumModeGuide'));
 const MigrationGuide = lazy(() => import('./pages/guides/MigrationGuide'));
+const WorkflowAutomationsGuide = lazy(() => import('./pages/guides/WorkflowAutomationsGuide'));
 
 // ── Suspense fallback ─────────────────────────────────────────────────────────
 function PageLoader() {
@@ -209,12 +224,14 @@ function App() {
             <ProtectedRoute>
               <ProjectProvider>
                 <TourProvider>
+                  <BreadcrumbProvider>
                   <Layout>
                     <Routes>
                       {/* Main Navigation - paths are relative to parent "/*" route */}
                       <Route path="dashboard" element={<Dashboard />} />
                       <Route path="projects" element={<Projects />} />
                       <Route path="projects/:id" element={<ProjectDetail />} />
+                      <Route path="projects/:projectId/settings" element={<ProjectSettingsPage />} />
                       <Route path="cycles" element={<CycleList />} />
                       <Route path="cycles/new" element={<CycleForm />} />
                       <Route path="cycles/:id" element={<CycleDetail />} />
@@ -275,6 +292,10 @@ function App() {
                       {/* Organisation */}
                       <Route path="people" element={<People />} />
                       <Route path="teams" element={<Teams />} />
+                      <Route path="teams/:id" element={<TeamDetailPage />} />
+
+                      {/* Workflow Automations */}
+                      <Route path="automations" element={<AutomationsPage />} />
 
                       {/* User Profile */}
                       <Route path="profile" element={<Profile />} />
@@ -287,6 +308,7 @@ function App() {
                       <Route path="integrations/github" element={<GitHubIntegration />} />
                       <Route path="integrations/teams" element={<TeamsIntegration />} />
                       <Route path="integrations/mcp" element={<McpIntegration />} />
+                      <Route path="integrations/mcp-usage" element={<McpUsageReport />} />
                       <Route path="integrations/api-keys" element={<ApiKeysPage />} />
                       <Route
                         path="integrations/inbound-webhooks"
@@ -338,6 +360,14 @@ function App() {
                       {/* Import */}
                       <Route path="import" element={<ImportPage />} />
 
+                      {/* Knowledge Center */}
+                      <Route path="knowledge" element={<KnowledgeCenter />} />
+
+                      {/* Wiki */}
+                      <Route path="wiki" element={<WikiSpaceList />} />
+                      <Route path="wiki/:spaceId" element={<WikiSpace />} />
+                      <Route path="wiki/:spaceId/:pageId" element={<WikiPage />} />
+
                       {/* Help & Guides */}
                       <Route path="help" element={<HelpGuides />} />
                       <Route path="help/getting-started" element={<GettingStartedGuide />} />
@@ -363,6 +393,7 @@ function App() {
                       <Route path="help/import" element={<ImportGuide />} />
                       <Route path="help/scrum-mode" element={<ScrumModeGuide />} />
                       <Route path="help/migration" element={<MigrationGuide />} />
+                      <Route path="help/automations" element={<WorkflowAutomationsGuide />} />
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -378,6 +409,7 @@ function App() {
                        */}
                     </Routes>
                   </Layout>
+                  </BreadcrumbProvider>
                 </TourProvider>
               </ProjectProvider>
             </ProtectedRoute>

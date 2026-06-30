@@ -1,6 +1,6 @@
 {
   "name": "shipflow-frontend",
-  "version": "1.5.0",
+  "version": "1.8.0",
   "private": true,
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -62,7 +62,12 @@
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@blocknote/core": "^0.29.1",
+    "@blocknote/react": "^0.29.1",
+    "@blocknote/mantine": "^0.29.1",
+    "@mantine/core": "^7.17.4",
+    "@mantine/hooks": "^7.17.4"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
