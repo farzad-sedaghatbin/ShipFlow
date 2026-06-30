@@ -8644,6 +8644,9 @@
     "missingPageTooltip": "This linked page no longer exists.",
     "insertPageLink": "Insert page link",
     "insertPageLinkHint": "Search for a page to insert a [[link]] at the cursor. Type @ in the editor to mention a teammate.",
+    "mentionMenuTitle": "Mention a teammate",
+    "mentionItemSubtitle": "@{{username}}",
+    "mentionNoResults": "No teammates found"
     "share": {
       "button": "Share",
       "title": "Manage Access",
