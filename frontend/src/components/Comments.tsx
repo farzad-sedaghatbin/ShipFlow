@@ -33,20 +33,29 @@ import {
   TooltipTrigger,
 } from './ui/tooltip';
 import { cn } from '../lib/utils';
-import commentService, { 
-  Comment, 
-  CommentEntityType, 
+import commentService, {
+  Comment,
+  CommentEntityType,
   CommentReaction,
   MentionUser,
-  REACTION_EMOJIS 
+  REACTION_EMOJIS
 } from '../services/commentService';
-import UserProfilePopover from './UserProfilePopover';
+import {
+  formatMentionToken,
+  splitMentionsInText,
+} from './mentions/mentionUtils';
 
 interface CommentsProps {
-  entityType: 'task' | 'bug';
+  entityType: 'task' | 'bug' | 'wiki';
   entityId: number;
   locale?: string;
 }
+
+const ENTITY_TYPE_MAP: Record<CommentsProps['entityType'], CommentEntityType> = {
+  task: 'TASK',
+  bug: 'BUG_REPORT',
+  wiki: 'WIKI_PAGE',
+};
 
 const AVAILABLE_REACTIONS: CommentReaction[] = [
   'THUMBS_UP',
@@ -58,57 +67,6 @@ const AVAILABLE_REACTIONS: CommentReaction[] = [
   'ROCKET',
   'EYES',
 ];
-
-/**
- * MentionLink component - renders a clickable @mention with user profile popover
- */
-interface MentionLinkProps {
-  name: string;
-  cachedUser?: MentionUser;
-  onFetchUser: (name: string) => Promise<MentionUser | null>;
-}
-
-const MentionLink: React.FC<MentionLinkProps> = ({ name, cachedUser, onFetchUser }) => {
-  const [user, setUser] = useState<MentionUser | null>(cachedUser || null);
-  const [loading, setLoading] = useState(false);
-  
-  const handleClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user && !loading) {
-      setLoading(true);
-      const fetchedUser = await onFetchUser(name);
-      setUser(fetchedUser);
-      setLoading(false);
-    }
-  };
-
-  // If we have user data, render with popover
-  if (user) {
-    return (
-      <UserProfilePopover userId={user.id} displayName={user.displayName}>
-        <button
-          type="button"
-          className="text-primary font-medium hover:underline cursor-pointer inline bg-transparent border-none p-0"
-          onClick={(e) => e.stopPropagation()}
-        >
-          @{name}
-        </button>
-      </UserProfilePopover>
-    );
-  }
-
-  // If no user data yet, render clickable mention that fetches on click
-  return (
-    <button
-      type="button"
-      className="text-primary font-medium hover:underline cursor-pointer inline bg-transparent border-none p-0"
-      onClick={handleClick}
-      disabled={loading}
-    >
-      @{name}
-    </button>
-  );
-};
 
 const Comments: React.FC<CommentsProps> = ({
   entityType,
@@ -136,7 +94,7 @@ const Comments: React.FC<CommentsProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionDropdownRef = useRef<HTMLDivElement>(null);
 
-  const apiEntityType: CommentEntityType = entityType === 'task' ? 'TASK' : 'BUG_REPORT';
+  const apiEntityType: CommentEntityType = ENTITY_TYPE_MAP[entityType];
 
   const loadComments = useCallback(async () => {
     setLoading(true);
@@ -239,11 +197,9 @@ const Comments: React.FC<CommentsProps> = ({
     const afterMention = newComment.substring(
       mentionStartIndex + mentionQuery.length + 1
     );
-    // Use displayName (person's name) for the mention
-    // If name has spaces, wrap in quotes for proper parsing
-    const mentionText = user.displayName.includes(' ') 
-      ? `@"${user.displayName}"` 
-      : `@${user.displayName}`;
+    // Use displayName (person's name) for the mention.
+    // If name has spaces, wrap in quotes for proper parsing.
+    const mentionText = formatMentionToken(user.displayName);
     const newValue = `${beforeMention}${mentionText} ${afterMention}`;
     
     setNewComment(newValue);
@@ -278,46 +234,21 @@ const Comments: React.FC<CommentsProps> = ({
     }
   }, [mentionUserCache]);
 
-  // Split a plain-text fragment into nodes, replacing @mentions with MentionLink popovers.
-  // Match both @"Full Name" and @SingleWord formats. Unquoted names may contain
-  // letters/numbers with dots/underscores only between segments (no trailing punctuation).
-  const splitMentionsInText = useCallback((text: string, keyPrefix: string): React.ReactNode[] => {
-    const mentionRegex = /@"([^"]+)"|@([\p{L}\p{N}]+(?:[._][\p{L}\p{N}]+)*)/gu;
-    const out: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-    while ((match = mentionRegex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        out.push(text.substring(lastIndex, match.index));
-      }
-      const name = match[1] || match[2];
-      out.push(
-        <MentionLink
-          key={`${keyPrefix}-mention-${match.index}`}
-          name={name}
-          cachedUser={mentionUserCache.get(name)}
-          onFetchUser={fetchMentionUser}
-        />
-      );
-      lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < text.length) {
-      out.push(text.substring(lastIndex));
-    }
-    return out.length > 0 ? out : [text];
-  }, [mentionUserCache, fetchMentionUser]);
-
   // Walk children produced by react-markdown and replace string nodes with
   // mention-highlighted fragments. Element children pass through untouched, so
-  // mentions inside code spans/blocks are preserved as-is.
+  // mentions inside code spans/blocks are preserved as-is. The @mention parsing
+  // + MentionLink rendering is shared with the wiki view via mentionUtils.
   const processChildren = useCallback((children: React.ReactNode, keyPrefix: string): React.ReactNode => {
     return React.Children.map(children, (child, i) => {
       if (typeof child === 'string') {
-        return splitMentionsInText(child, `${keyPrefix}-${i}`);
+        return splitMentionsInText(child, `${keyPrefix}-${i}`, {
+          mentionUserCache,
+          onFetchUser: fetchMentionUser,
+        });
       }
       return child;
     });
-  }, [splitMentionsInText]);
+  }, [mentionUserCache, fetchMentionUser]);
 
   // Render comment content as markdown with @mention popovers preserved.
   const renderCommentContent = (content: string, commentId: number) => {

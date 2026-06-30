@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Pencil, Clock, CalendarDays, AlertTriangle, Users, User } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -14,7 +15,6 @@ import { EmptyWorkLogsIllustration } from '../components/illustrations';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import { WorkLogsSkeleton } from '../components/Skeletons';
-
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { Badge } from '../components/ui/badge';
 import {
   Table,
@@ -67,11 +68,15 @@ export default function WorkLogsPage() {
   const [loading, setLoading] = useState(true);
   const [workLogType, setWorkLogType] = useState<'pitch' | 'task'>('task');
 
-  // Summary stats (aggregated from server, not from paginated data)
+  // Summary stats
   const [summaryTodayHours, setSummaryTodayHours] = useState(0);
   const [summaryTodayCount, setSummaryTodayCount] = useState(0);
   const [summaryTotalHours, setSummaryTotalHours] = useState(0);
   const [summaryTotalCount, setSummaryTotalCount] = useState(0);
+
+  // Log dialog state
+  const [quickLogDialogOpen, setQuickLogDialogOpen] = useState(false);
+  const [teamLogDialogOpen, setTeamLogDialogOpen] = useState(false);
 
   // Form state for personal logs
   const [newWorkLog, setNewWorkLog] = useState<CreateWorkLogForSelfRequest>({
@@ -118,23 +123,19 @@ export default function WorkLogsPage() {
   const [filterDateFrom, setFilterDateFrom] = useState<string>('');
   const [filterDateTo, setFilterDateTo] = useState<string>('');
 
-  // Filtered work logs — client-side person/pitch/task; date is server-side
   const filteredWorkLogs = useMemo(() => {
     return workLogs.filter(wl => {
-      if (filterPersonId !== 'all' && wl.personId !== parseInt(filterPersonId, 10)) return false;
       if (filterPitchId !== 'all' && wl.pitchId !== parseInt(filterPitchId, 10)) return false;
       if (filterTaskId !== 'all' && wl.taskId !== parseInt(filterTaskId, 10)) return false;
       return true;
     });
-  }, [workLogs, filterPersonId, filterPitchId, filterTaskId]);
+  }, [workLogs, filterPitchId, filterTaskId]);
 
-  // Filter cycles by current project
   const filteredCycles = useMemo(() => {
     if (isAllProjectsSelected) return cycles;
     return cycles.filter(c => c.projectId === currentProject?.id);
   }, [cycles, currentProject, isAllProjectsSelected]);
 
-  // Reset cycle filter, page, and table filters when project changes
   useEffect(() => {
     setSelectedCycle('all');
     setPage(0);
@@ -145,45 +146,27 @@ export default function WorkLogsPage() {
     setFilterDateTo('');
   }, [currentProject?.id, isAllProjectsSelected]);
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  useEffect(() => { loadInitialData(); }, []);
 
-  // Reload pitches and tasks when cycle or project changes (not on page change)
   useEffect(() => {
     if (selectedCycle) {
-      if (selectedCycle === 'all') {
-        loadAllPitches();
-        loadAllTasks();
-      } else {
-        const cycleId = parseInt(selectedCycle, 10);
-        loadPitches(cycleId);
-        loadTasks(cycleId);
-      }
+      if (selectedCycle === 'all') { loadAllPitches(); loadAllTasks(); }
+      else { const cycleId = parseInt(selectedCycle, 10); loadPitches(cycleId); loadTasks(cycleId); }
     }
   }, [selectedCycle, currentProject?.id]);
 
-  // Reload work logs when page, cycle, tab, project, or date filter changes
   useEffect(() => {
     if (selectedCycle) {
-      if (selectedCycle === 'all') {
-        loadWorkLogs('all');
-      } else {
-        loadWorkLogs(parseInt(selectedCycle, 10));
-      }
+      loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
     }
-  }, [page, selectedCycle, activeTab, currentProject?.id, filterDateFrom, filterDateTo]);
+  }, [page, selectedCycle, activeTab, currentProject?.id, filterDateFrom, filterDateTo, filterPersonId]);
 
-  // Reload summary stats when cycle, tab, or project changes (no page dependency)
   useEffect(() => {
     if (activeTab === 'my') {
       loadSummaryStats();
     } else {
-      // Team tab: reset summary to avoid stale "my" stats being shown
-      setSummaryTodayHours(0);
-      setSummaryTodayCount(0);
-      setSummaryTotalHours(0);
-      setSummaryTotalCount(0);
+      setSummaryTodayHours(0); setSummaryTodayCount(0);
+      setSummaryTotalHours(0); setSummaryTotalCount(0);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCycle, activeTab, currentProject?.id, isAllProjectsSelected]);
@@ -197,9 +180,7 @@ export default function WorkLogsPage() {
       setSummaryTodayCount(response.data.todayCount);
       setSummaryTotalHours(response.data.totalHours);
       setSummaryTotalCount(response.data.totalCount);
-    } catch (error) {
-      console.error('Failed to load work log summary:', error);
-    }
+    } catch (error) { console.error('Failed to load work log summary:', error); }
   };
 
   const loadInitialData = async () => {
@@ -209,171 +190,109 @@ export default function WorkLogsPage() {
         personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
+      const currentPersonId = user?.personId;
+      if (currentPersonId) {
+        personsRes.sort((a: Person, b: Person) => (a.id === currentPersonId ? -1 : b.id === currentPersonId ? 1 : 0));
+      }
       setPersons(personsRes);
-      // Default to 'all' - don't auto-select first cycle
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { console.error('Failed to load data:', error); }
+    finally { setLoading(false); }
   };
 
   const loadWorkLogs = async (cycleIdOrAll: number | string) => {
-    // Only send date params when both ends are set (avoids half-open range confusion)
     const from = filterDateFrom || undefined;
     const to = filterDateTo || undefined;
     const dateFrom = from && to ? from : undefined;
     const dateTo = from && to ? to : undefined;
+    const teamPersonId = activeTab === 'team' && filterPersonId !== 'all' ? parseInt(filterPersonId, 10) : undefined;
 
     try {
       let logs: WorkLog[] = [];
       let serverTotalPages = 0;
       let serverTotalElements = 0;
       if (cycleIdOrAll === 'all') {
-        // Load all work logs across all cycles, filtered by project on the server if one is selected
         const projectId = !isAllProjectsSelected && currentProject ? currentProject.id : undefined;
         if (activeTab === 'my') {
           const response = await workLogService.getMy(page, PAGE_SIZE, projectId, dateFrom, dateTo);
-          logs = response.data.content;
-          serverTotalPages = response.data.totalPages;
-          serverTotalElements = response.data.totalElements;
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         } else {
-          const response = await workLogService.getAll(page, PAGE_SIZE, projectId, dateFrom, dateTo);
-          logs = response.data.content;
-          serverTotalPages = response.data.totalPages;
-          serverTotalElements = response.data.totalElements;
+          const response = await workLogService.getAll(page, PAGE_SIZE, projectId, dateFrom, dateTo, teamPersonId);
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         }
       } else {
-        // Load work logs for specific cycle (already scoped to a project's cycle)
         const cycleId = cycleIdOrAll as number;
         if (activeTab === 'my') {
           const response = await workLogService.getMyByCycle(cycleId, page, PAGE_SIZE, dateFrom, dateTo);
-          logs = response.data.content;
-          serverTotalPages = response.data.totalPages;
-          serverTotalElements = response.data.totalElements;
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         } else {
-          const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE, dateFrom, dateTo);
-          logs = response.data.content;
-          serverTotalPages = response.data.totalPages;
-          serverTotalElements = response.data.totalElements;
+          const response = await workLogService.getByCycleId(cycleId, page, PAGE_SIZE, dateFrom, dateTo, teamPersonId);
+          logs = response.data.content; serverTotalPages = response.data.page?.totalPages ?? response.data.totalPages ?? 0; serverTotalElements = response.data.page?.totalElements ?? response.data.totalElements ?? 0;
         }
       }
-
-      // Server returns data sorted by date DESC; no client-side sort or filter needed
-      setWorkLogs(logs);
-      setTotalPages(serverTotalPages);
-      setTotalElements(serverTotalElements);
-    } catch (error) {
-      console.error('Failed to load work logs:', error);
-    } finally {
-      notifyProjectSwitchComplete();
-    }
+      setWorkLogs(logs); setTotalPages(serverTotalPages); setTotalElements(serverTotalElements);
+    } catch (error) { console.error('Failed to load work logs:', error); }
+    finally { notifyProjectSwitchComplete(); }
   };
 
   const loadPitches = async (cycleId: number) => {
-    try {
-      const response = await pitchService.getByCycleId(cycleId);
-      setPitches(response.data);
-    } catch (error) {
-      console.error('Failed to load pitches:', error);
-    }
+    try { const response = await pitchService.getByCycleId(cycleId); setPitches(response.data); }
+    catch (error) { console.error('Failed to load pitches:', error); }
   };
 
   const loadAllPitches = async () => {
     try {
-      // Use ALL accessible cycles (not just active) so pitches from past/completed
-      // cycles are included when a user wants to log work retroactively.
-      // filteredCycles only contains active cycles from getMyActiveCycles(), which
-      // misses any cycle that has ended.
       let allCycles: Cycle[];
-      if (isAllProjectsSelected) {
-        const res = await cycleService.getMyCycles();
-        allCycles = res.data;
-      } else if (currentProject) {
-        const res = await cycleService.getByProject(currentProject.id);
-        allCycles = res.data;
-      } else {
-        const res = await cycleService.getMyCycles();
-        allCycles = res.data;
-      }
-
-      if (allCycles.length === 0) {
-        setPitches([]);
-        return;
-      }
-
-      // Fetch pitches from every cycle in parallel using getByCycleId which
-      // handles both direct cycle_id FK and betting-slot assignments correctly.
-      const results = await Promise.all(
-        allCycles.map(cycle => pitchService.getByCycleId(cycle.id))
-      );
+      if (isAllProjectsSelected) { const res = await cycleService.getMyCycles(); allCycles = res.data; }
+      else if (currentProject) { const res = await cycleService.getByProject(currentProject.id); allCycles = res.data; }
+      else { const res = await cycleService.getMyCycles(); allCycles = res.data; }
+      if (allCycles.length === 0) { setPitches([]); return; }
+      const results = await Promise.all(allCycles.map(cycle => pitchService.getByCycleId(cycle.id)));
       const merged = results.flatMap(r => r.data);
-      // Deduplicate – a pitch can appear in multiple cycles via betting slots
       const unique = Array.from(new Map(merged.map(p => [p.id, p])).values());
       setPitches(unique);
-    } catch (error) {
-      console.error('Failed to load pitches:', error);
-    }
+    } catch (error) { console.error('Failed to load pitches:', error); }
   };
 
   const loadTasks = async (cycleId: number) => {
     try {
       const response = await taskService.getByCycleId(cycleId);
-      if (response.data && 'content' in response.data) {
-        setTasks((response.data as any).content || []);
-      } else if (Array.isArray(response.data)) {
-        setTasks(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-    }
+      if (response.data && 'content' in response.data) { setTasks((response.data as any).content || []); }
+      else if (Array.isArray(response.data)) { setTasks(response.data); }
+    } catch (error) { console.error('Failed to load tasks:', error); }
   };
 
   const loadAllTasks = async () => {
     try {
-      // For a specific project, load by project ID if available
       if (!isAllProjectsSelected && currentProject) {
         const response = await taskService.getByProjectIdPaged(currentProject.id, 0, 1000);
         setTasks(response.data.content || []);
       } else {
-        const response = await taskService.getAll(0, 1000);
-        setTasks(response.data.content || []);
+        // When all projects are selected and no cycle is chosen, don't load tasks across
+        // all projects — the dropdown would be unusable. User must pick a cycle first.
+        setTasks([]);
       }
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-    }
+    } catch (error) { console.error('Failed to load tasks:', error); }
   };
 
-  // My work log handlers
   const handleCreateMyWorkLog = async () => {
     if (!workLogDate || !newWorkLog.hoursSpent) return;
     if (workLogType === 'pitch' && !selectedPitchId) return;
     if (workLogType === 'task' && !selectedTaskId) return;
-    
     try {
-      const requestData = {
+      await workLogService.createMy({
         ...newWorkLog,
         pitchId: workLogType === 'pitch' ? parseInt(selectedPitchId, 10) : undefined,
         taskId: workLogType === 'task' ? parseInt(selectedTaskId, 10) : undefined,
         date: workLogDate,
-      };
-      
-      await workLogService.createMy(requestData);
-      setNewWorkLog({
-        pitchId: 0,
-        date: dayjs().format('YYYY-MM-DD'),
-        hoursSpent: 0,
-        note: '',
       });
+      setNewWorkLog({ pitchId: 0, date: dayjs().format('YYYY-MM-DD'), hoursSpent: 0, note: '' });
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
-      setSelectedPitchId('');
+      setSelectedPitchId(''); setSelectedTaskId('');
+      setQuickLogDialogOpen(false);
       showSuccess(t('workLogs.addSuccess'));
-      if (selectedCycle) {
-        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
-      }
+      loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
     } catch (error: any) {
-      const message = error.response?.data?.message || error.response?.data?.error || t('workLogs.errors.addFailed');
-      showError(message);
+      showError(error.response?.data?.message || error.response?.data?.error || t('workLogs.errors.addFailed'));
     }
   };
 
@@ -381,47 +300,31 @@ export default function WorkLogsPage() {
     try {
       await workLogService.deleteMy(id);
       showSuccess(t('workLogs.deleteSuccess'));
-      if (selectedCycle) {
-        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
-      }
+      loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
     } catch (error: any) {
-      const message = error.response?.data?.message || t('workLogs.errors.deleteFailed');
-      showError(message);
+      showError(error.response?.data?.message || t('workLogs.errors.deleteFailed'));
     }
   };
 
-  // Team work log handlers (admin)
   const handleCreateTeamWorkLog = async () => {
     if (!teamWorkLogDate || !teamWorkLog.personId || !teamWorkLog.hoursSpent) return;
     if (teamWorkLogType === 'pitch' && !teamSelectedPitchId) return;
     if (teamWorkLogType === 'task' && !teamSelectedTaskId) return;
-    
     try {
-      const requestData = {
+      await workLogService.create({
         ...teamWorkLog,
         pitchId: teamWorkLogType === 'pitch' ? parseInt(teamSelectedPitchId, 10) : undefined,
         taskId: teamWorkLogType === 'task' ? parseInt(teamSelectedTaskId, 10) : undefined,
         date: teamWorkLogDate,
-      };
-      
-      await workLogService.create(requestData);
-      setTeamWorkLog({
-        personId: 0,
-        pitchId: 0,
-        date: dayjs().format('YYYY-MM-DD'),
-        hoursSpent: 0,
-        note: '',
       });
+      setTeamWorkLog({ personId: 0, pitchId: 0, date: dayjs().format('YYYY-MM-DD'), hoursSpent: 0, note: '' });
       setTeamWorkLogDate(dayjs().format('YYYY-MM-DD'));
-      setTeamSelectedPitchId('');
-      setTeamSelectedTaskId('');
+      setTeamSelectedPitchId(''); setTeamSelectedTaskId('');
+      setTeamLogDialogOpen(false);
       showSuccess(t('workLogs.addSuccess'));
-      if (selectedCycle) {
-        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
-      }
+      loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
     } catch (error: any) {
-      const message = error.response?.data?.message || t('workLogs.errors.addFailed');
-      showError(message);
+      showError(error.response?.data?.message || t('workLogs.errors.addFailed'));
     }
   };
 
@@ -429,12 +332,9 @@ export default function WorkLogsPage() {
     try {
       await workLogService.delete(id);
       showSuccess(t('workLogs.deleteSuccess'));
-      if (selectedCycle) {
-        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
-      }
+      loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
     } catch (error: any) {
-      const message = error.response?.data?.message || t('workLogs.errors.deleteFailed');
-      showError(message);
+      showError(error.response?.data?.message || t('workLogs.errors.deleteFailed'));
     }
   };
 
@@ -442,13 +342,7 @@ export default function WorkLogsPage() {
     setEditingWorkLog(workLog);
     const hasTask = !!workLog.taskId;
     setEditWorkLogType(hasTask ? 'task' : 'pitch');
-    setEditForm({
-      pitchId: workLog.pitchId,
-      taskId: workLog.taskId,
-      date: workLog.date,
-      hoursSpent: workLog.hoursSpent,
-      note: workLog.note || '',
-    });
+    setEditForm({ pitchId: workLog.pitchId, taskId: workLog.taskId, date: workLog.date, hoursSpent: workLog.hoursSpent, note: workLog.note || '' });
     setEditDate(workLog.date);
     setEditPitchId(workLog.pitchId?.toString() || '');
     setEditTaskId(workLog.taskId?.toString() || '');
@@ -459,7 +353,6 @@ export default function WorkLogsPage() {
     if (!editingWorkLog || !editDate) return;
     if (editWorkLogType === 'pitch' && !editPitchId) return;
     if (editWorkLogType === 'task' && !editTaskId) return;
-    
     try {
       const requestData = {
         ...editForm,
@@ -467,24 +360,13 @@ export default function WorkLogsPage() {
         taskId: editWorkLogType === 'task' ? parseInt(editTaskId, 10) : undefined,
         date: editDate,
       };
-      
-      if (activeTab === 'my') {
-        await workLogService.updateMy(editingWorkLog.id, requestData);
-      } else {
-        await workLogService.update(editingWorkLog.id, {
-          personId: editingWorkLog.personId,
-          ...requestData,
-        });
-      }
+      if (activeTab === 'my') { await workLogService.updateMy(editingWorkLog.id, requestData); }
+      else { await workLogService.update(editingWorkLog.id, { personId: editingWorkLog.personId, ...requestData }); }
       showSuccess(t('workLogs.updateSuccess'));
-      setEditDialogOpen(false);
-      setEditingWorkLog(null);
-      if (selectedCycle) {
-        loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
-      }
+      setEditDialogOpen(false); setEditingWorkLog(null);
+      loadWorkLogs(selectedCycle === 'all' ? 'all' : parseInt(selectedCycle, 10));
     } catch (error: any) {
-      const message = error.response?.data?.message || t('workLogs.errors.updateFailed');
-      showError(message);
+      showError(error.response?.data?.message || t('workLogs.errors.updateFailed'));
     }
   };
 
@@ -492,15 +374,13 @@ export default function WorkLogsPage() {
   const [canManageLogs, setCanManageLogs] = useState(false);
   const canLogForSelf = !!user?.personId;
 
-  // Preload permission for team logs tab visibility
-  // Using TEAM:MANAGE permission as logging time for team members is part of team management
   useEffect(() => {
     hasPermission('TEAM', 'MANAGE').then(setCanManageLogs).catch(() => setCanManageLogs(false));
-  }, [hasPermission]); // Include hasPermission since it's now stable
+  }, [hasPermission]);
 
-  if (loading || isSwitchingProject) {
-    return <WorkLogsSkeleton />;
-  }
+  if (loading || isSwitchingProject) return <WorkLogsSkeleton />;
+
+  const hasActiveFilters = filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all' || !!filterDateFrom || !!filterDateTo;
 
   return (
     <div className="space-y-6">
@@ -508,29 +388,21 @@ export default function WorkLogsPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Work Logs</h1>
-          <p className="text-muted-foreground">Track time spent on pitches</p>
+          <p className="text-muted-foreground">Track time spent on pitches and tasks</p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Hide cycle selector for Kanban projects - they only have the hidden "Continuous Flow" cycle */}
-          {!isKanbanProject && (
-            <Select
-              value={selectedCycle}
-              onValueChange={(v) => { setSelectedCycle(v); setPage(0); }}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={t('workLogsPage.selectCycle')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('workLogsPage.allCycles')}</SelectItem>
-                {filteredCycles.map((cycle) => (
-                  <SelectItem key={cycle.id} value={cycle.id.toString()}>
-                    {cycle.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+        {!isKanbanProject && (
+          <Select value={selectedCycle} onValueChange={(v) => { setSelectedCycle(v); setPage(0); }}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder={t('workLogsPage.selectCycle')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('workLogsPage.allCycles')}</SelectItem>
+              {filteredCycles.map((cycle) => (
+                <SelectItem key={cycle.id} value={cycle.id.toString()}>{cycle.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -542,518 +414,252 @@ export default function WorkLogsPage() {
               <span className="text-sm text-muted-foreground">{t('workLogs.today')}</span>
             </div>
             <div className="text-3xl font-bold">{summaryTodayHours.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">
-              {t('workLogs.logsToday', { count: summaryTodayCount })}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('workLogs.logsToday', { count: summaryTodayCount })}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="h-5 w-5 text-secondary-foreground" />
-              <span className="text-sm text-muted-foreground">{t('workLogs.thisCycle')}</span>
+              <span className="text-sm text-muted-foreground">
+                {isKanbanProject ? t('workLogs.total', 'Total') : t('workLogs.thisCycle')}
+              </span>
             </div>
             <div className="text-3xl font-bold">{summaryTotalHours.toFixed(1)}h</div>
-            <p className="text-xs text-muted-foreground">
-              {t('workLogs.logsCount', { count: summaryTotalCount })}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('workLogs.logsCount', { count: summaryTotalCount })}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as 'my' | 'team'); setPage(0); }} className="w-full">
-        <TabsList>
-          <TabsTrigger value="my" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            {t('workLogs.myLogs')}
-          </TabsTrigger>
-          {canManageLogs && (
-            <TabsTrigger value="team" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              {t('workLogs.teamLogs')}
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="my" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              {t('workLogs.myLogs')}
             </TabsTrigger>
+            {canManageLogs && (
+              <TabsTrigger value="team" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {t('workLogs.teamLogs')}
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {/* CTA button — context-aware per active tab */}
+          {activeTab === 'my' && canLogForSelf && (
+            <Button onClick={() => setQuickLogDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t('workLogs.logTime')}
+            </Button>
           )}
-        </TabsList>
+          {activeTab === 'team' && canManageLogs && (
+            <Button onClick={() => setTeamLogDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              {t('workLogs.logTime')}
+            </Button>
+          )}
+        </div>
 
         {/* My Logs Tab */}
-        <TabsContent value="my" className="space-y-4">
+        <TabsContent value="my" className="space-y-4 mt-4">
           {!canLogForSelf ? (
             <Alert variant="default" className="border-amber-500 bg-amber-50 dark:bg-amber-950">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
-              <AlertDescription>
-                {t('workLogs.notLinkedAlert')}
-              </AlertDescription>
+              <AlertDescription>{t('workLogs.notLinkedAlert')}</AlertDescription>
             </Alert>
           ) : (
             <>
-              {/* Quick Log Form */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('workLogs.quickLog')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-8 gap-4 items-end">
-                    <div className="space-y-2">
-                      <Label htmlFor="log-type">{t('workLogs.logType')} *</Label>
-                      <Select
-                        value={workLogType}
-                        onValueChange={(value: 'pitch' | 'task') => {
-                          setWorkLogType(value);
-                          setSelectedPitchId('');
-                          setSelectedTaskId('');
-                        }}
-                      >
-                        <SelectTrigger id="log-type">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="task">{t('workLogs.taskSubtask')}</SelectItem>
-                          <SelectItem value="pitch">{t('workLogs.pitch')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {workLogType === 'pitch' ? (
-                      <div className="space-y-2">
-                        <Label htmlFor="my-pitch">{t('workLogs.pitch')} *</Label>
-                        <Select
-                          value={selectedPitchId}
-                          onValueChange={setSelectedPitchId}
-                        >
-                          <SelectTrigger id="my-pitch">
-                            <SelectValue placeholder={t('workLogs.selectPitch')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {pitches.map((p) => (
-                              <SelectItem key={p.id} value={p.id.toString()}>
-                                {p.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Label htmlFor="my-task">{t('workLogs.taskSubtask')} *</Label>
-                        <Select
-                          value={selectedTaskId}
-                          onValueChange={setSelectedTaskId}
-                        >
-                          <SelectTrigger id="my-task">
-                            <SelectValue placeholder={t('workLogs.selectTask')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {tasks.map((t) => (
-                              <SelectItem key={t.id} value={t.id.toString()}>
-                                {t.parentTaskId && '└─ '}{t.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      <Label htmlFor="my-date">{t('workLogs.date')}</Label>
-                      <LocalizedDateInput
-                        id="my-date"
-                        value={workLogDate}
-                        onChange={(value) => setWorkLogDate(value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="my-hours">{t('workLogs.hours')} *</Label>
-                      <Input
-                        id="my-hours"
-                        type="number"
-                        min={0.25}
-                        step={0.25}
-                        value={newWorkLog.hoursSpent || ''}
-                        onChange={(e) => setNewWorkLog({ ...newWorkLog, hoursSpent: parseFloat(e.target.value) || 0 })}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-3">
-                      <Label htmlFor="my-note">{t('workLogs.note')}</Label>
-                      <Textarea
-                        id="my-note"
-                        value={newWorkLog.note}
-                        onChange={(e) => setNewWorkLog({ ...newWorkLog, note: e.target.value })}
-                        placeholder={t('workLogs.optionalNote')}
-                        rows={2}
-                        className="resize-none"
-                      />
-                    </div>
-                    <Button
-                      onClick={handleCreateMyWorkLog}
-                      disabled={(workLogType === 'pitch' && !selectedPitchId) || (workLogType === 'task' && !selectedTaskId) || !newWorkLog.hoursSpent}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('workLogs.logTime')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Filters */}
-              <div className="flex flex-wrap gap-3 items-end">
-                <div className="space-y-1">
-                  <Label className="text-xs">{t('workLogsPage.filterFrom', 'From')}</Label>
-                  <LocalizedDateInput
-                    id="my-filter-from"
-                    value={filterDateFrom}
-                    onChange={(v) => { setFilterDateFrom(v); setPage(0); }}
-                    className="w-[150px] h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t('workLogsPage.filterTo', 'To')}</Label>
-                  <LocalizedDateInput
-                    id="my-filter-to"
-                    value={filterDateTo}
-                    onChange={(v) => { setFilterDateTo(v); setPage(0); }}
-                    className="w-[150px] h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t('workLogsPage.filterByPitch', 'Pitch')}</Label>
-                  <Select value={filterPitchId} onValueChange={setFilterPitchId}>
-                    <SelectTrigger className="w-[180px] h-9">
-                      <SelectValue placeholder={t('workLogsPage.allPitches', 'All Pitches')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('workLogsPage.allPitches', 'All Pitches')}</SelectItem>
-                      {pitches.map(p => (
-                        <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t('workLogsPage.filterByTask', 'Task')}</Label>
-                  <Select value={filterTaskId} onValueChange={setFilterTaskId}>
-                    <SelectTrigger className="w-[180px] h-9">
-                      <SelectValue placeholder={t('workLogsPage.allTasks', 'All Tasks')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t('workLogsPage.allTasks', 'All Tasks')}</SelectItem>
-                      {tasks.map(tk => (
-                        <SelectItem key={tk.id} value={tk.id.toString()}>{tk.title}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all' || filterDateFrom || filterDateTo) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); setFilterDateFrom(''); setFilterDateTo(''); setPage(0); }}
-                  >
-                    {t('workLogsPage.clearFilters', 'Clear Filters')}
-                  </Button>
-                )}
-              </div>
-
-              {/* Work Logs Table */}
-              <WorkLogsTable
-                workLogs={filteredWorkLogs}
-                showPerson={false}
-                onEdit={handleEditClick}
-                onDelete={handleDeleteMyWorkLog}
+              <LogFilters
+                filterDateFrom={filterDateFrom} onFilterDateFromChange={(v) => { setFilterDateFrom(v); setPage(0); }}
+                filterDateTo={filterDateTo} onFilterDateToChange={(v) => { setFilterDateTo(v); setPage(0); }}
+                filterPitchId={filterPitchId} onFilterPitchIdChange={setFilterPitchId}
+                filterTaskId={filterTaskId} onFilterTaskIdChange={setFilterTaskId}
+                pitches={pitches} tasks={tasks}
+                showPersonFilter={false}
+                filterPersonId={filterPersonId} onFilterPersonIdChange={setFilterPersonId}
+                persons={[]}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); setFilterDateFrom(''); setFilterDateTo(''); setPage(0); }}
               />
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
-                  <div className="text-sm text-muted-foreground">
-                    {t('meetingList.pagination.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(Math.max(0, page - 1))}
-                      disabled={page === 0}
-                    >
-                      {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
-                    </Button>
-                    <div className="text-sm text-muted-foreground">
-                      {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                      disabled={page >= totalPages - 1}
-                    >
-                      {t('meetingList.pagination.next', { defaultValue: 'Next' })}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <WorkLogsTable workLogs={filteredWorkLogs} showPerson={false} onEdit={handleEditClick} onDelete={handleDeleteMyWorkLog} />
+              <Pagination page={page} totalPages={totalPages} totalElements={totalElements} pageSize={PAGE_SIZE} onPageChange={setPage} />
             </>
           )}
         </TabsContent>
 
-        {/* Team Logs Tab (Managers) */}
+        {/* Team Logs Tab */}
         {canManageLogs && (
-          <TabsContent value="team" className="space-y-4">
-            {/* Add for Team Form */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t('workLogs.logTimeForTeamMember')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-9 gap-4 items-end">
-                  <div className="space-y-2">
-                    <Label htmlFor="team-person">{t('workLogs.person')} *</Label>
-                    <Select
-                      value={teamWorkLog.personId ? teamWorkLog.personId.toString() : ''}
-                      onValueChange={(value) => setTeamWorkLog({ ...teamWorkLog, personId: Number(value) })}
-                    >
-                      <SelectTrigger id="team-person">
-                        <SelectValue placeholder={t('workLogs.selectPerson')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {persons.map((p) => (
-                          <SelectItem key={p.id} value={p.id.toString()}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="team-log-type">{t('workLogs.logType')} *</Label>
-                    <Select
-                      value={teamWorkLogType}
-                      onValueChange={(value: 'pitch' | 'task') => {
-                        setTeamWorkLogType(value);
-                        setTeamSelectedPitchId('');
-                        setTeamSelectedTaskId('');
-                      }}
-                    >
-                      <SelectTrigger id="team-log-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="task">{t('workLogs.taskSubtask')}</SelectItem>
-                        <SelectItem value="pitch">{t('workLogs.pitch')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {teamWorkLogType === 'pitch' ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="team-pitch">{t('workLogs.pitch')} *</Label>
-                      <Select
-                        value={teamSelectedPitchId}
-                        onValueChange={setTeamSelectedPitchId}
-                      >
-                        <SelectTrigger id="team-pitch">
-                          <SelectValue placeholder={t('workLogs.selectPitch')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {pitches.map((p) => (
-                            <SelectItem key={p.id} value={p.id.toString()}>
-                              {p.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="team-task">{t('workLogs.taskSubtask')} *</Label>
-                      <Select
-                        value={teamSelectedTaskId}
-                        onValueChange={setTeamSelectedTaskId}
-                      >
-                        <SelectTrigger id="team-task">
-                          <SelectValue placeholder={t('workLogs.selectTask')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tasks.map((t) => (
-                            <SelectItem key={t.id} value={t.id.toString()}>
-                              {t.parentTaskId && '└─ '}{t.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Label htmlFor="team-date">Date</Label>
-                    <LocalizedDateInput
-                      id="team-date"
-                      value={teamWorkLogDate}
-                      onChange={(value) => setTeamWorkLogDate(value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="team-hours">Hours *</Label>
-                    <Input
-                      id="team-hours"
-                      type="number"
-                      min={0.25}
-                      step={0.25}
-                      value={teamWorkLog.hoursSpent || ''}
-                      onChange={(e) => setTeamWorkLog({ ...teamWorkLog, hoursSpent: parseFloat(e.target.value) || 0 })}
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-3">
-                    <Label htmlFor="team-note">Note</Label>
-                    <Textarea
-                      id="team-note"
-                      value={teamWorkLog.note}
-                      onChange={(e) => setTeamWorkLog({ ...teamWorkLog, note: e.target.value })}
-                      placeholder={t('workLogsPage.optionalNote')}
-                      rows={2}
-                      className="resize-none"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleCreateTeamWorkLog}
-                    disabled={!teamWorkLog.personId || (teamWorkLogType === 'pitch' && !teamSelectedPitchId) || (teamWorkLogType === 'task' && !teamSelectedTaskId) || !teamWorkLog.hoursSpent}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t('workLogs.logTime')}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3 items-end">
-              <div className="space-y-1">
-                <Label className="text-xs">{t('workLogsPage.filterFrom', 'From')}</Label>
-                <LocalizedDateInput
-                  id="team-filter-from"
-                  value={filterDateFrom}
-                  onChange={(v) => { setFilterDateFrom(v); setPage(0); }}
-                  className="w-[150px] h-9"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t('workLogsPage.filterTo', 'To')}</Label>
-                <LocalizedDateInput
-                  id="team-filter-to"
-                  value={filterDateTo}
-                  onChange={(v) => { setFilterDateTo(v); setPage(0); }}
-                  className="w-[150px] h-9"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t('workLogsPage.filterByPerson', 'Person')}</Label>
-                <Select value={filterPersonId} onValueChange={setFilterPersonId}>
-                  <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder={t('workLogsPage.allPersons', 'All People')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('workLogsPage.allPersons', 'All People')}</SelectItem>
-                    {persons.map(p => (
-                      <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t('workLogsPage.filterByPitch', 'Pitch')}</Label>
-                <Select value={filterPitchId} onValueChange={setFilterPitchId}>
-                  <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder={t('workLogsPage.allPitches', 'All Pitches')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('workLogsPage.allPitches', 'All Pitches')}</SelectItem>
-                    {pitches.map(p => (
-                      <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">{t('workLogsPage.filterByTask', 'Task')}</Label>
-                <Select value={filterTaskId} onValueChange={setFilterTaskId}>
-                  <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder={t('workLogsPage.allTasks', 'All Tasks')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t('workLogsPage.allTasks', 'All Tasks')}</SelectItem>
-                    {tasks.map(tk => (
-                      <SelectItem key={tk.id} value={tk.id.toString()}>{tk.title}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {(filterPitchId !== 'all' || filterTaskId !== 'all' || filterPersonId !== 'all' || filterDateFrom || filterDateTo) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); setFilterDateFrom(''); setFilterDateTo(''); setPage(0); }}
-                >
-                  {t('workLogsPage.clearFilters', 'Clear Filters')}
-                </Button>
-              )}
-            </div>
-
-            {/* Work Logs Table */}
-            <WorkLogsTable
-              workLogs={filteredWorkLogs}
-              showPerson={true}
-              onEdit={handleEditClick}
-              onDelete={handleDeleteTeamWorkLog}
+          <TabsContent value="team" className="space-y-4 mt-4">
+            <LogFilters
+              filterDateFrom={filterDateFrom} onFilterDateFromChange={(v) => { setFilterDateFrom(v); setPage(0); }}
+              filterDateTo={filterDateTo} onFilterDateToChange={(v) => { setFilterDateTo(v); setPage(0); }}
+              filterPitchId={filterPitchId} onFilterPitchIdChange={setFilterPitchId}
+              filterTaskId={filterTaskId} onFilterTaskIdChange={setFilterTaskId}
+              pitches={pitches} tasks={tasks}
+              showPersonFilter={true}
+              filterPersonId={filterPersonId} onFilterPersonIdChange={setFilterPersonId}
+              persons={persons}
+              hasActiveFilters={hasActiveFilters}
+              onClearFilters={() => { setFilterPitchId('all'); setFilterTaskId('all'); setFilterPersonId('all'); setFilterDateFrom(''); setFilterDateTo(''); setPage(0); }}
             />
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                  {t('meetingList.pagination.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(Math.max(0, page - 1))}
-                    disabled={page === 0}
-                  >
-                    {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
-                  </Button>
-                  <div className="text-sm text-muted-foreground">
-                    {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-                    disabled={page >= totalPages - 1}
-                  >
-                    {t('meetingList.pagination.next', { defaultValue: 'Next' })}
-                  </Button>
-                </div>
-              </div>
-            )}
+            <WorkLogsTable workLogs={filteredWorkLogs} showPerson={true} onEdit={handleEditClick} onDelete={handleDeleteTeamWorkLog} />
+            <Pagination page={page} totalPages={totalPages} totalElements={totalElements} pageSize={PAGE_SIZE} onPageChange={setPage} />
           </TabsContent>
         )}
       </Tabs>
 
+      {/* Quick Log Dialog (My Logs) */}
+      <Dialog open={quickLogDialogOpen} onOpenChange={setQuickLogDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('workLogs.quickLog')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>{t('workLogs.logType')} *</Label>
+              <Select value={workLogType} onValueChange={(v: 'pitch' | 'task') => { setWorkLogType(v); setSelectedPitchId(''); setSelectedTaskId(''); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="task">{t('workLogs.taskSubtask')}</SelectItem>
+                  <SelectItem value="pitch">{t('workLogs.pitch')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {workLogType === 'pitch' ? (
+              <div className="space-y-2">
+                <Label>{t('workLogs.pitch')} *</Label>
+                <Select value={selectedPitchId} onValueChange={setSelectedPitchId}>
+                  <SelectTrigger><SelectValue placeholder={t('workLogs.selectPitch')} /></SelectTrigger>
+                  <SelectContent>
+                    {pitches.map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{t('workLogs.taskSubtask')} *</Label>
+                <Select value={selectedTaskId} onValueChange={setSelectedTaskId} disabled={tasks.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={tasks.length === 0 ? t('workLogs.selectCycleFirst') : t('workLogs.selectTask')} /></SelectTrigger>
+                  <SelectContent>
+                    {tasks.map((tk) => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.parentTaskId && '└─ '}{tk.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {tasks.length === 0 && workLogType === 'task' && (
+                  <p className="text-xs text-muted-foreground">{t('workLogs.selectCycleToSeeTasks')}</p>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t('workLogs.date')}</Label>
+                <LocalizedDateInput value={workLogDate} onChange={setWorkLogDate} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('workLogs.hours')} *</Label>
+                <Input type="number" min={0.25} step={0.25} value={newWorkLog.hoursSpent || ''} onChange={(e) => setNewWorkLog({ ...newWorkLog, hoursSpent: parseFloat(e.target.value) || 0 })} placeholder="0" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t('workLogs.note')}</Label>
+              <Textarea value={newWorkLog.note} onChange={(e) => setNewWorkLog({ ...newWorkLog, note: e.target.value })} placeholder={t('workLogs.optionalNote')} rows={2} className="resize-none" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickLogDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleCreateMyWorkLog} disabled={(workLogType === 'pitch' && !selectedPitchId) || (workLogType === 'task' && !selectedTaskId) || !newWorkLog.hoursSpent}>
+              <Plus className="h-4 w-4 mr-2" />{t('workLogs.logTime')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Log Dialog */}
+      <Dialog open={teamLogDialogOpen} onOpenChange={setTeamLogDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('workLogs.logTimeForTeamMember')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>{t('workLogs.person')} *</Label>
+              <Combobox
+                options={persons.map((p) => ({ value: p.id.toString(), label: p.name }))}
+                value={teamWorkLog.personId ? teamWorkLog.personId.toString() : ''}
+                onValueChange={(v) => setTeamWorkLog({ ...teamWorkLog, personId: Number(v) })}
+                placeholder={t('workLogs.selectPerson')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('workLogs.logType')} *</Label>
+              <Select value={teamWorkLogType} onValueChange={(v: 'pitch' | 'task') => { setTeamWorkLogType(v); setTeamSelectedPitchId(''); setTeamSelectedTaskId(''); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="task">{t('workLogs.taskSubtask')}</SelectItem>
+                  <SelectItem value="pitch">{t('workLogs.pitch')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {teamWorkLogType === 'pitch' ? (
+              <div className="space-y-2">
+                <Label>{t('workLogs.pitch')} *</Label>
+                <Select value={teamSelectedPitchId} onValueChange={setTeamSelectedPitchId}>
+                  <SelectTrigger><SelectValue placeholder={t('workLogs.selectPitch')} /></SelectTrigger>
+                  <SelectContent>
+                    {pitches.map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>{t('workLogs.taskSubtask')} *</Label>
+                <Select value={teamSelectedTaskId} onValueChange={setTeamSelectedTaskId} disabled={tasks.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={tasks.length === 0 ? t('workLogs.selectCycleFirst') : t('workLogs.selectTask')} /></SelectTrigger>
+                  <SelectContent>
+                    {tasks.map((tk) => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.parentTaskId && '└─ '}{tk.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {tasks.length === 0 && teamWorkLogType === 'task' && (
+                  <p className="text-xs text-muted-foreground">{t('workLogs.selectCycleToSeeTasks')}</p>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Date</Label>
+                <LocalizedDateInput value={teamWorkLogDate} onChange={setTeamWorkLogDate} />
+              </div>
+              <div className="space-y-2">
+                <Label>Hours *</Label>
+                <Input type="number" min={0.25} step={0.25} value={teamWorkLog.hoursSpent || ''} onChange={(e) => setTeamWorkLog({ ...teamWorkLog, hoursSpent: parseFloat(e.target.value) || 0 })} placeholder="0" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Note</Label>
+              <Textarea value={teamWorkLog.note} onChange={(e) => setTeamWorkLog({ ...teamWorkLog, note: e.target.value })} placeholder={t('workLogsPage.optionalNote')} rows={2} className="resize-none" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTeamLogDialogOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleCreateTeamWorkLog} disabled={!teamWorkLog.personId || (teamWorkLogType === 'pitch' && !teamSelectedPitchId) || (teamWorkLogType === 'task' && !teamSelectedTaskId) || !teamWorkLog.hoursSpent}>
+              <Plus className="h-4 w-4 mr-2" />{t('workLogs.logTime')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('workLogs.editWorkLog')}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="edit-log-type">{t('workLogs.logType')}</Label>
-              <Select
-                value={editWorkLogType}
-                onValueChange={(value: 'pitch' | 'task') => {
-                  setEditWorkLogType(value);
-                  setEditPitchId('');
-                  setEditTaskId('');
-                }}
-              >
-                <SelectTrigger id="edit-log-type">
-                  <SelectValue />
-                </SelectTrigger>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>{t('workLogs.logType')}</Label>
+              <Select value={editWorkLogType} onValueChange={(v: 'pitch' | 'task') => { setEditWorkLogType(v); setEditPitchId(''); setEditTaskId(''); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="task">Task/Subtask</SelectItem>
                   <SelectItem value="pitch">Pitch</SelectItem>
@@ -1061,81 +667,118 @@ export default function WorkLogsPage() {
               </Select>
             </div>
             {editWorkLogType === 'pitch' ? (
-              <div className="grid gap-2">
-                <Label htmlFor="edit-pitch">{t('workLogs.pitch')}</Label>
-                <Select
-                  value={editPitchId}
-                  onValueChange={setEditPitchId}
-                >
-                  <SelectTrigger id="edit-pitch">
-                    <SelectValue />
-                  </SelectTrigger>
+              <div className="space-y-2">
+                <Label>{t('workLogs.pitch')}</Label>
+                <Select value={editPitchId} onValueChange={setEditPitchId}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {pitches.map((p) => (
-                      <SelectItem key={p.id} value={p.id.toString()}>
-                        {p.title}
-                      </SelectItem>
-                    ))}
+                    {pitches.map((p) => <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             ) : (
-              <div className="grid gap-2">
-                <Label htmlFor="edit-task">{t('workLogs.taskSubtask')}</Label>
-                <Select
-                  value={editTaskId}
-                  onValueChange={setEditTaskId}
-                >
-                  <SelectTrigger id="edit-task">
-                    <SelectValue />
-                  </SelectTrigger>
+              <div className="space-y-2">
+                <Label>{t('workLogs.taskSubtask')}</Label>
+                <Select value={editTaskId} onValueChange={setEditTaskId}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {tasks.map((t) => (
-                      <SelectItem key={t.id} value={t.id.toString()}>
-                        {t.parentTaskId && '└─ '}{t.title}
-                      </SelectItem>
-                    ))}
+                    {tasks.map((tk) => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.parentTaskId && '└─ '}{tk.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             )}
-            <div className="grid gap-2">
-              <Label htmlFor="edit-date">{t('workLogs.date')}</Label>
-              <LocalizedDateInput
-                id="edit-date"
-                value={editDate}
-                onChange={(value) => setEditDate(value)}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t('workLogs.date')}</Label>
+                <LocalizedDateInput value={editDate} onChange={setEditDate} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t('workLogs.hours')}</Label>
+                <Input type="number" min={0.25} step={0.25} value={editForm.hoursSpent} onChange={(e) => setEditForm({ ...editForm, hoursSpent: parseFloat(e.target.value) || 0 })} />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-hours">{t('workLogs.hours')}</Label>
-              <Input
-                id="edit-hours"
-                type="number"
-                min={0.25}
-                step={0.25}
-                value={editForm.hoursSpent}
-                onChange={(e) => setEditForm({ ...editForm, hoursSpent: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="edit-note">{t('workLogs.note')}</Label>
-              <Textarea
-                id="edit-note"
-                value={editForm.note}
-                onChange={(e) => setEditForm({ ...editForm, note: e.target.value })}
-                rows={3}
-              />
+            <div className="space-y-2">
+              <Label>{t('workLogs.note')}</Label>
+              <Textarea value={editForm.note} onChange={(e) => setEditForm({ ...editForm, note: e.target.value })} rows={3} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              {t('common.cancel')}
-            </Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t('common.cancel')}</Button>
             <Button onClick={handleEditSave}>{t('workLogs.saveChanges')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+interface LogFiltersProps {
+  filterDateFrom: string; onFilterDateFromChange: (v: string) => void;
+  filterDateTo: string; onFilterDateToChange: (v: string) => void;
+  filterPitchId: string; onFilterPitchIdChange: (v: string) => void;
+  filterTaskId: string; onFilterTaskIdChange: (v: string) => void;
+  pitches: Pitch[]; tasks: Task[];
+  showPersonFilter: boolean;
+  filterPersonId: string; onFilterPersonIdChange: (v: string) => void;
+  persons: Person[];
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
+}
+
+function LogFilters({ filterDateFrom, onFilterDateFromChange, filterDateTo, onFilterDateToChange, filterPitchId, onFilterPitchIdChange, filterTaskId, onFilterTaskIdChange, pitches, tasks, showPersonFilter, filterPersonId, onFilterPersonIdChange, persons, hasActiveFilters, onClearFilters }: LogFiltersProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-wrap gap-3 items-end">
+      <div className="space-y-1">
+        <Label className="text-xs">{t('workLogsPage.filterFrom', 'From')}</Label>
+        <LocalizedDateInput value={filterDateFrom} onChange={onFilterDateFromChange} className="w-[140px] h-9" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">{t('workLogsPage.filterTo', 'To')}</Label>
+        <LocalizedDateInput value={filterDateTo} onChange={onFilterDateToChange} className="w-[140px] h-9" />
+      </div>
+      {showPersonFilter && (
+        <div className="space-y-1">
+          <Label className="text-xs">{t('workLogsPage.filterByPerson', 'Person')}</Label>
+          <Combobox
+            options={[
+              { value: 'all', label: t('workLogsPage.allPersons', 'All People') },
+              ...persons.map(p => ({ value: p.id.toString(), label: p.name })),
+            ]}
+            value={filterPersonId}
+            onValueChange={onFilterPersonIdChange}
+            placeholder={t('workLogsPage.allPersons', 'All People')}
+            triggerClassName="w-[160px] h-9"
+          />
+        </div>
+      )}
+      <div className="space-y-1">
+        <Label className="text-xs">{t('workLogsPage.filterByPitch', 'Pitch')}</Label>
+        <Select value={filterPitchId} onValueChange={onFilterPitchIdChange}>
+          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder={t('workLogsPage.allPitches', 'All Pitches')} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('workLogsPage.allPitches', 'All Pitches')}</SelectItem>
+            {pitches.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">{t('workLogsPage.filterByTask', 'Task')}</Label>
+        <Select value={filterTaskId} onValueChange={onFilterTaskIdChange}>
+          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder={t('workLogsPage.allTasks', 'All Tasks')} /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('workLogsPage.allTasks', 'All Tasks')}</SelectItem>
+            {tasks.map(tk => <SelectItem key={tk.id} value={tk.id.toString()}>{tk.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {hasActiveFilters && (
+        <Button variant="ghost" size="sm" onClick={onClearFilters}>
+          {t('workLogsPage.clearFilters', 'Clear Filters')}
+        </Button>
+      )}
     </div>
   );
 }
@@ -1149,7 +792,7 @@ interface WorkLogsTableProps {
 
 function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTableProps) {
   const { t, i18n } = useTranslation();
-  
+
   if (workLogs.length === 0) {
     return (
       <EmptyState
@@ -1171,7 +814,7 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
             <TableRow>
               <TableHead>{t('workLogs.date')}</TableHead>
               {showPerson && <TableHead>Person</TableHead>}
-              <TableHead>Pitch/Task</TableHead>
+              <TableHead>Pitch / Task</TableHead>
               <TableHead className="text-right">Hours</TableHead>
               <TableHead>Note</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -1183,37 +826,30 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
                 <TableCell>{formatLocalizedDate(wl.date, i18n.language)}</TableCell>
                 {showPerson && <TableCell>{wl.personName}</TableCell>}
                 <TableCell>
-                  {wl.pitchTitle && (
+                  {wl.taskId ? (
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">{t('workLogs.pitch')}</Badge>
-                      <span>{wl.pitchTitle}</span>
+                      <Badge variant="outline" className="text-xs shrink-0">{t('workLogs.task')}</Badge>
+                      <Link to={`/backlog/${wl.taskId}`} className="text-primary hover:underline">{wl.taskTitle}</Link>
                     </div>
-                  )}
-                  {wl.taskTitle && (
+                  ) : wl.pitchId ? (
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">{t('workLogs.task')}</Badge>
-                      <span>{wl.taskTitle}</span>
+                      <Badge variant="outline" className="text-xs shrink-0">{t('workLogs.pitch')}</Badge>
+                      <Link to={`/pitches/${wl.pitchId}`} className="text-primary hover:underline">{wl.pitchTitle}</Link>
                     </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
                   <Badge variant="secondary">{wl.hoursSpent}h</Badge>
                 </TableCell>
-                <TableCell className="max-w-[200px] truncate">{wl.note || '-'}</TableCell>
+                <TableCell className="max-w-[200px] truncate text-muted-foreground">{wl.note || '—'}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onEdit(wl)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(wl)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(wl.id)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(wl.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -1224,5 +860,33 @@ function WorkLogsTable({ workLogs, showPerson, onEdit, onDelete }: WorkLogsTable
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+interface PaginationProps {
+  page: number; totalPages: number; totalElements: number; pageSize: number;
+  onPageChange: (p: number) => void;
+}
+
+function Pagination({ page, totalPages, totalElements, pageSize, onPageChange }: PaginationProps) {
+  const { t } = useTranslation();
+  if (totalPages <= 1) return null;
+  return (
+    <div className="flex items-center justify-between mt-4">
+      <div className="text-sm text-muted-foreground">
+        {t('meetingList.pagination.showing', { from: page * pageSize + 1, to: Math.min((page + 1) * pageSize, totalElements), total: totalElements })}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => onPageChange(Math.max(0, page - 1))} disabled={page === 0}>
+          {t('meetingList.pagination.previous', { defaultValue: 'Previous' })}
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          {t('meetingList.pagination.page', { current: page + 1, total: totalPages })}
+        </span>
+        <Button variant="outline" size="sm" onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}>
+          {t('meetingList.pagination.next', { defaultValue: 'Next' })}
+        </Button>
+      </div>
+    </div>
   );
 }

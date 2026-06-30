@@ -116,3 +116,10 @@ backend/data/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
 node_modules/
+
+# =========================
+# Local upload storage (LOCAL_FS object-storage backend) & E2E artifacts
+# =========================
+backend/uploads/
+frontend/test-results/
+frontend/playwright-report/

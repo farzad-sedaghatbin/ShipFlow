@@ -18,7 +18,11 @@ public class RetroItemDTO {
   private String authorName;
   private Boolean isAnonymous;
   private Integer voteCount;
-  private Boolean hasVoted; // Whether current user has voted
+  private Boolean hasVoted;
+  private Integer dislikeCount;
+  private Boolean hasDisliked;
+  private Boolean discussed;
+  private LocalDateTime discussedAt;
   private Long mergedIntoId;
   private List<Long> mergedItemIds; // IDs of items merged into this one
   private LocalDateTime createdAt;

@@ -95,9 +95,11 @@ class BettingTableServiceTest {
     testSlot = BettingSlot.builder().id(1L).cycle(testCycle).team(testTeam).position(0)
         .startDate(testCycle.getStartDate()).endDate(testCycle.getEndDate()).build();
 
-    // Setup capacity config mock - default 8 hours/day
+    // Setup capacity config mock - default 8 hours/day, 5 working days/week
     lenient().when(capacityConfigService.calculatePitchAppetiteHours(any(Pitch.class))).thenReturn(112.0);
     lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
+    lenient().when(capacityConfigService.getEffectiveWorkingDaysPerWeek(any(Team.class)))
+        .thenReturn(new CapacityConfigService.CapacityResolution(5.0, "organization"));
   }
 
   @Test

@@ -1,0 +1,30 @@
+ShipFlow {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Name }}".
+
+1. Watch the rollout:
+   kubectl get pods -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }} -w
+
+2. Reach the app:
+{{- if .Values.ingress.enabled }}
+   https://{{ (index .Values.ingress.hosts 0).host }}
+{{- else }}
+   kubectl port-forward svc/{{ include "shipflow.fullname" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
+   open http://localhost:8080
+{{- end }}
+
+3. Observability:
+   - Prometheus scrape endpoint: /actuator/prometheus (common tag application="shipflow")
+{{- if .Values.observability.serviceMonitor.enabled }}
+   - A Prometheus Operator ServiceMonitor was created.
+{{- else }}
+   - Pod annotations expose the scrape target for a vanilla Prometheus.
+{{- end }}
+{{- if .Values.observability.tracing.enabled }}
+   - OpenTelemetry traces are shipped to {{ .Values.observability.tracing.otlpEndpoint }}.
+{{- end }}
+
+{{- if and .Values.persistence.enabled (gt (int .Values.replicaCount) 1) (eq .Values.persistence.accessMode "ReadWriteOnce") }}
+
+WARNING: replicaCount > 1 with a ReadWriteOnce uploads PVC will not schedule all
+pods. For multi-replica, either use a ReadWriteMany storage class or switch the
+attachment storage backend to S3/MinIO in Org Settings (recommended).
+{{- end }}

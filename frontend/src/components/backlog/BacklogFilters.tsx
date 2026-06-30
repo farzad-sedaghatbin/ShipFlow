@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
+import { Input } from '../ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { TabsList, TabsTrigger } from '../ui/tabs';
-import { TaskStatus, TaskPriority } from '../../types';
+import { MultiCombobox } from '../ui/multi-combobox';
+import { TaskStatus, TaskPriority, Person } from '../../types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '../../constants/backlogConstants';
 
 export interface BacklogFiltersProps {
@@ -20,6 +23,11 @@ export interface BacklogFiltersProps {
   onPriorityFilterChange: (priority: TaskPriority) => void;
   dependencyFilter: 'all' | 'blocked' | 'blocking';
   onDependencyFilterChange: (filter: 'all' | 'blocked' | 'blocking') => void;
+  searchQuery: string;
+  onSearchQueryChange: (query: string) => void;
+  persons: Person[];
+  assigneeFilter: number[];
+  onAssigneeFilterChange: (personId: number) => void;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
@@ -32,6 +40,11 @@ export function BacklogFilters({
   onPriorityFilterChange,
   dependencyFilter,
   onDependencyFilterChange,
+  searchQuery,
+  onSearchQueryChange,
+  persons,
+  assigneeFilter,
+  onAssigneeFilterChange,
   hasActiveFilters,
   onClearFilters,
 }: BacklogFiltersProps) {
@@ -41,18 +54,19 @@ export function BacklogFilters({
   const [dependencyDropdownOpen, setDependencyDropdownOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4">
-      <TabsList>
-        <TabsTrigger value="all" onClick={() => onTabChange('all')}>
-          {t('backlogPage.allTasks')}
-        </TabsTrigger>
-        <TabsTrigger value="my" onClick={() => onTabChange('my')}>
-          {t('backlogPage.myTasks')}
-        </TabsTrigger>
-      </TabsList>
+    <div className="flex flex-col gap-3 mb-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <TabsList>
+          <TabsTrigger value="all" onClick={() => onTabChange('all')}>
+            {t('backlogPage.allTasks')}
+          </TabsTrigger>
+          <TabsTrigger value="my" onClick={() => onTabChange('my')}>
+            {t('backlogPage.myTasks')}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 flex-wrap">
+        {/* Filters */}
+        <div className="flex items-center gap-2 flex-wrap">
         {/* Status Filter */}
         <DropdownMenu open={statusDropdownOpen} onOpenChange={setStatusDropdownOpen}>
           <DropdownMenuTrigger asChild>
@@ -128,6 +142,30 @@ export function BacklogFilters({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Assignee Filter — searchable so typing a name filters the list instead of
+            leaking keystrokes to the global keyboard shortcuts (the old DropdownMenu had
+            no text input, so isTyping() stayed false and single-key shortcuts fired). */}
+        {persons.length > 0 && (
+          <MultiCombobox
+            options={persons.filter((p) => p.isActive).map((p) => ({ value: String(p.id), label: p.name }))}
+            value={assigneeFilter.map(String)}
+            onValueChange={(vals) => {
+              // MultiCombobox emits the full next selection; the page state toggles a
+              // single id at a time, so forward only the one that changed.
+              const next = vals.map(Number);
+              const toggled =
+                next.find((id) => !assigneeFilter.includes(id)) ??
+                assigneeFilter.find((id) => !next.includes(id));
+              if (toggled !== undefined) onAssigneeFilterChange(toggled);
+            }}
+            placeholder={t('backlogPage.filters.assignee')}
+            searchPlaceholder={t('backlogPage.filters.searchAssignee', 'Search people...')}
+            emptyText={t('backlogPage.filters.noAssignee', 'No people found')}
+            triggerClassName="h-9 min-h-9 w-[200px]"
+            maxDisplay={2}
+          />
+        )}
+
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={onClearFilters}>
             {t('backlogPage.filters.clearFilters')}
@@ -135,5 +173,17 @@ export function BacklogFilters({
         )}
       </div>
     </div>
+
+    {/* Search */}
+    <div className="relative max-w-sm">
+      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <Input
+        placeholder={t('backlogPage.filters.searchPlaceholder')}
+        value={searchQuery}
+        onChange={(e) => onSearchQueryChange(e.target.value)}
+        className="pl-8"
+      />
+    </div>
+  </div>
   );
 }

@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { Badge } from '../components/ui/badge';
 import {
   Table,
@@ -755,25 +756,18 @@ export default function UserManagement() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="person">{t('userManagement.linkToPerson')}</Label>
-              <Select
+              <Label>{t('userManagement.linkToPerson')}</Label>
+              <Combobox
+                options={[
+                  { value: 'none', label: t('userManagement.none') },
+                  ...people.map((person) => ({ value: person.id.toString(), label: `${person.name} (${person.email})` })),
+                ]}
                 value={formData.personId?.toString() || 'none'}
                 onValueChange={(value) =>
                   setFormData({ ...formData, personId: value && value !== 'none' ? Number(value) : undefined })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('userManagement.selectPerson')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t('userManagement.none')}</SelectItem>
-                  {people.map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name} ({person.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('userManagement.selectPerson')}
+              />
             </div>
             {/* Project Access */}
             <div className="space-y-2">

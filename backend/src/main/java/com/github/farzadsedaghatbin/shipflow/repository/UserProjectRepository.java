@@ -26,6 +26,16 @@ public interface UserProjectRepository extends JpaRepository<UserProject, Long> 
   /** Get all users with direct access to a project */
   List<UserProject> findByProjectId(Long projectId);
 
+  /** Get project members with user and grantedBy eagerly loaded to avoid LazyInitializationException */
+  @Query("""
+      SELECT up FROM UserProject up
+      JOIN FETCH up.user u
+      LEFT JOIN FETCH u.person
+      LEFT JOIN FETCH up.grantedBy
+      WHERE up.project.id = :projectId
+      """)
+  List<UserProject> findByProjectIdEager(@Param("projectId") Long projectId);
+
   /** Get all users with a specific role in a project */
   List<UserProject> findByProjectIdAndProjectRole(Long projectId, ProjectRole role);
 

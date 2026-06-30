@@ -1,31 +1,44 @@
 // Pagination
+// Spring Boot 3.3+ with PageSerializationMode.VIA_DTO puts totalElements/totalPages
+// inside a nested `page` object. All fields except `content` and `page` are optional
+// to remain compatible with both the legacy flat format and VIA_DTO format.
 export interface Page<T> {
   content: T[];
-  pageable: {
+  // Spring Data VIA_DTO format (Boot 3.3+ / Spring Data 3.3+)
+  page?: {
+    size: number;
+    number: number;
+    totalElements: number;
+    totalPages: number;
+  };
+  // Legacy flat fields (Boot ≤ 3.2, kept optional for backward compat)
+  pageable?: {
     pageNumber: number;
     pageSize: number;
-    sort: {
-      sorted: boolean;
-      unsorted: boolean;
-      empty: boolean;
-    };
+    sort: { sorted: boolean; unsorted: boolean; empty: boolean };
     offset: number;
     paged: boolean;
     unpaged: boolean;
   };
-  totalPages: number;
-  totalElements: number;
-  last: boolean;
-  size: number;
-  number: number;
-  sort: {
-    sorted: boolean;
-    unsorted: boolean;
-    empty: boolean;
-  };
-  numberOfElements: number;
-  first: boolean;
-  empty: boolean;
+  totalPages?: number;
+  totalElements?: number;
+  last?: boolean;
+  size?: number;
+  number?: number;
+  sort?: { sorted: boolean; unsorted: boolean; empty: boolean };
+  numberOfElements?: number;
+  first?: boolean;
+  empty?: boolean;
+}
+
+/** Extract totalElements from either Spring Data page format. */
+export function getPageTotal<T>(p: Page<T>): number {
+  return p.page?.totalElements ?? p.totalElements ?? 0;
+}
+
+/** Extract totalPages from either Spring Data page format. */
+export function getPageCount<T>(p: Page<T>): number {
+  return p.page?.totalPages ?? p.totalPages ?? 0;
 }
 
 // Enums
@@ -36,7 +49,7 @@ export type CyclePhase = 'SHAPING_BUILDING' | 'BETTING_COOLDOWN';
  * In-cycle: PENDING → STARTED → ... → DONE (requires cycle)
  */
 export type PitchStatus = 'IDEA' | 'DRAFT' | 'PENDING' | 'SHAPED' | 'STARTED' | 'IN_PROGRESS' | 'TESTING' | 'DONE' | 'COOLDOWN' | 'CANCELLED';
-export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
+export type TeamMemberRole = 'BACKEND' | 'FRONTEND' | 'MOBILE' | 'QA' | 'DESIGNER' | 'FULLSTACK' | 'TECH_LEAD' | 'PRODUCT_MANAGER';
 export type MeetingType = 'SHAPING' | 'BETTING' | 'KICKOFF' | 'STANDUP' | 'DEMO' | 'RETROSPECTIVE' | 'HILL_CHART_REVIEW';
 export type TaskStatus = 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'IN_REVIEW' | 'DONE' | 'CANCELLED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -102,7 +115,9 @@ export interface Project {
  */
 export interface ProjectMember {
   userId: number;
+  personId?: number;
   username: string;
+  personName?: string;
   email?: string;
   projectRole: ProjectRole;
   grantedAt: string;
@@ -156,6 +171,7 @@ export interface CreateCycleRequest {
 export interface Team {
   id: number;
   name: string;
+  isArchived?: boolean;
   assignments?: TeamAssignment[];
   // Capacity overrides
   hoursPerDayOverride?: number;
@@ -427,6 +443,13 @@ export interface WorkLogSummary {
   todayCount: number;
   totalHours: number;
   totalCount: number;
+}
+
+export interface WorkLogPersonSummary {
+  personId: number;
+  personName: string;
+  totalHours: number;
+  entryCount: number;
 }
 
 export interface MeetingAction {
@@ -1011,6 +1034,9 @@ export interface TestCase {
   preconditions?: string;
   steps?: string;
   expectedResult?: string;
+  projectId?: number;
+  projectName?: string;
+  projectKey?: string;
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -1049,6 +1075,7 @@ export interface CreateTestCaseRequest {
   preconditions?: string;
   steps?: string;
   expectedResult?: string;
+  projectId?: number;
   pitchId?: number;
   cycleId?: number;
   teamId?: number;
@@ -1089,12 +1116,13 @@ export interface BugReport {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
-  
+  component?: string;
+
   // Direct project association
   projectId?: number;
   projectName?: string;
   projectKey?: string;
-  
+
   pitchId?: number;
   pitchTitle?: string;
   cycleId?: number;
@@ -1116,6 +1144,8 @@ export interface BugReport {
   reporterName?: string;
   assigneeId?: number;
   assigneeName?: string;
+  qaAssigneeId?: number;
+  qaAssigneeName?: string;
   resolution?: string;
   resolvedAt?: string;
   createdAt: string;
@@ -1140,6 +1170,7 @@ export interface CreateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  component?: string;
   projectId?: number;
   pitchId?: number;
   cycleId?: number;
@@ -1151,6 +1182,7 @@ export interface CreateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   targetReleaseId?: number;
 }
 
@@ -1161,6 +1193,7 @@ export interface UpdateBugReportRequest {
   expectedBehavior?: string;
   actualBehavior?: string;
   environment?: string;
+  component?: string;
   projectId?: number;
   pitchId?: number;
   cycleId?: number;
@@ -1171,9 +1204,18 @@ export interface UpdateBugReportRequest {
   tags?: string[];
   attachments?: string;
   assigneeId?: number;
+  qaAssigneeId?: number;
   resolution?: string;
   targetReleaseId?: number;
   fixedInReleaseId?: number;
+}
+
+export interface BugStats {
+  total: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  critical: number;
 }
 
 export interface TestRun {
@@ -1197,7 +1239,16 @@ export interface TestRun {
   attachments?: string;
   bugReportId?: number;
   bugReportKey?: string;
+  /** All bug reports (defects) linked to this run. A failed execution may have several. */
+  linkedBugs?: LinkedBugReport[];
   createdAt: string;
+}
+
+export interface LinkedBugReport {
+  id: number;
+  bugKey: string;
+  title?: string;
+  status?: BugStatus;
 }
 
 export interface CreateTestRunRequest {
@@ -1344,6 +1395,7 @@ export interface TeamTrack {
   totalCapacityWeeks: number;
   usedCapacityWeeks: number;
   availableCapacityWeeks: number;
+  workingDaysPerWeek?: number;
 }
 
 export interface BettingTable {
@@ -1394,6 +1446,10 @@ export interface RetroItem {
   isAnonymous?: boolean;
   voteCount: number;
   hasVoted: boolean;
+  dislikeCount: number;
+  hasDisliked: boolean;
+  discussed?: boolean;
+  discussedAt?: string;
   mergedIntoId?: number;
   mergedItemIds?: number[];
   createdAt: string;
@@ -1770,7 +1826,14 @@ export interface BulkUpdateResult {
 }
 
 // Global Search
-export type GlobalSearchEntityType = 'TASK' | 'SUBTASK' | 'BUG_REPORT' | 'PITCH' | 'EPIC';
+export type GlobalSearchEntityType =
+  | 'TASK'
+  | 'SUBTASK'
+  | 'BUG_REPORT'
+  | 'PITCH'
+  | 'EPIC'
+  | 'WIKI_SPACE'
+  | 'WIKI_PAGE';
 
 export interface GlobalSearchResult {
   entityType: GlobalSearchEntityType;
@@ -1800,6 +1863,26 @@ export interface ImportJobDTO {
   completedAt: string | null;
 }
 
+export interface ZephyrRowResult {
+  rowNumber: number;
+  zephyrKey: string;
+  title: string;
+  success: boolean;
+  testCaseId: number | null;
+  error: string | null;
+}
+
+export interface ZephyrImportReportDTO {
+  importJobId: number;
+  fileName: string;
+  status: 'COMPLETED' | 'FAILED';
+  totalRows: number;
+  importedRows: number;
+  failedRows: number;
+  rows: ZephyrRowResult[];
+  completedAt: string | null;
+}
+
 export interface LinearConnectionStatus {
   connected: boolean;
   configured: boolean;
@@ -1825,4 +1908,68 @@ export interface JiraProject {
   key: string;
   name: string;
   description: string | null;
+}
+
+// ── Custom Fields (v1.8.0) ─────────────────────────────────────────────────
+
+export type CustomFieldType =
+  | 'TEXT'
+  | 'NUMBER'
+  | 'DATE'
+  | 'SELECT'
+  | 'MULTISELECT'
+  | 'CHECKBOX'
+  | 'URL';
+
+export type CustomFieldEntityType = 'TASK' | 'PITCH' | 'BUG';
+
+export interface CustomFieldDefinition {
+  id: number;
+  name: string;
+  description?: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  projectId?: number;
+  projectName?: string;
+  required: boolean;
+  sortOrder: number;
+  options?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomFieldValue {
+  definitionId: number;
+  definitionName: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  entityId: number;
+  value?: string;
+  updatedByUsername?: string;
+  updatedAt: string;
+}
+
+export interface CreateCustomFieldDefinitionRequest {
+  name: string;
+  description?: string;
+  fieldType: CustomFieldType;
+  entityType: CustomFieldEntityType;
+  projectId?: number;
+  required?: boolean;
+  sortOrder?: number;
+  options?: string[];
+}
+
+export interface UpdateCustomFieldDefinitionRequest {
+  name?: string;
+  description?: string;
+  required?: boolean;
+  sortOrder?: number;
+  options?: string[];
+}
+
+export interface BulkUpsertCustomFieldValuesRequest {
+  entityType: CustomFieldEntityType;
+  entityId: number;
+  values: Record<number, string>;
 }

@@ -60,6 +60,12 @@ public class TestCase {
   @Column(columnDefinition = "TEXT")
   private String expectedResult;
 
+  /** The project this test case belongs to (direct association for project scoping). */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project_id")
+  private Project project;
+
   /** The pitch this test case is associated with. */
   @NotAudited
   @ManyToOne(fetch = FetchType.LAZY)
@@ -95,6 +101,12 @@ public class TestCase {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "task_id")
   private Task task;
+
+  /** The import job that created this test case (nullable for manually created cases). */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "import_job_id")
+  private ImportJob importJob;
 
   /** Type of test case. */
   @Enumerated(EnumType.STRING)

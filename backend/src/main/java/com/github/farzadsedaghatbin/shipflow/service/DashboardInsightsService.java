@@ -106,9 +106,11 @@ public class DashboardInsightsService {
 
     // ── 2. At-risk cycles ────────────────────────────────────────────────────
     // Active cycles ending within 7 days that still have more than half their pitches incomplete.
+    // A cycle that hasn't started yet cannot be at-risk: it has no work to be behind on.
     for (Cycle cycle : allCycles) {
       if (!Boolean.TRUE.equals(cycle.getIsActive())) continue;
       if (cycle.getEndDate() == null) continue;
+      if (cycle.getStartDate() != null && cycle.getStartDate().isAfter(today)) continue;
       long daysLeft = today.until(cycle.getEndDate()).getDays();
       if (daysLeft < 0 || daysLeft > 7) continue;
 

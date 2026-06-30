@@ -94,6 +94,14 @@ public class RetroService {
     return retroItemService.toggleVote(itemId);
   }
 
+  public RetroItemDTO toggleDislike(Long itemId) {
+    return retroItemService.toggleDislike(itemId);
+  }
+
+  public RetroItemDTO markDiscussed(Long itemId, boolean discussed) {
+    return retroItemService.markDiscussed(itemId, discussed);
+  }
+
   // ==================== MERGING ====================
 
   public RetroItemDTO mergeItems(Long targetItemId, Long sourceItemId) {

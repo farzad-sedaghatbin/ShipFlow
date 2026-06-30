@@ -116,21 +116,20 @@ const AITestGeneratePage: React.FC = () => {
 
     try {
       const testsToSave = selectedTests.map(idx => generatedTests[idx]);
-      for (const tc of testsToSave) {
-        await qaTestManagementService.createTestCase({
-          title: tc.title,
-          description: tc.description,
-          preconditions: tc.preconditions,
-          steps: tc.steps,
-          expectedResult: tc.expectedResult,
-          pitchId: Number(selectedPitchId) || undefined,
-          type: (tc.suggestedType as TestCaseType) || 'FUNCTIONAL',
-          priority: (tc.suggestedPriority as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL') || 'MEDIUM',
-          status: 'DRAFT',
-          tags: tc.suggestedTags || [],
-          aiGenerated: true,
-        });
-      }
+      const requests = testsToSave.map(tc => ({
+        title: tc.title,
+        description: tc.description,
+        preconditions: tc.preconditions,
+        steps: tc.steps,
+        expectedResult: tc.expectedResult,
+        pitchId: Number(selectedPitchId) || undefined,
+        type: (tc.suggestedType as TestCaseType) || 'FUNCTIONAL',
+        priority: (tc.suggestedPriority as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL') || 'MEDIUM',
+        status: 'DRAFT' as const,
+        tags: tc.suggestedTags || [],
+        aiGenerated: true,
+      }));
+      await qaTestManagementService.createTestCasesBulk(requests);
       navigate('/qa/test-cases');
     } catch (err: any) {
       setError(err.response?.data?.message || t('aiTestGenerate.saveFailed'));

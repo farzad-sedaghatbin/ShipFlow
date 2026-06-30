@@ -2,9 +2,11 @@ package com.github.farzadsedaghatbin.shipflow.repository;
 
 import com.github.farzadsedaghatbin.shipflow.entity.KnowledgeItem;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -50,4 +52,20 @@ public interface KnowledgeItemRepository extends JpaRepository<KnowledgeItem, Lo
   /** Find all embedding IDs for a given entity. */
   @Query("SELECT k.embeddingId FROM KnowledgeItem k WHERE k.entityType = :type AND k.entityId = :entityId AND k.embeddingId IS NOT NULL")
   List<String> findEmbeddingIdsByEntity(@Param("type") KnowledgeEntityType type, @Param("entityId") Long entityId);
+
+  /** Find active (non-deleted) knowledge item ids for a given source. */
+  @Query("SELECT k.id FROM KnowledgeItem k WHERE k.knowledgeSourceId = :sid AND k.deletedAt IS NULL")
+  List<Long> findIdsBySourceId(@Param("sid") Long sid);
+
+  /** Soft-delete all knowledge items belonging to a source. */
+  @Modifying
+  @Query("UPDATE KnowledgeItem k SET k.deletedAt = :ts WHERE k.knowledgeSourceId = :sid AND k.deletedAt IS NULL")
+  int softDeleteBySourceId(@Param("sid") Long sid, @Param("ts") OffsetDateTime ts);
+
+  /** Count active (non-deleted) knowledge items for a source. */
+  @Query("SELECT COUNT(k) FROM KnowledgeItem k WHERE k.knowledgeSourceId = :sid AND k.deletedAt IS NULL")
+  long countActiveBySourceId(@Param("sid") Long sid);
+
+  /** Find knowledge items for a source ordered by chunk index ascending. */
+  List<KnowledgeItem> findByKnowledgeSourceIdOrderByChunkIndexAsc(Long knowledgeSourceId);
 }
