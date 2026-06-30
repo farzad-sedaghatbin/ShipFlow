@@ -37,6 +37,22 @@ Each release shows:
 - **Medium** — Feature partially broken, workaround available
 - **Low** — Minor issue, cosmetic
 
+## Assignee vs QA Tester
+A bug has two distinct people:
+- **Assignee** — the person responsible for *fixing* the bug.
+- **QA Tester** — the person responsible for *testing/verifying* the fix.
+
+Set either one inline from the bug detail dialog, or when creating/editing a bug. Leave the QA Tester unassigned until the fix is ready, then pick who should verify it. Changing the QA Tester is recorded in the bug's Activity history.
+
+## Sharing a Bug
+Use the **Copy link** action (the three-dot menu on a kanban card, or the link button on a list row) to copy a direct URL to the bug. Anyone with access can open the link to land on that bug's full page.
+
+## Filtering Bugs
+The Bug Reports page has multi-select filters for **Status**, **Severity**, **Assignee**, and **Reporter** — pick any combination and bugs matching all active filters are shown (toggle **Exclude** to invert the selection). The Reporter filter lets you narrow the backlog to bugs raised by specific people, which is handy when triaging incoming reports. Active filters are reflected in the page URL, so a filtered view is shareable and survives the browser back button, and they also drive the overview stat cards at the top of the page. You can save a filter combination as a named filter to reuse it later.
+
+## List vs Kanban View
+Toggle between the **list** (paginated table) and **kanban** (status-column board) views from the top-right of the Bug Reports page. The kanban board groups every matching bug into its status column, while the list view pages through results — use the filters to narrow large backlogs in either view.
+
 ## Tracking Bugs Across Releases
 - Bugs can be tagged to specific releases
 - Filter bugs by release to see what was fixed

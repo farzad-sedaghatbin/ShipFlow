@@ -403,6 +403,6 @@ public class ProjectService {
   @Transactional(readOnly = true)
   public List<UserProject> getProjectMembers(Long projectId) {
     requireProjectAccess(projectId);
-    return userProjectRepository.findByProjectId(projectId);
+    return userProjectRepository.findByProjectIdEager(projectId);
   }
 }

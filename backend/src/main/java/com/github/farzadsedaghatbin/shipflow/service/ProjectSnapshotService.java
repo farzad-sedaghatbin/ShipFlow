@@ -124,6 +124,7 @@ public class ProjectSnapshotService {
    * <p>This method never throws — any failure returns an empty string so that the calling AI
    * service can proceed unaffected.
    */
+  @Transactional(readOnly = true)
   public String buildPromptBlock(Long projectId) {
     try {
       ProjectSnapshotDTO snap = getOrCompute(projectId);

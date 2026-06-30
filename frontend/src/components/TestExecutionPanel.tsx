@@ -75,7 +75,7 @@ const TestExecutionPanel: React.FC<TestExecutionPanelProps> = ({
   showTestCaseInfo = true,
   maxRows,
 }) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const displayRuns = maxRows ? testRuns.slice(0, maxRows) : testRuns;
 
   const formatDuration = (seconds?: number) => {
@@ -172,21 +172,37 @@ const TestExecutionPanel: React.FC<TestExecutionPanelProps> = ({
                           <TooltipContent>View Details</TooltipContent>
                         </Tooltip>
                       )}
-                      {run.bugReportId && onViewBug && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-600"
-                              onClick={() => onViewBug(run.bugReportId!)}
-                            >
-                              <Bug className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>View Bug Report</TooltipContent>
-                        </Tooltip>
-                      )}
+                      {onViewBug && (run.linkedBugs && run.linkedBugs.length > 0
+                        ? run.linkedBugs.map((bug) => (
+                            <Tooltip key={bug.id}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-600"
+                                  onClick={() => onViewBug(bug.id)}
+                                >
+                                  <Bug className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>{t('testRuns.viewDefect', { key: bug.bugKey, defaultValue: `View defect ${bug.bugKey}` })}</TooltipContent>
+                            </Tooltip>
+                          ))
+                        : run.bugReportId && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:text-red-600"
+                                  onClick={() => onViewBug(run.bugReportId!)}
+                                >
+                                  <Bug className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View Bug Report</TooltipContent>
+                            </Tooltip>
+                          ))}
                     </TooltipProvider>
                   </div>
                 </TableCell>

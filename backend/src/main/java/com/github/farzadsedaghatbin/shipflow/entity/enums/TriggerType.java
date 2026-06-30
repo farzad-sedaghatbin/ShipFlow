@@ -1,0 +1,19 @@
+package com.github.farzadsedaghatbin.shipflow.entity.enums;
+
+public enum TriggerType {
+  TASK_CREATED,
+  TASK_STATUS_CHANGED,
+  TASK_ASSIGNED,
+  TASK_COMPLETED,
+  PITCH_CREATED,
+  PITCH_STATUS_CHANGED,
+  CYCLE_STARTED,
+  CYCLE_ENDED,
+  CYCLE_STATUS_CHANGED,
+  COMMENT_ADDED,
+  // Shape Up specific triggers
+  BETTING_TABLE_LOCKED,
+  HILL_CHART_MOVED,
+  APPETITE_EXCEEDED,
+  SCOPE_CREEP_DETECTED
+}

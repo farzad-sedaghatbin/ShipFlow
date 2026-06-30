@@ -49,6 +49,21 @@ public class QAService {
   @Value("${app.qa.retrieval.top-k:5}")
   private int topK;
 
+  /** Active vector store provider (in-memory, qdrant, chroma, ...). Determines the relevance-score scale. */
+  @Value("${app.qa.vectorstore.provider:in-memory}")
+  private String vectorStoreProvider;
+
+  /**
+   * Minimum relevance score for a retrieved chunk. Negative = "auto": derive the
+   * threshold from the vector-store provider, because score scales differ. langchain4j's
+   * in-memory store returns {@code (cosine + 1) / 2} (relevant content ≈ 0.7–0.95), while
+   * Qdrant/Chroma/etc. return the raw cosine similarity (relevant content ≈ 0.4–0.6). A
+   * single hardcoded 0.70 silently rejected every Qdrant match and forced a keyword-only
+   * fallback. Override with {@code app.qa.retrieval.min-score} to pin a value.
+   */
+  @Value("${app.qa.retrieval.min-score:-1}")
+  private double configuredMinScore;
+
   private final KnowledgeItemRepository knowledgeItemRepository;
   private final QAInteractionRepository qaInteractionRepository;
   private final EmbeddingModel embeddingModel;
@@ -260,7 +275,7 @@ public class QAService {
 
       // 3. Retrieve relevant knowledge chunks with fallback
       int retrieveK = qaConfig != null ? qaConfig.getTopK() : topK;
-      double minScore = 0.70; // Increased threshold for better quality
+      double minScore = resolveMinScore();
       List<EmbeddingMatch<TextSegment>> matches;
 
       try {
@@ -1122,6 +1137,24 @@ public class QAService {
    * "cycle 4" → ["cycle 4", "4"] - "What is the status of the API pitch?" →
    * ["api", "status", "pitch"]
    */
+  /**
+   * Resolve the minimum relevance-score threshold for the active vector store.
+   *
+   * <p>langchain4j's in-memory store returns a normalized relevance score of
+   * {@code (cosineSimilarity + 1) / 2}, so 0.70 there corresponds to a raw cosine of
+   * ~0.40. External stores (Qdrant, Chroma, Milvus, Pinecone, Weaviate) return the raw
+   * cosine similarity, so the same 0.70 would reject virtually all matches and collapse
+   * retrieval to the keyword fallback. We therefore use a provider-aware default unless
+   * {@code app.qa.retrieval.min-score} is explicitly set (>= 0).
+   */
+  double resolveMinScore() {
+    if (configuredMinScore >= 0) {
+      return configuredMinScore;
+    }
+    String provider = vectorStoreProvider == null ? "in-memory" : vectorStoreProvider.trim().toLowerCase();
+    return "in-memory".equals(provider) ? 0.70 : 0.40;
+  }
+
   private List<String> extractSearchTerms(String question) {
     if (question == null || question.trim().isEmpty()) {
       return Collections.emptyList();
@@ -1219,6 +1252,8 @@ public class QAService {
     // Extract significant words (3+ characters, not stop words)
     String[] words = cleaned.split("\\s+");
     for (String word : words) {
+      // Strip surrounding punctuation so "intensive?" matches "intensive" (keeps internal hyphens).
+      word = word.replaceAll("^[^a-z0-9]+", "").replaceAll("[^a-z0-9]+$", "");
       if (word.length() >= 3 && !word.matches("\\d+")) {
         terms.add(word);
       }

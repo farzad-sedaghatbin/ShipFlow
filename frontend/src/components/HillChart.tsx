@@ -103,6 +103,7 @@ interface HillChartProps {
   onPointUpdate?: (point: HillChartPoint, newPosition: number) => void;
   onPointEdit?: (point: HillChartPoint) => void;
   onPointDelete?: (point: HillChartPoint) => void;
+  onNavigateToTask?: (point: HillChartPoint) => void;
   readonly?: boolean;
   animateEntrance?: boolean;
 }
@@ -113,6 +114,7 @@ export const HillChart: React.FC<HillChartProps> = ({
   onPointUpdate,
   onPointEdit,
   onPointDelete,
+  onNavigateToTask,
   readonly = false,
   animateEntrance = true,
 }) => {
@@ -709,6 +711,18 @@ export const HillChart: React.FC<HillChartProps> = ({
             style={{ left: contextMenuPosition.x, top: contextMenuPosition.y }}
           >
             <div className="bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[120px]">
+              {contextMenuPoint.linkedTaskId && onNavigateToTask && (
+                <button
+                  className="w-full px-3 py-2 text-sm text-left hover:bg-accent flex items-center gap-2 text-primary"
+                  onClick={() => {
+                    onNavigateToTask(contextMenuPoint);
+                    setContextMenuPosition(null);
+                    setContextMenuPoint(null);
+                  }}
+                >
+                  🔗 View Task
+                </button>
+              )}
               <button
                 className="w-full px-3 py-2 text-sm text-left hover:bg-accent flex items-center gap-2"
                 onClick={() => {

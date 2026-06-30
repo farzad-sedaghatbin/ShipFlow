@@ -26,6 +26,13 @@ public class PitchRiskDTO {
   /** Risk level category derived from score using configurable thresholds. */
   private RiskLevel riskLevel;
 
+  /**
+   * Structured explanation of the score: the threshold legend (the four bands
+   * with their numeric ranges + the active band) and each risk factor's weighted
+   * contribution. Lets the UI show why the score lands where it does.
+   */
+  private RiskScoreExplanation explanation;
+
   /** List of specific risk factors identified. */
   private List<RiskFactor> riskFactors;
 

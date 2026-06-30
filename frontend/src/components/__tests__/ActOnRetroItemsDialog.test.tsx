@@ -41,6 +41,8 @@ const mockRetroItems: RetroItem[] = [
     retrospectiveId: 1,
     voteCount: 5,
     hasVoted: false,
+    dislikeCount: 0,
+    hasDisliked: false,
     createdAt: '2026-02-01T00:00:00Z',
   },
   {
@@ -50,6 +52,8 @@ const mockRetroItems: RetroItem[] = [
     retrospectiveId: 1,
     voteCount: 3,
     hasVoted: false,
+    dislikeCount: 0,
+    hasDisliked: false,
     createdAt: '2026-02-01T00:00:00Z',
   },
   {
@@ -59,6 +63,8 @@ const mockRetroItems: RetroItem[] = [
     retrospectiveId: 1,
     voteCount: 2,
     hasVoted: false,
+    dislikeCount: 0,
+    hasDisliked: false,
     createdAt: '2026-02-01T00:00:00Z',
   },
 ];

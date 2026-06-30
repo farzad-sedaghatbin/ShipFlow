@@ -45,6 +45,10 @@ public class RetroItem {
   @Column(nullable = false)
   private Integer voteCount = 0;
 
+  @Builder.Default
+  @Column(name = "dislike_count", nullable = false)
+  private Integer dislikeCount = 0;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "merged_into_id")
   private RetroItem mergedInto;
@@ -62,6 +66,14 @@ public class RetroItem {
 
   @Column
   private LocalDateTime updatedAt;
+
+  // Discussion tracking
+  @Builder.Default
+  @Column(name = "discussed", nullable = false)
+  private Boolean discussed = false;
+
+  @Column(name = "discussed_at")
+  private LocalDateTime discussedAt;
 
   // v0.5 - Action follow-through tracking
   @Builder.Default

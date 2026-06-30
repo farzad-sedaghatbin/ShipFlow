@@ -33,6 +33,9 @@ RUN groupadd -r shipflow && useradd -r -g shipflow shipflow
 # Copy the built jar
 COPY --from=backend-builder /app/backend/target/shipflow-*.jar app.jar
 
+# Create uploads directory so the named volume inherits shipflow ownership on first mount
+RUN mkdir -p /app/uploads
+
 # Change ownership
 RUN chown -R shipflow:shipflow /app
 

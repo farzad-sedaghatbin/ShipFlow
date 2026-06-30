@@ -159,7 +159,8 @@ public class PersonService {
 
     TeamAssignment assignment = TeamAssignment.builder().person(person).team(team).role(request.getRole())
         .startDate(request.getStartDate() != null ? request.getStartDate() : LocalDate.now())
-        .endDate(request.getEndDate()).isActive(true).build();
+        .endDate(request.getEndDate()).isActive(true)
+        .hoursPerDayOverride(request.getHoursPerDayOverride()).build();
 
     TeamAssignment saved = teamAssignmentRepository.save(assignment);
     return mapToAssignmentDTO(saved);
@@ -171,12 +172,12 @@ public class PersonService {
         .orElseThrow(() -> new EntityNotFoundException("Assignment not found with id: " + assignmentId));
 
     assignment.setRole(request.getRole());
-    
-    // Only update startDate if provided (don't overwrite with null)
+    assignment.setHoursPerDayOverride(request.getHoursPerDayOverride());
+
     if (request.getStartDate() != null) {
       assignment.setStartDate(request.getStartDate());
     }
-    
+
     assignment.setEndDate(request.getEndDate());
 
     TeamAssignment saved = teamAssignmentRepository.save(assignment);

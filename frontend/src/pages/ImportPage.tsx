@@ -99,8 +99,11 @@ function ImportResultCard({
             ? t('importPage.importComplete')
             : t('importPage.importFailed')}
         </h2>
-        {result.status === 'COMPLETED' && (
-          <p className="text-sm text-muted-foreground">{t('importPage.projectCreated')}</p>
+        {result.status === 'COMPLETED' && result.projectName && (
+          <p className="text-sm text-muted-foreground">
+            {t('importPage.projectCreated')}:{' '}
+            <span className="font-semibold text-foreground">{result.projectName}</span>
+          </p>
         )}
       </div>
 
@@ -141,7 +144,11 @@ function ImportResultCard({
       <div className="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
-          onClick={() => navigate('/projects')}
+          onClick={() =>
+            result.projectId
+              ? navigate(`/projects/${result.projectId}`)
+              : navigate('/projects')
+          }
           className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           {t('importPage.openProject')}

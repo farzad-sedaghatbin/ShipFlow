@@ -148,7 +148,22 @@ export const documentService = {
   deleteBugAttachment: (attachmentId: number) =>
     api.delete<{ message: string }>(`/documents/bug/attachment/${attachmentId}`),
 
-  // Get attachment URL for display (inline viewing)
-  getAttachmentUrl: (attachmentId: number) =>
-    `${api.defaults.baseURL}/documents/${attachmentId}/download`,
+  // Fetch attachment as an authenticated blob URL suitable for <img>/<video> src
+  fetchAttachmentBlobUrl: async (id: number): Promise<string> => {
+    const response = await api.get(`/documents/${id}/download`, { responseType: 'blob' });
+    return URL.createObjectURL(response.data);
+  },
+
+  // Trigger a download using an authenticated request
+  downloadAttachment: async (id: number, fileName: string): Promise<void> => {
+    const response = await api.get(`/documents/${id}/download`, { responseType: 'blob' });
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
 };

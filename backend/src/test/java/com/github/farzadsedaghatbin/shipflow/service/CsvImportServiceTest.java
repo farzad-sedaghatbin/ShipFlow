@@ -6,6 +6,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.ImportSourceFormat;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,7 @@ class CsvImportServiceTest {
   @Mock private CycleRepository cycleRepository;
   @Mock private PersonRepository personRepository;
   @Mock private UserRepository userRepository;
+  @Mock private BugReportRepository bugReportRepository;
 
   private CsvImportService service;
 
@@ -40,7 +43,8 @@ class CsvImportServiceTest {
             epicRepository,
             cycleRepository,
             personRepository,
-            userRepository);
+            userRepository,
+            bugReportRepository);
   }
 
   // ---- detectFormat -------------------------------------------------------
@@ -221,5 +225,75 @@ class CsvImportServiceTest {
   @DisplayName("mapLinearPriority: 'No priority' maps to LOW")
   void linearPriority_noPriority() {
     assertThat(service.mapLinearPriority("No priority")).isEqualTo(TaskPriority.LOW);
+  }
+
+  // ---- Jira bug severity mapping ------------------------------------------
+
+  @Test
+  @DisplayName("mapJiraSeverity: 'Blocker' maps to CRITICAL")
+  void jiraSeverity_blocker() {
+    assertThat(service.mapJiraSeverity("Blocker")).isEqualTo(BugSeverity.CRITICAL);
+  }
+
+  @Test
+  @DisplayName("mapJiraSeverity: 'Critical' maps to CRITICAL")
+  void jiraSeverity_critical() {
+    assertThat(service.mapJiraSeverity("Critical")).isEqualTo(BugSeverity.CRITICAL);
+  }
+
+  @Test
+  @DisplayName("mapJiraSeverity: 'Major' maps to MAJOR")
+  void jiraSeverity_major() {
+    assertThat(service.mapJiraSeverity("Major")).isEqualTo(BugSeverity.MAJOR);
+  }
+
+  @Test
+  @DisplayName("mapJiraSeverity: 'Minor' maps to MINOR")
+  void jiraSeverity_minor() {
+    assertThat(service.mapJiraSeverity("Minor")).isEqualTo(BugSeverity.MINOR);
+  }
+
+  @Test
+  @DisplayName("mapJiraSeverity: 'Trivial' maps to TRIVIAL")
+  void jiraSeverity_trivial() {
+    assertThat(service.mapJiraSeverity("Trivial")).isEqualTo(BugSeverity.TRIVIAL);
+  }
+
+  @Test
+  @DisplayName("mapJiraSeverity: null defaults to MAJOR")
+  void jiraSeverity_null() {
+    assertThat(service.mapJiraSeverity(null)).isEqualTo(BugSeverity.MAJOR);
+  }
+
+  // ---- Jira bug status mapping --------------------------------------------
+
+  @Test
+  @DisplayName("mapJiraBugStatus: 'Open' maps to OPEN")
+  void jiraBugStatus_open() {
+    assertThat(service.mapJiraBugStatus("Open")).isEqualTo(BugStatus.OPEN);
+  }
+
+  @Test
+  @DisplayName("mapJiraBugStatus: 'In Progress' maps to IN_PROGRESS")
+  void jiraBugStatus_inProgress() {
+    assertThat(service.mapJiraBugStatus("In Progress")).isEqualTo(BugStatus.IN_PROGRESS);
+  }
+
+  @Test
+  @DisplayName("mapJiraBugStatus: 'Resolved' maps to RESOLVED")
+  void jiraBugStatus_resolved() {
+    assertThat(service.mapJiraBugStatus("Resolved")).isEqualTo(BugStatus.RESOLVED);
+  }
+
+  @Test
+  @DisplayName("mapJiraBugStatus: 'Won't Fix' maps to WONT_FIX")
+  void jiraBugStatus_wontFix() {
+    assertThat(service.mapJiraBugStatus("Won't Fix")).isEqualTo(BugStatus.WONT_FIX);
+  }
+
+  @Test
+  @DisplayName("mapJiraBugStatus: null defaults to OPEN")
+  void jiraBugStatus_null() {
+    assertThat(service.mapJiraBugStatus(null)).isEqualTo(BugStatus.OPEN);
   }
 }

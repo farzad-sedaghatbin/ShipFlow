@@ -26,6 +26,7 @@ class JiraApiImportServiceTest {
   @Mock private CycleRepository cycleRepository;
   @Mock private EpicRepository epicRepository;
   @Mock private TaskRepository taskRepository;
+  @Mock private BugReportRepository bugReportRepository;
   @Mock private ImportJobRepository importJobRepository;
   @Mock private PersonRepository personRepository;
   @Mock private RestTemplate restTemplate;
@@ -41,6 +42,7 @@ class JiraApiImportServiceTest {
             cycleRepository,
             epicRepository,
             taskRepository,
+            bugReportRepository,
             importJobRepository,
             personRepository,
             restTemplate,

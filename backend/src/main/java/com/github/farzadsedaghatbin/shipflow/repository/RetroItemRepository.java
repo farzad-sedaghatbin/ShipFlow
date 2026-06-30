@@ -22,8 +22,11 @@ public interface RetroItemRepository extends JpaRepository<RetroItem, Long> {
   @Query("SELECT COUNT(i) FROM RetroItem i WHERE i.retrospective.id = :retrospectiveId")
   long countByRetrospectiveId(@Param("retrospectiveId") Long retrospectiveId);
 
-  @Query("SELECT i FROM RetroItem i LEFT JOIN FETCH i.author WHERE i.id = :id")
+  @Query("SELECT i FROM RetroItem i LEFT JOIN FETCH i.author a LEFT JOIN FETCH a.person WHERE i.id = :id")
   Optional<RetroItem> findByIdWithAuthor(@Param("id") Long id);
+
+  @Query("SELECT i FROM RetroItem i LEFT JOIN FETCH i.author a LEFT JOIN FETCH a.person LEFT JOIN FETCH i.actedOnBy ab LEFT JOIN FETCH ab.person WHERE i.retrospective.id = :retroId ORDER BY i.createdAt ASC")
+  List<RetroItem> findByRetrospectiveIdWithAuthorOrderByCreatedAtAsc(@Param("retroId") Long retroId);
 
   // Find items that are not merged (for display)
   @Query("SELECT i FROM RetroItem i WHERE i.retrospective.id = :retrospectiveId AND i.mergedInto IS NULL ORDER BY i.voteCount DESC, i.createdAt ASC")

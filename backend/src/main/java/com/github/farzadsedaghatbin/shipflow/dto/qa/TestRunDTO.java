@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.dto.qa;
 
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TestRunStatus;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.*;
 
 /** DTO for test run responses. */
@@ -28,7 +29,10 @@ public class TestRunDTO {
   private String buildVersion;
   private String environment;
   private String attachments;
+  /** Primary linked defect (first of {@link #linkedBugs}) — kept for backward compatibility. */
   private Long bugReportId;
   private String bugReportKey;
+  /** All bug reports (defects) linked to this run. A failed execution may have several. */
+  private List<LinkedBugReportDTO> linkedBugs;
   private LocalDateTime createdAt;
 }

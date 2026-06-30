@@ -57,9 +57,9 @@ export default function QATestingGuide() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <ol className="list-decimal list-inside space-y-3">
-                        <li>{t('guides.qaTesting.testCasesStep1')}</li>
-                        <li>{t('guides.qaTesting.testCasesStep2')}</li>
-                        <li>{t('guides.qaTesting.testCasesStep3')}
+                        <li><MarkdownInline content={t('guides.qaTesting.testCasesStep1')} /></li>
+                        <li><MarkdownInline content={t('guides.qaTesting.testCasesStep2')} /></li>
+                        <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3')} />
                             <ul className="list-disc list-inside ml-6 mt-2 space-y-1 text-sm text-muted-foreground">
                                 <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3a')} /></li>
                                 <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3b')} /></li>
@@ -68,7 +68,7 @@ export default function QATestingGuide() {
                                 <li><MarkdownInline content={t('guides.qaTesting.testCasesStep3e')} /></li>
                             </ul>
                         </li>
-                        <li>{t('guides.qaTesting.testCasesStep4')}</li>
+                        <li><MarkdownInline content={t('guides.qaTesting.testCasesStep4')} /></li>
                     </ol>
 
                     <div className="rounded-lg border bg-muted/50 p-4 mt-4">
@@ -105,10 +105,10 @@ export default function QATestingGuide() {
                         <div className="rounded-lg border p-4">
                             <h4 className="font-semibold mb-2">{t('guides.qaTesting.aiHowToUseTitle')}</h4>
                             <ol className="list-decimal list-inside space-y-2 text-sm">
-                                <li>{t('guides.qaTesting.aiHowToStep1')}</li>
-                                <li>{t('guides.qaTesting.aiHowToStep2')}</li>
-                                <li>{t('guides.qaTesting.aiHowToStep3')}</li>
-                                <li>{t('guides.qaTesting.aiHowToStep4')}</li>
+                                <li><MarkdownInline content={t('guides.qaTesting.aiHowToStep1')} /></li>
+                                <li><MarkdownInline content={t('guides.qaTesting.aiHowToStep2')} /></li>
+                                <li><MarkdownInline content={t('guides.qaTesting.aiHowToStep3')} /></li>
+                                <li><MarkdownInline content={t('guides.qaTesting.aiHowToStep4')} /></li>
                             </ol>
                         </div>
                         <div className="rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 p-4">
@@ -136,15 +136,9 @@ export default function QATestingGuide() {
                     <p>
                         {t('guides.qaTesting.bugReportsDesc')}
                     </p>
-                    <ul className="space-y-2 text-sm">
-                        <li className="flex items-start gap-2">
-                            <span className="font-semibold min-w-[80px]">{t('guides.qaTesting.bugSeverity').split(':')[0]}:</span>
-                            <span>{t('guides.qaTesting.bugSeverity').split(':').slice(1).join(':').trim()}</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <span className="font-semibold min-w-[80px]">{t('guides.qaTesting.bugStatus').split(':')[0]}:</span>
-                            <span>{t('guides.qaTesting.bugStatus').split(':').slice(1).join(':').trim()}</span>
-                        </li>
+                    <ul className="list-disc list-inside space-y-2 text-sm">
+                        <li><MarkdownInline content={t('guides.qaTesting.bugSeverity')} /></li>
+                        <li><MarkdownInline content={t('guides.qaTesting.bugStatus')} /></li>
                     </ul>
 
                     <div className="rounded-lg border bg-muted/50 p-4 mt-4">

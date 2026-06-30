@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreatePitchRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.PitchDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.mcp.McpPitchDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.service.PitchService;
@@ -39,6 +40,7 @@ public class PitchMcpTools {
   public static final String TOOL_GET_BETTING_CANDIDATES = "get_betting_candidates";
   public static final String TOOL_CREATE_PITCH = "create_pitch";
   public static final String TOOL_UPDATE_PITCH_STATUS = "update_pitch_status";
+  public static final String TOOL_UPDATE_PITCH = "update_pitch";
 
   public static Map<String, Object> getPitchesDefinition() {
     return Map.of(
@@ -172,6 +174,53 @@ public class PitchMcpTools {
                 List.of("pitchId", "status")));
   }
 
+  public static Map<String, Object> updatePitchDefinition() {
+    return Map.of(
+        "name",
+        TOOL_UPDATE_PITCH,
+        "description",
+            "Update editable fields on an existing pitch. Only the fields you supply are changed — "
+                + "omitted fields keep their current values (PATCH semantics). "
+                + "To change pitch status (e.g. IDEA → SHAPED) use update_pitch_status instead. "
+                + "Requires WRITE API key scope.",
+        "inputSchema",
+            Map.of(
+                "type",
+                "object",
+                "properties",
+                    Map.of(
+                        "pitchId",
+                        Map.of("type", "integer", "description", "The numeric pitch ID (required)"),
+                        "title",
+                        Map.of("type", "string", "description", "New pitch title"),
+                        "description",
+                        Map.of("type", "string", "description", "High-level description"),
+                        "problemStatement",
+                        Map.of("type", "string", "description", "Shape Up: what problem does this solve?"),
+                        "solution",
+                        Map.of("type", "string", "description", "Shape Up: proposed solution"),
+                        "rabbitHoles",
+                        Map.of("type", "string", "description", "Shape Up: known rabbit holes to avoid"),
+                        "risks",
+                        Map.of("type", "string", "description", "Shape Up: identified risks"),
+                        "noGos",
+                        Map.of("type", "string", "description", "Shape Up: explicit out-of-scope items"),
+                        "wireframeLinks",
+                        Map.of(
+                            "type",
+                            "string",
+                            "description",
+                            "Comma-separated URLs to wireframes or Figma files"),
+                        "appetiteDays",
+                        Map.of(
+                            "type",
+                            "integer",
+                            "description",
+                            "Time budget in days (14 = Small Batch, 42 = Big Batch)")),
+                "required",
+                List.of("pitchId")));
+  }
+
   // ── Implementations ───────────────────────────────────────────────────────
 
   public List<McpPitchDTO> getPitches(Map<String, Object> args) {
@@ -268,6 +317,80 @@ public class PitchMcpTools {
               + "DONE, COOLDOWN, CANCELLED, CIRCUIT_BREAKER");
     }
     return McpPitchDTO.from(pitchService.updateStatus(pitchId, status));
+  }
+
+  public McpPitchDTO updatePitch(Map<String, Object> args) {
+    long pitchId = toLong(args.get("pitchId"), "pitchId");
+    PitchDTO current = pitchService.getPitchById(pitchId);
+
+    // Seed the request with the current state to achieve PATCH semantics — updatePitch is a full replace.
+    CreatePitchRequest request = new CreatePitchRequest();
+    request.setTitle(current.getTitle());
+    request.setDescription(current.getDescription());
+    request.setAppetiteDays(current.getAppetiteDays());
+    request.setStatus(current.getStatus());
+    request.setCycleId(current.getCycleId());
+    request.setTeamId(current.getTeamId());
+    request.setEpicId(current.getEpicId());
+    request.setTargetReleaseId(current.getTargetReleaseId());
+    request.setPriority(current.getPriority());
+    request.setSortOrder(current.getSortOrder());
+    request.setProblemStatement(current.getProblemStatement());
+    request.setSolution(current.getSolution());
+    request.setRabbitHoles(current.getRabbitHoles());
+    request.setRisks(current.getRisks());
+    request.setNoGos(current.getNoGos());
+    request.setWireframeLinks(current.getWireframeLinks());
+
+    // Apply only the fields explicitly provided by the caller.
+    Object titleArg = args.get("title");
+    if (titleArg != null) {
+      String title = titleArg.toString().trim();
+      if (title.isBlank()) {
+        throw new IllegalArgumentException("title cannot be blank");
+      }
+      request.setTitle(title);
+    }
+    Object descriptionArg = args.get("description");
+    if (descriptionArg != null) {
+      request.setDescription(descriptionArg.toString());
+    }
+    Object problemArg = args.get("problemStatement");
+    if (problemArg != null) {
+      request.setProblemStatement(problemArg.toString());
+    }
+    Object solutionArg = args.get("solution");
+    if (solutionArg != null) {
+      request.setSolution(solutionArg.toString());
+    }
+    Object rabbitHolesArg = args.get("rabbitHoles");
+    if (rabbitHolesArg != null) {
+      request.setRabbitHoles(rabbitHolesArg.toString());
+    }
+    Object risksArg = args.get("risks");
+    if (risksArg != null) {
+      request.setRisks(risksArg.toString());
+    }
+    Object noGosArg = args.get("noGos");
+    if (noGosArg != null) {
+      request.setNoGos(noGosArg.toString());
+    }
+    Object wireframeLinksArg = args.get("wireframeLinks");
+    if (wireframeLinksArg != null) {
+      request.setWireframeLinks(wireframeLinksArg.toString());
+    }
+    Object appetiteArg = args.get("appetiteDays");
+    if (appetiteArg instanceof Number n) {
+      request.setAppetiteDays(n.intValue());
+    } else if (appetiteArg != null) {
+      try {
+        request.setAppetiteDays(Integer.parseInt(appetiteArg.toString()));
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("appetiteDays must be an integer, got: " + appetiteArg);
+      }
+    }
+
+    return McpPitchDTO.from(pitchService.updatePitch(pitchId, request));
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
