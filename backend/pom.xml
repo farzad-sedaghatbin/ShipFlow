@@ -123,17 +123,17 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.12.3</version>
+            <version>0.13.0</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.12.3</version>
+            <version>0.13.0</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.3</version>
+            <version>0.13.0</version>
         </dependency>
 
         <!-- Test -->
@@ -224,7 +224,7 @@
         <dependency>
             <groupId>io.qdrant</groupId>
             <artifactId>client</artifactId>
-            <version>1.7.0</version>
+            <version>1.18.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.grpc</groupId>
@@ -302,7 +302,7 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.2.5</version>
+            <version>5.5.1</version>
         </dependency>
 
         <!-- Bucket4j - In-memory rate limiting (no Redis required) -->
@@ -328,7 +328,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>1.11.0</version>
+            <version>1.14.1</version>
         </dependency>
 
         <!-- Apache Tika — text extraction for Knowledge Center file uploads.
