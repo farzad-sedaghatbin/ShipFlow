@@ -3,27 +3,35 @@ import { useTranslation } from 'react-i18next';
 import {
   LogIn,
   BarChart3,
-  Users,
   Brain,
   Target,
   CheckCircle,
   Github,
-  Accessibility,
   RotateCcw,
   ArrowRight,
-  FileText,
   Linkedin,
   Mail,
   Code2,
-  Activity,
   Sparkles,
   Layers,
-  Calendar,
   Heart,
-  Search,
-  ArrowDownToLine,
-  Pencil,
   Command,
+  ShieldCheck,
+  Server,
+  Lock,
+  KanbanSquare,
+  Workflow,
+  BookOpen,
+  Database,
+  KeyRound,
+  ScrollText,
+  Globe,
+  Boxes,
+  Cpu,
+  Container,
+  Gauge,
+  Terminal,
+  Bot,
 } from 'lucide-react';
 import { useAuth } from '../contexts';
 
@@ -41,120 +49,137 @@ export default function Landing() {
     { name: 'React 18', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },
     { name: 'TypeScript', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
     { name: 'Spring Boot 3', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
-    { name: 'Java 17+', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
-    { name: 'shadcn/ui', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-    { name: 'LangChain4j', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
+    { name: 'Java 21', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
+    { name: 'Ollama', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
+    { name: 'PostgreSQL', color: 'bg-sky-500/10 text-sky-400 border-sky-500/20' },
+    { name: 'Redis', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
+    { name: 'Qdrant', color: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+  ];
+
+  const trustBadges = [
+    { icon: <ShieldCheck className="h-3.5 w-3.5 mr-1" />, label: t('landing.trustMitLicensed') },
+    { icon: <CheckCircle className="h-3.5 w-3.5 mr-1" />, label: t('landing.trustNoPerSeat') },
+    { icon: <Code2 className="h-3.5 w-3.5 mr-1" />, label: t('landing.trustStack') },
+    { icon: <Lock className="h-3.5 w-3.5 mr-1" />, label: t('landing.trustOffline') },
+  ];
+
+  const pillars = [
+    {
+      icon: <Target className="h-8 w-8" />,
+      title: t('landing.pillarShapeUpTitle'),
+      description: t('landing.pillarShapeUpDesc'),
+    },
+    {
+      icon: <Server className="h-8 w-8" />,
+      title: t('landing.pillarSelfHostTitle'),
+      description: t('landing.pillarSelfHostDesc'),
+    },
+    {
+      icon: <Lock className="h-8 w-8" />,
+      title: t('landing.pillarPrivateAiTitle'),
+      description: t('landing.pillarPrivateAiDesc'),
+    },
+  ];
+
+  const methodologies = [
+    {
+      icon: <Target className="h-7 w-7" />,
+      title: t('landing.methodShapeUp'),
+      description: t('landing.methodShapeUpDesc'),
+    },
+    {
+      icon: <KanbanSquare className="h-7 w-7" />,
+      title: t('landing.methodKanban'),
+      description: t('landing.methodKanbanDesc'),
+    },
+    {
+      icon: <RotateCcw className="h-7 w-7" />,
+      title: t('landing.methodScrum'),
+      description: t('landing.methodScrumDesc'),
+    },
+  ];
+
+  const aiCapabilities = [
+    {
+      icon: <Cpu className="h-7 w-7" />,
+      title: t('landing.aiPluggableTitle'),
+      description: t('landing.aiPluggableDesc'),
+    },
+    {
+      icon: <Bot className="h-7 w-7" />,
+      title: t('landing.aiMcpTitle'),
+      description: t('landing.aiMcpDesc'),
+    },
+    {
+      icon: <BookOpen className="h-7 w-7" />,
+      title: t('landing.aiRagTitle'),
+      description: t('landing.aiRagDesc'),
+    },
+    {
+      icon: <Sparkles className="h-7 w-7" />,
+      title: t('landing.aiFeaturesTitle'),
+      description: t('landing.aiFeaturesDesc'),
+    },
+  ];
+
+  const selfHostFeatures = [
+    {
+      icon: <Container className="h-7 w-7" />,
+      title: t('landing.selfHostDockerTitle'),
+      description: t('landing.selfHostDockerDesc'),
+    },
+    {
+      icon: <Boxes className="h-7 w-7" />,
+      title: t('landing.selfHostHelmTitle'),
+      description: t('landing.selfHostHelmDesc'),
+    },
+    {
+      icon: <Gauge className="h-7 w-7" />,
+      title: t('landing.selfHostObsTitle'),
+      description: t('landing.selfHostObsDesc'),
+    },
+    {
+      icon: <ScrollText className="h-7 w-7" />,
+      title: t('landing.selfHostAuditTitle'),
+      description: t('landing.selfHostAuditDesc'),
+    },
+    {
+      icon: <KeyRound className="h-7 w-7" />,
+      title: t('landing.selfHostSsoTitle'),
+      description: t('landing.selfHostSsoDesc'),
+    },
+    {
+      icon: <Database className="h-7 w-7" />,
+      title: t('landing.selfHostStorageTitle'),
+      description: t('landing.selfHostStorageDesc'),
+    },
   ];
 
   const features = [
-    {
-      icon: <Layers className="h-10 w-10" />,
-      title: t('landing.dualProjectModes'),
-      description: t('landing.dualProjectModesDesc'),
-    },
-    {
-      icon: <Calendar className="h-10 w-10" />,
-      title: t('landing.cycleManagement'),
-      description: t('landing.cycleManagementDesc'),
-    },
-    {
-      icon: <BarChart3 className="h-10 w-10" />,
-      title: t('landing.hillCharts'),
-      description: t('landing.hillChartsDesc'),
-    },
-    {
-      icon: <Target className="h-10 w-10" />,
-      title: t('landing.scopeTaskBridge'),
-      description: t('landing.scopeTaskBridgeDesc'),
-    },
-    {
-      icon: <Brain className="h-10 w-10" />,
-      title: t('landing.aiRiskAnalysis'),
-      description: t('landing.aiRiskAnalysisDesc'),
-    },
-    {
-      icon: <Brain className="h-10 w-10" />,
-      title: t('landing.wiseArchitecture'),
-      description: t('landing.wiseArchitectureDesc'),
-    },
-    {
-      icon: <Heart className="h-10 w-10" />,
-      title: t('landing.pitchHealthSummary'),
-      description: t('landing.pitchHealthSummaryDesc'),
-    },
-    {
-      icon: <Users className="h-10 w-10" />,
-      title: t('landing.teamManagement'),
-      description: t('landing.teamManagementDesc'),
-    },
-    {
-      icon: <RotateCcw className="h-10 w-10" />,
-      title: t('landing.retrospectives'),
-      description: t('landing.retrospectivesDesc'),
-    },
-    {
-      icon: <CheckCircle className="h-10 w-10" />,
-      title: t('landing.aiPoweredQA'),
-      description: t('landing.aiPoweredQADesc'),
-    },
-    {
-      icon: <Accessibility className="h-10 w-10" />,
-      title: t('landing.wcagAccessible'),
-      description: t('landing.wcagAccessibleDesc'),
-    },
-    {
-      icon: <FileText className="h-10 w-10" />,
-      title: t('landing.reportsAnalytics'),
-      description: t('landing.reportsAnalyticsDesc'),
-    },
-    {
-      icon: <Activity className="h-10 w-10" />,
-      title: t('landing.cycleSignals'),
-      description: t('landing.cycleSignalsDesc'),
-    },
-    {
-      icon: <Search className="h-10 w-10" />,
-      title: t('landing.inAppGuides'),
-      description: t('landing.inAppGuidesDesc'),
-    },
-    {
-      icon: <ArrowDownToLine className="h-10 w-10" />,
-      title: t('landing.inboundWebhooks'),
-      description: t('landing.inboundWebhooksDesc'),
-    },
-    {
-      icon: <Pencil className="h-10 w-10" />,
-      title: t('landing.markdownEditor'),
-      description: t('landing.markdownEditorDesc'),
-    },
-    {
-      icon: <Command className="h-10 w-10" />,
-      title: t('landing.globalSearch'),
-      description: t('landing.globalSearchDesc'),
-    },
+    { icon: <Layers className="h-9 w-9" />, title: t('landing.tripleMode'), description: t('landing.tripleModeDesc') },
+    { icon: <BarChart3 className="h-9 w-9" />, title: t('landing.hillCharts'), description: t('landing.hillChartsDesc') },
+    { icon: <Target className="h-9 w-9" />, title: t('landing.scopeTaskBridge'), description: t('landing.scopeTaskBridgeDesc') },
+    { icon: <CheckCircle className="h-9 w-9" />, title: t('landing.bettingTable'), description: t('landing.bettingTableDesc') },
+    { icon: <Workflow className="h-9 w-9" />, title: t('landing.workflowAutomations'), description: t('landing.workflowAutomationsDesc') },
+    { icon: <BookOpen className="h-9 w-9" />, title: t('landing.builtInWiki'), description: t('landing.builtInWikiDesc') },
+    { icon: <Code2 className="h-9 w-9" />, title: t('landing.customFields'), description: t('landing.customFieldsDesc') },
+    { icon: <ShieldCheck className="h-9 w-9" />, title: t('landing.advancedRbac'), description: t('landing.advancedRbacDesc') },
+    { icon: <Brain className="h-9 w-9" />, title: t('landing.aiRiskAnalysis'), description: t('landing.aiRiskAnalysisDesc') },
+    { icon: <BookOpen className="h-9 w-9" />, title: t('landing.knowledgeCenter'), description: t('landing.knowledgeCenterDesc') },
+    { icon: <Bot className="h-9 w-9" />, title: t('landing.mcpServer'), description: t('landing.mcpServerDesc') },
+    { icon: <KeyRound className="h-9 w-9" />, title: t('landing.ssoScim'), description: t('landing.ssoScimDesc') },
+    { icon: <Database className="h-9 w-9" />, title: t('landing.objectStorage'), description: t('landing.objectStorageDesc') },
+    { icon: <Heart className="h-9 w-9" />, title: t('landing.reportsAnalytics'), description: t('landing.reportsAnalyticsDesc') },
+    { icon: <Command className="h-9 w-9" />, title: t('landing.globalSearch'), description: t('landing.globalSearchDesc') },
+    { icon: <Globe className="h-9 w-9" />, title: t('landing.i18nRtl'), description: t('landing.i18nRtlDesc') },
+    { icon: <ScrollText className="h-9 w-9" />, title: t('landing.auditTrail'), description: t('landing.auditTrailDesc') },
   ];
 
   const steps = [
-    {
-      step: '1',
-      title: t('landing.shapeStep'),
-      description: t('landing.shapeStepDesc'),
-    },
-    {
-      step: '2',
-      title: t('landing.betStep'),
-      description: t('landing.betStepDesc'),
-    },
-    {
-      step: '3',
-      title: t('landing.buildStep'),
-      description: t('landing.buildStepDesc'),
-    },
-    {
-      step: '4',
-      title: t('landing.cooldownStep'),
-      description: t('landing.cooldownStepDesc'),
-    },
+    { step: '1', title: t('landing.shapeStep'), description: t('landing.shapeStepDesc') },
+    { step: '2', title: t('landing.betStep'), description: t('landing.betStepDesc') },
+    { step: '3', title: t('landing.buildStep'), description: t('landing.buildStepDesc') },
+    { step: '4', title: t('landing.cooldownStep'), description: t('landing.cooldownStepDesc') },
   ];
 
   // Redirect authenticated users to dashboard
@@ -167,33 +192,33 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
             <div>
               {/* Logo & Title */}
               <div className="flex items-center gap-3 mb-6">
-                <img src="/icon.png" alt="ShipFlow" className="w-14 h-14 rounded-xl" />
-                <h1 className="text-3xl font-bold text-primary">ShipFlow</h1>
+                <img src="/icon.png" alt="ShipFlow" className="w-12 h-12 rounded-xl" />
+                <span className="text-2xl font-bold text-primary">ShipFlow</span>
               </div>
 
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                {t('landing.heroTitle')}
-              </h2>
+              <p className="inline-flex items-center rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-muted-foreground mb-5">
+                {t('landing.heroEyebrow')}
+              </p>
+
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4">
+                {t('landing.heroHeadline')}
+              </h1>
 
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                {t('landing.heroDescription')}
+                {t('landing.heroSubhead')}
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-3 mb-8">
+              <div className="flex flex-wrap gap-3 mb-6">
                 <Button size="lg" onClick={() => navigate('/login')}>
                   <LogIn className="h-5 w-5 mr-2" />
                   {t('landing.getStarted')}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  asChild
-                >
+                <Button variant="outline" size="lg" asChild>
                   <a
                     href="https://github.com/farzad-sedaghatbin/ShipFlow"
                     target="_blank"
@@ -203,108 +228,62 @@ export default function Landing() {
                     {t('landing.viewOnGitHub')}
                   </a>
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  onClick={() => navigate('/compare')}
-                >
+                <Button variant="ghost" size="lg" onClick={() => navigate('/compare')}>
                   <ArrowRight className="h-5 w-5 mr-2" />
                   {t('landing.compareToCompetitors')}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  onClick={() => navigate('/releases')}
-                >
+                <Button variant="ghost" size="lg" onClick={() => navigate('/releases')}>
                   <Sparkles className="h-5 w-5 mr-2" />
                   {t('landing.whatsNew')}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  onClick={() => navigate('/public-roadmap')}
-                >
+                <Button variant="ghost" size="lg" onClick={() => navigate('/public-roadmap')}>
                   <ArrowRight className="h-5 w-5 mr-2" />
                   {t('landing.roadmap')}
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="lg"
-                  onClick={() => navigate('/blog')}
-                >
-                  <ArrowRight className="h-5 w-5 mr-2" />
-                  {t('landing.blog', 'Blog')}
-                </Button>
               </div>
 
-              {/* Tech Stack */}
+              {/* Trust row */}
               <div className="flex flex-wrap gap-2">
-                {techStack.map((tech) => (
+                {trustBadges.map((badge) => (
                   <Badge
-                    key={tech.name}
+                    key={badge.label}
                     variant="outline"
-                    className={`${tech.color} font-medium`}
+                    className="bg-muted text-muted-foreground border-border font-medium"
                   >
-                    {tech.name}
+                    {badge.icon}
+                    {badge.label}
                   </Badge>
                 ))}
               </div>
             </div>
 
-            {/* Preview Card */}
-            <div className="hidden md:block">
-              <Card className="shadow-2xl">
-                <CardContent className="p-6">
-                  <p className="text-sm text-muted-foreground mb-4">{t('landing.hillChartPreview')}</p>
-                  <svg viewBox="0 0 400 150" className="w-full">
-                    {/* Hill curve */}
-                    <path
-                      d="M 0 150 Q 100 150 200 30 Q 300 150 400 150"
-                      fill="none"
-                      stroke="currentColor"
-                      className="text-primary/30"
-                      strokeWidth="3"
-                    />
-                    {/* Center line */}
-                    <line
-                      x1="200"
-                      y1="0"
-                      x2="200"
-                      y2="150"
-                      stroke="currentColor"
-                      className="text-border"
-                      strokeDasharray="5,5"
-                    />
-                    {/* Sample points */}
-                    <circle cx="80" cy="120" r="10" className="fill-amber-500" />
-                    <circle cx="150" cy="60" r="10" className="fill-blue-500" />
-                    <circle cx="280" cy="80" r="10" className="fill-green-500" />
-                    <circle cx="350" cy="130" r="10" className="fill-green-500" />
-                    {/* Labels */}
-                    <text x="60" y="145" fontSize="10" className="fill-muted-foreground">
-                      {t('landing.figuringOut')}
-                    </text>
-                    <text x="280" y="145" fontSize="10" className="fill-muted-foreground">
-                      {t('landing.makingHappen')}
-                    </text>
-                  </svg>
-
-                  <Separator className="my-4" />
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                      <span className="text-sm">2 {t('landing.tasksCompleted')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                      <span className="text-sm">1 {t('landing.taskInProgress')}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                      <span className="text-sm">1 {t('landing.taskInDiscovery')}</span>
-                    </div>
-                  </div>
+            {/* Signature terminal card */}
+            <div>
+              <Card className="shadow-2xl overflow-hidden">
+                <div className="flex items-center gap-2 border-b border-border bg-muted px-4 py-3">
+                  <span className="h-3 w-3 rounded-full bg-red-500/70" />
+                  <span className="h-3 w-3 rounded-full bg-amber-500/70" />
+                  <span className="h-3 w-3 rounded-full bg-green-500/70" />
+                  <span className="ml-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <Terminal className="h-3.5 w-3.5" />
+                    {t('landing.terminalTitle')}
+                  </span>
+                </div>
+                <CardContent className="bg-muted/40 p-5 font-mono text-sm leading-relaxed">
+                  <p className="text-muted-foreground/80">{t('landing.terminalComment')}</p>
+                  <p className="mt-2 text-foreground">
+                    <span className="text-primary">$</span> git clone https://github.com/farzad-sedaghatbin/ShipFlow.git
+                  </p>
+                  <p className="text-foreground">
+                    <span className="text-primary">$</span> cd ShipFlow
+                  </p>
+                  <p className="text-foreground">
+                    <span className="text-primary">$</span> docker compose up -d
+                  </p>
+                  <p className="mt-3 flex items-center gap-2 text-green-500">
+                    <CheckCircle className="h-4 w-4 shrink-0" />
+                    {t('landing.terminalUp')}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -312,24 +291,169 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Three Pillars (the moat) */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.pillarsTitle')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{t('landing.pillarsDesc')}</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {pillars.map((pillar) => (
+              <Card key={pillar.title} className="h-full hover:-translate-y-1 hover:shadow-lg transition-all">
+                <CardContent className="p-6">
+                  <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    {pillar.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{pillar.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{pillar.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Three methodologies, one workspace */}
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">
+                {t('landing.methodologiesEyebrow')}
+              </p>
+              <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.methodologiesTitle')}</h2>
+              <p className="text-muted-foreground mb-8 leading-relaxed">{t('landing.methodologiesDesc')}</p>
+
+              <div className="space-y-4">
+                {methodologies.map((method) => (
+                  <div key={method.title} className="flex gap-4">
+                    <div className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      {method.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">{method.title}</h3>
+                      <p className="text-sm text-muted-foreground">{method.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hill chart preview (secondary visual) */}
+            <Card className="shadow-xl">
+              <CardContent className="p-6">
+                <p className="text-sm text-muted-foreground mb-4">{t('landing.hillChartPreview')}</p>
+                <svg viewBox="0 0 400 150" className="w-full" role="img" aria-label={t('landing.hillChartPreview')}>
+                  <path
+                    d="M 0 150 Q 100 150 200 30 Q 300 150 400 150"
+                    fill="none"
+                    stroke="currentColor"
+                    className="text-primary/30"
+                    strokeWidth="3"
+                  />
+                  <line
+                    x1="200"
+                    y1="0"
+                    x2="200"
+                    y2="150"
+                    stroke="currentColor"
+                    className="text-border"
+                    strokeDasharray="5,5"
+                  />
+                  <circle cx="80" cy="120" r="10" className="fill-amber-500" />
+                  <circle cx="150" cy="60" r="10" className="fill-blue-500" />
+                  <circle cx="280" cy="80" r="10" className="fill-green-500" />
+                  <circle cx="350" cy="130" r="10" className="fill-green-500" />
+                  <text x="60" y="145" fontSize="10" className="fill-muted-foreground">
+                    {t('landing.figuringOut')}
+                  </text>
+                  <text x="280" y="145" fontSize="10" className="fill-muted-foreground">
+                    {t('landing.makingHappen')}
+                  </text>
+                </svg>
+
+                <Separator className="my-4" />
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                    <span className="text-sm">2 {t('landing.tasksCompleted')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                    <span className="text-sm">1 {t('landing.taskInProgress')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                    <span className="text-sm">1 {t('landing.taskInDiscovery')}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* AI that stays on your infrastructure */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">{t('landing.aiEyebrow')}</p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.aiTitle')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{t('landing.aiDesc')}</p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {aiCapabilities.map((cap) => (
+              <Card key={cap.title} className="h-full hover:-translate-y-1 hover:shadow-lg transition-all">
+                <CardContent className="p-6">
+                  <div className="text-primary mb-4">{cap.icon}</div>
+                  <h3 className="font-semibold text-foreground mb-2">{cap.title}</h3>
+                  <p className="text-sm text-muted-foreground">{cap.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Production-grade self-hosting */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              {t('landing.featuresTitle')}
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t('landing.featuresDesc')}
-            </p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">{t('landing.selfHostEyebrow')}</p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.selfHostTitle')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{t('landing.selfHostDesc')}</p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {selfHostFeatures.map((feat) => (
+              <Card key={feat.title} className="h-full hover:-translate-y-1 hover:shadow-lg transition-all">
+                <CardContent className="p-6">
+                  <div className="text-primary mb-4">{feat.icon}</div>
+                  <h3 className="font-semibold text-foreground mb-2">{feat.title}</h3>
+                  <p className="text-sm text-muted-foreground">{feat.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Curated Feature Grid */}
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-12">
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary mb-3">{t('landing.featuresEyebrow')}</p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.featuresTitle')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{t('landing.featuresDesc')}</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="h-full hover:-translate-y-1 hover:shadow-lg transition-all"
-              >
+              <Card key={index} className="h-full hover:-translate-y-1 hover:shadow-lg transition-all">
                 <CardContent className="p-6">
                   <div className="text-primary mb-4">{feature.icon}</div>
                   <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
@@ -341,16 +465,32 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Honest Comparison Teaser */}
+      <section className="py-16 md:py-24">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <Card className="bg-gradient-to-br from-primary/5 to-secondary/10 border-primary/10">
+            <CardContent className="p-8 md:p-12 text-center">
+              <p className="text-sm font-semibold uppercase tracking-wide text-primary mb-4">
+                {t('landing.comparisonEyebrow')}
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">{t('landing.comparisonTitle')}</h2>
+              <p className="text-muted-foreground mb-2 leading-relaxed">{t('landing.comparisonLead')}</p>
+              <p className="text-lg font-semibold text-foreground mb-8 leading-relaxed">{t('landing.comparisonPunch')}</p>
+              <Button size="lg" onClick={() => navigate('/compare')}>
+                <ArrowRight className="h-5 w-5 mr-2" />
+                {t('landing.seeComparison')}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
       {/* How it Works */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              {t('landing.howItWorksTitle')}
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t('landing.howItWorksDesc')}
-            </p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.howItWorksTitle')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{t('landing.howItWorksDesc')}</p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -374,15 +514,22 @@ export default function Landing() {
             <CardContent className="p-8 md:p-12">
               <div className="grid md:grid-cols-3 gap-8 items-center">
                 <div className="md:col-span-2">
-                  <h2 className="text-3xl font-bold text-foreground mb-4">
-                    {t('landing.openSourceTitle')}
-                  </h2>
-                  <p className="text-muted-foreground mb-6">
-                    {t('landing.openSourceDesc')}
-                  </p>
+                  <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.openSourceTitle')}</h2>
+                  <p className="text-muted-foreground mb-6">{t('landing.openSourceDesc')}</p>
                   <div className="flex flex-wrap gap-2">
-                    {['MIT License', 'Self-Hosted', 'Docker Ready', 'WCAG 2.1 AA', 'RTL Support', 'Active Development'].map((label) => (
-                      <Badge key={label} variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20">
+                    {[
+                      t('landing.mitLicense'),
+                      t('landing.selfHosted'),
+                      t('landing.dockerReady'),
+                      t('landing.wcag21AA'),
+                      t('landing.trustOffline'),
+                      t('landing.activeDevelopment'),
+                    ].map((label) => (
+                      <Badge
+                        key={label}
+                        variant="outline"
+                        className="bg-green-500/10 text-green-400 border-green-500/20"
+                      >
                         <CheckCircle className="h-3 w-3 mr-1" />
                         {label}
                       </Badge>
@@ -411,18 +558,13 @@ export default function Landing() {
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              {t('landing.aboutAuthorTitle')}
-            </h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              {t('landing.aboutAuthorSubtitle')}
-            </p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">{t('landing.aboutAuthorTitle')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">{t('landing.aboutAuthorSubtitle')}</p>
           </div>
 
           <Card className="max-w-3xl mx-auto">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center gap-8">
-                {/* Author Avatar */}
                 <div className="flex-shrink-0">
                   <img
                     src="https://avatars.githubusercontent.com/farzad-sedaghatbin?v=4"
@@ -431,19 +573,11 @@ export default function Landing() {
                   />
                 </div>
 
-                {/* Author Info */}
                 <div className="flex-1 text-center md:text-left">
-                  <h3 className="text-2xl font-bold text-foreground mb-2">
-                    {t('landing.authorName')}
-                  </h3>
-                  <p className="text-primary font-medium mb-4">
-                    {t('landing.authorRole')}
-                  </p>
-                  <p className="text-muted-foreground mb-6 leading-relaxed">
-                    {t('landing.authorBio')}
-                  </p>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">{t('landing.authorName')}</h3>
+                  <p className="text-primary font-medium mb-4">{t('landing.authorRole')}</p>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">{t('landing.authorBio')}</p>
 
-                  {/* Social Links */}
                   <div className="flex flex-wrap justify-center md:justify-start gap-3">
                     <Button variant="outline" size="sm" asChild>
                       <a
@@ -466,9 +600,7 @@ export default function Landing() {
                       </a>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                      <a
-                        href="mailto:farzad.sedaghatbin@gmail.com"
-                      >
+                      <a href="mailto:farzad.sedaghatbin@gmail.com">
                         <Mail className="h-4 w-4 mr-2" />
                         {t('landing.contact')}
                       </a>
@@ -479,14 +611,27 @@ export default function Landing() {
 
               <Separator className="my-8" />
 
-              {/* Skills/Expertise */}
               <div>
                 <h4 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
                   <Code2 className="h-4 w-4" />
                   {t('landing.authorExpertise')}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {['Digital Banking', 'Fintech', 'AI', 'Java', 'Java EE', 'Spring Boot', 'Quarkus', 'React', 'React Native', 'Cloud-Native', 'Solution Architecture', 'Nexus/Scrum', 'Shape Up'].map((skill) => (
+                  {[
+                    'Digital Banking',
+                    'Fintech',
+                    'AI',
+                    'Java',
+                    'Java EE',
+                    'Spring Boot',
+                    'Quarkus',
+                    'React',
+                    'React Native',
+                    'Cloud-Native',
+                    'Solution Architecture',
+                    'Nexus/Scrum',
+                    'Shape Up',
+                  ].map((skill) => (
                     <Badge key={skill} variant="secondary">
                       {skill}
                     </Badge>
@@ -498,25 +643,31 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Tech Stack Section */}
+      <section className="py-12">
+        <div className="container mx-auto px-4 max-w-6xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+            {t('landing.techStack')}
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {techStack.map((tech) => (
+              <Badge key={tech.name} variant="outline" className={`${tech.color} font-medium`}>
+                {tech.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-16 md:py-20 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            {t('landing.getStarted')}
-          </h2>
-          <p className="text-lg opacity-90 mb-8">
-            {t('landing.heroDescription')}
-          </p>
-          <Button
-            size="lg"
-            variant="secondary"
-            onClick={() => navigate('/login')}
-          >
+          <h2 className="text-3xl font-bold mb-4">{t('landing.readyToShapeUp')}</h2>
+          <p className="text-lg opacity-90 mb-8">{t('landing.heroSubhead')}</p>
+          <Button size="lg" variant="secondary" onClick={() => navigate('/login')}>
             {t('landing.getStarted')}
           </Button>
-          <p className="text-sm mt-4 opacity-70">
-            Demo: admin / admin123
-          </p>
+          <p className="text-sm mt-4 opacity-70">{t('landing.demoCredentials')}</p>
         </div>
       </section>
 
@@ -525,14 +676,14 @@ export default function Landing() {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
+              {t('landing.copyright', { year: new Date().getFullYear() })}
             </p>
             <nav className="flex gap-6">
               <button
                 onClick={() => navigate('/blog')}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                {t('landing.blog', 'Blog')}
+                {t('landing.blog')}
               </button>
               <button
                 onClick={() => navigate('/releases')}
@@ -546,7 +697,7 @@ export default function Landing() {
                 rel="noopener noreferrer"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                GitHub
+                {t('landing.github')}
               </a>
               <a
                 href="https://github.com/farzad-sedaghatbin/ShipFlow/blob/main/CONTRIBUTING.md"
@@ -554,7 +705,7 @@ export default function Landing() {
                 rel="noopener noreferrer"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Contributing
+                {t('landing.contributing')}
               </a>
               <a
                 href="https://basecamp.com/shapeup"
@@ -562,7 +713,7 @@ export default function Landing() {
                 rel="noopener noreferrer"
                 className="text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Shape Up Book
+                {t('landing.shapeUpBook')}
               </a>
             </nav>
           </div>
