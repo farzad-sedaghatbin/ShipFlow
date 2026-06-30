@@ -60,6 +60,18 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       const data = await projectService.getActive();
       setProjects(data);
 
+      // Deep link: ?project=<id> (used by "open project in new tab") takes priority over the
+      // last-selected project persisted in localStorage so the new tab lands on the right project.
+      const urlProjectId = new URLSearchParams(window.location.search).get('project');
+      if (urlProjectId) {
+        const urlProject = data.find(p => p.id === parseInt(urlProjectId, 10));
+        if (urlProject) {
+          setCurrentProject(urlProject);
+          localStorage.setItem(SELECTED_PROJECT_KEY, urlProject.id.toString());
+          return;
+        }
+      }
+
       // Try to restore previously selected project
       const savedProjectId = localStorage.getItem(SELECTED_PROJECT_KEY);
       if (savedProjectId === ALL_PROJECTS_VALUE) {

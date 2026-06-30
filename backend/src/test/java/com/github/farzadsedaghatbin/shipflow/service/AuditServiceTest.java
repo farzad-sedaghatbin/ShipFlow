@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,9 @@ class AuditServiceTest {
 
   @Mock
   private EntityManager entityManager;
+
+  @Mock
+  private UserRepository userRepository;
 
   @InjectMocks
   private AuditService auditService;

@@ -33,7 +33,7 @@ interface AIPitchWriterModalProps {
 
 type ModalState = 'input' | 'loading' | 'result' | 'error';
 
-const MAX_PROBLEM_LENGTH = 500;
+const MAX_PROBLEM_LENGTH = 2000;
 
 export default function AIPitchWriterModal({
   open,
@@ -122,7 +122,7 @@ export default function AIPitchWriterModal({
             }
           }}
           placeholder={t('aiPitchWriter.problemPlaceholder')}
-          rows={5}
+          rows={8}
           aria-describedby="ai-problem-counter"
         />
         <p

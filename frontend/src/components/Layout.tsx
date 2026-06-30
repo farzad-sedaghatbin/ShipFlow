@@ -41,6 +41,8 @@ import {
   Search,
   Workflow,
   KeyRound,
+  Zap,
+  BookOpenText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth, useTour, useTheme } from '../contexts';
@@ -82,7 +84,42 @@ import { RouteProgressProvider } from './RouteProgressProvider';
 import MobileBottomNav from './MobileBottomNav';
 import GlobalSearchCommand from './GlobalSearchCommand';
 import { KeyboardShortcutSheet } from './KeyboardShortcutSheet';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import packageJson from '../../package.json';
+
+const ROUTE_TITLES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/projects': 'Projects',
+  '/cycles': 'Cycles',
+  '/pitches': 'Pitches',
+  '/betting': 'Betting Table',
+  '/health': 'Health Overview',
+  '/retros': 'Retrospectives',
+  '/dashboards': 'Custom Dashboards',
+  '/reports': 'Reports',
+  '/backlog': 'Backlog',
+  '/people': 'People',
+  '/teams': 'Teams',
+  '/meetings': 'Meetings',
+  '/time': 'Work Logs',
+  '/settings': 'Settings',
+  '/org-settings': 'Organization Settings',
+  '/qa': 'Quality',
+  '/rd': 'R&D',
+  '/import': 'Import',
+  '/roadmap': 'Roadmap',
+  '/sprint-planning': 'Sprint Planning',
+  '/ai-features': 'AI Features',
+  '/wiki': 'Wiki',
+};
+
+function getPageTitle(pathname: string): string {
+  // exact match first
+  if (ROUTE_TITLES[pathname]) return ROUTE_TITLES[pathname];
+  // prefix match: /cycles/123/edit → /cycles → 'Cycles'
+  const segment = '/' + pathname.replace(/^\//, '').split('/')[0];
+  return ROUTE_TITLES[segment] || 'ShipFlow';
+}
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -155,13 +192,20 @@ const roadmapItems: NavItemConfig[] = [
   { textKey: 'nav.releases', icon: PackageCheck, path: '/releases-management', tourId: 'releases-menu' },
 ];
 
+// Workflow Automations
+const automationsItems: NavItemConfig[] = [
+  { textKey: 'nav.automations', icon: Zap, path: '/automations', tourId: 'automations-menu' },
+];
+
 // Meetings (accessible from cycle context)
 const meetingsItems: NavItemConfig[] = [
   { textKey: 'nav.meetings', icon: Calendar, path: '/meetings', tourId: 'meetings-menu' },
 ];
 
-// Admin section - User & Access items
+// Admin section - People & Access (merges People/Teams + User Management/Permissions)
 const userAccessItems: NavItemConfig[] = [
+  { textKey: 'nav.people', icon: Users2, path: '/people', tourId: 'people-menu' },
+  { textKey: 'nav.teams', icon: Users, path: '/teams', tourId: 'teams-menu' },
   { textKey: 'nav.userManagement', icon: Shield, path: '/users' },
   { textKey: 'nav.permissions', icon: ShieldCheck, path: '/permissions' },
 ];
@@ -401,8 +445,33 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             />
           )}
 
+          {/* Knowledge Center */}
+          <NavItem
+            item={{ textKey: 'nav.knowledge', icon: BookOpen, path: '/knowledge', tourId: 'knowledge-link' }}
+            isActive={currentPath.startsWith('/knowledge')}
+            onClick={onItemClick}
+          />
+
+          {/* Wiki */}
+          <NavItem
+            item={{ textKey: 'nav.wiki', icon: BookOpenText, path: '/wiki', tourId: 'wiki-link' }}
+            isActive={currentPath.startsWith('/wiki')}
+            onClick={onItemClick}
+          />
+
           {/* Meetings */}
           {meetingsItems.map((item) => (
+            <NavItem
+              key={item.path}
+              item={item}
+              isActive={currentPath === item.path}
+              onClick={onItemClick}
+            />
+          ))}
+
+          {/* Workflow Automations */}
+          <SectionHeader textKey="nav.sections.automations" />
+          {automationsItems.map((item) => (
             <NavItem
               key={item.path}
               item={item}
@@ -449,15 +518,19 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onClick={onItemClick}
           />
 
-          {/* Organization Section - moved down (less frequently used) */}
-          <SectionHeader textKey="nav.sections.organization" />
-          <NavGroup
-            titleKey="nav.groups.people"
-            icon={Users2}
-            items={peopleItems}
-            currentPath={currentPath}
-            onItemClick={onItemClick}
-          />
+          {/* Organization Section - only shown to non-admins; admins see People & Access under Administration */}
+          {!hasPermissionSync('SYSTEM', 'MANAGE') && (
+            <>
+              <SectionHeader textKey="nav.sections.organization" />
+              <NavGroup
+                titleKey="nav.groups.people"
+                icon={Users2}
+                items={peopleItems}
+                currentPath={currentPath}
+                onItemClick={onItemClick}
+              />
+            </>
+          )}
         </nav>
 
         {/* Member-visible integrations (API Keys etc.) — accessible to non-admins
@@ -481,8 +554,8 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             <SectionHeader textKey="nav.sections.administration" />
             <nav className="flex flex-col gap-1">
               <NavGroup
-                titleKey="nav.groups.userAccess"
-                icon={Shield}
+                titleKey="nav.groups.peopleAccess"
+                icon={Users2}
                 items={userAccessItems}
                 currentPath={currentPath}
                 onItemClick={onItemClick}
@@ -519,38 +592,39 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [showShortcuts, setShowShortcuts] = useState(false);
   const { user, logout } = useAuth();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
   const { t } = useTranslation();
+  const location = useLocation();
+  const { showHelp: showShortcuts, setShowHelp: setShowShortcuts } = useKeyboardShortcuts();
 
-  // Global search keyboard shortcut: Cmd+K / Ctrl+K
+  // Dynamic tab title: "Cycles | ShipFlow", "Pitches | ShipFlow", etc.
+  useEffect(() => {
+    const pageTitle = getPageTitle(location.pathname);
+    document.title = pageTitle === 'ShipFlow' ? 'ShipFlow' : `${pageTitle} | ShipFlow`;
+  }, [location.pathname]);
+
+  // Global search: Cmd+K / Ctrl+K or plain S key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
+        return;
       }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Keyboard shortcut help: ? key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const active = document.activeElement;
-      const tag = active?.tagName.toLowerCase();
-      const isTyping =
-        tag === 'input' ||
-        tag === 'textarea' ||
-        tag === 'select' ||
-        (active as HTMLElement | null)?.isContentEditable;
-      if (isTyping) return;
-      if (e.key === '?') {
-        e.preventDefault();
-        setShowShortcuts((prev) => !prev);
+      if ((e.key === 's' || e.key === 'S') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const active = document.activeElement;
+        const tag = active?.tagName.toLowerCase();
+        const typing =
+          tag === 'input' ||
+          tag === 'textarea' ||
+          tag === 'select' ||
+          (active as HTMLElement | null)?.isContentEditable;
+        if (!typing) {
+          e.preventDefault();
+          setSearchOpen(true);
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -742,8 +816,10 @@ export default function Layout({ children }: LayoutProps) {
       {/* Global Search Command Palette */}
       <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
-      {/* Q&A Floating Button - Available on all pages */}
-      <QAFloatingButton contextType="cycle" contextName="your active cycles" />
+      {/* Q&A Floating Button - Available on all pages. Scoped to the whole Knowledge
+          Center (wiki + pitches + docs…), not the active cycle, so general questions
+          retrieve across all ingested content without entity filtering. */}
+      <QAFloatingButton contextType="knowledge" />
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />

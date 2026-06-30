@@ -54,6 +54,14 @@ export const projectService = {
   },
 
   /**
+   * Get the calling user's role for a specific project
+   */
+  getMyRole: async (projectId: number): Promise<ProjectRole | null> => {
+    const response = await api.get<ProjectRole | null>(`/projects/${projectId}/my-role`);
+    return response.data;
+  },
+
+  /**
    * Grant project access to a user
    */
   grantAccess: async (projectId: number, userId: number, role: ProjectRole = 'VIEWER'): Promise<void> => {

@@ -4,6 +4,7 @@ import java.util.concurrent.Executor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
@@ -11,9 +12,13 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  * Async configuration for AI operations.
  * Provides a dedicated thread pool for AI advisory calls to prevent
  * blocking the main request threads when AI responses are slow or not cached.
+ *
+ * <p>Also enables Spring Retry app-wide (used by the Knowledge Center ingestion
+ * orchestrator for {@code @Retryable} on transient provider failures).
  */
 @Configuration
 @EnableAsync
+@EnableRetry
 @Slf4j
 public class AsyncAIConfig {
 

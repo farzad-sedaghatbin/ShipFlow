@@ -26,6 +26,8 @@ public class UpdateBugReportRequest {
 
   private String environment;
 
+  private String component;
+
   /**
    * Direct project association - can be updated if bug needs to be moved to
    * another project.
@@ -50,5 +52,12 @@ public class UpdateBugReportRequest {
 
   private Long assigneeId;
 
+  /** Person assigned to QA/test this bug. */
+  private Long qaAssigneeId;
+
   private String resolution;
+
+  private Long targetReleaseId;
+
+  private Long fixedInReleaseId;
 }

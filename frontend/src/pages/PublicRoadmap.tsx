@@ -40,8 +40,10 @@ import {
   Upload,
   FileSpreadsheet,
   FolderInput,
+  BookOpen,
   Key,
   Wand2,
+  Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -84,6 +86,40 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.8.0',
+      date: 'June 27, 2026',
+      title: t('publicRoadmap.shipped180Title'),
+      highlights: [
+        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase180Item0Title'), description: t('publicRoadmap.phase180Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase180Item1Title'), description: t('publicRoadmap.phase180Item1Desc') },
+        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item0Title'), description: t('publicRoadmap.shipped190Item0Desc') },
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item2Title'), description: t('publicRoadmap.shipped190Item2Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.shipped190Item3Title'), description: t('publicRoadmap.shipped190Item3Desc') },
+      ],
+    },
+    {
+      version: '1.7.0',
+      date: 'June 15, 2026',
+      title: t('publicRoadmap.shipped170Title'),
+      highlights: [
+        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item0Title'), description: t('publicRoadmap.shipped170Item0Desc') },
+        { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item1Title'), description: t('publicRoadmap.shipped170Item1Desc') },
+        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item2Title'), description: t('publicRoadmap.shipped170Item2Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item3Title'), description: t('publicRoadmap.shipped170Item3Desc') },
+      ],
+    },
+    {
+      version: '1.6.0',
+      date: 'June 15, 2026',
+      title: t('publicRoadmap.shipped160Title'),
+      highlights: [
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.shipped160Item0Title'), description: t('publicRoadmap.shipped160Item0Desc') },
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.shipped160Item1Title'), description: t('publicRoadmap.shipped160Item1Desc') },
+        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.shipped160Item2Title'), description: t('publicRoadmap.shipped160Item2Desc') },
+        { icon: <Network className="h-5 w-5" />, title: t('publicRoadmap.shipped160Item3Title'), description: t('publicRoadmap.shipped160Item3Desc') },
+      ],
+    },
     {
       version: '1.5.0',
       date: 'June 7, 2026',
@@ -227,13 +263,13 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.6.0',
-      theme: t('publicRoadmap.phase160Theme'),
-      status: 'planned',
+      version: 'v1.9.0',
+      theme: t('publicRoadmap.phaseShTheme'),
+      status: 'in-progress',
       items: [
-        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase160Item0Title'), description: t('publicRoadmap.phase160Item0Desc') },
-        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.phase160Item1Title'), description: t('publicRoadmap.phase160Item1Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase160Item2Title'), description: t('publicRoadmap.phase160Item2Desc') },
+        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem0Title'), description: t('publicRoadmap.phaseShItem0Desc') },
+        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem1Title'), description: t('publicRoadmap.phaseShItem1Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem2Title'), description: t('publicRoadmap.phaseShItem2Desc') },
       ],
     },
   ];

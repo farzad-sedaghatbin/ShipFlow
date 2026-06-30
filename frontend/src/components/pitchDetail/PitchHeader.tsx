@@ -2,7 +2,8 @@ import type { KeyboardEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { History, Pencil, Check, X, Layers } from 'lucide-react';
+import { History, Pencil, Check, X, Layers, Link2 } from 'lucide-react';
+import { useToast } from '../../contexts';
 import { Pitch, PitchStatus, Epic } from '../../types';
 import StatusChip from '../StatusChip';
 import { SoftDeleteButton } from '../SoftDeleteButton';
@@ -29,6 +30,7 @@ interface PitchHeaderProps {
 
 export function PitchHeader({ pitch, epics, onStatusChange, onHistoryOpen, onTitleSave, onEpicChange }: PitchHeaderProps) {
   const { t } = useTranslation();
+  const { showSuccess } = useToast();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(pitch.title);
   const [savingTitle, setSavingTitle] = useState(false);
@@ -77,6 +79,12 @@ export function PitchHeader({ pitch, epics, onStatusChange, onHistoryOpen, onTit
     } else if (e.key === 'Escape') {
       handleTitleCancel();
     }
+  };
+
+  const handleCopyPreviewLink = () => {
+    const url = `${window.location.origin}/preview/pitch/${pitch.id}`;
+    navigator.clipboard.writeText(url);
+    showSuccess(t('common.linkCopied'));
   };
 
   return (
@@ -177,6 +185,9 @@ export function PitchHeader({ pitch, epics, onStatusChange, onHistoryOpen, onTit
         )}
       </div>
       <div className="flex gap-2 items-center flex-wrap">
+        <Button variant="ghost" size="icon" onClick={handleCopyPreviewLink} title={t('common.copyLink')}>
+          <Link2 className="h-4 w-4" />
+        </Button>
         <Button variant="outline" size="sm" asChild>
           <Link to={`/pitches/${pitch.id}/hill-chart`}>{t('pitchDetailPage.hillChart')}</Link>
         </Button>
