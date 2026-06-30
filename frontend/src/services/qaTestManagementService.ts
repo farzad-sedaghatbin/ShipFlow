@@ -107,6 +107,7 @@ export const qaTestManagementService = {
     statuses?: BugStatus[],
     severities?: BugSeverity[],
     assigneeIds?: number[],
+    reporterIds?: number[],
     exclude?: boolean,
     page: number = 0,
     size: number = 10,
@@ -121,6 +122,7 @@ export const qaTestManagementService = {
     if (statuses && statuses.length > 0) params.statuses = statuses.join(',');
     if (severities && severities.length > 0) params.severities = severities.join(',');
     if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
+    if (reporterIds && reporterIds.length > 0) params.reporterIds = reporterIds.join(',');
     if (exclude !== undefined) params.exclude = exclude;
     if (search && search.trim()) params.search = search.trim();
 
@@ -134,6 +136,7 @@ export const qaTestManagementService = {
     statuses?: BugStatus[],
     severities?: BugSeverity[],
     assigneeIds?: number[],
+    reporterIds?: number[],
     exclude?: boolean,
     search?: string
   ) => {
@@ -144,6 +147,7 @@ export const qaTestManagementService = {
     if (statuses && statuses.length > 0) params.statuses = statuses.join(',');
     if (severities && severities.length > 0) params.severities = severities.join(',');
     if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
+    if (reporterIds && reporterIds.length > 0) params.reporterIds = reporterIds.join(',');
     if (exclude !== undefined) params.exclude = exclude;
     if (search && search.trim()) params.search = search.trim();
     return api.get<BugStats>('/qa/bug-reports/stats', { params });
