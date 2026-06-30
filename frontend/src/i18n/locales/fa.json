@@ -7545,7 +7545,10 @@
     "pageFallback": "صفحه {{id}}",
     "missingPageTooltip": "این صفحهٔ پیوندشده دیگر وجود ندارد.",
     "insertPageLink": "درج پیوند صفحه",
-    "insertPageLinkHint": "برای درج یک [[پیوند]] در محل مکان‌نما، صفحه‌ای را جست‌وجو کنید. برای اشاره به هم‌تیمی، در ویرایشگر @ را تایپ کنید."
+    "insertPageLinkHint": "برای درج یک [[پیوند]] در محل مکان‌نما، صفحه‌ای را جست‌وجو کنید. برای اشاره به هم‌تیمی، در ویرایشگر @ را تایپ کنید.",
+    "mentionMenuTitle": "اشاره به هم‌تیمی",
+    "mentionItemSubtitle": "@{{username}}",
+    "mentionNoResults": "هم‌تیمی‌ای یافت نشد"
   },
   "moveToProject": {
     "title": "انتقال {{type}} به پروژه دیگر",

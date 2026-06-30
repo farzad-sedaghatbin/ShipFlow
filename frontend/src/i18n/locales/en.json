@@ -8509,7 +8509,10 @@
     "pageFallback": "Page {{id}}",
     "missingPageTooltip": "This linked page no longer exists.",
     "insertPageLink": "Insert page link",
-    "insertPageLinkHint": "Search for a page to insert a [[link]] at the cursor. Type @ in the editor to mention a teammate."
+    "insertPageLinkHint": "Search for a page to insert a [[link]] at the cursor. Type @ in the editor to mention a teammate.",
+    "mentionMenuTitle": "Mention a teammate",
+    "mentionItemSubtitle": "@{{username}}",
+    "mentionNoResults": "No teammates found"
   },
   "moveToProject": {
     "title": "Move {{type}} to another project",
