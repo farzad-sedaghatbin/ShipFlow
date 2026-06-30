@@ -76,6 +76,8 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final CustomFieldDefinitionRepository customFieldDefinitionRepository;
   private final CustomFieldValueRepository customFieldValueRepository;
   private final McpUsageLogRepository mcpUsageLogRepository;
+  private final BettingSlotRepository bettingSlotRepository;
+  private final WorkflowAutomationExecutionRepository workflowAutomationExecutionRepository;
 
   @Override
   @Transactional
@@ -298,6 +300,9 @@ public class SampleDataInitializer implements CommandLineRunner {
             .updatedAt(LocalDateTime.now())
             .build();
     pitchRepository.save(spendingAnalytics);
+
+    // ── Betting Table slots ───────────────────────────────────────────────────
+    createBettingSlots(mbaActiveCycle, paymentsTeam, authTeam, instantTransfer, spendingAnalytics);
 
     // Pre-cycle pitches (no cycle — in betting or shaping queue)
     Pitch cardFreeze =
@@ -1877,6 +1882,75 @@ public class SampleDataInitializer implements CommandLineRunner {
     log.info("SSO sample data created: 2 demo identity providers (Okta OIDC, Azure AD SAML2) — both disabled by default");
   }
 
+  /**
+   * Seeds Betting Table slots for the active cycle so the slot-allocation UI renders with real
+   * tracks. Payments Team gets 3 slots (two assigned to in-cycle pitches, one open); Auth Team gets
+   * 2 open slots. Idempotent — guarded by row count.
+   */
+  private void createBettingSlots(
+      Cycle activeCycle, Team paymentsTeam, Team authTeam, Pitch firstPitch, Pitch secondPitch) {
+    if (bettingSlotRepository.count() > 0) {
+      return;
+    }
+
+    LocalDate start = activeCycle.getStartDate();
+    LocalDate end = activeCycle.getEndDate();
+
+    // Payments Team track — 3 slots, first two filled with the active-cycle pitches
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(paymentsTeam)
+            .pitch(firstPitch)
+            .position(0)
+            .startDate(start)
+            .endDate(end)
+            .notes("Primary bet for the Payments track this cycle.")
+            .build());
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(paymentsTeam)
+            .pitch(secondPitch)
+            .position(1)
+            .startDate(start)
+            .endDate(end)
+            .notes("Secondary bet — derives from existing TransactionService, low risk.")
+            .build());
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(paymentsTeam)
+            .position(2)
+            .startDate(start)
+            .endDate(end)
+            .notes("Open slot — reserved for cooldown spillover.")
+            .build());
+
+    // Auth Team track — 2 open slots
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(authTeam)
+            .position(0)
+            .startDate(start)
+            .endDate(end)
+            .notes("Open slot — awaiting a shaped auth pitch.")
+            .build());
+    bettingSlotRepository.save(
+        BettingSlot.builder()
+            .cycle(activeCycle)
+            .team(authTeam)
+            .position(1)
+            .startDate(start)
+            .endDate(end)
+            .build());
+
+    log.info(
+        "Betting slot sample data created: 5 slots (3 Payments Team, 2 Auth Team) for cycle '{}'",
+        activeCycle.getName());
+  }
+
   private void createWorkflowAutomationSampleData(Project project) {
     if (workflowAutomationRepository.count() > 0) return;
 
@@ -1888,7 +1962,7 @@ public class SampleDataInitializer implements CommandLineRunner {
     WorkflowAutomationTemplate notifyPitchChange = templates.size() > 5 ? templates.get(5) : templates.get(0);
     WorkflowAutomationTemplate cycleStart = templates.size() > 7 ? templates.get(7) : templates.get(0);
 
-    workflowAutomationRepository.save(WorkflowAutomation.builder()
+    WorkflowAutomation taskDoneRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
         .name("Notify team on task completion")
         .description("Fires when any task is marked done and notifies all project members.")
         .project(project)
@@ -1902,7 +1976,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .lastTriggeredAt(LocalDateTime.of(2026, 6, 14, 10, 22))
         .build());
 
-    workflowAutomationRepository.save(WorkflowAutomation.builder()
+    WorkflowAutomation pitchChangeRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
         .name("Alert on pitch status change")
         .description("Notifies team when a pitch moves to Shaped or Approved.")
         .project(project)
@@ -1916,7 +1990,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .lastTriggeredAt(LocalDateTime.of(2026, 6, 10, 15, 0))
         .build());
 
-    workflowAutomationRepository.save(WorkflowAutomation.builder()
+    WorkflowAutomation cycleStartRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
         .name("Cycle kick-off notification")
         .description("Sends a kick-off message when a cycle transitions to In Progress.")
         .project(project)
@@ -1942,7 +2016,114 @@ public class SampleDataInitializer implements CommandLineRunner {
         .executionCount(0L)
         .build());
 
+    createWorkflowAutomationExecutions(taskDoneRule, pitchChangeRule, cycleStartRule);
+
     log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
+  }
+
+  /**
+   * Seeds a realistic sample of execution-history rows for the demo automation rules so the
+   * "Execution History" tab renders instead of an empty state. Not every counted execution is
+   * materialised (the rules advertise 47/8/3); ~18 representative rows spread across the two weeks
+   * leading up to each rule's lastTriggeredAt are enough for the UI. Idempotent via the rules-block
+   * count guard in the caller.
+   */
+  private void createWorkflowAutomationExecutions(
+      WorkflowAutomation taskDoneRule,
+      WorkflowAutomation pitchChangeRule,
+      WorkflowAutomation cycleStartRule) {
+
+    // ── "Notify team on task completion" — mostly SUCCESS, one FAILURE ──────────
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Wire OTP confirmation screen\",\"taskId\":101}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 2, 9, 14));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"IBAN validation service\",\"taskId\":104}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 4, 11, 30));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Transfer fee preview component\",\"taskId\":108}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 6, 16, 5));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Animated success state\",\"taskId\":112}",
+        AutomationExecutionStatus.FAILURE,
+        "Notification delivery failed: SMTP timeout after 3 retries.",
+        LocalDateTime.of(2026, 6, 8, 8, 42));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Spending category aggregation\",\"taskId\":118}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 9, 13, 20));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Donut chart for category split\",\"taskId\":121}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 11, 10, 55));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Biggest transactions list\",\"taskId\":125}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 12, 15, 10));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"Beneficiary selection flow\",\"taskId\":130}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 13, 17, 48));
+    saveExecution(taskDoneRule, "TASK_COMPLETED",
+        "{\"taskTitle\":\"OTP rate-limit guard\",\"taskId\":134}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 14, 10, 22));
+
+    // ── "Alert on pitch status change" — SUCCESS with one SKIPPED ──────────────
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Card Freeze & Unfreeze\",\"newStatus\":\"SHAPED\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 30, 9, 0));
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Instant Transfer UI\",\"newStatus\":\"APPROVED\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 3, 14, 30));
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Recurring Payment Support\",\"newStatus\":\"DRAFT\"}",
+        AutomationExecutionStatus.SKIPPED,
+        "Condition not met: toStatus filter excludes DRAFT.",
+        LocalDateTime.of(2026, 6, 7, 11, 15));
+    saveExecution(pitchChangeRule, "PITCH_STATUS_CHANGED",
+        "{\"pitchTitle\":\"Spending Analytics Dashboard\",\"newStatus\":\"APPROVED\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 6, 10, 15, 0));
+
+    // ── "Cycle kick-off notification" — SUCCESS ────────────────────────────────
+    saveExecution(cycleStartRule, "CYCLE_STARTED",
+        "{\"cycleName\":\"v1.5 — Biometric Authentication\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 1, 9, 0));
+    saveExecution(cycleStartRule, "CYCLE_STARTED",
+        "{\"cycleName\":\"v2.0 — Payments Overhaul\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 15, 9, 0));
+    saveExecution(cycleStartRule, "CYCLE_STARTED",
+        "{\"cycleName\":\"Continuous Flow\"}",
+        AutomationExecutionStatus.SUCCESS, "Notified 4 project members.",
+        LocalDateTime.of(2026, 5, 28, 9, 0));
+
+    log.info("Workflow automation execution history created: 17 demo execution records");
+  }
+
+  private void saveExecution(
+      WorkflowAutomation automation,
+      String triggerEventType,
+      String triggerEventData,
+      AutomationExecutionStatus status,
+      String resultMessage,
+      LocalDateTime executedAt) {
+    workflowAutomationExecutionRepository.save(
+        WorkflowAutomationExecution.builder()
+            .automation(automation)
+            .triggerEventType(triggerEventType)
+            .triggerEventData(triggerEventData)
+            .status(status)
+            .resultMessage(resultMessage)
+            .executedAt(executedAt)
+            .build());
   }
 
   /**
@@ -2098,6 +2279,9 @@ public class SampleDataInitializer implements CommandLineRunner {
   }
 
   private void createCustomFieldSampleData(Project project) {
+    if (customFieldDefinitionRepository.count() > 0) {
+      return;
+    }
     // Org-wide TEXT field applicable to all tasks
     CustomFieldDefinition sprintNotes =
         customFieldDefinitionRepository.save(
