@@ -541,7 +541,7 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **MCP Server (AI editor tools + graph context)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Self-hosted / open MCP server** | ✅ | Partial¹ | Partial¹ | ❌ | Partial¹ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Pluggable VCS Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
@@ -554,11 +554,13 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
+> ¹ **MCP & AI are no longer ShipFlow-only.** Linear (2025), Atlassian/Jira Rovo, and Asana (2026) all shipped MCP servers and embedded agentic AI — so on the AI rows above, treat ✅ as "**built-in, free, and able to run on a fully-private / local LLM**" rather than "competitors have nothing." Every competitor's MCP and AI is **cloud-only and paid** (per-seat or metered AI credits). ShipFlow's durable, structural edge is the *combination* the cloud majors can't match: **native Shape Up + self-hosted + open-source + private, air-gapped AI (Ollama) with zero data egress.** See [COMPETITOR_ANALYSIS.md](COMPETITOR_ANALYSIS.md) §4 for the full June-2026 re-benchmark.
+
 **Why Choose ShipFlow?**
 - **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
 - **Fixed-Time, Variable-Scope**: Circuit breaker enforces appetite constraints and prevents scope creep
 - **Visual Progress**: Hill charts provide intuitive progress visibility (figuring it out → making it happen)
-- **AI-Native Workflows**: The only PM tool that connects to your editor via MCP — ask Claude Code "what's blocking my tasks?" without leaving the terminal
+- **Private, in-editor AI**: A self-hostable, open MCP server lets Claude Code / Cursor query your Shape Up board ("what's blocking my tasks?") without leaving the terminal — and, pointed at Ollama, the whole AI stack runs air-gapped with zero data egress, which no cloud-only competitor can offer
 - **AI-Powered**: Pluggable LLM architecture with provider flexibility
   - **Local AI (Ollama)**: Privacy-first, no API costs, perfect for local development or self-hosted deployments
   - **Cloud AI (OpenAI)**: Production-grade GPT-4o/GPT-4o-mini for complex reasoning and high-quality responses
