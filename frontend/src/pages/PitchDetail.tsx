@@ -19,7 +19,7 @@ import { PitchDetailSkeleton } from '../components/Skeletons';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
-import { useToast, useProject, useAuth } from '../contexts';
+import { useToast, useProject, useAuth, useBreadcrumbLabel } from '../contexts';
 import { MoveToProjectDialog } from '../components/MoveToProjectDialog';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { Button } from '../components/ui/button';
@@ -55,6 +55,9 @@ export default function PitchDetail() {
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+
+  // Show the pitch title (not "Pitch #N") in the global breadcrumb.
+  useBreadcrumbLabel(idParam ? `/pitches/${idParam}` : undefined, pitch?.title);
 
   // Shape Up editing state
   const [editingShapeUp, setEditingShapeUp] = useState(false);

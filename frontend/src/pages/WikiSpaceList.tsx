@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -25,6 +25,14 @@ const createSpaceSchema = z.object({
 
 type CreateSpaceForm = z.infer<typeof createSpaceSchema>;
 
+// Derive a valid space key (uppercase alphanumeric, max 10) from a space name.
+export function deriveSpaceKey(name: string): string {
+  return (name || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WikiSpaceList() {
@@ -48,6 +56,7 @@ export default function WikiSpaceList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wiki-spaces"] });
       setDialogOpen(false);
+      setKeyEdited(false);
       reset();
     },
   });
@@ -64,10 +73,31 @@ export default function WikiSpaceList() {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateSpaceForm>({
     resolver: zodResolver(createSpaceSchema),
   });
+
+  // Auto-derive the space key from the name until the user edits the key manually.
+  const [keyEdited, setKeyEdited] = useState(false);
+  const nameValue = watch("name");
+  useEffect(() => {
+    if (!keyEdited) {
+      setValue("spaceKey", deriveSpaceKey(nameValue ?? ""), {
+        shouldValidate: false,
+      });
+    }
+  }, [nameValue, keyEdited, setValue]);
+
+  const spaceKeyField = register("spaceKey");
+
+  function closeDialog() {
+    setDialogOpen(false);
+    setKeyEdited(false);
+    reset();
+  }
 
   function onSubmit(data: CreateSpaceForm) {
     createMutation.mutate(data);
@@ -164,7 +194,11 @@ export default function WikiSpaceList() {
                   {t("wiki.spaceKey")} *
                 </label>
                 <input
-                  {...register("spaceKey")}
+                  {...spaceKeyField}
+                  onChange={(e) => {
+                    setKeyEdited(true);
+                    spaceKeyField.onChange(e);
+                  }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
                   placeholder="ENG"
                 />
@@ -190,10 +224,7 @@ export default function WikiSpaceList() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setDialogOpen(false);
-                    reset();
-                  }}
+                  onClick={closeDialog}
                   className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
                 >
                   {t("wiki.cancel")}

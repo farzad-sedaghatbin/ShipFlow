@@ -29,7 +29,7 @@ import ProgressBar from '../components/ProgressBar';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import TaskStatisticsCard from '../components/TaskStatisticsCard';
-import { useToast, useProject } from '../contexts';
+import { useToast, useProject, useBreadcrumbLabel } from '../contexts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -62,6 +62,9 @@ export default function CycleDetail() {
 
   const { hasPermissionSync } = usePermission();
   const canManageCycle = hasPermissionSync('CYCLE', 'MANAGE');
+
+  // Show the cycle name (not "Cycle #N") in the global breadcrumb.
+  useBreadcrumbLabel(idParam ? `/cycles/${idParam}` : undefined, cycle?.name);
 
   useEffect(() => {
     const abortController = new AbortController();

@@ -78,6 +78,32 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.9.0',
+    date: 'In progress',
+    title: 'Production-Grade Self-Hosting',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Helm Chart & Kubernetes',
+        description:
+          'A first-party Helm chart deploys ShipFlow to any Kubernetes cluster — configurable replicas, HPA autoscaling, ingress, secrets, persistent uploads, and probes wired to Spring Boot health groups.',
+      },
+      {
+        icon: <Activity className="h-5 w-5" />,
+        title: 'Observability — Prometheus, Grafana & Tracing',
+        description:
+          'A Prometheus scrape endpoint (/actuator/prometheus), a ready-to-import Grafana dashboard, and optional OpenTelemetry distributed tracing over OTLP. Ships a docker-compose monitoring profile and structured JSON logging with traceId/spanId.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Audit Trail Export',
+        description:
+          'Admins can export the full Envers change history (tasks, pitches, bug reports, test cases) as CSV or JSON, filtered by entity type and date range, from Organization Settings — for compliance and offline review.',
+      },
+    ],
+  },
+  {
     version: '1.8.0',
     date: 'June 27, 2026',
     title: 'Custom Fields, Wiki & Object Storage',

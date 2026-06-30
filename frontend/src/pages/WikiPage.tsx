@@ -2,16 +2,29 @@ import { lazy, Suspense, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Edit2, Paperclip, ChevronDown, ChevronUp, FileDown } from "lucide-react";
+import {
+  Edit2,
+  Paperclip,
+  ChevronDown,
+  ChevronUp,
+  FileDown,
+  Link as LinkIcon,
+} from "lucide-react";
 import WikiTree from "../components/wiki/WikiTree";
 import WikiBreadcrumbs from "../components/wiki/WikiBreadcrumbs";
 import WikiTableOfContents from "../components/wiki/WikiTableOfContents";
 import WikiHistoryPanel from "../components/wiki/WikiHistoryPanel";
 import WikiAttachmentItem from "../components/wiki/WikiAttachmentItem";
+import WikiLinkedReferences from "../components/wiki/WikiLinkedReferences";
+import WikiInsertLinkDialog from "../components/wiki/WikiInsertLinkDialog";
+import type { WikiEditorHandle } from "../components/wiki/WikiEditor";
+import { extractPlainText } from "../components/wiki/wikiTokens";
 import Comments from "../components/Comments";
+import { useBreadcrumbLabel } from "../contexts";
 import {
   wikiService,
   type WikiPageDTO,
+  type WikiPageSearchDTO,
   type WikiTreeNodeDTO,
 } from "../services/wikiService";
 
@@ -35,8 +48,11 @@ export default function WikiPage() {
   // Add-subpage dialog: null = closed; a number = creating a child of that page.
   const [childParent, setChildParent] = useState<number | null>(null);
   const [childTitle, setChildTitle] = useState("");
+  // Insert-page-link picker (edit mode only).
+  const [insertLinkOpen, setInsertLinkOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<WikiEditorHandle>(null);
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
@@ -67,6 +83,13 @@ export default function WikiPage() {
     queryFn: () => wikiService.getAttachments(numPageId).then((r) => r.data),
     enabled: !!numPageId,
   });
+
+  // Resolve both breadcrumb crumbs by name: the parent space and this page.
+  useBreadcrumbLabel(spaceId ? `/wiki/${spaceId}` : undefined, space?.name);
+  useBreadcrumbLabel(
+    spaceId && pageId ? `/wiki/${spaceId}/${pageId}` : undefined,
+    page?.title,
+  );
 
   // ── Mutations ──────────────────────────────────────────────────────────────
 
@@ -186,6 +209,13 @@ export default function WikiPage() {
     }, 400);
   }
 
+  function handleInsertPageLink(target: WikiPageSearchDTO) {
+    // Insert the `[[pageId]]` token at the cursor; the backend resolves it to a
+    // WikiPageLinkDTO on save and the view renders it under "Linked pages".
+    editorRef.current?.insertText(`[[${target.id}]]`);
+    setInsertLinkOpen(false);
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) uploadMutation.mutate(file);
@@ -232,6 +262,7 @@ export default function WikiPage() {
       createdBy: 0,
       createdAt: "",
       updatedAt: "",
+      pageLinks: [],
     }));
   }
 
@@ -291,6 +322,13 @@ export default function WikiPage() {
                 {editMode ? (
                   <>
                     <button
+                      onClick={() => setInsertLinkOpen(true)}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-input hover:bg-muted transition-colors"
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" />
+                      {t("wiki.insertPageLink")}
+                    </button>
+                    <button
                       onClick={() => {
                         setEditMode(false);
                         setDraftContent(null);
@@ -344,6 +382,7 @@ export default function WikiPage() {
                   }
                 >
                   <WikiEditor
+                    ref={editorRef}
                     initialContent={page.content}
                     editable={true}
                     onChange={setDraftContent}
@@ -369,6 +408,14 @@ export default function WikiPage() {
                 </p>
               )}
             </div>
+
+            {/* Linked pages + mentions (view mode) */}
+            {!editMode && (
+              <WikiLinkedReferences
+                page={page}
+                plainText={extractPlainText(page.content)}
+              />
+            )}
 
             {/* Attachments */}
             <section className="space-y-3 no-print">
@@ -443,6 +490,14 @@ export default function WikiPage() {
           <WikiTableOfContents content={displayContent} />
         </aside>
       </div>
+
+      {/* Insert page link picker */}
+      <WikiInsertLinkDialog
+        spaceId={numSpaceId}
+        open={insertLinkOpen}
+        onClose={() => setInsertLinkOpen(false)}
+        onInsert={handleInsertPageLink}
+      />
 
       {/* Add Subpage dialog */}
       {childParent !== null && (
