@@ -415,7 +415,7 @@ export default function EpicDetailPage() {
           <CardContent className="space-y-4">
             {epic.description && (
               <div>
-                <h4 className="font-medium mb-1">{t('epics.description')}</h4>
+                <h4 className="font-medium mb-1">{t('epics.descriptionLabel')}</h4>
                 <Markdown content={epic.description} className="text-muted-foreground" />
               </div>
             )}

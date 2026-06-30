@@ -24,6 +24,7 @@ public final class BugReportSpecification {
       List<BugStatus> statuses,
       List<BugSeverity> severities,
       List<Long> assigneeIds,
+      List<Long> reporterIds,
       String search) {
     return (root, query, cb) -> {
       List<Predicate> predicates =
@@ -37,6 +38,9 @@ public final class BugReportSpecification {
       }
       if (assigneeIds != null && !assigneeIds.isEmpty()) {
         predicates.add(root.get("assignee").get("id").in(assigneeIds));
+      }
+      if (reporterIds != null && !reporterIds.isEmpty()) {
+        predicates.add(root.get("reporter").get("id").in(reporterIds));
       }
 
       return cb.and(predicates.toArray(new Predicate[0]));
@@ -54,6 +58,7 @@ public final class BugReportSpecification {
       List<BugStatus> statuses,
       List<BugSeverity> severities,
       List<Long> assigneeIds,
+      List<Long> reporterIds,
       String search) {
     return (root, query, cb) -> {
       List<Predicate> predicates =
@@ -67,6 +72,9 @@ public final class BugReportSpecification {
       }
       if (assigneeIds != null && !assigneeIds.isEmpty()) {
         predicates.add(root.get("assignee").get("id").in(assigneeIds).not());
+      }
+      if (reporterIds != null && !reporterIds.isEmpty()) {
+        predicates.add(root.get("reporter").get("id").in(reporterIds).not());
       }
 
       return cb.and(predicates.toArray(new Predicate[0]));

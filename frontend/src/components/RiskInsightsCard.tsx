@@ -16,11 +16,13 @@ import {
   riskService,
   PitchRiskDTO,
   RiskLevel,
+  RiskBand,
   getRiskScoreColor,
   formatRiskCategory,
   fetchPitchRiskAsync,
   JobStatusResponse,
 } from '../services/riskService';
+import { Info } from 'lucide-react';
 import { RiskFeedbackForm } from './RiskFeedbackForm';
 import { RiskQA } from './RiskQA';
 import { Card, CardContent } from './ui/card';
@@ -136,17 +138,49 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
   const getRiskLevelLabel = (level: RiskLevel): string => {
     switch (level) {
       case 'LOW':
-        return 'Low Risk';
+        return t('risk.level.lowRisk');
       case 'MEDIUM':
-        return 'Medium Risk';
+        return t('risk.level.mediumRisk');
       case 'HIGH':
-        return 'High Risk';
+        return t('risk.level.highRisk');
       case 'CRITICAL':
-        return 'Critical Risk';
+        return t('risk.level.criticalRisk');
       default:
-        return 'Unknown';
+        return t('risk.level.unknown');
     }
   };
+
+  const getRiskLevelShortLabel = (level: RiskLevel): string => {
+    switch (level) {
+      case 'LOW':
+        return t('risk.level.low');
+      case 'MEDIUM':
+        return t('risk.level.medium');
+      case 'HIGH':
+        return t('risk.level.high');
+      case 'CRITICAL':
+        return t('risk.level.critical');
+      default:
+        return t('risk.level.unknown');
+    }
+  };
+
+  const bandColor = (level: RiskLevel): string => {
+    switch (level) {
+      case 'LOW':
+        return '#388e3c';
+      case 'MEDIUM':
+        return '#fbc02d';
+      case 'HIGH':
+        return '#f57c00';
+      case 'CRITICAL':
+        return '#d32f2f';
+      default:
+        return '#9e9e9e';
+    }
+  };
+
+  const activeBand: RiskBand | undefined = riskData?.explanation?.bands.find((b) => b.active);
 
   const getRiskLevelBadgeClass = (level: RiskLevel): string => {
     switch (level) {
@@ -282,14 +316,25 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
               </span>
             </div>
             <div>
-              <Badge 
-                variant="outline" 
+              <Badge
+                variant="outline"
                 className={cn('text-sm font-semibold mb-2', getRiskLevelBadgeClass(riskData.riskLevel))}
               >
                 {getRiskLevelLabel(riskData.riskLevel)}
               </Badge>
+              {/* Legend line: makes the band + numeric range explicit */}
+              {activeBand && (
+                <p className="text-sm font-medium">
+                  {t('risk.explanation.scoreLine', {
+                    score: riskData.riskScore,
+                    level: getRiskLevelShortLabel(activeBand.level),
+                    min: activeBand.minScore,
+                    max: activeBand.maxScore,
+                  })}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground">
-                Confidence: {riskData.confidenceScore}%
+                {t('risk.confidence', { value: riskData.confidenceScore })}
               </p>
             </div>
           </div>
@@ -300,6 +345,125 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
               ['--progress-background' as any]: getRiskScoreColor(riskData.riskScore),
             }}
           />
+
+          {/* Compact Low | Medium | High | Critical band scale with active band highlighted */}
+          {riskData.explanation && riskData.explanation.bands.length > 0 && (
+            <div className="mt-3">
+              <div className="flex gap-1" role="img" aria-label={t('risk.explanation.scaleAriaLabel')}>
+                {riskData.explanation.bands.map((band) => (
+                  <TooltipProvider key={band.level}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className={cn(
+                            'flex-1 rounded-sm h-2 transition-opacity',
+                            band.active ? 'opacity-100 ring-2 ring-offset-1 ring-offset-background' : 'opacity-25'
+                          )}
+                          style={{
+                            backgroundColor: bandColor(band.level),
+                            ['--tw-ring-color' as any]: bandColor(band.level),
+                          }}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {getRiskLevelShortLabel(band.level)} ({band.minScore}–{band.maxScore})
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+              <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+                {riskData.explanation.bands.map((band) => (
+                  <span
+                    key={band.level}
+                    className={cn('flex-1 text-center', band.active && 'font-semibold text-foreground')}
+                  >
+                    {getRiskLevelShortLabel(band.level)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Collapsible "How is this calculated?" detail */}
+          {riskData.explanation && (
+            <Collapsible
+              open={expandedSection === 'howCalculated'}
+              onOpenChange={() => toggleSection('howCalculated')}
+              className="mt-3"
+            >
+              <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground py-1">
+                <Info className="h-3.5 w-3.5" />
+                <span>{t('risk.explanation.howCalculated')}</span>
+                {expandedSection === 'howCalculated' ? (
+                  <ChevronUp className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                )}
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 rounded-md border bg-muted/30 p-3 space-y-3">
+                  {/* Threshold legend */}
+                  <div>
+                    <p className="text-xs font-semibold mb-1.5">{t('risk.explanation.bandsTitle')}</p>
+                    <ul className="space-y-1">
+                      {riskData.explanation.bands.map((band) => (
+                        <li
+                          key={band.level}
+                          className={cn(
+                            'flex items-center justify-between text-xs',
+                            band.active && 'font-semibold'
+                          )}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: bandColor(band.level) }}
+                            />
+                            {getRiskLevelShortLabel(band.level)}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {band.minScore}–{band.maxScore}
+                            {band.active && ` · ${t('risk.explanation.current')}`}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Per-factor contributions */}
+                  {riskData.explanation.factorContributions.length > 0 ? (
+                    <div>
+                      <p className="text-xs font-semibold mb-1.5">{t('risk.explanation.contributionsTitle')}</p>
+                      <ul className="space-y-1.5">
+                        {riskData.explanation.factorContributions.map((fc, idx) => (
+                          <li key={idx} className="text-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium">{formatRiskCategory(fc.category)}</span>
+                              <span className="shrink-0 font-mono text-muted-foreground">
+                                +{fc.weightedPoints.toFixed(1)}
+                              </span>
+                            </div>
+                            <p className="text-muted-foreground">
+                              {fc.description}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {t('risk.explanation.impactProbability', {
+                                impact: fc.impactLevel,
+                                probability: fc.probability,
+                              })}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t('risk.explanation.noFactors')}</p>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
 
         {/* Risk Factors */}
