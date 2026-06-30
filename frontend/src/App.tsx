@@ -72,6 +72,7 @@ const MeetingList = lazy(() => import('./pages/MeetingList'));
 // Organisation
 const People = lazy(() => import('./pages/People'));
 const Teams = lazy(() => import('./pages/Teams'));
+const TeamDetailPage = lazy(() => import('./pages/TeamDetailPage'));
 const Profile = lazy(() => import('./pages/Profile'));
 
 // Admin
@@ -291,6 +292,7 @@ function App() {
                       {/* Organisation */}
                       <Route path="people" element={<People />} />
                       <Route path="teams" element={<Teams />} />
+                      <Route path="teams/:id" element={<TeamDetailPage />} />
 
                       {/* Workflow Automations */}
                       <Route path="automations" element={<AutomationsPage />} />

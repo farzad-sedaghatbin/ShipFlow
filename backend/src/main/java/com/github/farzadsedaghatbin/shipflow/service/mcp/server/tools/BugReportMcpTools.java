@@ -214,7 +214,7 @@ public class BugReportMcpTools {
 
     var pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
     return bugReportService
-        .getBugReportsWithFilters(projectId, cycleId, pitchId, null, null, null, false,
+        .getBugReportsWithFilters(projectId, cycleId, pitchId, null, null, null, null, false,
             effectiveSearch, pageable)
         .getContent()
         .stream()

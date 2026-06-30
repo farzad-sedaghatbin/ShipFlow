@@ -5,9 +5,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, Share2 } from "lucide-react";
 import WikiTree from "../components/wiki/WikiTree";
-import { useBreadcrumbLabel } from "../contexts";
+import WikiPermissionsDialog from "../components/wiki/WikiPermissionsDialog";
+import { useBreadcrumbLabel, useAuth } from "../contexts";
 import {
   wikiService,
   type CreateWikiPageRequest,
@@ -28,11 +29,17 @@ export default function WikiSpace() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   // null = create a top-level page; a number = create a child of that page.
   const [parentId, setParentId] = useState<number | null>(null);
 
   const numSpaceId = Number(spaceId);
+
+  // READONLY users cannot grant/revoke access (backend requires WRITE on the
+  // space). Hide the Share affordance for them; everyone else may try.
+  const canManageAccess = user?.role !== "READONLY";
 
   function openCreateDialog(parent: number | null) {
     setParentId(parent);
@@ -130,15 +137,26 @@ export default function WikiSpace() {
       {/* Right: page list */}
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-2xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">{space.name}</h1>
-            <button
-              onClick={() => openCreateDialog(null)}
-              className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              {t("wiki.createPage")}
-            </button>
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-2xl font-semibold truncate">{space.name}</h1>
+            <div className="flex items-center gap-2 flex-none">
+              {canManageAccess && (
+                <button
+                  onClick={() => setShareOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md border border-input text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  {t("wiki.share.button")}
+                </button>
+              )}
+              <button
+                onClick={() => openCreateDialog(null)}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t("wiki.createPage")}
+              </button>
+            </div>
           </div>
 
           <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -165,6 +183,14 @@ export default function WikiSpace() {
           )}
         </div>
       </main>
+
+      {/* Manage Access Dialog */}
+      <WikiPermissionsDialog
+        spaceId={numSpaceId}
+        spaceName={space.name}
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+      />
 
       {/* Create Page Dialog */}
       {dialogOpen && (
