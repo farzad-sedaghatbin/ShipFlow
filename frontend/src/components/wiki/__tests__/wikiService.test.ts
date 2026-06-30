@@ -71,30 +71,8 @@ describe('wikiService', () => {
     });
   });
 
-  describe('getSpacePermissions', () => {
-    it('calls GET /wiki/spaces/:id/permissions', async () => {
-      mockedApi.get.mockResolvedValueOnce({ data: [] });
-      await wikiService.getSpacePermissions(6);
-      expect(mockedApi.get).toHaveBeenCalledWith('/wiki/spaces/6/permissions');
-    });
-  });
-
-  describe('grantPermission', () => {
-    it('calls POST /wiki/spaces/:id/permissions', async () => {
-      const req = { userId: 10, role: 'VIEWER' };
-      mockedApi.post.mockResolvedValueOnce({ data: { id: 1, ...req } });
-      await wikiService.grantPermission(6, req);
-      expect(mockedApi.post).toHaveBeenCalledWith('/wiki/spaces/6/permissions', req);
-    });
-  });
-
-  describe('revokePermission', () => {
-    it('calls DELETE /wiki/permissions/:permId', async () => {
-      mockedApi.delete.mockResolvedValueOnce({ data: null });
-      await wikiService.revokePermission(99);
-      expect(mockedApi.delete).toHaveBeenCalledWith('/wiki/permissions/99');
-    });
-  });
+  // Space permission (sharing) calls now live in wikiPermissionService — see
+  // wikiPermissionService.test.ts.
 
   // ── Pages ───────────────────────────────────────────────────────────────────
 
