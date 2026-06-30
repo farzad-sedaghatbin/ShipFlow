@@ -35,10 +35,11 @@ import {
   ExternalLink,
   ClipboardCheck
 } from 'lucide-react';
-import { RetroItem, Cycle, Pitch, Task, RetroColumnType } from '../types';
+import { RetroItem, Cycle, Pitch, Task, RetroColumnType, Project } from '../types';
 import { retroService, ConvertToPitchRequest } from '../services/retroService';
 import { cycleService } from '../services/cycleService';
 import { taskService } from '../services/taskService';
+import { projectService } from '../services/projectService';
 import { cn } from '../lib/utils';
 
 type ActionType = 'pitch' | 'task' | 'mark-only';
@@ -77,6 +78,8 @@ export function ActOnRetroItemsDialog({
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [appetiteDays, setAppetiteDays] = useState<number>(1);
   const [targetCycleId, setTargetCycleId] = useState<string>('');
+  const [selectedProjectId, setSelectedProjectId] = useState<number>(projectId);
+  const [availableProjects, setAvailableProjects] = useState<Project[]>([]);
   const [availableCycles, setAvailableCycles] = useState<Cycle[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,25 +94,33 @@ export function ActOnRetroItemsDialog({
       !item.mergedIntoId
   );
 
-  // Load available cycles
+  // Load available projects once when dialog opens
   useEffect(() => {
-    if (open && projectId) {
-      cycleService.getByProject(projectId).then((res) => {
-        // Filter to upcoming or active cycles
+    if (open) {
+      projectService.getMyProjects().then((projects) => {
+        setAvailableProjects(projects);
+      }).catch(() => {/* silently fall back to no project list */});
+    }
+  }, [open]);
+
+  // Load available cycles whenever the selected project changes
+  useEffect(() => {
+    if (open && selectedProjectId) {
+      setTargetCycleId('');
+      cycleService.getByProject(selectedProjectId).then((res) => {
         const now = new Date();
         const futureCycles = res.data.filter((cycle) => {
           const endDate = new Date(cycle.endDate);
           return endDate >= now;
         });
         setAvailableCycles(futureCycles);
-        
-        // Auto-select first available cycle
-        if (futureCycles.length > 0 && !targetCycleId) {
+
+        if (futureCycles.length > 0) {
           setTargetCycleId(futureCycles[0].id.toString());
         }
       });
     }
-  }, [open, projectId]);
+  }, [open, selectedProjectId]);
 
   // Pre-select all actionable items by default
   useEffect(() => {
@@ -160,6 +171,7 @@ export function ActOnRetroItemsDialog({
         const request: ConvertToPitchRequest = {
           retroItemIds: selectedItemIds,
           targetCycleId: targetCycleId ? Number(targetCycleId) : undefined,
+          targetProjectId: selectedProjectId !== projectId ? selectedProjectId : undefined,
           customTitle: customTitle.trim() || undefined,
           additionalNotes: additionalNotes.trim() || undefined,
           appetiteDays,
@@ -183,7 +195,7 @@ export function ActOnRetroItemsDialog({
           const taskData = {
             title: taskTitle,
             description: item.content,
-            projectId,
+            projectId: selectedProjectId,
             cycleId: Number(targetCycleId),
             status: 'TODO' as const,
           };
@@ -240,6 +252,7 @@ export function ActOnRetroItemsDialog({
       setCustomTitle('');
       setAdditionalNotes('');
       setAppetiteDays(1);
+      setSelectedProjectId(projectId);
       setError(null);
     }, 200);
   };
@@ -476,10 +489,33 @@ export function ActOnRetroItemsDialog({
                   </div>
                 )}
 
+                {availableProjects.length > 1 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="target-project">
+                      {t('retroBoard.actOnItems.targetProject', 'Target Project')}
+                    </Label>
+                    <Select
+                      value={selectedProjectId.toString()}
+                      onValueChange={(v) => setSelectedProjectId(Number(v))}
+                    >
+                      <SelectTrigger id="target-project">
+                        <SelectValue placeholder={t('retroBoard.actOnItems.selectProject', 'Select a project')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableProjects.map((project) => (
+                          <SelectItem key={project.id} value={project.id.toString()}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="target-cycle">
-                      {t('retroBoard.actOnItems.targetCycle', 'Target Cycle')} 
+                      {t('retroBoard.actOnItems.targetCycle', 'Target Cycle')}
                       {actionType === 'task' && <span className="text-destructive ml-1">*</span>}
                       {actionType === 'pitch' && ` (${t('common.optional', 'Optional')})`}
                     </Label>

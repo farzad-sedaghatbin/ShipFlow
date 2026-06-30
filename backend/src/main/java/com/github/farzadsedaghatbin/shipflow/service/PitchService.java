@@ -16,10 +16,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.event.PitchStatusChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -51,8 +53,10 @@ public class PitchService {
   private final TeamRepository teamRepository;
   private final WorkLogRepository workLogRepository;
   private final UserRepository userRepository;
+  private final ProjectPermissionService projectPermissionService;
   private final EpicRepository epicRepository;
   private final ReleaseRepository releaseRepository;
+  private final ProjectRepository projectRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final AICacheService cacheService;
   private final CapacityConfigService capacityConfigService;
@@ -419,6 +423,7 @@ public class PitchService {
 
   /** Get ideas for a specific project. */
   public List<PitchDTO> getIdeasByProjectId(Long projectId) {
+    projectPermissionService.requireProjectAccess(projectId);
     return toDTOList(pitchRepository.findIdeasByProjectId(projectId));
   }
 
@@ -760,52 +765,73 @@ public class PitchService {
       var team = pitch.getTeam();
       var teamBudget = capacityConfigService.calculateTeamBudget(team, pitch.getAppetiteDays());
       
-      // Get hours spent per person from work logs
-      Map<Long, Double> personHoursMap = workLogRepository.findByPitchId(pitch.getId()).stream()
+      // Get hours spent per person from work logs (cached for reuse below)
+      var pitchWorkLogs = workLogRepository.findByPitchId(pitch.getId());
+      Map<Long, Double> personHoursMap = pitchWorkLogs.stream()
           .filter(wl -> wl.getPerson() != null)
           .collect(java.util.stream.Collectors.groupingBy(
               wl -> wl.getPerson().getId(),
               java.util.stream.Collectors.summingDouble(wl -> wl.getHoursSpent() != null ? wl.getHoursSpent().doubleValue() : 0.0)
           ));
-      
+
       // Calculate average hours per day for person-days conversion
-      double avgHoursPerDay = teamBudget.getMemberBudgets().isEmpty() ? 
+      double avgHoursPerDay = teamBudget.getMemberBudgets().isEmpty() ?
           capacityConfigService.getOrganizationDefaultHoursPerDay() :
           teamBudget.getTotalDailyCapacityHours() / teamBudget.getMemberCount();
-      
-      // Find busiest member (highest utilization)
-      var busiestMember = teamBudget.getMemberBudgets().stream()
-          .map(pb -> {
-            double hoursSpent = personHoursMap.getOrDefault(pb.getPersonId(), 0.0);
-            double utilization = pb.getTotalBudgetHours() > 0 ? 
-                (hoursSpent / pb.getTotalBudgetHours()) * 100 : 0;
-            return new Object() {
-              final Long personId = pb.getPersonId();
-              final String personName = pb.getPersonName();
-              final String role = pb.getRole() != null ? pb.getRole().name() : null;
-              final Double hoursPerDay = pb.getHoursPerDay();
-              final String capacitySource = pb.getCapacitySource();
-              final Double totalBudgetHours = pb.getTotalBudgetHours();
-              final Double spent = hoursSpent;
-              final Double util = Math.round(utilization * 10.0) / 10.0;
-              final Boolean overBudget = hoursSpent > pb.getTotalBudgetHours();
-            };
-          })
-          .max((a, b) -> Double.compare(a.util, b.util))
+
+      // Busiest = person with most ACTUAL hours logged (not just team members).
+      // This prevents showing a 0h team member when the real contributors aren't on the team.
+      var topPersonEntry = personHoursMap.entrySet().stream()
+          .max(Map.Entry.comparingByValue())
           .orElse(null);
-      
-      if (busiestMember != null) {
-        busiestPerson = PitchDTO.BusiestPersonDTO.builder()
-            .personId(busiestMember.personId)
-            .personName(busiestMember.personName)
-            .role(busiestMember.role)
-            .hoursPerDay(busiestMember.hoursPerDay)
-            .capacitySource(busiestMember.capacitySource)
-            .totalBudgetHours(busiestMember.totalBudgetHours)
-            .hoursSpent(busiestMember.spent)
-            .utilizationPercent(busiestMember.util)
-            .isOverBudget(busiestMember.overBudget)
-            .build();
+
+      if (topPersonEntry != null) {
+        Long topPersonId = topPersonEntry.getKey();
+        double hoursSpent = topPersonEntry.getValue();
+
+        // Look up their team budget row if they're a team member
+        var teamMemberBudget = teamBudget.getMemberBudgets().stream()
+            .filter(pb -> pb.getPersonId().equals(topPersonId))
+            .findFirst().orElse(null);
+
+        if (teamMemberBudget != null) {
+          double utilization = teamMemberBudget.getTotalBudgetHours() > 0 ?
+              (hoursSpent / teamMemberBudget.getTotalBudgetHours()) * 100 : 0;
+          busiestPerson = PitchDTO.BusiestPersonDTO.builder()
+              .personId(topPersonId)
+              .personName(teamMemberBudget.getPersonName())
+              .role(teamMemberBudget.getRole() != null ? teamMemberBudget.getRole().name() : null)
+              .hoursPerDay(teamMemberBudget.getHoursPerDay())
+              .capacitySource(teamMemberBudget.getCapacitySource())
+              .totalBudgetHours(teamMemberBudget.getTotalBudgetHours())
+              .hoursSpent(hoursSpent)
+              .utilizationPercent(Math.round(utilization * 10.0) / 10.0)
+              .isOverBudget(hoursSpent > teamMemberBudget.getTotalBudgetHours())
+              .build();
+        } else {
+          // Non-team-member — resolve their capacity from person/org settings
+          var personRef = pitchWorkLogs.stream()
+              .filter(wl -> wl.getPerson() != null && wl.getPerson().getId().equals(topPersonId))
+              .map(wl -> wl.getPerson())
+              .findFirst().orElse(null);
+          if (personRef != null) {
+            var capacityRes = capacityConfigService.getEffectiveHoursPerDay(personRef);
+            double hpd = capacityRes.value();
+            double budgetHours = hpd * pitch.getAppetiteDays();
+            double utilization = budgetHours > 0 ? (hoursSpent / budgetHours) * 100 : 0;
+            busiestPerson = PitchDTO.BusiestPersonDTO.builder()
+                .personId(topPersonId)
+                .personName(personRef.getName())
+                .role(null)
+                .hoursPerDay(hpd)
+                .capacitySource(capacityRes.source())
+                .totalBudgetHours(budgetHours)
+                .hoursSpent(hoursSpent)
+                .utilizationPercent(Math.round(utilization * 10.0) / 10.0)
+                .isOverBudget(hoursSpent > budgetHours)
+                .build();
+          }
+        }
       }
       
       // Calculate budget metrics
@@ -828,6 +854,10 @@ public class PitchService {
       projectId = pitch.getCycle().getProject().getId();
       projectName = pitch.getCycle().getProject().getName();
       projectKey = pitch.getCycle().getProject().getProjectKey();
+    } else if (pitch.getProject() != null) {
+      projectId = pitch.getProject().getId();
+      projectName = pitch.getProject().getName();
+      projectKey = pitch.getProject().getProjectKey();
     }
 
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())
@@ -865,5 +895,32 @@ public class PitchService {
         .blockingPitches(blockingPitches)
         .blockedByPitches(blockedByPitches)
         .build();
+  }
+
+  /** Move a pitch to a different project. Clears the cycle so the pitch lands in the target project backlog. */
+  public PitchDTO movePitchToProject(Long pitchId, Long targetProjectId) {
+    Pitch pitch = pitchRepository.findById(pitchId)
+        .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
+    Project target = projectRepository.findById(targetProjectId)
+        .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + targetProjectId));
+
+    Long currentProjectId = pitch.getCycle() != null && pitch.getCycle().getProject() != null
+        ? pitch.getCycle().getProject().getId()
+        : (pitch.getProject() != null ? pitch.getProject().getId() : null);
+    if (targetProjectId.equals(currentProjectId)) {
+      throw new BadRequestException("Pitch is already in the target project");
+    }
+
+    if (pitch.getCycle() != null) {
+      cacheService.invalidateCycleRiskCache(pitch.getCycle().getId());
+      pitch.setCycle(null);
+    }
+    pitch.setProject(target);
+    // Reset betting-stage status back to SHAPED so the pitch can be re-assigned in the new project
+    if (pitch.getStatus() == PitchStatus.PENDING || pitch.getStatus() == PitchStatus.IN_PROGRESS) {
+      pitch.setStatus(PitchStatus.SHAPED);
+    }
+    pitch.setUpdatedAt(LocalDateTime.now());
+    return toDTO(pitchRepository.save(pitch));
   }
 }

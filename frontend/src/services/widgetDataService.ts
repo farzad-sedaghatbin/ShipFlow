@@ -186,7 +186,7 @@ class WidgetDataService {
         type: 'TABLE',
         data: filteredTasks,
         metadata: {
-          total: hasClientFiltering ? filteredTasks.length : (response.data.totalElements || filteredTasks.length),
+          total: hasClientFiltering ? filteredTasks.length : (response.data.page?.totalElements ?? response.data.totalElements ?? filteredTasks.length),
           lastUpdated: new Date().toISOString()
         }
       };
@@ -256,7 +256,7 @@ class WidgetDataService {
         type: 'TABLE',
         data: filteredBugs,
         metadata: {
-          total: hasClientFiltering ? filteredBugs.length : (response.data.totalElements || filteredBugs.length),
+          total: hasClientFiltering ? filteredBugs.length : (response.data.page?.totalElements ?? response.data.totalElements ?? filteredBugs.length),
           lastUpdated: new Date().toISOString()
         }
       };

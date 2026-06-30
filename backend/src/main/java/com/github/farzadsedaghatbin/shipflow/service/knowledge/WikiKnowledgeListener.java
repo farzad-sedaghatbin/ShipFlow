@@ -1,0 +1,165 @@
+package com.github.farzadsedaghatbin.shipflow.service.knowledge;
+
+import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
+import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
+import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
+import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeItemRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
+import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
+import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.RawChunk;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+@Component
+@Slf4j
+public class WikiKnowledgeListener {
+
+  private static final int CHUNK_SIZE = 1200;
+  private static final int CHUNK_OVERLAP = 150;
+
+  private final WikiPageRepository wikiPageRepository;
+  private final WikiSpaceRepository wikiSpaceRepository;
+  private final KnowledgeItemRepository knowledgeItemRepository;
+  private final WikiSpacePermissionRepository wikiSpacePermissionRepository;
+  private final ObjectProvider<KnowledgeIngestionService> ingestionServiceProvider;
+
+  public WikiKnowledgeListener(
+      WikiPageRepository wikiPageRepository,
+      WikiSpaceRepository wikiSpaceRepository,
+      KnowledgeItemRepository knowledgeItemRepository,
+      WikiSpacePermissionRepository wikiSpacePermissionRepository,
+      ObjectProvider<KnowledgeIngestionService> ingestionServiceProvider) {
+    this.wikiPageRepository = wikiPageRepository;
+    this.wikiSpaceRepository = wikiSpaceRepository;
+    this.knowledgeItemRepository = knowledgeItemRepository;
+    this.wikiSpacePermissionRepository = wikiSpacePermissionRepository;
+    this.ingestionServiceProvider = ingestionServiceProvider;
+  }
+
+  /**
+   * Ingests wiki page content into the Knowledge Center for AI Q&A.
+   *
+   * <p>Runs <em>after</em> the publishing transaction commits ({@link TransactionPhase#AFTER_COMMIT}).
+   * {@code WikiService.createPage}/{@code updatePage} publish {@link WikiPageChangedEvent} while still
+   * inside their transaction; the previous {@code @Async @EventListener} fired on a separate thread
+   * before that commit, so {@code findById} saw no row on CREATE and the page was silently skipped —
+   * never ingested, so AI Q&A could not answer about newly created pages. Firing after commit
+   * guarantees the row is visible. {@code @Async} keeps the (potentially slow) embedding off the
+   * request thread; because there is no transaction to join after commit, the handler opens its own
+   * with {@code REQUIRES_NEW} (a plain {@code @Transactional} fails at startup for an AFTER_COMMIT
+   * listener). Mirrors {@code ScopeProgressListener}.
+   */
+  @Async
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void onWikiPageChanged(WikiPageChangedEvent event) {
+    try {
+      Long pageId = event.pageId();
+      Long spaceId = event.spaceId();
+
+      switch (event.type()) {
+        case CREATED, UPDATED, RESTORED -> handleUpsert(pageId, spaceId);
+        case DELETED -> handleDelete(pageId);
+      }
+    } catch (Exception e) {
+      log.error(
+          "WikiKnowledgeListener failed for event {}: {}", event, e.getMessage(), e);
+    }
+  }
+
+  // Heuristic mitigation: spaces with explicit per-user/role grants are treated as restricted and
+  // excluded from KC ingestion pending true ACL-aware retrieval support.
+  private boolean isRestricted(Long spaceId) {
+    return wikiSpacePermissionRepository.existsBySpaceId(spaceId);
+  }
+
+  private void handleUpsert(Long pageId, Long spaceId) {
+    // Always purge any existing chunks — covers the case where a space becomes restricted after
+    // content was already indexed.
+    knowledgeItemRepository.deleteByEntityTypeAndEntityId(KnowledgeEntityType.WIKI_PAGE, pageId);
+
+    if (isRestricted(spaceId)) {
+      log.debug(
+          "Wiki space {} is restricted; skipping KC ingest for page {}", spaceId, pageId);
+      return;
+    }
+
+    WikiPage page = wikiPageRepository.findById(pageId).orElse(null);
+    if (page == null || page.getDeletedAt() != null) {
+      log.debug("Wiki page {} not found or deleted, skipping ingest", pageId);
+      return;
+    }
+
+    String text = page.getContentText();
+    if (text == null || text.isBlank()) {
+      log.debug("Wiki page {} has blank content, skipping ingest", pageId);
+      return;
+    }
+
+    WikiSpace space = wikiSpaceRepository.findById(spaceId).orElse(null);
+    Long projectId = space != null ? space.getProjectId() : null;
+    String spaceKey = space != null ? space.getSpaceKey() : String.valueOf(spaceId);
+    String sourceUrl = "/wiki/" + spaceKey + "/" + pageId;
+
+    List<RawChunk> chunks = splitIntoChunks(text, page.getTitle(), sourceUrl);
+    if (chunks.isEmpty()) return;
+
+    KnowledgeIngestionService ingestionService = ingestionServiceProvider.getIfAvailable();
+    if (ingestionService == null) {
+      log.debug(
+          "KnowledgeIngestionService not available (QA disabled); skipping ingest for wiki page {}",
+          pageId);
+      return;
+    }
+    ingestionService.ingestChunks(
+        chunks, KnowledgeEntityType.WIKI_PAGE, pageId, null, projectId);
+    log.info(
+        "Ingested {} chunks for wiki page {} (space {})", chunks.size(), pageId, spaceId);
+  }
+
+  private void handleDelete(Long pageId) {
+    knowledgeItemRepository.deleteByEntityTypeAndEntityId(KnowledgeEntityType.WIKI_PAGE, pageId);
+    log.info("Removed knowledge items for deleted wiki page {}", pageId);
+  }
+
+  private List<RawChunk> splitIntoChunks(String text, String pageTitle, String sourceUrl) {
+    List<RawChunk> chunks = new ArrayList<>();
+    int ord = 0;
+    for (int i = 0; i < text.length(); i += CHUNK_SIZE - CHUNK_OVERLAP) {
+      String body = text.substring(i, Math.min(i + CHUNK_SIZE, text.length()));
+      chunks.add(
+          RawChunk.builder()
+              .title(pageTitle + " — part " + (ord + 1))
+              .content(body)
+              .ordinal(ord++)
+              .sourceUrl(sourceUrl)
+              .hash(sha256Hex(body))
+              .build());
+      if (i + CHUNK_SIZE >= text.length()) break;
+    }
+    return chunks;
+  }
+
+  private static String sha256Hex(String s) {
+    try {
+      var d = MessageDigest.getInstance("SHA-256").digest(s.getBytes());
+      var sb = new StringBuilder();
+      for (byte x : d) sb.append(String.format("%02x", x));
+      return sb.toString();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+}

@@ -1,10 +1,8 @@
 # Build stage for frontend
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
-# Copy both manifests explicitly — package-lock.json must be committed to git
 COPY frontend/package.json frontend/package-lock.json* ./
-# Use npm ci when lockfile exists (reproducible CI), fall back to npm install if absent
-RUN [ -f package-lock.json ] && npm ci --no-audit || npm install --no-audit
+RUN npm install --no-audit
 COPY frontend/ ./
 RUN npm run build
 
@@ -34,6 +32,9 @@ RUN groupadd -r shipflow && useradd -r -g shipflow shipflow
 
 # Copy the built jar
 COPY --from=backend-builder /app/backend/target/shipflow-*.jar app.jar
+
+# Create uploads directory so the named volume inherits shipflow ownership on first mount
+RUN mkdir -p /app/uploads
 
 # Change ownership
 RUN chown -R shipflow:shipflow /app

@@ -4,6 +4,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.CreateProjectRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.ProjectDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.UserProject;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
+import com.github.farzadsedaghatbin.shipflow.service.ProjectPermissionService;
 import com.github.farzadsedaghatbin.shipflow.service.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProjectController {
 
   private final ProjectService projectService;
+  private final ProjectPermissionService projectPermissionService;
 
   /**
    * Get all projects (ADMIN only). For regular users, use /my-projects endpoint.
@@ -90,9 +92,9 @@ public class ProjectController {
     return ResponseEntity.ok(dtos);
   }
 
-  /** Grant project access to a user */
+  /** Grant project access to a user — requires MANAGER role on the project */
   @PostMapping("/{projectId}/members/{userId}")
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("@projectPermissionService.hasProjectRole(#projectId, 'MANAGER') or hasRole('ADMIN')")
   @Operation(summary = "Grant project access", description = "Grant access to a user (Project Manager or Admin)")
   public ResponseEntity<Void> grantAccess(@PathVariable Long projectId, @PathVariable Long userId,
       @RequestParam(defaultValue = "VIEWER") ProjectRole role) {
@@ -100,13 +102,21 @@ public class ProjectController {
     return ResponseEntity.ok().build();
   }
 
-  /** Revoke project access from a user */
+  /** Revoke project access from a user — requires MANAGER role on the project */
   @DeleteMapping("/{projectId}/members/{userId}")
-  @PreAuthorize("isAuthenticated()")
+  @PreAuthorize("@projectPermissionService.hasProjectRole(#projectId, 'MANAGER') or hasRole('ADMIN')")
   @Operation(summary = "Revoke project access", description = "Revoke access from a user (Project Manager or Admin)")
   public ResponseEntity<Void> revokeAccess(@PathVariable Long projectId, @PathVariable Long userId) {
     projectService.revokeProjectAccess(projectId, userId);
     return ResponseEntity.noContent().build();
+  }
+
+  /** Returns the current user's project-level role */
+  @GetMapping("/{projectId}/my-role")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get my project role", description = "Returns the calling user's ProjectRole for the given project")
+  public ResponseEntity<ProjectRole> getMyRole(@PathVariable Long projectId) {
+    return ResponseEntity.ok(projectPermissionService.getMyRole(projectId).orElse(null));
   }
 
   @PostMapping
@@ -149,7 +159,9 @@ public class ProjectController {
 
   private ProjectMemberDTO toMemberDTO(UserProject up) {
     return ProjectMemberDTO.builder().userId(up.getUser().getId()).username(up.getUser().getUsername())
-        .email(up.getUser().getEmail()).projectRole(up.getProjectRole()).grantedAt(up.getCreatedAt())
+        .email(up.getUser().getEmail())
+        .personId(up.getUser().getPerson() != null ? up.getUser().getPerson().getId() : null)
+        .projectRole(up.getProjectRole()).grantedAt(up.getCreatedAt())
         .grantedByUsername(up.getGrantedBy() != null ? up.getGrantedBy().getUsername() : null).build();
   }
 
@@ -161,6 +173,7 @@ public class ProjectController {
     private Long userId;
     private String username;
     private String email;
+    private Long personId;
     private ProjectRole projectRole;
     private LocalDateTime grantedAt;
     private String grantedByUsername;

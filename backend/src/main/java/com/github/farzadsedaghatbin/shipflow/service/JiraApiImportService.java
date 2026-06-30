@@ -51,6 +51,7 @@ public class JiraApiImportService {
   private final CycleRepository cycleRepository;
   private final EpicRepository epicRepository;
   private final TaskRepository taskRepository;
+  private final BugReportRepository bugReportRepository;
   private final ImportJobRepository importJobRepository;
   private final PersonRepository personRepository;
   private final RestTemplate restTemplate;
@@ -334,7 +335,7 @@ public class JiraApiImportService {
     return epicMap;
   }
 
-  /** Second pass: create a ShipFlow Task from a Jira non-Epic issue. */
+  /** Second pass: create a ShipFlow Task or BugReport from a Jira non-Epic issue. */
   private void importIssue(
       JsonNode issue,
       Project project,
@@ -347,40 +348,22 @@ public class JiraApiImportService {
       throw new IllegalArgumentException("Issue has no summary");
     }
 
+    String issueTypeName = fields.path("issuetype").path("name").asText("");
     JsonNode descNode = fields.path("description");
     String description = extractDescriptionText(descNode);
-
-    TaskStatus status = mapJiraStatus(fields.path("status").path("name").asText(null));
-    TaskPriority priority = mapJiraPriority(fields.path("priority").path("name").asText(null));
-
-    // Story points from customfield_10016
-    Integer storyPoints = null;
-    JsonNode spNode = fields.path("customfield_10016");
-    if (!spNode.isMissingNode() && !spNode.isNull() && spNode.isNumber()) {
-      storyPoints = spNode.asInt();
-    }
+    String priorityName = fields.path("priority").path("name").asText(null);
+    String statusName = fields.path("status").path("name").asText(null);
 
     // Sprint → Cycle from customfield_10020
     Cycle cycle = null;
     JsonNode sprintNode = fields.path("customfield_10020");
     if (!sprintNode.isMissingNode() && !sprintNode.isNull()) {
-      // In Jira Cloud, customfield_10020 can be an object or an array; handle both
       JsonNode sprintObj = sprintNode.isArray() ? sprintNode.get(0) : sprintNode;
       if (sprintObj != null && !sprintObj.isNull()) {
         int sprintId = sprintObj.path("id").asInt(-1);
         if (sprintId > 0) {
           cycle = sprintCycleMap.get(sprintId);
         }
-      }
-    }
-
-    // Parent epic → Epic link (parent field holds the Jira epic key for non-Epic issues)
-    Epic epic = null;
-    JsonNode parentNode = fields.path("parent");
-    if (!parentNode.isMissingNode() && !parentNode.isNull()) {
-      String parentKey = parentNode.path("key").asText(null);
-      if (parentKey != null) {
-        epic = epicMap.get(parentKey);
       }
     }
 
@@ -395,12 +378,48 @@ public class JiraApiImportService {
       }
     }
 
+    if (isJiraBugType(issueTypeName)) {
+      BugReport bug =
+          BugReport.builder()
+              .bugKey(nextBugKey())
+              .title(title)
+              .description(description != null ? description : "")
+              .severity(mapJiraSeverityFromPriority(priorityName))
+              .status(mapJiraBugStatus(statusName))
+              .reporter(null)
+              .assignee(assignee)
+              .project(project)
+              .cycle(cycle)
+              .createdAt(LocalDateTime.now())
+              .updatedAt(LocalDateTime.now())
+              .build();
+      bugReportRepository.save(bug);
+      return;
+    }
+
+    // Story points from customfield_10016
+    Integer storyPoints = null;
+    JsonNode spNode = fields.path("customfield_10016");
+    if (!spNode.isMissingNode() && !spNode.isNull() && spNode.isNumber()) {
+      storyPoints = spNode.asInt();
+    }
+
+    // Parent epic → Epic link
+    Epic epic = null;
+    JsonNode parentNode = fields.path("parent");
+    if (!parentNode.isMissingNode() && !parentNode.isNull()) {
+      String parentKey = parentNode.path("key").asText(null);
+      if (parentKey != null) {
+        epic = epicMap.get(parentKey);
+      }
+    }
+
     Task task =
         Task.builder()
             .title(title)
             .description(description)
-            .status(status)
-            .priority(priority)
+            .status(mapJiraStatus(statusName))
+            .priority(mapJiraPriority(priorityName))
             .category(TaskCategory.PITCH_SCOPE)
             .project(project)
             .cycle(cycle)
@@ -409,6 +428,49 @@ public class JiraApiImportService {
             .build();
 
     taskRepository.save(task);
+  }
+
+  private boolean isJiraBugType(String issueType) {
+    if (issueType == null || issueType.isBlank()) return false;
+    String lower = issueType.trim().toLowerCase();
+    return lower.equals("bug")
+        || lower.equals("defect")
+        || lower.equals("error")
+        || lower.equals("problem")
+        || lower.equals("bug report")
+        || lower.equals("fault")
+        || lower.contains("bug");
+  }
+
+  private String nextBugKey() {
+    Integer max = bugReportRepository.findMaxBugKeyNumber();
+    int next = (max != null ? max : 0) + 1;
+    return String.format("BUG-%03d", next);
+  }
+
+  private BugSeverity mapJiraSeverityFromPriority(String priority) {
+    if (priority == null) return BugSeverity.MAJOR;
+    return switch (priority.toLowerCase(Locale.ROOT)) {
+      case "blocker", "critical", "highest" -> BugSeverity.CRITICAL;
+      case "high" -> BugSeverity.MAJOR;
+      case "minor", "low", "lowest" -> BugSeverity.MINOR;
+      default -> BugSeverity.MAJOR;
+    };
+  }
+
+  private BugStatus mapJiraBugStatus(String statusName) {
+    if (statusName == null) return BugStatus.OPEN;
+    String lower = statusName.toLowerCase(Locale.ROOT);
+    if (lower.contains("done") || lower.contains("closed") || lower.contains("fixed")) {
+      return BugStatus.CLOSED;
+    }
+    if (lower.contains("resolve") || lower.contains("verified")) {
+      return BugStatus.RESOLVED;
+    }
+    if (lower.contains("progress") || lower.contains("review") || lower.contains("testing")) {
+      return BugStatus.IN_PROGRESS;
+    }
+    return BugStatus.OPEN;
   }
 
   // ── Mapping helpers ───────────────────────────────────────────────────────

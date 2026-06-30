@@ -9,5 +9,7 @@ public enum ImportSourceFormat {
   /** Linear API import (OAuth-based, v1.2.0 S29). */
   LINEAR_API,
   /** Jira API import (OAuth-based, v1.2.0 S30). */
-  JIRA_API
+  JIRA_API,
+  /** Zephyr Scale XLSX test-case import (v1.6.0 S41). */
+  ZEPHYR_XLSX
 }
