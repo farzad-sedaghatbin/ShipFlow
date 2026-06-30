@@ -20,11 +20,34 @@ export interface RiskFactor {
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+export interface RiskBand {
+  level: RiskLevel;
+  minScore: number;
+  maxScore: number;
+  active: boolean;
+}
+
+export interface FactorContribution {
+  category: RiskFactor['category'];
+  description: string;
+  impactLevel: number;
+  probability: number;
+  weightedPoints: number;
+}
+
+export interface RiskScoreExplanation {
+  score: number;
+  activeBand: RiskLevel;
+  bands: RiskBand[];
+  factorContributions: FactorContribution[];
+}
+
 export interface PitchRiskDTO {
   pitchId: number;
   pitchTitle: string;
   riskScore: number;
   riskLevel: RiskLevel;
+  explanation?: RiskScoreExplanation;
   riskFactors: RiskFactor[];
   insights: string[];
   recommendations: string[];
