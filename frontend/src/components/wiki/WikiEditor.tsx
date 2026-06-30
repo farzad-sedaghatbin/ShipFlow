@@ -2,14 +2,21 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 
 import { type Block, type PartialBlock } from "@blocknote/core";
-import { useCreateBlockNote } from "@blocknote/react";
+import {
+  useCreateBlockNote,
+  SuggestionMenuController,
+  type DefaultReactSuggestionItem,
+} from "@blocknote/react";
 // Use the Mantine flavor's BlockNoteView — it wires the default UI (SideMenu,
 // formatting toolbar, slash menu). @blocknote/react only exports the bare
 // BlockNoteViewRaw, which leaves those components undefined and crashes in the
 // production bundle ("undefined is not an object (evaluating '…SideMenu')").
 import { BlockNoteView } from "@blocknote/mantine";
 import { forwardRef, useEffect, useImperativeHandle } from "react";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../contexts";
+import commentService, { type MentionUser } from "../../services/commentService";
+import { formatMentionToken } from "../mentions/mentionUtils";
 
 // ─── Pure helpers (exported for unit tests without mounting the editor) ───────
 
@@ -64,10 +71,42 @@ const WikiEditor = forwardRef<WikiEditorHandle, WikiEditorProps>(function WikiEd
   // hand-authored content), which would white-screen the whole page. Instead we
   // load the content defensively below.
   const editor = useCreateBlockNote();
+  const { t } = useTranslation();
   // Keep the editor's theme in sync with the app theme; otherwise BlockNote
   // keeps whatever color scheme it mounted with (e.g. a dark editor surface
   // lingering after switching the app back to light mode).
   const { actualMode } = useTheme();
+
+  // Build the `@`-mention suggestion items. Typing `@` opens this menu, which
+  // searches the same people source as Comments (`searchUsersForMention`).
+  // Selecting a teammate inserts a PLAIN-TEXT token — `@Name` or `@"Full Name"`
+  // — identical to the comment format, so the backend's WikiService mention
+  // parser (which scans the page's extracted text) resolves and notifies the
+  // mentioned user on save. We deliberately do NOT use a custom inline content
+  // spec: a styled inline node would not survive BlockNote's plain-text
+  // extraction and the mention would never be detected on the server.
+  const getMentionMenuItems = async (
+    query: string,
+  ): Promise<DefaultReactSuggestionItem[]> => {
+    let users: MentionUser[] = [];
+    try {
+      const response = await commentService.searchUsersForMention(query);
+      users = response.data;
+    } catch (e) {
+      console.warn("WikiEditor: could not search users for mention", e);
+      users = [];
+    }
+    return users.map((user) => ({
+      title: user.displayName,
+      subtext: t("wiki.mentionItemSubtitle", { username: user.username }),
+      onItemClick: () => {
+        // Trailing space ends the token and separates it from following text.
+        editor.insertInlineContent([
+          `${formatMentionToken(user.displayName)} `,
+        ]);
+      },
+    }));
+  };
 
   // Expose an imperative insert so the page-link picker can drop a `[[id]]`
   // token at the cursor. After inserting, push the change up immediately so the
@@ -108,7 +147,17 @@ const WikiEditor = forwardRef<WikiEditorHandle, WikiEditorProps>(function WikiEd
       onChange={() => {
         onChange(serializeBlockNoteContent(editor.document));
       }}
-    />
+    >
+      {/* `@`-mention autocomplete. Passing this child does NOT suppress the
+          default UI (slash menu, formatting toolbar, etc.) — BlockNote renders
+          BlockNoteDefaultUI alongside children. Only mount it in edit mode. */}
+      {editable && (
+        <SuggestionMenuController
+          triggerCharacter="@"
+          getItems={getMentionMenuItems}
+        />
+      )}
+    </BlockNoteView>
   );
 });
 

@@ -12,6 +12,10 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@blocknote/react', () => ({
   useCreateBlockNote: vi.fn(),
   BlockNoteView: vi.fn(),
+  SuggestionMenuController: vi.fn(),
+}));
+vi.mock('@blocknote/mantine', () => ({
+  BlockNoteView: vi.fn(),
 }));
 vi.mock('@blocknote/core', () => ({
   // nothing needed for the pure helpers

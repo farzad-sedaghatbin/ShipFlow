@@ -227,7 +227,7 @@ export default function ReleaseDetailPage() {
           <CardContent className="space-y-4">
             {release.description && (
               <div>
-                <h4 className="font-medium mb-1">{t('releases.description')}</h4>
+                <h4 className="font-medium mb-1">{t('releases.descriptionLabel')}</h4>
                 <p className="text-muted-foreground">{release.description}</p>
               </div>
             )}

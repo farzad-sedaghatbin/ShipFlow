@@ -47,6 +47,9 @@ Set either one inline from the bug detail dialog, or when creating/editing a bug
 ## Sharing a Bug
 Use the **Copy link** action (the three-dot menu on a kanban card, or the link button on a list row) to copy a direct URL to the bug. Anyone with access can open the link to land on that bug's full page.
 
+## Filtering Bugs
+The Bug Reports page has multi-select filters for **Status**, **Severity**, **Assignee**, and **Reporter** — pick any combination and bugs matching all active filters are shown (toggle **Exclude** to invert the selection). The Reporter filter lets you narrow the backlog to bugs raised by specific people, which is handy when triaging incoming reports. Active filters are reflected in the page URL, so a filtered view is shareable and survives the browser back button, and they also drive the overview stat cards at the top of the page. You can save a filter combination as a named filter to reuse it later.
+
 ## List vs Kanban View
 Toggle between the **list** (paginated table) and **kanban** (status-column board) views from the top-right of the Bug Reports page. The kanban board groups every matching bug into its status column, while the list view pages through results — use the filters to narrow large backlogs in either view.
 

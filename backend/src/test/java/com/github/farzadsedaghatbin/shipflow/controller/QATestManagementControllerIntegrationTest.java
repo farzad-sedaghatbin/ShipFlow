@@ -148,6 +148,45 @@ class QATestManagementControllerIntegrationTest {
   }
 
   @Test
+  void getBugReportsWithFilters_ByReporters_ShouldReturnOnlyMatchingReporter() throws Exception {
+    // Second reporter with their own bug
+    User otherReporter = User.builder().username("other-reporter").password("password")
+        .email("other@example.com").role(UserRole.MEMBER).isActive(true).createdAt(LocalDateTime.now()).build();
+    otherReporter = userRepository.save(otherReporter);
+
+    BugReport otherBug = BugReport.builder().bugKey("BUG-R02").title("Other Reporter Bug")
+        .description("Reported by someone else").severity(BugSeverity.MINOR).status(BugStatus.OPEN)
+        .cycle(testCycle).reporter(otherReporter).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
+        .build();
+    bugReportRepository.save(otherBug);
+
+    // Filtering by testUser's id must return only their bug, not otherReporter's.
+    mockMvc.perform(get("/api/qa/bug-reports/filter").param("reporterIds", testUser.getId().toString())
+        .param("exclude", "false")).andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].reporterId", is(testUser.getId().intValue())));
+  }
+
+  @Test
+  void getBugStats_ByReporters_ShouldRespectReporterFilter() throws Exception {
+    User otherReporter = User.builder().username("stats-reporter").password("password")
+        .email("stats@example.com").role(UserRole.MEMBER).isActive(true).createdAt(LocalDateTime.now()).build();
+    otherReporter = userRepository.save(otherReporter);
+
+    BugReport otherBug = BugReport.builder().bugKey("BUG-R03").title("Stats Reporter Bug")
+        .description("Reported by someone else").severity(BugSeverity.MINOR).status(BugStatus.OPEN)
+        .cycle(testCycle).reporter(otherReporter).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
+        .build();
+    bugReportRepository.save(otherBug);
+
+    // Stats scoped to testUser must count only their single bug.
+    mockMvc.perform(get("/api/qa/bug-reports/stats").param("reporterIds", testUser.getId().toString()))
+        .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.total", is(1)));
+  }
+
+  @Test
   void createBugReport_WithValidData_ShouldCreateBugReport() throws Exception {
     CreateBugReportRequest request = CreateBugReportRequest.builder().title("New Bug")
         .description("New bug description").severity(BugSeverity.MAJOR).status(BugStatus.OPEN)
