@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { Combobox } from '../components/ui/combobox';
 import { Skeleton } from '../components/ui/skeleton';
 
 const COLORS = [
@@ -222,22 +223,15 @@ export default function InitiativeFormPage() {
             {/* Owner */}
             <div className="space-y-2">
               <Label>{t('initiatives.owner')}</Label>
-              <Select
+              <Combobox
+                options={[
+                  { value: 'NO_OWNER', label: t('initiatives.noOwner') },
+                  ...people.map((person) => ({ value: person.id.toString(), label: person.name })),
+                ]}
                 value={formData.ownerId?.toString() || 'NO_OWNER'}
                 onValueChange={(v) => setFormData({ ...formData, ownerId: v === 'NO_OWNER' ? undefined : Number(v) })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('initiatives.selectOwner')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NO_OWNER">{t('initiatives.noOwner')}</SelectItem>
-                  {people.map((person) => (
-                    <SelectItem key={person.id} value={person.id.toString()}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder={t('initiatives.selectOwner')}
+              />
             </div>
 
             {/* Date Range */}

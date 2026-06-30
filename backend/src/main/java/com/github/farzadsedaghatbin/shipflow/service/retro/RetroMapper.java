@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.RetroItem;
 import com.github.farzadsedaghatbin.shipflow.entity.Retrospective;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.repository.RetroItemDislikeVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemVoteRepository;
 import java.util.*;
@@ -24,6 +25,7 @@ public class RetroMapper {
 
   private final RetroItemRepository retroItemRepository;
   private final RetroItemVoteRepository retroItemVoteRepository;
+  private final RetroItemDislikeVoteRepository retroItemDislikeVoteRepository;
 
   // ==================== RETRO DTO MAPPING ====================
 
@@ -102,7 +104,7 @@ public class RetroMapper {
    * Map a single RetroItem to DTO.
    * For single item mapping when vote/merge data is provided.
    */
-  public RetroItemDTO toItemDTO(RetroItem item, boolean hasVoted, List<Long> mergedItemIds) {
+  public RetroItemDTO toItemDTO(RetroItem item, boolean hasVoted, boolean hasDisliked, List<Long> mergedItemIds) {
     Boolean isAnonymous = item.getIsAnonymous() != null ? item.getIsAnonymous() : false;
 
     RetroItemDTO.RetroItemDTOBuilder builder = RetroItemDTO.builder()
@@ -112,15 +114,22 @@ public class RetroMapper {
         .retrospectiveId(item.getRetrospective().getId())
         .isAnonymous(isAnonymous)
         .voteCount(item.getVoteCount() != null ? item.getVoteCount() : 0)
+        .hasVoted(hasVoted)
+        .dislikeCount(item.getDislikeCount() != null ? item.getDislikeCount() : 0)
+        .hasDisliked(hasDisliked)
+        .discussed(item.getDiscussed() != null ? item.getDiscussed() : false)
+        .discussedAt(item.getDiscussedAt())
         .createdAt(item.getCreatedAt())
         .updatedAt(item.getUpdatedAt())
-        .hasVoted(hasVoted)
         .mergedItemIds(mergedItemIds != null ? mergedItemIds : Collections.emptyList());
 
     // Always include author fields (null for anonymous items)
     if (!isAnonymous && item.getAuthor() != null) {
-      builder.authorId(item.getAuthor().getId())
-          .authorName(item.getAuthor().getUsername());
+      User author = item.getAuthor();
+      String displayName = author.getPerson() != null && author.getPerson().getName() != null
+          ? author.getPerson().getName()
+          : author.getUsername();
+      builder.authorId(author.getId()).authorName(displayName);
     } else {
       builder.authorId(null).authorName(null);
     }
@@ -135,8 +144,11 @@ public class RetroMapper {
     builder.actedOnNotes(item.getActedOnNotes());
     builder.actedOnAt(item.getActedOnAt());
     if (item.getActedOnBy() != null) {
-      builder.actedOnById(item.getActedOnBy().getId());
-      builder.actedOnByName(item.getActedOnBy().getUsername());
+      User actedOnBy = item.getActedOnBy();
+      String actedOnByDisplayName = actedOnBy.getPerson() != null && actedOnBy.getPerson().getName() != null
+          ? actedOnBy.getPerson().getName()
+          : actedOnBy.getUsername();
+      builder.actedOnById(actedOnBy.getId()).actedOnByName(actedOnByDisplayName);
     }
 
     return builder.build();
@@ -155,9 +167,12 @@ public class RetroMapper {
         .map(RetroItem::getId)
         .collect(Collectors.toList());
 
-    // Batch fetch vote status for current user
+    // Batch fetch like/dislike status for current user
     Set<Long> votedItemIds = currentUser != null
         ? retroItemVoteRepository.findVotedItemIds(itemIds, currentUser.getId())
+        : Collections.emptySet();
+    Set<Long> dislikedItemIds = currentUser != null
+        ? retroItemDislikeVoteRepository.findDislikedItemIds(itemIds, currentUser.getId())
         : Collections.emptySet();
 
     // Batch fetch merged item mappings
@@ -167,6 +182,7 @@ public class RetroMapper {
         .map(item -> toItemDTO(
             item,
             votedItemIds.contains(item.getId()),
+            dislikedItemIds.contains(item.getId()),
             mergedItemsMap.getOrDefault(item.getId(), Collections.emptyList())
         ))
         .collect(Collectors.toList());
@@ -178,8 +194,10 @@ public class RetroMapper {
    */
   public RetroItemDTO toItemDTOWithLookup(RetroItem item, User currentUser) {
     boolean hasVoted = false;
+    boolean hasDisliked = false;
     if (currentUser != null) {
       hasVoted = retroItemVoteRepository.existsByRetroItemIdAndUserId(item.getId(), currentUser.getId());
+      hasDisliked = retroItemDislikeVoteRepository.existsByRetroItemIdAndUserId(item.getId(), currentUser.getId());
     }
 
     List<Long> mergedItemIds = retroItemRepository.findByMergedIntoId(item.getId())
@@ -187,7 +205,7 @@ public class RetroMapper {
         .map(RetroItem::getId)
         .collect(Collectors.toList());
 
-    return toItemDTO(item, hasVoted, mergedItemIds);
+    return toItemDTO(item, hasVoted, hasDisliked, mergedItemIds);
   }
 
   // ==================== PITCH DTO MAPPING ====================

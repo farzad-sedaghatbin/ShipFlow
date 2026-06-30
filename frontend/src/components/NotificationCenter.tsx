@@ -57,12 +57,14 @@ export const NotificationCenter: React.FC = () => {
     }
   }, []);
 
-  // Stable callback: called whenever the SSE stream delivers a new notification
-  const handleSseNotification = useCallback(() => {
-    loadUnreadCount();
-    // Reload the full list only if the dropdown is open to avoid background noise
-    if (open) {
-      loadNotifications();
+  // Stable callback: routes SSE events — notification events update the bell,
+  // all other named events are forwarded as browser CustomEvents for other components to handle.
+  const handleSseNotification = useCallback((eventName: string, payload: unknown) => {
+    if (eventName === 'notification') {
+      loadUnreadCount();
+      if (open) loadNotifications();
+    } else {
+      window.dispatchEvent(new CustomEvent(eventName, { detail: payload }));
     }
   }, [open, loadUnreadCount, loadNotifications]);
 

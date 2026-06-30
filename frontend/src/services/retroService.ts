@@ -26,6 +26,7 @@ export interface RetroActionStats {
 export interface ConvertToPitchRequest {
   retroItemIds?: number[];
   targetCycleId?: number;
+  targetProjectId?: number;
   customTitle?: string;
   additionalNotes?: string;
   appetiteDays?: number;
@@ -49,8 +50,11 @@ export const retroService = {
   updateItem: (itemId: number, content: string) => api.put<RetroItem>(`/retros/items/${itemId}`, { content }),
   deleteItem: (itemId: number) => api.delete(`/retros/items/${itemId}`),
 
-  // Voting
+  // Voting / reactions
   toggleVote: (itemId: number) => api.post<RetroItem>(`/retros/items/${itemId}/vote`),
+  toggleDislike: (itemId: number) => api.post<RetroItem>(`/retros/items/${itemId}/dislike`),
+  markDiscussed: (itemId: number, discussed: boolean) =>
+    api.post<RetroItem>(`/retros/items/${itemId}/discussed`, { discussed }),
 
   // Merging
   mergeItems: (targetItemId: number, sourceItemId: number) =>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { detectTextDirection } from '../utils/rtlDetection';
@@ -15,11 +16,17 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   MessageSquare,
   LayoutList,
   Kanban,
   Check,
   Info,
+  Link,
+  BookmarkPlus,
+  Bookmark,
+  BookmarkX,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -34,6 +41,7 @@ import {
   TableRow,
 } from '../components/ui/table';
 import { Combobox } from '../components/ui/combobox';
+import { MultiCombobox } from '../components/ui/multi-combobox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,12 +65,16 @@ import qaTestManagementService from '../services/qaTestManagementService';
 import { cycleService } from '../services/cycleService';
 import { pitchService } from '../services/pitchService';
 import { releaseService } from '../services/releaseService';
-import { useProject } from '../contexts';
-import { BugReport, BugStatus, BugSeverity, Cycle, Pitch, Release } from '../types';
+import { personService } from '../services/personService';
+import { useProject, useAuth, useToast } from '../contexts';
+import { useListLoader } from '../hooks';
+import { BugReport, BugStats, BugStatus, BugSeverity, Cycle, Pitch, Release, Person, getPageTotal } from '../types';
 import BugReportModal from '../components/BugReportModal';
 import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
 import { BugReportsSkeleton } from '../components/Skeletons';
+
+const FILTER_KEYS = ['q', 'status', 'severity', 'assignee', 'reporter', 'cycle', 'pitch', 'release', 'exclude', 'sortBy', 'sortOrder', 'page', 'size'];
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -83,37 +95,147 @@ const statusBadgeVariants: Record<BugStatus, 'default' | 'secondary' | 'info' | 
   DUPLICATE: 'secondary',
 };
 
+const BUG_FILTER_KEY = 'shipflow.bugFilters';
+const NAMED_BUG_FILTERS_KEY = 'shipflow.namedBugFilters';
+
+// Derive overview stats from a bug list, mirroring the backend's BugReportService.getBugStats
+// semantics exactly. Used when a filter (e.g. release) is applied client-side and the server
+// stats endpoint can't see it — keeps the overview cards in sync with the visible table.
+function computeBugStats(bugs: BugReport[]): BugStats {
+  return {
+    total: bugs.length,
+    open: bugs.filter((b) => b.status === 'OPEN').length,
+    inProgress: bugs.filter((b) => b.status === 'IN_PROGRESS').length,
+    resolved: bugs.filter((b) => b.status === 'RESOLVED' || b.status === 'VERIFIED' || b.status === 'CLOSED').length,
+    critical: bugs.filter((b) => b.severity === 'CRITICAL' || b.severity === 'BLOCKER').length,
+  };
+}
+
+// Build a compact list of 0-indexed page numbers to render, inserting 'gap' markers
+// for elided ranges. Always shows the first and last page plus the current ±1.
+function buildPageList(current: number, totalPages: number): (number | 'gap')[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i);
+  const pages: (number | 'gap')[] = [0];
+  const start = Math.max(1, current - 1);
+  const end = Math.min(totalPages - 2, current + 1);
+  if (start > 1) pages.push('gap');
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < totalPages - 2) pages.push('gap');
+  pages.push(totalPages - 1);
+  return pages;
+}
+
+function readSavedBugFilter<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(BUG_FILTER_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed?.[key] ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+type SavedBugFilter = {
+  id: string;
+  name: string;
+  searchQuery: string;
+  statusFilter: BugStatus[];
+  severityFilter: BugSeverity[];
+  assigneeFilter: number[];
+  reporterFilter: number[];
+  excludeMode: boolean;
+  sortBy: 'createdAt' | 'severity' | 'status' | 'title';
+  sortOrder: 'asc' | 'desc';
+};
+
+function loadNamedFilters(userId: number | undefined): SavedBugFilter[] {
+  try {
+    const raw = localStorage.getItem(`${NAMED_BUG_FILTERS_KEY}.${userId ?? 'guest'}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistNamedFilters(userId: number | undefined, filters: SavedBugFilter[]): void {
+  try {
+    localStorage.setItem(`${NAMED_BUG_FILTERS_KEY}.${userId ?? 'guest'}`, JSON.stringify(filters));
+  } catch {}
+}
+
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
+  const { user } = useAuth();
+  const { showToast } = useToast();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
   const [totalElements, setTotalElements] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [bugStats, setBugStats] = useState<BugStats>({ total: 0, open: 0, inProgress: 0, resolved: 0, critical: 0 });
+  const { loading, refreshing, startLoad, finishLoad, resetInitial } = useListLoader();
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<BugStatus[]>([]);
-  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>([]);
-  const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
-  const [cycleFilter, setCycleFilter] = useState<number | undefined>(undefined);
-  const [pitchFilter, setPitchFilter] = useState<number | undefined>(undefined);
-  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
+
+  // Filter state — URL params are the primary source of truth (shareable, back-button safe).
+  // When there are no URL params (fresh navigation or new session), fall back to localStorage
+  // so the user's last view is restored automatically.
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
+  const [statusFilter, setStatusFilter] = useState<BugStatus[]>(() =>
+    searchParams.getAll('status').length > 0 ? searchParams.getAll('status') as BugStatus[] : readSavedBugFilter('statusFilter', [])
+  );
+  const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() =>
+    searchParams.getAll('severity').length > 0 ? searchParams.getAll('severity') as BugSeverity[] : readSavedBugFilter('severityFilter', [])
+  );
+  const [assigneeFilter, setAssigneeFilter] = useState<number[]>(() => {
+    const urlVals = searchParams.getAll('assignee');
+    return urlVals.length > 0 ? urlVals.map((v) => parseInt(v)) : readSavedBugFilter('assigneeFilter', []);
+  });
+  const [reporterFilter, setReporterFilter] = useState<number[]>(() => {
+    const urlVals = searchParams.getAll('reporter');
+    return urlVals.length > 0 ? urlVals.map((v) => parseInt(v)) : readSavedBugFilter('reporterFilter', []);
+  });
+  const [cycleFilter, setCycleFilter] = useState<number | undefined>(() => {
+    const v = searchParams.get('cycle'); return v ? parseInt(v) : undefined;
+  });
+  const [pitchFilter, setPitchFilter] = useState<number | undefined>(() => {
+    const v = searchParams.get('pitch'); return v ? parseInt(v) : undefined;
+  });
+  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(() => {
+    const v = searchParams.get('release'); return v ? parseInt(v) : undefined;
+  });
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [releases, setReleases] = useState<Release[]>([]);
-  const [excludeMode, setExcludeMode] = useState(false);
-  const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [excludeMode, setExcludeMode] = useState(() =>
+    searchParams.has('exclude') ? searchParams.get('exclude') === 'true' : readSavedBugFilter('excludeMode', false)
+  );
+  const [sortBy, setSortBy] = useState<'createdAt' | 'severity' | 'status' | 'title'>(
+    () => (searchParams.get('sortBy') as 'createdAt' | 'severity' | 'status' | 'title') ?? readSavedBugFilter('sortBy', 'createdAt')
+  );
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(
+    () => (searchParams.get('sortOrder') as 'asc' | 'desc') ?? readSavedBugFilter('sortOrder', 'desc')
+  );
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '0'));
+  const [rowsPerPage, setRowsPerPage] = useState(() =>
+    parseInt(searchParams.get('size') ?? String(readSavedBugFilter('rowsPerPage', 10)))
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBug, setSelectedBug] = useState<BugReport | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [severityDropdownOpen, setSeverityDropdownOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>(() => readSavedBugFilter('viewMode', 'list'));
   const [updatingBugId, setUpdatingBugId] = useState<number | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [bugToDelete, setBugToDelete] = useState<number | null>(null);
+
+  // Saved named filters (per user, stored in localStorage)
+  const [savedFilters, setSavedFilters] = useState<SavedBugFilter[]>(() => loadNamedFilters(user?.userId));
+  const [savedFilterPanelOpen, setSavedFilterPanelOpen] = useState(false);
+  const [savedFilterName, setSavedFilterName] = useState('');
+  const savedFilterPanelRef = useRef<HTMLDivElement>(null);
 
   // Filter cycles by current project
   const filteredCycles = useMemo(() => {
@@ -128,17 +250,83 @@ const BugReportsPage: React.FC = () => {
     return pitches.filter(p => p.cycleId !== undefined && projectCycleIds.has(p.cycleId));
   }, [pitches, filteredCycles, isAllProjectsSelected]);
 
+  // Reporters are User accounts (not the Person directory used for assignees), and the
+  // all-users endpoint is admin-only — so we build the reporter filter options from the
+  // reporters that actually appear in loaded bug reports. The directory accumulates across
+  // page/filter changes so previously-seen reporters stay selectable, and currently-selected
+  // ids are always retained even if they fall off the visible page.
+  const [reporterDirectory, setReporterDirectory] = useState<Record<number, string>>({});
+  const reporterOptions = useMemo(
+    () =>
+      Object.entries(reporterDirectory)
+        .map(([id, name]) => ({ value: id, label: name }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [reporterDirectory]
+  );
+
+  // Keep URL in sync with filter state so the address bar is always shareable
+  // and browser Back/Forward restores the exact filter view.
+  useEffect(() => {
+    setSearchParams(prev => {
+      const next = new URLSearchParams();
+      // Carry through non-filter params that may be set by other code
+      prev.forEach((v, k) => { if (!FILTER_KEYS.includes(k)) next.set(k, v); });
+      if (searchQuery) next.set('q', searchQuery);
+      statusFilter.forEach(s => next.append('status', s));
+      severityFilter.forEach(s => next.append('severity', s));
+      assigneeFilter.forEach(a => next.append('assignee', String(a)));
+      reporterFilter.forEach(r => next.append('reporter', String(r)));
+      if (cycleFilter !== undefined) next.set('cycle', String(cycleFilter));
+      if (pitchFilter !== undefined) next.set('pitch', String(pitchFilter));
+      if (releaseFilter !== undefined) next.set('release', String(releaseFilter));
+      if (excludeMode) next.set('exclude', 'true');
+      if (sortBy !== 'createdAt') next.set('sortBy', sortBy);
+      if (sortOrder !== 'desc') next.set('sortOrder', sortOrder);
+      if (page > 0) next.set('page', String(page));
+      if (rowsPerPage !== 10) next.set('size', String(rowsPerPage));
+      return next;
+    }, { replace: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, severityFilter, assigneeFilter, reporterFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
+
   // Reset cycle and pitch filters when project changes to ensure clean filtering
   useEffect(() => {
+    resetInitial(); // force full skeleton on next project load
     setCycleFilter(undefined);
     setPitchFilter(undefined);
     setReleaseFilter(undefined);
-    setPage(0); // Reset to first page when project changes
+    setPage(0);
   }, [currentProject?.id, isAllProjectsSelected]);
+
+  // Persist user-level filters across page navigations
+  useEffect(() => {
+    try {
+      localStorage.setItem(BUG_FILTER_KEY, JSON.stringify({
+        searchQuery,
+        statusFilter,
+        severityFilter,
+        assigneeFilter,
+        reporterFilter,
+        excludeMode,
+        sortBy,
+        sortOrder,
+        rowsPerPage,
+        viewMode,
+      }));
+    } catch { /* quota exceeded — ignore */ }
+  }, [searchQuery, statusFilter, severityFilter, assigneeFilter, reporterFilter, excludeMode, sortBy, sortOrder, rowsPerPage, viewMode]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     loadBugReports();
-  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, currentProject?.id, isAllProjectsSelected]);
+  }, [page, rowsPerPage, sortBy, sortOrder, statusFilter, severityFilter, assigneeFilter, reporterFilter, excludeMode, cycleFilter, pitchFilter, releaseFilter, viewMode, currentProject?.id, isAllProjectsSelected, debouncedSearch]);
 
   useEffect(() => {
     loadCyclesAndPitches();
@@ -146,12 +334,14 @@ const BugReportsPage: React.FC = () => {
 
   const loadCyclesAndPitches = async () => {
     try {
-      const [cyclesRes, pitchesRes] = await Promise.all([
+      const [cyclesRes, pitchesRes, personsData] = await Promise.all([
         cycleService.getMyCycles(),
         pitchService.getMyPitches(),
+        personService.getAll(true),
       ]);
       setCycles(cyclesRes.data);
       setPitches(pitchesRes.data);
+      setPersons(personsData);
       // Load releases for current project
       if (currentProject?.id) {
         try {
@@ -167,48 +357,126 @@ const BugReportsPage: React.FC = () => {
   };
 
   const loadBugReports = async () => {
-    setLoading(true);
+    startLoad();
     setError(null);
     try {
-      let response;
-      // Always use the filter endpoint for consistent server-side filtering
       const projectId = isAllProjectsSelected ? undefined : currentProject?.id;
-      
-      // When release filter is active, fetch a large page so client-side
-      // filtering covers all records (no reliable backend support yet).
-      const effectivePage = releaseFilter !== undefined ? 0 : page;
-      const effectiveSize = releaseFilter !== undefined ? 1000 : rowsPerPage;
+      const activeStatuses = statusFilter.length > 0 ? statusFilter : undefined;
+      const activeSeverities = severityFilter.length > 0 ? severityFilter : undefined;
+      const activeAssignees = assigneeFilter.length > 0 ? assigneeFilter : undefined;
+      const activeReporters = reporterFilter.length > 0 ? reporterFilter : undefined;
 
-      response = await qaTestManagementService.getBugReportsWithFilters(
-        projectId,
-        cycleFilter,
-        pitchFilter,
-        statusFilter.length > 0 ? statusFilter : undefined,
-        severityFilter.length > 0 ? severityFilter : undefined,
-        assigneeFilter.length > 0 ? assigneeFilter : undefined,
-        excludeMode,
-        effectivePage,
-        effectiveSize,
-        sortBy,
-        sortOrder
-      );
-      
+      // The kanban board groups every matching bug into status columns, so it needs the full
+      // result set rather than a single page. The release filter is applied client-side and also
+      // needs all records. In both cases fetch a large page; otherwise honor list pagination.
+      const fetchAll = releaseFilter !== undefined || viewMode === 'kanban';
+      const effectivePage = fetchAll ? 0 : page;
+      const effectiveSize = fetchAll ? 1000 : rowsPerPage;
+
+      // Fire page data and aggregate stats in parallel
+      const [response, statsResponse] = await Promise.all([
+        qaTestManagementService.getBugReportsWithFilters(
+          projectId, cycleFilter, pitchFilter,
+          activeStatuses, activeSeverities, activeAssignees, activeReporters,
+          excludeMode, effectivePage, effectiveSize,
+          sortBy, sortOrder, debouncedSearch || undefined
+        ),
+        qaTestManagementService.getBugStats(
+          projectId, cycleFilter, pitchFilter,
+          activeStatuses, activeSeverities, activeAssignees, activeReporters,
+          excludeMode, debouncedSearch || undefined
+        ),
+      ]);
+
       let bugData = response.data.content;
-      
-      // Client-side filter by release (not yet supported by backend filter endpoint)
       if (releaseFilter !== undefined) {
         bugData = bugData.filter(bug => bug.targetReleaseId === releaseFilter);
       }
-      
+
       setBugReports(bugData);
-      setTotalElements(releaseFilter !== undefined ? bugData.length : response.data.totalElements);
+      // Accumulate any reporters seen in this result set into the reporter filter directory.
+      setReporterDirectory((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const bug of bugData) {
+          if (bug.reporterId !== undefined && bug.reporterName && next[bug.reporterId] !== bug.reporterName) {
+            next[bug.reporterId] = bug.reporterName;
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+      setTotalElements(releaseFilter !== undefined ? bugData.length : getPageTotal(response.data));
+      // The release filter is applied client-side, so the server stats endpoint can't account
+      // for it — recompute the overview cards from the filtered set to keep them in sync.
+      setBugStats(releaseFilter !== undefined ? computeBugStats(bugData) : statsResponse.data);
     } catch (err) {
       setError(t('bugReports.loadFailed'));
       console.error(err);
     } finally {
-      setLoading(false);
+      finishLoad();
       notifyProjectSwitchComplete();
     }
+  };
+
+  // Close saved-filter panel on outside click
+  useEffect(() => {
+    if (!savedFilterPanelOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (savedFilterPanelRef.current && !savedFilterPanelRef.current.contains(e.target as Node)) {
+        setSavedFilterPanelOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [savedFilterPanelOpen]);
+
+  const handleSaveFilter = () => {
+    const name = savedFilterName.trim();
+    if (!name) return;
+    const entry: SavedBugFilter = {
+      id: String(Date.now()),
+      name,
+      searchQuery,
+      statusFilter,
+      severityFilter,
+      assigneeFilter,
+      reporterFilter,
+      excludeMode,
+      sortBy,
+      sortOrder,
+    };
+    const next = [entry, ...savedFilters];
+    setSavedFilters(next);
+    persistNamedFilters(user?.userId, next);
+    setSavedFilterName('');
+    showToast(t('bugReports.savedFilters.saved', 'Filter saved'), 'success');
+  };
+
+  const handleApplyFilter = (f: SavedBugFilter) => {
+    setSearchQuery(f.searchQuery);
+    setDebouncedSearch(f.searchQuery);
+    setStatusFilter(f.statusFilter);
+    setSeverityFilter(f.severityFilter);
+    // Older saved filters may have stored a single assignee number — normalize to an array.
+    const savedAssignee = f.assigneeFilter as unknown;
+    setAssigneeFilter(Array.isArray(savedAssignee) ? (savedAssignee as number[])
+      : typeof savedAssignee === 'number' ? [savedAssignee] : []);
+    // Older saved filters predate the reporter filter — default to empty.
+    const savedReporter = f.reporterFilter as unknown;
+    setReporterFilter(Array.isArray(savedReporter) ? (savedReporter as number[])
+      : typeof savedReporter === 'number' ? [savedReporter] : []);
+    setExcludeMode(f.excludeMode);
+    setSortBy(f.sortBy);
+    setSortOrder(f.sortOrder);
+    setPage(0);
+    setSavedFilterPanelOpen(false);
+  };
+
+  const handleDeleteSavedFilter = (id: string) => {
+    const next = savedFilters.filter(f => f.id !== id);
+    setSavedFilters(next);
+    persistNamedFilters(user?.userId, next);
   };
 
   const openDeleteConfirm = (id: number) => {
@@ -236,6 +504,9 @@ const BugReportsPage: React.FC = () => {
       } else {
         const response = await qaTestManagementService.createBugReport(data);
         setBugReports([response.data, ...bugReports]);
+        setModalOpen(false);
+        setSelectedBug(null);
+        return response.data; // return so BugReportModal can upload pending attachments
       }
       setModalOpen(false);
       setSelectedBug(null);
@@ -288,28 +559,47 @@ const BugReportsPage: React.FC = () => {
     setStatusFilter((prev) =>
       prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
     );
+    setPage(0);
   };
 
   const toggleSeverityFilter = (severity: BugSeverity) => {
     setSeverityFilter((prev) =>
       prev.includes(severity) ? prev.filter((s) => s !== severity) : [...prev, severity]
     );
+    setPage(0);
   };
 
-  // Inline update for status/severity
-  const handleInlineUpdate = async (bugId: number, field: 'status' | 'severity', value: string) => {
+  const toggleAssigneeFilter = (personId: number) => {
+    setAssigneeFilter((prev) =>
+      prev.includes(personId) ? prev.filter((p) => p !== personId) : [...prev, personId]
+    );
+    setPage(0);
+  };
+
+  const toggleReporterFilter = (reporterId: number) => {
+    setReporterFilter((prev) =>
+      prev.includes(reporterId) ? prev.filter((r) => r !== reporterId) : [...prev, reporterId]
+    );
+    setPage(0);
+  };
+
+  // Inline update for status/severity/assignee
+  const handleInlineUpdate = async (bugId: number, field: 'status' | 'severity' | 'assignee', value: string) => {
     setUpdatingBugId(bugId);
     try {
       const bug = bugReports.find(b => b.id === bugId);
       if (!bug) return;
-      
+
+      // The backend applies updates partially (only non-null fields), so we send the
+      // unchanged title/description/severity/status plus just the field being edited.
       const updateData = {
         title: bug.title,
         description: bug.description,
         severity: field === 'severity' ? value as BugSeverity : bug.severity,
         status: field === 'status' ? value as BugStatus : bug.status,
+        ...(field === 'assignee' ? { assigneeId: parseInt(value, 10) } : {}),
       };
-      
+
       const response = await qaTestManagementService.updateBugReport(bugId, updateData);
       setBugReports(bugReports.map(b => b.id === bugId ? response.data : b));
     } catch (err) {
@@ -320,15 +610,7 @@ const BugReportsPage: React.FC = () => {
     }
   };
 
-  const getStatCounts = () => ({
-    total: totalElements,
-    open: bugReports.filter((b) => b.status === 'OPEN').length,
-    inProgress: bugReports.filter((b) => b.status === 'IN_PROGRESS').length,
-    resolved: bugReports.filter((b) => ['RESOLVED', 'VERIFIED', 'CLOSED'].includes(b.status)).length,
-    critical: bugReports.filter((b) => ['CRITICAL', 'BLOCKER'].includes(b.severity)).length,
-  });
-
-  const stats = getStatCounts();
+  const stats = bugStats;
   const totalPages = Math.ceil(totalElements / rowsPerPage);
 
   if (loading || isSwitchingProject) {
@@ -337,6 +619,11 @@ const BugReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Thin refresh progress bar — no page blink, just a subtle indicator */}
+      <div className={`fixed top-0 left-0 right-0 z-50 h-0.5 overflow-hidden transition-opacity duration-300 ${refreshing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <div className={`h-full w-full bg-primary ${refreshing ? 'animate-page-progress' : ''}`} />
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t('bugReports.title')}</h1>
@@ -376,13 +663,98 @@ const BugReportsPage: React.FC = () => {
             </TooltipProvider>
           </div>
 
+          {/* Copy shareable link */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
+                  }}>
+                  <Link className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('bugReports.copyLink', 'Copy shareable link')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Save / load named filters */}
+          <div className="relative" ref={savedFilterPanelRef}>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => setSavedFilterPanelOpen(v => !v)}
+                  >
+                    <Bookmark className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('bugReports.savedFilters.title', 'Saved filters')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {savedFilterPanelOpen && (
+              <div className="absolute right-0 top-full mt-1 z-50 w-72 bg-popover border rounded-md shadow-lg p-3 space-y-3">
+                {/* Save current filter */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">{t('bugReports.savedFilters.saveCurrent', 'Save current filters')}</p>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      className="flex-1 h-8 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                      placeholder={t('bugReports.savedFilters.namePlaceholder', 'Filter name...')}
+                      value={savedFilterName}
+                      onChange={e => setSavedFilterName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSaveFilter(); }}
+                    />
+                    <Button size="sm" className="h-8 px-2" onClick={handleSaveFilter} disabled={!savedFilterName.trim()}>
+                      <BookmarkPlus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Saved filters list */}
+                {savedFilters.length > 0 ? (
+                  <div className="space-y-1 border-t pt-2">
+                    <p className="text-xs font-medium text-muted-foreground">{t('bugReports.savedFilters.title', 'Saved filters')}</p>
+                    {savedFilters.map(f => (
+                      <div key={f.id} className="flex items-center gap-1 group">
+                        <button
+                          type="button"
+                          className="flex-1 text-left text-sm px-2 py-1 rounded hover:bg-accent truncate"
+                          onClick={() => handleApplyFilter(f)}
+                        >
+                          {f.name}
+                        </button>
+                        <button
+                          type="button"
+                          className="shrink-0 p-1 rounded text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleDeleteSavedFilter(f.id)}
+                          title={t('common.delete', 'Delete')}
+                        >
+                          <BookmarkX className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground border-t pt-2">{t('bugReports.savedFilters.none', 'No saved filters yet')}</p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Add New Bug Button */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
-                  <Button 
-                    onClick={openCreateModal} 
+                  <Button
+                    onClick={openCreateModal}
                     disabled={isAllProjectsSelected}
                   >
                     <Plus className="h-4 w-4 mr-2" />
@@ -423,44 +795,44 @@ const BugReportsPage: React.FC = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-5 gap-3">
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold">{stats.total}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold">{stats.total}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.total')}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-destructive">{stats.open}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-destructive">{stats.open}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.open')}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-primary">{stats.inProgress}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-primary">{stats.inProgress}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.inProgress')}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-success">{stats.resolved}</p>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-success">{stats.resolved}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.resolved')}</p>
           </CardContent>
         </Card>
-        <Card className="col-span-2 sm:col-span-1">
-          <CardContent className="text-center py-4">
-            <p className="text-2xl font-bold text-destructive">{stats.critical}</p>
+        <Card>
+          <CardContent className="text-center py-2 px-3">
+            <p className="text-xl font-bold text-destructive">{stats.critical}</p>
             <p className="text-xs text-muted-foreground">{t('bugReports.stats.criticalBlocker')}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-          {/* Search */}
-          <div className="relative lg:col-span-2">
+      <div className="space-y-2">
+        {/* Row 1: Search + Sort */}
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="relative flex-1 min-w-[200px]">
             <Label htmlFor="bugs-search" className="sr-only">{t('bugReports.filters.searchLabel')}</Label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -473,19 +845,49 @@ const BugReportsPage: React.FC = () => {
               aria-label={t('bugReports.filters.searchAriaLabel')}
             />
           </div>
-
-          {/* Status Filter */}
-          <div className="relative">
-            <Label className="text-xs mb-1 block">{t('bugReports.filters.status')}</Label>
+          <div className="flex items-end gap-2">
+            <div className="min-w-[140px]">
+              <Label className="text-xs mb-1 block">{t('bugReports.filters.sortBy')}</Label>
+              <Combobox
+                options={[
+                  { value: 'createdAt', label: t('bugReports.sort.createdDate') },
+                  { value: 'severity', label: t('bugReports.sort.severity') },
+                  { value: 'status', label: t('bugReports.sort.status') },
+                  { value: 'title', label: t('bugReports.sort.title') },
+                ]}
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as typeof sortBy)}
+                placeholder={t('bugReports.filters.sortBy')}
+              />
+            </div>
             <Button
               variant="outline"
-              className="w-full justify-between"
+              size="icon"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              aria-label={sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
+            >
+              {sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+
+        {/* Row 2: Filter controls */}
+        <div className="flex flex-wrap gap-2 items-center">
+          {/* Status multi-select */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
               onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
             >
-              {statusFilter.length > 0 ? t('bugReports.filters.itemsSelected', { count: statusFilter.length }) : t('bugReports.filters.allStatus')}
+              {t('bugReports.filters.status')}
+              {statusFilter.length > 0 && (
+                <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-xs">{statusFilter.length}</Badge>
+              )}
             </Button>
             {statusDropdownOpen && (
-              <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md p-2 space-y-1">
+              <div className="absolute z-50 mt-1 min-w-[180px] bg-popover border rounded-md shadow-md p-2 space-y-1">
                 {(Object.keys(statusBadgeVariants) as BugStatus[]).map((status) => (
                   <div
                     key={status}
@@ -493,25 +895,28 @@ const BugReportsPage: React.FC = () => {
                     onClick={() => toggleStatusFilter(status)}
                   >
                     <Checkbox checked={statusFilter.includes(status)} />
-                    <span className="text-sm">{status.replace('_', ' ')}</span>
+                    <span className="text-sm">{status.replace(/_/g, ' ')}</span>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Severity Filter */}
+          {/* Severity multi-select */}
           <div className="relative">
-            <Label className="text-xs mb-1 block">{t('bugReports.filters.severity')}</Label>
             <Button
               variant="outline"
-              className="w-full justify-between"
+              size="sm"
+              className="gap-1.5"
               onClick={() => setSeverityDropdownOpen(!severityDropdownOpen)}
             >
-              {severityFilter.length > 0 ? t('bugReports.filters.itemsSelected', { count: severityFilter.length }) : t('bugReports.filters.allSeverity')}
+              {t('bugReports.filters.severity')}
+              {severityFilter.length > 0 && (
+                <Badge variant="secondary" className="ml-0.5 px-1.5 py-0 text-xs">{severityFilter.length}</Badge>
+              )}
             </Button>
             {severityDropdownOpen && (
-              <div className="absolute z-50 mt-1 w-full bg-popover border rounded-md shadow-md p-2 space-y-1">
+              <div className="absolute z-50 mt-1 min-w-[160px] bg-popover border rounded-md shadow-md p-2 space-y-1">
                 {(Object.keys(severityBadgeVariants) as BugSeverity[]).map((severity) => (
                   <div
                     key={severity}
@@ -526,16 +931,135 @@ const BugReportsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Exclude Mode + Clear */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="exclude-mode"
-                checked={excludeMode}
-                onCheckedChange={setExcludeMode}
+          {/* Assignee multi-select — searchable so typing a name filters the list instead
+              of leaking keystrokes to the global keyboard shortcuts (the old dropdown had
+              no text input, so isTyping() stayed false and single-key shortcuts fired). */}
+          {persons.length > 0 && (
+            <div className="min-w-[200px]">
+              <MultiCombobox
+                options={persons.map((p) => ({ value: String(p.id), label: p.name }))}
+                value={assigneeFilter.map(String)}
+                onValueChange={(vals) => {
+                  // MultiCombobox emits the full next selection; toggleAssigneeFilter flips a
+                  // single id, so forward only the one that changed.
+                  const next = vals.map(Number);
+                  const toggled =
+                    next.find((id) => !assigneeFilter.includes(id)) ??
+                    assigneeFilter.find((id) => !next.includes(id));
+                  if (toggled !== undefined) toggleAssigneeFilter(toggled);
+                }}
+                placeholder={t('bugReports.filters.allAssignees', 'All Assignees')}
+                searchPlaceholder={t('bugReports.filters.searchAssignee', 'Search people...')}
+                emptyText={t('bugReports.filters.noAssignee', 'No people found')}
+                triggerClassName="h-9 min-h-9"
+                maxDisplay={2}
               />
-              <Label htmlFor="exclude-mode" className="text-sm">{t('bugReports.filters.exclude')}</Label>
             </div>
+          )}
+
+          {/* Reporter multi-select — mirrors the assignee filter. Options are the reporters
+              that have appeared in loaded bug reports (the all-users list is admin-only). Any
+              currently-selected reporter is always shown so a deep-linked/saved filter stays
+              readable even before its reporter appears in the visible page. */}
+          {(reporterOptions.length > 0 || reporterFilter.length > 0) && (
+            <div className="min-w-[200px]">
+              <MultiCombobox
+                options={(() => {
+                  const opts = [...reporterOptions];
+                  const known = new Set(opts.map((o) => o.value));
+                  reporterFilter.forEach((id) => {
+                    if (!known.has(String(id))) {
+                      opts.push({ value: String(id), label: reporterDirectory[id] ?? `#${id}` });
+                    }
+                  });
+                  return opts;
+                })()}
+                value={reporterFilter.map(String)}
+                onValueChange={(vals) => {
+                  // MultiCombobox emits the full next selection; toggleReporterFilter flips a
+                  // single id, so forward only the one that changed.
+                  const next = vals.map(Number);
+                  const toggled =
+                    next.find((id) => !reporterFilter.includes(id)) ??
+                    reporterFilter.find((id) => !next.includes(id));
+                  if (toggled !== undefined) toggleReporterFilter(toggled);
+                }}
+                placeholder={t('bugReports.filters.allReporters', 'All Reporters')}
+                searchPlaceholder={t('bugReports.filters.searchReporter', 'Search reporters...')}
+                emptyText={t('bugReports.filters.noReporter', 'No reporters found')}
+                triggerClassName="h-9 min-h-9"
+                maxDisplay={2}
+              />
+            </div>
+          )}
+
+          {/* Cycle + Pitch (Shape Up only) */}
+          {!isKanbanProject && (
+            <>
+              <div className="min-w-[160px]">
+                <Combobox
+                  options={[
+                    { value: 'all', label: t('bugReports.filters.allCycles') },
+                    ...filteredCycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name })),
+                  ]}
+                  value={cycleFilter?.toString() ?? 'all'}
+                  onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
+                  placeholder={t('bugReports.filters.allCycles')}
+                  searchPlaceholder="Search cycles..."
+                />
+              </div>
+              <div className="min-w-[160px]">
+                <Combobox
+                  options={[
+                    { value: 'all', label: t('bugReports.filters.allPitches') },
+                    ...filteredPitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title })),
+                  ]}
+                  value={pitchFilter?.toString() ?? 'all'}
+                  onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
+                  placeholder={t('bugReports.filters.allPitches')}
+                  searchPlaceholder="Search pitches..."
+                />
+              </div>
+            </>
+          )}
+
+          {/* Release */}
+          {releases.length > 0 && (
+            <div className="min-w-[160px]">
+              <Combobox
+                options={[
+                  { value: 'all', label: t('bugReports.filters.allReleases', 'All Releases') },
+                  ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` })),
+                ]}
+                value={releaseFilter?.toString() ?? 'all'}
+                onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
+                placeholder={t('bugReports.filters.allReleases', 'All Releases')}
+                searchPlaceholder="Search releases..."
+              />
+            </div>
+          )}
+
+          {/* Exclude + Clear — pushed to the end */}
+          <div className="ml-auto flex items-center gap-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Switch
+                      id="exclude-mode"
+                      checked={excludeMode}
+                      onCheckedChange={setExcludeMode}
+                    />
+                    <Label htmlFor="exclude-mode" className="text-sm cursor-pointer">
+                      {t('bugReports.filters.excludeLabel')}
+                    </Label>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  {t('bugReports.filters.excludeTooltip')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button
               variant="outline"
               size="sm"
@@ -543,6 +1067,7 @@ const BugReportsPage: React.FC = () => {
                 setStatusFilter([]);
                 setSeverityFilter([]);
                 setAssigneeFilter([]);
+                setReporterFilter([]);
                 setCycleFilter(undefined);
                 setPitchFilter(undefined);
                 setReleaseFilter(undefined);
@@ -552,88 +1077,12 @@ const BugReportsPage: React.FC = () => {
               {t('bugReports.filters.clear')}
             </Button>
           </div>
-
-          {/* Sort */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Label className="text-xs mb-1 block">{t('bugReports.filters.sortBy')}</Label>
-              <Combobox
-                options={[
-                  { value: 'createdAt', label: t('bugReports.sort.createdDate') },
-                  { value: 'severity', label: t('bugReports.sort.severity') },
-                  { value: 'status', label: t('bugReports.sort.status') },
-                  { value: 'title', label: t('bugReports.sort.title') }
-                ]}
-                value={sortBy}
-                onValueChange={(v) => setSortBy(v as typeof sortBy)}
-                placeholder="Sort by"
-              />
-            </div>
-            <div className="self-end">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              >
-                {sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
         </div>
-
-        {/* Cycle and Pitch Filters Row - Hidden for Kanban projects (Shape Up concepts) */}
-        {!isKanbanProject && (
-          <div className="flex flex-wrap gap-4">
-            <div className="min-w-[180px]">
-              <Label className="text-xs mb-1 block">{t('bugReports.filters.cycle')}</Label>
-              <Combobox
-                options={[
-                  { value: 'all', label: t('bugReports.filters.allCycles') },
-                  ...filteredCycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))
-                ]}
-                value={cycleFilter?.toString() ?? 'all'}
-                onValueChange={(value) => setCycleFilter(value === 'all' ? undefined : parseInt(value))}
-                placeholder={t('bugReports.filters.allCycles')}
-                searchPlaceholder="Search cycles..."
-              />
-            </div>
-
-            <div className="min-w-[180px]">
-              <Label className="text-xs mb-1 block">{t('bugReports.filters.pitch')}</Label>
-              <Combobox
-                options={[
-                  { value: 'all', label: t('bugReports.filters.allPitches') },
-                  ...filteredPitches.map(pitch => ({ value: pitch.id.toString(), label: pitch.title }))
-                ]}
-                value={pitchFilter?.toString() ?? 'all'}
-                onValueChange={(value) => setPitchFilter(value === 'all' ? undefined : parseInt(value))}
-                placeholder={t('bugReports.filters.allPitches')}
-                searchPlaceholder="Search pitches..."
-              />
-            </div>
-
-            {releases.length > 0 && (
-              <div className="min-w-[180px]">
-                <Label className="text-xs mb-1 block">{t('bugReports.filters.release', 'Release')}</Label>
-                <Combobox
-                  options={[
-                    { value: 'all', label: t('bugReports.filters.allReleases', 'All Releases') },
-                    ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` }))
-                  ]}
-                  value={releaseFilter?.toString() ?? 'all'}
-                  onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
-                  placeholder={t('bugReports.filters.allReleases', 'All Releases')}
-                  searchPlaceholder="Search releases..."
-                />
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Bug Reports - List View */}
       {viewMode === 'list' && (
-        <Card>
+        <Card className={`transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
           <ResponsiveTable
             mobileContent={
               <MobileCardView
@@ -668,8 +1117,10 @@ const BugReportsPage: React.FC = () => {
                   ],
                   actions: (
                     <>
-                      <Button variant="ghost" size="icon-sm" onClick={() => openDetailModal(bug)}>
-                        <Eye className="h-4 w-4" />
+                      <Button asChild variant="ghost" size="icon-sm" title={t('bugReports.actions.openFullPage', 'Open full page')}>
+                        <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
+                          <Eye className="h-4 w-4" />
+                        </RouterLink>
                       </Button>
                       <Button variant="ghost" size="icon-sm" onClick={() => openEditModal(bug)}>
                         <Pencil className="h-4 w-4" />
@@ -729,6 +1180,7 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </div>
                 </TableHead>
+                <TableHead>{t('bugReports.table.component')}</TableHead>
                 <TableHead>{t('bugReports.table.pitch')}</TableHead>
                 <TableHead>{t('bugReports.table.assignee')}</TableHead>
                 <TableHead>{t('bugReports.table.reporter')}</TableHead>
@@ -835,21 +1287,59 @@ const BugReportsPage: React.FC = () => {
                     </DropdownMenu>
                   </TableCell>
                   <TableCell>
+                    {bug.component ? (
+                      <Badge variant="outline" className="text-xs font-normal">{bug.component}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <span className="text-muted-foreground">{bug.pitchTitle || '-'}</span>
                   </TableCell>
                   <TableCell>
-                    {bug.assigneeName ? (
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-xs">
-                            {bug.assigneeName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{bug.assigneeName}</span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">{t('bugReports.unassigned')}</span>
-                    )}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-1 -ml-1"
+                          disabled={updatingBugId === bug.id}
+                          title={t('bugReports.changeAssignee', 'Change assignee')}
+                        >
+                          {updatingBugId === bug.id && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                          {bug.assigneeName ? (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-xs">
+                                  {bug.assigneeName.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm">{bug.assigneeName}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">{t('bugReports.unassigned')}</span>
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                        {persons.length === 0 ? (
+                          <DropdownMenuItem disabled>{t('bugReports.filters.searchAssignee', 'Search people...')}</DropdownMenuItem>
+                        ) : (
+                          persons.map((person) => (
+                            <DropdownMenuItem
+                              key={person.id}
+                              onClick={() => handleInlineUpdate(bug.id, 'assignee', String(person.id))}
+                            >
+                              <Avatar className="h-5 w-5 mr-2">
+                                <AvatarFallback className="text-[0.6rem]">{person.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              {person.name}
+                              {bug.assigneeId === person.id && <Check className="ml-auto h-4 w-4" />}
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">{bug.reporterName || '-'}</span>
@@ -875,15 +1365,35 @@ const BugReportsPage: React.FC = () => {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
+                              asChild
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => openDetailModal(bug)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <RouterLink to={`/qa/bug-reports/${bug.bugKey}`}>
+                                <Eye className="h-4 w-4" />
+                              </RouterLink>
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>{t('bugReports.actions.viewDetails')}</TooltipContent>
+                          <TooltipContent>{t('bugReports.actions.openFullPage', 'Open full page')}</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/qa/bug-reports/${bug.bugKey}`);
+                                showToast(t('bugReports.linkCopied', 'Link copied to clipboard'), 'success');
+                              }}
+                            >
+                              <Link className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('bugReports.copyBugLink', 'Copy link')}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                       <TooltipProvider>
@@ -922,7 +1432,7 @@ const BugReportsPage: React.FC = () => {
               ))}
               {bugReports.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <span className="text-muted-foreground">
                       {searchQuery || statusFilter.length > 0 || severityFilter.length > 0
                         ? t('bugReports.emptyState.noMatches')
@@ -952,32 +1462,77 @@ const BugReportsPage: React.FC = () => {
               triggerClassName="w-[70px] h-8"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">
-              {t('bugReports.pagination.rangeText', { 
-                start: page * rowsPerPage + 1, 
-                end: Math.min((page + 1) * rowsPerPage, totalElements), 
-                total: totalElements 
-              })}
+              {totalElements === 0
+                ? t('bugReports.pagination.empty', 'No results')
+                : t('bugReports.pagination.rangeText', {
+                    start: page * rowsPerPage + 1,
+                    end: Math.min((page + 1) * rowsPerPage, totalElements),
+                    total: totalElements,
+                  })}
             </span>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleChangePage(0)}
+                disabled={page === 0}
+                aria-label={t('bugReports.pagination.first', 'First page')}
+                title={t('bugReports.pagination.first', 'First page')}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => handleChangePage(page - 1)}
                 disabled={page === 0}
+                aria-label={t('bugReports.pagination.previous', 'Previous page')}
+                title={t('bugReports.pagination.previous', 'Previous page')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
+              {totalPages > 1 && buildPageList(page, totalPages).map((item, idx) =>
+                item === 'gap' ? (
+                  <span key={`gap-${idx}`} className="px-1 text-sm text-muted-foreground select-none">…</span>
+                ) : (
+                  <Button
+                    key={item}
+                    variant={item === page ? 'default' : 'outline'}
+                    size="icon"
+                    className="h-8 w-8 text-xs"
+                    onClick={() => handleChangePage(item)}
+                    aria-label={t('bugReports.pagination.goToPage', 'Go to page {{page}}', { page: item + 1 })}
+                    aria-current={item === page ? 'page' : undefined}
+                  >
+                    {item + 1}
+                  </Button>
+                )
+              )}
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => handleChangePage(page + 1)}
                 disabled={page >= totalPages - 1}
+                aria-label={t('bugReports.pagination.next', 'Next page')}
+                title={t('bugReports.pagination.next', 'Next page')}
               >
                 <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleChangePage(totalPages - 1)}
+                disabled={page >= totalPages - 1}
+                aria-label={t('bugReports.pagination.last', 'Last page')}
+                title={t('bugReports.pagination.last', 'Last page')}
+              >
+                <ChevronsRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -987,18 +1542,20 @@ const BugReportsPage: React.FC = () => {
 
       {/* Bug Reports - Kanban View */}
       {viewMode === 'kanban' && (
-        <BugKanbanBoard
-          bugs={bugReports}
-          onStatusChange={(bugId, newStatus) => handleInlineUpdate(bugId, 'status', newStatus)}
-          onViewBug={openDetailModal}
-          onEditBug={(bug) => {
-            setSelectedBug(bug);
-            setModalOpen(true);
-          }}
-          onDeleteBug={handleDelete}
-          loading={loading}
-          updatingBugId={updatingBugId}
-        />
+        <div className={`transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
+          <BugKanbanBoard
+            bugs={bugReports}
+            onStatusChange={(bugId, newStatus) => handleInlineUpdate(bugId, 'status', newStatus)}
+            onViewBug={openDetailModal}
+            onEditBug={(bug) => {
+              setSelectedBug(bug);
+              setModalOpen(true);
+            }}
+            onDeleteBug={handleDelete}
+            loading={loading}
+            updatingBugId={updatingBugId}
+          />
+        </div>
       )}
 
       {/* Create/Edit Modal */}
@@ -1007,8 +1564,6 @@ const BugReportsPage: React.FC = () => {
         onClose={handleModalClose}
         onSubmit={handleCreateOrUpdate}
         bugReport={selectedBug || undefined}
-        cycleId={!isAllProjectsSelected && currentProject ? filteredCycles[0]?.id : undefined}
-        pitchId={!isAllProjectsSelected && currentProject ? filteredPitches[0]?.id : undefined}
       />
 
       {/* Bug Detail Dialog - uses BugViewDialog with Activity tab */}
@@ -1016,6 +1571,15 @@ const BugReportsPage: React.FC = () => {
         bug={selectedBug}
         open={detailModalOpen}
         onOpenChange={setDetailModalOpen}
+        onEdit={(bug) => {
+          setDetailModalOpen(false);
+          openEditModal(bug);
+        }}
+        onOpenFullPage={(bug) => {
+          setDetailModalOpen(false);
+          navigate(`/qa/bug-reports/${bug.bugKey}`);
+        }}
+        onUpdate={(updated) => setSelectedBug(updated)}
       />
 
       {/* Delete Confirmation Dialog */}

@@ -46,6 +46,9 @@ class TaskSoftDeleteTest {
   @Mock
   private LocalizationService messageService;
 
+  @Mock
+  private ProjectPermissionService projectPermissionService;
+
   @InjectMocks
   private TaskService taskService;
 

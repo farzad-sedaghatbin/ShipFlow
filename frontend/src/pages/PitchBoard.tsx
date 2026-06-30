@@ -253,6 +253,7 @@ export default function PitchBoard() {
   };
 
   const handleStatusChange = async (pitchId: number, newStatus: string) => {
+    setPitches(prev => prev.map(p => p.id === pitchId ? { ...p, status: newStatus as PitchStatus } : p));
     try {
       await pitchService.updateStatus(pitchId, newStatus as PitchStatus);
       if (selectedCycle === 'all') {
@@ -261,6 +262,11 @@ export default function PitchBoard() {
         loadPitches(parseInt(selectedCycle));
       }
     } catch (error) {
+      if (selectedCycle === 'all') {
+        loadAllPitches();
+      } else if (selectedCycle) {
+        loadPitches(parseInt(selectedCycle));
+      }
       showError(getUserFriendlyError(error, t('pitchBoard.errors.updateStatusFailed')));
     }
   };

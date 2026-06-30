@@ -6,6 +6,7 @@ import {
   CreateTestCaseRequest,
   UpdateTestCaseRequest,
   BugReport,
+  BugStats,
   CreateBugReportRequest,
   UpdateBugReportRequest,
   TestRun,
@@ -55,20 +56,37 @@ export const qaTestManagementService = {
     pitchId?: number,
     statuses?: TestCaseStatus[],
     types?: TestCaseType[],
-    priorities?: TestCasePriority[]
-  ) => 
-    api.get<TestCase[]>('/qa/test-cases/filter', {
+    priorities?: TestCasePriority[],
+    page: number = 0,
+    size: number = 10,
+    sortBy: string = 'createdAt',
+    sortOrder: string = 'desc',
+    createdById?: number,
+    aiGenerated?: boolean,
+    projectId?: number
+  ) =>
+    api.get<Page<TestCase>>('/qa/test-cases/filter', {
       params: {
+        projectId,
         cycleId,
         pitchId,
         statuses: statuses?.join(','),
         types: types?.join(','),
         priorities: priorities?.join(','),
+        page,
+        size,
+        sortBy,
+        sortOrder,
+        createdById,
+        aiGenerated,
       },
     }),
 
-  createTestCase: (request: CreateTestCaseRequest) => 
+  createTestCase: (request: CreateTestCaseRequest) =>
     api.post<TestCase>('/qa/test-cases', request),
+
+  createTestCasesBulk: (requests: CreateTestCaseRequest[]) =>
+    api.post<TestCase[]>('/qa/test-cases/bulk', { testCases: requests }),
 
   updateTestCase: (id: number, request: UpdateTestCaseRequest) => 
     api.put<TestCase>(`/qa/test-cases/${id}`, request),
@@ -89,11 +107,13 @@ export const qaTestManagementService = {
     statuses?: BugStatus[],
     severities?: BugSeverity[],
     assigneeIds?: number[],
+    reporterIds?: number[],
     exclude?: boolean,
     page: number = 0,
     size: number = 10,
     sortBy: string = 'createdAt',
-    sortOrder: string = 'desc'
+    sortOrder: string = 'desc',
+    search?: string
   ) => {
     const params: any = { page, size, sortBy, sortOrder };
     if (projectId !== undefined) params.projectId = projectId;
@@ -102,12 +122,38 @@ export const qaTestManagementService = {
     if (statuses && statuses.length > 0) params.statuses = statuses.join(',');
     if (severities && severities.length > 0) params.severities = severities.join(',');
     if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
+    if (reporterIds && reporterIds.length > 0) params.reporterIds = reporterIds.join(',');
     if (exclude !== undefined) params.exclude = exclude;
-    
+    if (search && search.trim()) params.search = search.trim();
+
     return api.get<Page<BugReport>>('/qa/bug-reports/filter', { params });
   },
 
-  getBugReportById: (id: number) => 
+  getBugStats: (
+    projectId?: number,
+    cycleId?: number,
+    pitchId?: number,
+    statuses?: BugStatus[],
+    severities?: BugSeverity[],
+    assigneeIds?: number[],
+    reporterIds?: number[],
+    exclude?: boolean,
+    search?: string
+  ) => {
+    const params: any = {};
+    if (projectId !== undefined) params.projectId = projectId;
+    if (cycleId !== undefined) params.cycleId = cycleId;
+    if (pitchId !== undefined) params.pitchId = pitchId;
+    if (statuses && statuses.length > 0) params.statuses = statuses.join(',');
+    if (severities && severities.length > 0) params.severities = severities.join(',');
+    if (assigneeIds && assigneeIds.length > 0) params.assigneeIds = assigneeIds.join(',');
+    if (reporterIds && reporterIds.length > 0) params.reporterIds = reporterIds.join(',');
+    if (exclude !== undefined) params.exclude = exclude;
+    if (search && search.trim()) params.search = search.trim();
+    return api.get<BugStats>('/qa/bug-reports/stats', { params });
+  },
+
+  getBugReportById: (id: number) =>
     api.get<BugReport>(`/qa/bug-reports/${id}`),
 
   getBugReportByKey: (key: string) => 
@@ -131,8 +177,12 @@ export const qaTestManagementService = {
   createBugReport: (request: CreateBugReportRequest) => 
     api.post<BugReport>('/qa/bug-reports', request),
 
-  updateBugReport: (id: number, request: UpdateBugReportRequest) => 
+  updateBugReport: (id: number, request: UpdateBugReportRequest) =>
     api.put<BugReport>(`/qa/bug-reports/${id}`, request),
+
+  /** Lightweight PATCH to assign/unassign the QA tester for a bug. Pass null to unassign. */
+  updateBugQaAssignee: (id: number, qaAssigneeId: number | null) =>
+    api.patch<BugReport>(`/qa/bug-reports/${id}/qa-assignee`, { qaAssigneeId }),
 
   deleteBugReport: (id: number) => 
     api.delete<{ message: string }>(`/qa/bug-reports/${id}`),
@@ -156,16 +206,39 @@ export const qaTestManagementService = {
   getLatestTestRun: (testCaseId: number) => 
     api.get<TestRun>(`/qa/test-runs/latest/${testCaseId}`),
 
-  createTestRun: (request: CreateTestRunRequest) => 
+  createTestRun: (request: CreateTestRunRequest) =>
     api.post<TestRun>('/qa/test-runs', request),
 
-  updateTestRunStatus: (id: number, status: TestRunStatus, notes?: string) => 
+  /** Record the same execution result against many test cases at once (Zephyr-style bulk run). */
+  recordTestRunsBulk: (request: {
+    testCaseIds: number[];
+    status: TestRunStatus;
+    environment?: string;
+    buildVersion?: string;
+    notes?: string;
+    cycleId?: number;
+    pitchId?: number;
+  }) => api.post<TestRun[]>('/qa/test-runs/bulk', request),
+
+  /** Update the status of many test runs at once (Zephyr-style bulk update). */
+  updateTestRunStatusBulk: (request: { testRunIds: number[]; status: TestRunStatus; notes?: string }) =>
+    api.patch<TestRun[]>('/qa/test-runs/bulk/status', request),
+
+  updateTestRunStatus: (id: number, status: TestRunStatus, notes?: string) =>
     api.patch<TestRun>(`/qa/test-runs/${id}/status`, null, {
       params: { status, notes },
     }),
 
-  deleteTestRun: (id: number) => 
+  deleteTestRun: (id: number) =>
     api.delete<{ message: string }>(`/qa/test-runs/${id}`),
+
+  /** Link an existing bug report (defect) to a test run. A run can have several linked defects. */
+  linkDefectToRun: (runId: number, bugReportId: number) =>
+    api.patch<TestRun>(`/qa/test-runs/${runId}/defects/${bugReportId}`),
+
+  /** Unlink a bug report (defect) from a test run. */
+  unlinkDefectFromRun: (runId: number, bugReportId: number) =>
+    api.delete<TestRun>(`/qa/test-runs/${runId}/defects/${bugReportId}`),
 
   // ========== Coverage & Dashboard ==========
   getTestCoverageByPitch: (pitchId: number) => 
@@ -194,6 +267,9 @@ export const qaTestManagementService = {
         size: size ?? 20,
       },
     }),
+
+  moveBugToProject: (id: number, projectId: number) =>
+    api.patch<BugReport>(`/qa/bug-reports/${id}/move-to-project/${projectId}`),
 };
 
 export default qaTestManagementService;

@@ -42,12 +42,17 @@ docker compose up -d
 | **MCP server** | Claude Code, Cursor, and any MCP client can call `list_projects`, `get_work_context`, `create_task`, and 18 other tools — no browser tab switching |
 | **Pluggable AI stack** | Swap between Ollama (local), OpenAI, Anthropic Claude, or RunPod via one env var. RAG Q&A, risk scoring, test generation, AI Pitch Writer, Retro Summarizer, and technical solutions all work with every provider |
 | **AI Copilot v2** | **AI Pitch Writer** turns a one-sentence problem into a full Shape Up pitch draft. **Retrospective Summarizer** generates structured cycle retros (wins, blockers, team health). **Proactive Dashboard Insights** surfaces at-risk cycles, scope creep, and velocity trends automatically |
+| **Workflow Automations** *(v1.7.0)* | 14 trigger types (task status changes, pitch events, cycle start/end, scope creep, appetite exceeded) × 7 action types (notify, webhook, email, comment, change status). 20 built-in templates — deploy in one click or build custom rules. Async execution with per-run logs |
 | **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
 | **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
+| **Wiki / Docs Space** *(v1.8.0)* | Built-in hierarchical wiki with a Notion-style block editor (headings, tables, code blocks, callouts, slash menu). Every page is versioned, searchable, and auto-ingested into the AI Knowledge Center |
+| **Pluggable Object Storage** *(v1.8.0)* | Attachments on AWS S3, MinIO, or local disk — chosen in Org Settings with one-click backend migration and a connection test |
+| **Knowledge Center** | Upload docs and paste URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis — scoped Org / Team / Project, pluggable provider SPI |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |
-| **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs |
+| **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs; admin **CSV/JSON export** of the whole trail by entity type and date range *(v1.9.0)* |
 | **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
+| **Production self-hosting** *(v1.9.0)* | First-party **Helm chart** for Kubernetes; **Prometheus** metrics (`/actuator/prometheus`) + a ready-to-import **Grafana** dashboard; optional **OpenTelemetry** tracing and structured JSON logging |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -223,6 +228,16 @@ docker compose up -d
   - Supported forms: Epic, Initiative, Bug Report, Pitch, Task
   - Rendered views: Epic Detail, Initiative Detail, Bug View, Task Detail, Pitch Detail (description + Shape Up fields)
   - Uses GFM (GitHub Flavored Markdown) with headings, lists, code blocks, tables, links, and more
+- **Workflow Automations (v1.7.0)**: No-code trigger/action engine that reacts to project events automatically
+  - **14 trigger types**: task created/status-changed/assigned/completed, pitch created/status-changed, cycle started/ended/status-changed, comment added, betting table locked, hill chart moved, appetite exceeded, scope creep detected
+  - **7 action types**: notify assignee, notify project members, send webhook, send email, add comment, change task status, create task
+  - **20 built-in templates** across four categories (Tasks, Shape Up, Automation, Notifications) — install in one click or build custom rules
+  - **Template gallery**: search, filter by category, and preview each template before installing
+  - **Enable/disable toggle** per rule — pause automations without deleting them
+  - **Execution history**: per-rule and per-project log with status (SUCCESS/FAILURE/SKIPPED), trigger payload, result message, and timestamp
+  - **Async engine**: automations execute outside the primary transaction — never delays the triggering action
+  - **`{{key}}` interpolation** in action config — inject event context (task name, assignee, status) into messages and webhooks
+  - REST API: `GET /api/automations/project/{id}`, `POST /api/automations`, `PATCH /api/automations/{id}/toggle`, `GET /api/automations/{id}/executions`
 - **Competitor Migration Tooling (v1.2.0)**: Import your existing projects from Jira, Linear, Asana, or any generic CSV directly into ShipFlow
   - Auto-detects source format from CSV column headers (no manual format selection required)
   - Maps rows to Tasks, Epics, and Cycles inside a new Kanban project; teams migrate to Shape Up or Scrum at their own pace
@@ -237,18 +252,22 @@ docker compose up -d
 - **Expanded Color Palette**: 42 colors for Epics and Initiatives
   - 7 hue groups (Reds, Oranges, Greens, Teals, Blues, Purples, Neutrals) × 6 shades each
   - Hover scale effect and ring indicator on selected color
-- **Retrospectives**: Team retros with voting and merging
+- **Retrospectives**: Live collaborative retro board with voting, reactions, and discuss timer
+  - **Live Board Updates**: Auto-refreshes every 5 seconds while open — no manual reloads needed
+  - **Vote Fill Bar**: Proportional background fill on each item shows relative signal strength at a glance
+  - **👎 Disagree Reaction**: Toggle dislike/disagree alongside existing up-votes; counts shown live
+  - **Discuss Countdown Timer**: Per-item 3-minute timer; turns amber at 1 min, red at 30 s, auto-marks discussed at 0:00
+  - **Persistent Discussed State**: "Discussed" flag + timestamp stored server-side; green badge + strikethrough synced across all participants
+  - **Item Ownership**: Edit/delete restricted to item author; admins and managers can manage any item
   - **Anonymous Submissions**: Post feedback anonymously for psychological safety
-  - Checkbox option to hide author attribution on sensitive items
   - Standard columns: Went Well, Needs Improvement, Action Items
-  - Real-time collaboration and voting
-  - **Flexible Action Conversion (v0.5)**: Transform retro insights into actionable work
-    - **Convert to Pitch**: Create draft pitches for the next betting table
-    - **Convert to Tasks**: Generate tasks for immediate work
+  - **Flexible Action Conversion**: Transform retro insights into actionable work
+    - **Convert to Pitch**: Create draft pitches for the next betting table — choose any project you belong to
+    - **Convert to Tasks**: Generate tasks for immediate work in any project
     - **Mark as Acted On**: Track completion without creating new items
     - Batch processing of multiple retro items with customizable titles and notes
     - Automatic status tracking with notes and timestamps
-  - **Action Tracking (v0.5)**: Track whether teams act on retrospective insights
+  - **Action Tracking**: Track whether teams act on retrospective insights
     - "Did we act on this?" checkbox for Action Items (ACTIONS column)
     - Notes and attribution for action follow-through
     - Follow-through rate calculation per retrospective
@@ -295,6 +314,7 @@ docker compose up -d
   - **Visual Timeline**: Timeline with colored dots (green=created, blue=modified, red=deleted)
   - **Relative Time Display**: Shows "5 minutes ago", "2 hours ago" for recent changes
   - **Field Change Display**: Color-coded old → new value comparisons with strikethrough
+  - **Audit Export (v1.9.0)**: Admins export the full audit trail as CSV or JSON from Organization Settings — filtered by entity type and date range, one row per changed field
   - **Internationalization**: Full i18n support (English/Persian) for history labels
 - **Circuit Breaker**: Shape Up's fixed-time safety valve for overflow detection
   - **Automated Overflow Detection**: Real-time budget monitoring with configurable thresholds (50-150%)
@@ -389,6 +409,7 @@ docker compose up -d
   - **`get_work_context`** — one call returns cycle + pitches + tasks + blockers + hill-chart scopes + retros (the full relationship graph, no chaining needed)
   - **Pitch → Figma chain**: `get_pitch_detail` returns wireframe (Figma) URLs so the AI can chain to Figma MCP for full design context
   - **API key auth** — Bearer token on all `/mcp/**` endpoints; reuses existing API key scopes (READ / WRITE / ADMIN)
+  - **Admin usage report** — per-user and per-tool call analytics with 30-day timeline, success rate, and recent-log feed (Integrations → MCP → View Usage Report)
   - See [MCP Client Setup Guide](MCP_CLIENT_SETUP.md) and [VS Code Guide](VSCODE_GUIDE.md)
 - **QA Test Case Generation**: AI-assisted test case generation with validation
   - Works with all supported LLM providers (Ollama, OpenAI, RunPod)
@@ -510,13 +531,17 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Circuit Breaker** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A (RAG)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Q&A multi-turn memory** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Unified Knowledge Center wired into all AI features** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Built-in team wiki (block editor, version history, @mentions)** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Wiki auto-ingested into AI Knowledge Center** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Pluggable object storage (S3 / MinIO / local, one-click migration)** | ✅ (v1.8.0) | ❌ | Partial | ❌ | ❌ | ❌ |
 | **Interactive onboarding tour** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global Search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **MCP Server (AI editor tools + graph context)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Self-hosted / open MCP server** | ✅ | Partial¹ | Partial¹ | ❌ | Partial¹ | ❌ |
 | **GitHub Integration** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Pluggable VCS Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
 | **Pluggable Notification Providers** | ✅ | ❌ | ❌ | ❌ | Partial | ❌ |
@@ -529,11 +554,13 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
+> ¹ **MCP & AI are no longer ShipFlow-only.** Linear (2025), Atlassian/Jira Rovo, and Asana (2026) all shipped MCP servers and embedded agentic AI — so on the AI rows above, treat ✅ as "**built-in, free, and able to run on a fully-private / local LLM**" rather than "competitors have nothing." Every competitor's MCP and AI is **cloud-only and paid** (per-seat or metered AI credits). ShipFlow's durable, structural edge is the *combination* the cloud majors can't match: **native Shape Up + self-hosted + open-source + private, air-gapped AI (Ollama) with zero data egress.** See [COMPETITOR_ANALYSIS.md](COMPETITOR_ANALYSIS.md) §4 for the full June-2026 re-benchmark.
+
 **Why Choose ShipFlow?**
 - **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
 - **Fixed-Time, Variable-Scope**: Circuit breaker enforces appetite constraints and prevents scope creep
 - **Visual Progress**: Hill charts provide intuitive progress visibility (figuring it out → making it happen)
-- **AI-Native Workflows**: The only PM tool that connects to your editor via MCP — ask Claude Code "what's blocking my tasks?" without leaving the terminal
+- **Private, in-editor AI**: A self-hostable, open MCP server lets Claude Code / Cursor query your Shape Up board ("what's blocking my tasks?") without leaving the terminal — and, pointed at Ollama, the whole AI stack runs air-gapped with zero data egress, which no cloud-only competitor can offer
 - **AI-Powered**: Pluggable LLM architecture with provider flexibility
   - **Local AI (Ollama)**: Privacy-first, no API costs, perfect for local development or self-hosted deployments
   - **Cloud AI (OpenAI)**: Production-grade GPT-4o/GPT-4o-mini for complex reasoning and high-quality responses

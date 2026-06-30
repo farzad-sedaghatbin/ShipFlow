@@ -13,7 +13,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
   // Non-pageable variants kept for internal aggregation use (BettingTableService, etc.)
-  List<WorkLog> findByPitchId(Long pitchId);
+  // Includes work logs on tasks whose pitch matches, not only direct-pitch logs.
+  @Query("SELECT w FROM WorkLog w LEFT JOIN w.task t WHERE w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)")
+  List<WorkLog> findByPitchId(@Param("pitchId") Long pitchId);
 
   List<WorkLog> findByTaskId(Long taskId);
 
@@ -21,7 +23,15 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
 
   List<WorkLog> findByPersonIdAndDate(Long personId, LocalDate date);
 
-  List<WorkLog> findByPitchIdAndPersonId(Long pitchId, Long personId);
+  @Query("SELECT w FROM WorkLog w LEFT JOIN w.task t WHERE (w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)) AND w.person.id = :personId")
+  List<WorkLog> findByPitchIdAndPersonId(@Param("pitchId") Long pitchId, @Param("personId") Long personId);
+
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.task t WHERE (w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)) AND w.person.id = :personId",
+      countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.task t WHERE (w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)) AND w.person.id = :personId")
+  Page<WorkLog> findByPitchIdAndPersonId(@Param("pitchId") Long pitchId, @Param("personId") Long personId, Pageable pageable);
+
+  @Query("SELECT w.person.id, w.person.name, SUM(w.hoursSpent), COUNT(w) FROM WorkLog w LEFT JOIN w.task t WHERE w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId) GROUP BY w.person.id, w.person.name ORDER BY SUM(w.hoursSpent) DESC")
+  List<Object[]> getPersonSummaryByPitchId(@Param("pitchId") Long pitchId);
 
   List<WorkLog> findByTaskIdAndPersonId(Long taskId, Long personId);
 
@@ -32,7 +42,9 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
   List<WorkLog> findByPersonIdAndCycleId(@Param("personId") Long personId, @Param("cycleId") Long cycleId);
 
   // Pageable variants for API endpoints
-  Page<WorkLog> findByPitchId(Long pitchId, Pageable pageable);
+  @Query(value = "SELECT w FROM WorkLog w LEFT JOIN w.task t WHERE w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)",
+         countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.task t WHERE w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)")
+  Page<WorkLog> findByPitchId(@Param("pitchId") Long pitchId, Pageable pageable);
 
   Page<WorkLog> findByTaskId(Long taskId, Pageable pageable);
 
@@ -79,7 +91,7 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
          countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId) AND w.date BETWEEN :from AND :to")
   Page<WorkLog> findByCycleIdAndDateBetween(@Param("cycleId") Long cycleId, @Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
 
-  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id = :pitchId")
+  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.task t WHERE w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)")
   Double getTotalHoursByPitchId(@Param("pitchId") Long pitchId);
 
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.task.id = :taskId")
@@ -125,7 +137,7 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
    * Batch query to get total hours for multiple pitches at once. Returns a list
    * of Object[] where [0] is pitchId and [1] is total hours.
    */
-  @Query("SELECT w.pitch.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.id IN :pitchIds GROUP BY w.pitch.id")
+  @Query("SELECT COALESCE(w.pitch.id, t.pitch.id), SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.task t WHERE (w.pitch.id IN :pitchIds OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id IN :pitchIds)) GROUP BY COALESCE(w.pitch.id, t.pitch.id)")
   List<Object[]> getTotalHoursByPitchIds(@Param("pitchIds") List<Long> pitchIds);
 
   /**
@@ -139,6 +151,6 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
    * Get total hours for all pitches in a cycle. Returns a list of Object[] where
    * [0] is pitchId and [1] is total hours.
    */
-  @Query("SELECT w.pitch.id, SUM(w.hoursSpent) FROM WorkLog w WHERE w.pitch.cycle.id = :cycleId GROUP BY w.pitch.id")
+  @Query("SELECT COALESCE(w.pitch.id, t.pitch.id), SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.task t WHERE (w.pitch IS NOT NULL AND w.pitch.cycle.id = :cycleId) OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.cycle.id = :cycleId) GROUP BY COALESCE(w.pitch.id, t.pitch.id)")
   List<Object[]> getTotalHoursByCycleId(@Param("cycleId") Long cycleId);
 }

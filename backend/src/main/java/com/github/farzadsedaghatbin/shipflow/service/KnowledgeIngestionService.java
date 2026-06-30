@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.QAFeedbackType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.RawChunk;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
@@ -1139,5 +1140,51 @@ public class KnowledgeIngestionService {
     sb.append("Last Updated: ").append(release.getUpdatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)).append("\n");
 
     return sb.toString();
+  }
+
+  /**
+   * Generic chunk ingestion entry point used by Knowledge Center providers (file upload, URL,
+   * future Notion/Confluence). Persists one {@link KnowledgeItem} per chunk and attempts to embed
+   * each one inline. If embedding fails the item is left with {@code isEmbedded=false} so the
+   * existing {@code processPendingEmbeddings()} sweep can pick it up later.
+   *
+   * @param chunks chunks produced by a {@code KnowledgeSourceProvider}
+   * @param entityType the owning entity type — for Knowledge Center sources this is
+   *     {@link KnowledgeEntityType#KNOWLEDGE_SOURCE}
+   * @param entityId id of the owning entity (e.g. the {@code KnowledgeSource} id)
+   * @param teamId optional team scope, propagated to each item for filtering
+   * @param projectId optional project scope — currently resolved via the parent
+   *     {@code KnowledgeSource} for {@code KNOWLEDGE_SOURCE} items, accepted here for API parity
+   */
+  @Transactional
+  public void ingestChunks(List<RawChunk> chunks, KnowledgeEntityType entityType, Long entityId,
+      Long teamId, Long projectId) {
+    if (chunks == null || chunks.isEmpty()) {
+      log.debug("ingestChunks called with no chunks for {} {}", entityType, entityId);
+      return;
+    }
+
+    // projectId resolved via parent KnowledgeSource for KNOWLEDGE_SOURCE items
+    int total = chunks.size();
+    for (RawChunk chunk : chunks) {
+      KnowledgeItem item = KnowledgeItem.builder().entityType(entityType).entityId(entityId)
+          .title(chunk.getTitle()).content(chunk.getContent()).teamId(teamId)
+          .chunkIndex(chunk.getOrdinal()).totalChunks(total).contentHash(chunk.getHash())
+          .isEmbedded(false).build();
+
+      if (entityType == KnowledgeEntityType.KNOWLEDGE_SOURCE) {
+        item.setKnowledgeSourceId(entityId);
+      }
+
+      item.setEmbeddingId(item.generateEmbeddingId());
+      knowledgeItemRepository.save(item);
+
+      try {
+        embedKnowledgeItem(item);
+      } catch (Exception e) {
+        log.warn("Embedding deferred for item {} - will be retried by processPendingEmbeddings",
+            item.getId(), e);
+      }
+    }
   }
 }

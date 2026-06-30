@@ -10,17 +10,20 @@ import { meetingService } from '../services/meetingService';
 import { taskService } from '../services/taskService';
 import { documentService, UploadedDocument } from '../services/documentService';
 import { organizationSettingsService } from '../services/organizationSettingsService';
-import { Pitch, Epic, WorkLog, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task } from '../types';
+import { Pitch, Epic, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task, WorkLogPersonSummary } from '../types';
 import { MeetingTypeConfig } from '../types/organizationSettings';
+import { CustomFieldsSection } from '../components/CustomFieldsSection';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
 import { PitchDetailSkeleton } from '../components/Skeletons';
 import { QAFloatingButton } from '../components/QAFloatingButton';
 import { NotesList } from '../components/NotesList';
 import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
-import { useToast, useProject } from '../contexts';
+import { useToast, useProject, useAuth, useBreadcrumbLabel } from '../contexts';
+import { MoveToProjectDialog } from '../components/MoveToProjectDialog';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { Button } from '../components/ui/button';
+import { FolderInput } from 'lucide-react';
 import {
   PitchHeader,
   PitchStatsRow,
@@ -39,13 +42,12 @@ export default function PitchDetail() {
   const id = safeParseId(idParam);
   const { showSuccess, showError } = useToast();
   const { currentProject } = useProject();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [pitch, setPitch] = useState<Pitch | null>(null);
   const [epics, setEpics] = useState<Epic[]>([]);
-  const [workLogs, setWorkLogs] = useState<WorkLog[]>([]);
-  const [workLogPage, setWorkLogPage] = useState(0);
-  const [, setWorkLogTotalPages] = useState(0);
-  const [workLogTotalElements, setWorkLogTotalElements] = useState(0);
-  const WORK_LOG_PAGE_SIZE = 5;
+  const [workLogPersonSummaries, setWorkLogPersonSummaries] = useState<WorkLogPersonSummary[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [documents, setDocuments] = useState<UploadedDocument[]>([]);
@@ -53,6 +55,9 @@ export default function PitchDetail() {
   const [loading, setLoading] = useState(true);
   const [, setSaving] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+
+  // Show the pitch title (not "Pitch #N") in the global breadcrumb.
+  useBreadcrumbLabel(idParam ? `/pitches/${idParam}` : undefined, pitch?.title);
 
   // Shape Up editing state
   const [editingShapeUp, setEditingShapeUp] = useState(false);
@@ -106,7 +111,7 @@ export default function PitchDetail() {
     const abortController = new AbortController();
     if (id) {
       loadData(id);
-      loadWorkLogs(id, 0);
+      loadWorkLogs(id);
     }
     return () => abortController.abort();
   }, [id]);
@@ -154,14 +159,12 @@ export default function PitchDetail() {
     }
   };
 
-  const loadWorkLogs = async (pitchId: number, page: number) => {
+  const loadWorkLogs = async (pitchId: number) => {
     try {
-      const res = await workLogService.getByPitchId(pitchId, page, WORK_LOG_PAGE_SIZE);
-      setWorkLogs(res.data.content);
-      setWorkLogTotalPages(res.data.totalPages);
-      setWorkLogTotalElements(res.data.totalElements);
+      const res = await workLogService.getPersonSummaryByPitchId(pitchId);
+      setWorkLogPersonSummaries(res.data);
     } catch (error) {
-      console.error('Failed to load work logs:', error);
+      console.error('Failed to load work log summaries:', error);
     }
   };
 
@@ -332,9 +335,8 @@ export default function PitchDetail() {
         note: '',
       });
       setWorkLogDate(dayjs().format('YYYY-MM-DD'));
-      setWorkLogPage(0);
       loadData(pitch.id);
-      loadWorkLogs(pitch.id, 0);
+      loadWorkLogs(pitch.id);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.workLogFailed')));
     } finally {
@@ -342,16 +344,18 @@ export default function PitchDetail() {
     }
   };
 
-  const handleDeleteWorkLog = async (workLogId: number) => {
+  const handleDeleteWorkLog = async (workLogId: number, ownerPersonId: number) => {
     if (!pitch) return;
     try {
-      await workLogService.delete(workLogId);
+      const isOwn = user?.personId != null && user.personId === ownerPersonId;
+      if (isOwn) {
+        await workLogService.deleteMy(workLogId);
+      } else {
+        await workLogService.delete(workLogId);
+      }
       showSuccess(t('pitchDetailPage.workLogDeleted'));
-      // If we deleted the last item on a non-first page, go back one page
-      const newPage = workLogs.length === 1 && workLogPage > 0 ? workLogPage - 1 : workLogPage;
-      setWorkLogPage(newPage);
       loadData(pitch.id);
-      loadWorkLogs(pitch.id, newPage);
+      loadWorkLogs(pitch.id);
     } catch (error) {
       showError(getUserFriendlyError(error, t('pitchDetailPage.workLogDeleteFailed')));
     }
@@ -534,10 +538,19 @@ export default function PitchDetail() {
         onEpicChange={handleEpicChange}
       />
 
+      {isAdmin && (
+        <div className="flex justify-end mb-2">
+          <Button variant="outline" size="sm" onClick={() => setMoveDialogOpen(true)}>
+            <FolderInput className="h-4 w-4 mr-2" />
+            {t('moveToProject.confirm')}
+          </Button>
+        </div>
+      )}
+
       <PitchStatsRow
         pitch={pitch}
         totalHours={totalHours}
-        workLogTotalElements={workLogTotalElements}
+        workLogTotalElements={workLogPersonSummaries.reduce((sum, s) => sum + s.entryCount, 0)}
       />
 
       <PitchTeamCapacity pitch={pitch} />
@@ -577,6 +590,12 @@ export default function PitchDetail() {
           onUploadComplete={() => loadData(pitch.id)}
         />
 
+        <CustomFieldsSection
+          entityType="PITCH"
+          entityId={pitch.id}
+          projectId={pitch.projectId}
+        />
+
         <NotesList
           contextType="pitch"
           contextId={pitch.id}
@@ -593,9 +612,8 @@ export default function PitchDetail() {
         {/* Work Logs and Meetings - Two columns on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <PitchWorkLogsSection
-            workLogs={workLogs}
-            workLogTotalElements={workLogTotalElements}
-            workLogPageSize={WORK_LOG_PAGE_SIZE}
+            pitchId={pitch.id}
+            personSummaries={workLogPersonSummaries}
             workLogDialog={workLogDialog}
             newWorkLog={newWorkLog}
             workLogDate={workLogDate}
@@ -655,6 +673,18 @@ export default function PitchDetail() {
         cycleId={pitch.cycleId}
         teamId={pitch.teamId}
       />
+
+      {isAdmin && (
+        <MoveToProjectDialog
+          open={moveDialogOpen}
+          onOpenChange={setMoveDialogOpen}
+          entityType="pitch"
+          entityId={pitch.id}
+          entityTitle={pitch.title}
+          currentProjectId={pitch.projectId ?? undefined}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
     </div>
   );
 }

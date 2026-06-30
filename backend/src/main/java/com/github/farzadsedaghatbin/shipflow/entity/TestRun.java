@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TestRunStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.*;
 
 /**
@@ -83,10 +85,15 @@ public class TestRun {
   @Column(columnDefinition = "TEXT")
   private String attachments;
 
-  /** Bug report created from this test run (if failed). */
-  @OneToOne(mappedBy = "testRun", fetch = FetchType.LAZY)
+  /**
+   * Bug reports (defects) linked to this test run. A failed execution can be tied to multiple
+   * defects (Zephyr-style), so this is a one-to-many over the existing {@code bug_reports.test_run_id}
+   * foreign key.
+   */
+  @OneToMany(mappedBy = "testRun", fetch = FetchType.LAZY)
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private BugReport bugReport;
+  @Builder.Default
+  private List<BugReport> bugReports = new ArrayList<>();
 
   @Column(nullable = false)
   private LocalDateTime createdAt;

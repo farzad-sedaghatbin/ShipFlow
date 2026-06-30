@@ -24,6 +24,11 @@ class GlobalSearchServiceTest {
 
   @Mock private Query nativeQuery;
 
+  @Mock
+  private com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository wikiSpaceRepository;
+
+  @Mock private WikiPermissionService wikiPermissionService;
+
   @InjectMocks private GlobalSearchService globalSearchService;
 
   @BeforeEach
@@ -34,28 +39,28 @@ class GlobalSearchServiceTest {
 
   @Test
   void search_WithNullQuery_ShouldReturnEmptyList() {
-    List<GlobalSearchResultDTO> results = globalSearchService.search(null, 1L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search(null, 1L, 10, 100L);
     assertThat(results).isEmpty();
     verifyNoInteractions(entityManager);
   }
 
   @Test
   void search_WithEmptyQuery_ShouldReturnEmptyList() {
-    List<GlobalSearchResultDTO> results = globalSearchService.search("", 1L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("", 1L, 10, 100L);
     assertThat(results).isEmpty();
     verifyNoInteractions(entityManager);
   }
 
   @Test
   void search_WithSingleCharQuery_ShouldReturnEmptyList() {
-    List<GlobalSearchResultDTO> results = globalSearchService.search("a", 1L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("a", 1L, 10, 100L);
     assertThat(results).isEmpty();
     verifyNoInteractions(entityManager);
   }
 
   @Test
   void search_WithWhitespaceOnlyQuery_ShouldReturnEmptyList() {
-    List<GlobalSearchResultDTO> results = globalSearchService.search("   ", 1L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("   ", 1L, 10, 100L);
     assertThat(results).isEmpty();
     verifyNoInteractions(entityManager);
   }
@@ -67,7 +72,7 @@ class GlobalSearchServiceTest {
 
     when(nativeQuery.getResultList()).thenReturn(Arrays.asList(bugRow, taskRow));
 
-    List<GlobalSearchResultDTO> results = globalSearchService.search("login", 5L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("login", 5L, 10, 100L);
 
     assertThat(results).hasSize(2);
 
@@ -91,7 +96,7 @@ class GlobalSearchServiceTest {
   void search_ShouldSetCorrectParameters() {
     when(nativeQuery.getResultList()).thenReturn(List.of());
 
-    globalSearchService.search("login", 7L, 15);
+    globalSearchService.search("login", 7L, 15, 100L);
 
     verify(nativeQuery).setParameter("query", "login");
     verify(nativeQuery).setParameter("queryPattern", "%login%");
@@ -103,7 +108,7 @@ class GlobalSearchServiceTest {
   void search_ShouldTrimQuery() {
     when(nativeQuery.getResultList()).thenReturn(List.of());
 
-    globalSearchService.search("  login  ", 7L, 10);
+    globalSearchService.search("  login  ", 7L, 10, 100L);
 
     verify(nativeQuery).setParameter("query", "login");
     verify(nativeQuery).setParameter("queryPattern", "%login%");
@@ -113,7 +118,7 @@ class GlobalSearchServiceTest {
   void search_WithNoResults_ShouldReturnEmptyList() {
     when(nativeQuery.getResultList()).thenReturn(List.of());
 
-    List<GlobalSearchResultDTO> results = globalSearchService.search("nonexistent", 1L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("nonexistent", 1L, 10, 100L);
     assertThat(results).isEmpty();
   }
 
@@ -124,7 +129,7 @@ class GlobalSearchServiceTest {
     rows.add(subtaskRow);
     when(nativeQuery.getResultList()).thenReturn(rows);
 
-    List<GlobalSearchResultDTO> results = globalSearchService.search("CSS", 1L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("CSS", 1L, 10, 100L);
 
     assertThat(results).hasSize(1);
     assertThat(results.get(0).getEntityType()).isEqualTo("SUBTASK");
@@ -138,7 +143,7 @@ class GlobalSearchServiceTest {
     rows.add(pitchRow);
     when(nativeQuery.getResultList()).thenReturn(rows);
 
-    List<GlobalSearchResultDTO> results = globalSearchService.search("checkout", 2L, 5);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("checkout", 2L, 5, 100L);
 
     assertThat(results).hasSize(1);
     assertThat(results.get(0).getEntityType()).isEqualTo("PITCH");
@@ -153,7 +158,7 @@ class GlobalSearchServiceTest {
     rows.add(epicRow);
     when(nativeQuery.getResultList()).thenReturn(rows);
 
-    List<GlobalSearchResultDTO> results = globalSearchService.search("redesign", 4L, 10);
+    List<GlobalSearchResultDTO> results = globalSearchService.search("redesign", 4L, 10, 100L);
 
     assertThat(results).hasSize(1);
     assertThat(results.get(0).getEntityType()).isEqualTo("EPIC");
@@ -165,7 +170,7 @@ class GlobalSearchServiceTest {
   void search_SqlQueryShouldContainAllEntityTypes() {
     when(nativeQuery.getResultList()).thenReturn(List.of());
 
-    globalSearchService.search("test", 1L, 10);
+    globalSearchService.search("test", 1L, 10, 100L);
 
     var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(entityManager).createNativeQuery(sqlCaptor.capture());
@@ -184,7 +189,7 @@ class GlobalSearchServiceTest {
   void search_SqlQueryShouldFilterByProjectId() {
     when(nativeQuery.getResultList()).thenReturn(List.of());
 
-    globalSearchService.search("test", 1L, 10);
+    globalSearchService.search("test", 1L, 10, 100L);
 
     var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(entityManager).createNativeQuery(sqlCaptor.capture());
@@ -200,7 +205,7 @@ class GlobalSearchServiceTest {
   void search_SqlQueryShouldRespectSoftDeletes() {
     when(nativeQuery.getResultList()).thenReturn(List.of());
 
-    globalSearchService.search("test", 1L, 10);
+    globalSearchService.search("test", 1L, 10, 100L);
 
     var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
     verify(entityManager).createNativeQuery(sqlCaptor.capture());
@@ -209,5 +214,116 @@ class GlobalSearchServiceTest {
     assertThat(sql).contains("t.deleted_at IS NULL");
     assertThat(sql).contains("p.deleted_at IS NULL");
     assertThat(sql).contains("e.deleted_at IS NULL");
+  }
+
+  @Test
+  void search_SqlQueryShouldContainWikiBranch() {
+    when(nativeQuery.getResultList()).thenReturn(List.of());
+
+    globalSearchService.search("test", 1L, 10, 100L);
+
+    var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(entityManager).createNativeQuery(sqlCaptor.capture());
+    String sql = sqlCaptor.getValue();
+
+    assertThat(sql).contains("wiki_pages");
+    assertThat(sql).contains("wiki_spaces");
+    assertThat(sql).contains("WIKI_PAGE");
+    assertThat(sql).contains("/wiki/");
+    assertThat(sql).contains("content_text");
+    assertThat(sql).contains("ws.project_id = :projectId");
+    assertThat(sql).contains("wp.deleted_at IS NULL");
+    assertThat(sql).contains("ws.deleted_at IS NULL");
+  }
+
+  @Test
+  void search_SqlQueryShouldContainWikiSpaceBranch() {
+    when(nativeQuery.getResultList()).thenReturn(List.of());
+
+    globalSearchService.search("test", 1L, 10, 100L);
+
+    var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(entityManager).createNativeQuery(sqlCaptor.capture());
+    String sql = sqlCaptor.getValue();
+
+    // Wiki space names are searchable and route to the space by numeric id.
+    assertThat(sql).contains("WIKI_SPACE");
+    assertThat(sql).contains("similarity(ws.name, :query)");
+    assertThat(sql).contains("CONCAT('/wiki/', ws.id)");
+  }
+
+  @Test
+  void search_WikiPageRoute_UsesNumericSpaceId_NotSpaceKey() {
+    when(nativeQuery.getResultList()).thenReturn(List.of());
+
+    globalSearchService.search("test", 1L, 10, 100L);
+
+    var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(entityManager).createNativeQuery(sqlCaptor.capture());
+    String sql = sqlCaptor.getValue();
+
+    // The router uses Number(spaceId); the route must carry the numeric space id, not space_key.
+    assertThat(sql).contains("CONCAT('/wiki/', ws.id, '/', wp.id)");
+    assertThat(sql).doesNotContain("ws.space_key, '/', wp.id");
+  }
+
+  @Test
+  void search_WithProject_WikiScopeIncludesOrgGlobalSpaces() {
+    when(nativeQuery.getResultList()).thenReturn(List.of());
+
+    globalSearchService.search("test", 1L, 10, 100L);
+
+    var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(entityManager).createNativeQuery(sqlCaptor.capture());
+    String sql = sqlCaptor.getValue();
+
+    assertThat(sql).contains("(ws.project_id = :projectId OR ws.project_id IS NULL)");
+  }
+
+  @Test
+  void search_NullProjectId_SearchesOrgGlobalWikiOnly_AndOmitsProjectIdParam() {
+    when(nativeQuery.getResultList()).thenReturn(List.of());
+
+    globalSearchService.search("test", null, 10, 100L);
+
+    var sqlCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+    verify(entityManager).createNativeQuery(sqlCaptor.capture());
+    String sql = sqlCaptor.getValue();
+
+    // Wiki is searched org-globally...
+    assertThat(sql).contains("WIKI_SPACE");
+    assertThat(sql).contains("WIKI_PAGE");
+    assertThat(sql).contains("ws.project_id IS NULL");
+    // ...but project-scoped entities are excluded entirely (no :projectId reference).
+    assertThat(sql).doesNotContain("tasks t");
+    assertThat(sql).doesNotContain("bug_reports br");
+    assertThat(sql).doesNotContain("epics e");
+    assertThat(sql).doesNotContain(":projectId");
+
+    // And the :projectId parameter must NOT be bound (it isn't in the SQL).
+    verify(nativeQuery, never()).setParameter(eq("projectId"), any());
+  }
+
+  @Test
+  void search_WithWikiPageResult_ShouldMapCorrectly() {
+    Object[] wikiRow =
+        new Object[] {
+          "WIKI_PAGE", 7L, "Getting Started", "Engineering", "/wiki/eng/7", 0.72, "LIKE_TITLE"
+        };
+    List<Object[]> rows = new ArrayList<>();
+    rows.add(wikiRow);
+    when(nativeQuery.getResultList()).thenReturn(rows);
+
+    List<GlobalSearchResultDTO> results = globalSearchService.search("started", 3L, 10, 100L);
+
+    assertThat(results).hasSize(1);
+    GlobalSearchResultDTO dto = results.get(0);
+    assertThat(dto.getEntityType()).isEqualTo("WIKI_PAGE");
+    assertThat(dto.getEntityId()).isEqualTo(7L);
+    assertThat(dto.getTitle()).isEqualTo("Getting Started");
+    assertThat(dto.getSubtitle()).isEqualTo("Engineering");
+    assertThat(dto.getRoute()).isEqualTo("/wiki/eng/7");
+    assertThat(dto.getScore()).isEqualTo(0.72);
+    assertThat(dto.getMatchedBy()).isEqualTo("LIKE_TITLE");
   }
 }
