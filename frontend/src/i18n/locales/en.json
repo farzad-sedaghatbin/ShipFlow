@@ -442,6 +442,30 @@
     "levelHigh": "High",
     "levelCritical": "Critical"
   },
+  "risk": {
+    "level": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical",
+      "lowRisk": "Low Risk",
+      "mediumRisk": "Medium Risk",
+      "highRisk": "High Risk",
+      "criticalRisk": "Critical Risk",
+      "unknown": "Unknown"
+    },
+    "confidence": "Confidence: {{value}}%",
+    "explanation": {
+      "scoreLine": "Score {{score}}/100 · {{level}} ({{min}}–{{max}})",
+      "scaleAriaLabel": "Risk level scale from Low to Critical",
+      "howCalculated": "How is this calculated?",
+      "bandsTitle": "Risk bands",
+      "current": "current",
+      "contributionsTitle": "Risk factor contributions",
+      "impactProbability": "Impact {{impact}}/10 · Probability {{probability}}/10",
+      "noFactors": "No discrete risk factors — the score reflects overall progress versus the cycle timeline."
+    }
+  },
   "priority": {
     "label": "Priority",
     "set": "Set Priority",

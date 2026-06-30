@@ -1648,6 +1648,30 @@
     "levelHigh": "بالا",
     "levelCritical": "بحرانی"
   },
+  "risk": {
+    "level": {
+      "low": "کم",
+      "medium": "متوسط",
+      "high": "زیاد",
+      "critical": "بحرانی",
+      "lowRisk": "ریسک کم",
+      "mediumRisk": "ریسک متوسط",
+      "highRisk": "ریسک زیاد",
+      "criticalRisk": "ریسک بحرانی",
+      "unknown": "نامشخص"
+    },
+    "confidence": "اطمینان: {{value}}٪",
+    "explanation": {
+      "scoreLine": "امتیاز {{score}}/۱۰۰ · {{level}} ({{min}}–{{max}})",
+      "scaleAriaLabel": "مقیاس سطح ریسک از کم تا بحرانی",
+      "howCalculated": "این امتیاز چگونه محاسبه می‌شود؟",
+      "bandsTitle": "بازه‌های ریسک",
+      "current": "فعلی",
+      "contributionsTitle": "سهم عوامل ریسک",
+      "impactProbability": "تأثیر {{impact}}/۱۰ · احتمال {{probability}}/۱۰",
+      "noFactors": "هیچ عامل ریسک مشخصی وجود ندارد — امتیاز بازتاب پیشرفت کلی نسبت به جدول زمانی چرخه است."
+    }
+  },
   "dashboardCustomizer": {
     "addWidget": "افزودن ویجت",
     "customWidget": "ویجت سفارشی",
