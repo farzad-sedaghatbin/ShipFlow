@@ -290,7 +290,7 @@ export default function InitiativeDetailPage() {
           <CardContent className="space-y-4">
             {initiative.description && (
               <div>
-                <h4 className="font-medium mb-1">{t('initiatives.description')}</h4>
+                <h4 className="font-medium mb-1">{t('initiatives.descriptionLabel')}</h4>
                 <Markdown content={initiative.description} className="text-muted-foreground" />
               </div>
             )}

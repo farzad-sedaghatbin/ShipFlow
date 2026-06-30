@@ -132,7 +132,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
             <CardContent className="p-4 text-center">
               <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" aria-hidden="true" />
               <p className="text-3xl font-bold text-green-500">{summary.healthyPitches}</p>
-              <p className="text-sm text-muted-foreground">Healthy</p>
+              <p className="text-sm text-muted-foreground">{t('healthOverview.statHealthy')}</p>
             </CardContent>
           </Card>
           
@@ -140,7 +140,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
             <CardContent className="p-4 text-center">
               <AlertTriangle className="h-8 w-8 text-yellow-500 mx-auto mb-2" aria-hidden="true" />
               <p className="text-3xl font-bold text-yellow-500">{summary.atRiskPitches}</p>
-              <p className="text-sm text-muted-foreground">At Risk</p>
+              <p className="text-sm text-muted-foreground">{t('healthOverview.statAtRisk')}</p>
             </CardContent>
           </Card>
           
@@ -167,7 +167,7 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
                 "text-3xl font-bold text-red-500",
                 summary.criticalPitches > 0 && "animate-pulse text-4xl"
               )}>{summary.criticalPitches}</p>
-              <p className="text-sm text-muted-foreground font-semibold">Critical</p>
+              <p className="text-sm text-muted-foreground font-semibold">{t('healthOverview.statCritical')}</p>
               {summary.criticalPitches > 0 && (
               <p className="text-xs text-red-600 font-bold mt-1 animate-pulse">
                 <span className="sr-only">Warning: </span>
@@ -189,7 +189,11 @@ export const CycleHealthSummary: React.FC<CycleHealthSummaryProps> = ({
                 "text-3xl font-bold",
                 summary.daysLeft <= 7 ? "text-orange-500" : "text-primary"
               )}>{summary.daysLeft}</p>
-              <p className="text-sm text-muted-foreground">Days Left</p>
+              <p className="text-sm text-muted-foreground">
+                {summary.daysLeft === 0
+                  ? t('healthOverview.endsToday')
+                  : t('healthOverview.daysLeft', { count: summary.daysLeft })}
+              </p>
             </CardContent>
           </Card>
         </div>
