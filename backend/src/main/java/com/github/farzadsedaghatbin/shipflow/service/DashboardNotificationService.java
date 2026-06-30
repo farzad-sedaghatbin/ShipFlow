@@ -165,6 +165,42 @@ public class DashboardNotificationService {
         author.getId(), entityType, entityId);
   }
 
+  /** Create notification when a user is mentioned in a wiki page body (not a comment). */
+  public void notifyWikiPageMention(User mentionedUser, User author, Long pageId, Long spaceId,
+      String contentPreview) {
+    if (mentionedUser == null || author == null) {
+      return;
+    }
+    // Don't notify if user mentioned themselves
+    if (mentionedUser.getId().equals(author.getId())) {
+      return;
+    }
+
+    String authorName = author.getPerson() != null ? author.getPerson().getName() : author.getUsername();
+    String actionUrl = "/wiki/" + spaceId + "/" + pageId;
+    String preview = contentPreview == null ? ""
+        : (contentPreview.length() > 100 ? contentPreview.substring(0, 100) + "..." : contentPreview);
+
+    createNotification(mentionedUser, "WIKI_MENTION", "You were mentioned in a wiki page",
+        String.format("%s mentioned you in a wiki page: \"%s\"", authorName, preview), "INFO", actionUrl,
+        "WIKI_PAGE", pageId);
+
+    sendToConfiguredChannels("WIKI_MENTION",
+        String.format("📄 *Wiki Mention*\n*%s* mentioned *%s* in a wiki page:\n\"%s\"", authorName,
+            mentionedUser.getUsername(), preview),
+        "WIKI_PAGE", pageId, mentionedUser.getPerson());
+
+    if (mentionedUser.getEmail() != null && !mentionedUser.getEmail().isBlank()) {
+      String recipientName = mentionedUser.getPerson() != null && mentionedUser.getPerson().getName() != null
+          ? mentionedUser.getPerson().getName()
+          : mentionedUser.getUsername();
+      emailService.sendMentionedInComment(mentionedUser.getEmail(), recipientName, "wiki page", actionUrl);
+    }
+
+    log.info("Created wiki mention notification for user {} from author {} on page {}", mentionedUser.getId(),
+        author.getId(), pageId);
+  }
+
   /**
    * Resolve the in-app URL for a commented entity so a mention notification deep-links to it.
    * Wiki pages need their space id to build the canonical {@code /wiki/{spaceId}/{pageId}} route;
