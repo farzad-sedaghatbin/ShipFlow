@@ -7694,7 +7694,7 @@
     "insertPageLinkHint": "برای درج یک [[پیوند]] در محل مکان‌نما، صفحه‌ای را جست‌وجو کنید. برای اشاره به هم‌تیمی، در ویرایشگر @ را تایپ کنید.",
     "mentionMenuTitle": "اشاره به هم‌تیمی",
     "mentionItemSubtitle": "@{{username}}",
-    "mentionNoResults": "هم‌تیمی‌ای یافت نشد"
+    "mentionNoResults": "هم‌تیمی‌ای یافت نشد",
     "share": {
       "button": "اشتراک‌گذاری",
       "title": "مدیریت دسترسی",
