@@ -135,6 +135,17 @@ function readSavedBugFilter<T>(key: string, fallback: T): T {
   }
 }
 
+// Status/severity/assignee filters are array-typed state, but pre-v1.8 builds persisted
+// them as a single scalar (one status string, one assignee id). Reading such a legacy
+// value straight into array state makes the URL-sync effect crash on `.forEach` — which
+// is why an old localStorage payload bricks the Bug Reports page until site data is cleared.
+// Coerce any non-array (scalar/null) to a safe array so old payloads load cleanly.
+function readSavedBugFilterArray<T>(key: string): T[] {
+  const value = readSavedBugFilter<unknown>(key, []);
+  if (Array.isArray(value)) return value as T[];
+  return value === null || value === undefined || value === '' ? [] : [value as T];
+}
+
 type SavedBugFilter = {
   id: string;
   name: string;
@@ -181,14 +192,14 @@ const BugReportsPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('q') ?? readSavedBugFilter('searchQuery', ''));
   const [statusFilter, setStatusFilter] = useState<BugStatus[]>(() =>
-    searchParams.getAll('status').length > 0 ? searchParams.getAll('status') as BugStatus[] : readSavedBugFilter('statusFilter', [])
+    searchParams.getAll('status').length > 0 ? searchParams.getAll('status') as BugStatus[] : readSavedBugFilterArray<BugStatus>('statusFilter')
   );
   const [severityFilter, setSeverityFilter] = useState<BugSeverity[]>(() =>
-    searchParams.getAll('severity').length > 0 ? searchParams.getAll('severity') as BugSeverity[] : readSavedBugFilter('severityFilter', [])
+    searchParams.getAll('severity').length > 0 ? searchParams.getAll('severity') as BugSeverity[] : readSavedBugFilterArray<BugSeverity>('severityFilter')
   );
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>(() => {
     const urlVals = searchParams.getAll('assignee');
-    return urlVals.length > 0 ? urlVals.map((v) => parseInt(v)) : readSavedBugFilter('assigneeFilter', []);
+    return urlVals.length > 0 ? urlVals.map((v) => parseInt(v)) : readSavedBugFilterArray<number>('assigneeFilter');
   });
   const [cycleFilter, setCycleFilter] = useState<number | undefined>(() => {
     const v = searchParams.get('cycle'); return v ? parseInt(v) : undefined;
@@ -421,12 +432,13 @@ const BugReportsPage: React.FC = () => {
   const handleApplyFilter = (f: SavedBugFilter) => {
     setSearchQuery(f.searchQuery);
     setDebouncedSearch(f.searchQuery);
-    setStatusFilter(f.statusFilter);
-    setSeverityFilter(f.severityFilter);
-    // Older saved filters may have stored a single assignee number — normalize to an array.
-    const savedAssignee = f.assigneeFilter as unknown;
-    setAssigneeFilter(Array.isArray(savedAssignee) ? (savedAssignee as number[])
-      : typeof savedAssignee === 'number' ? [savedAssignee] : []);
+    // Older saved filters may have stored a single scalar instead of an array — normalize
+    // each array-typed filter so the URL-sync effect never crashes on a non-array `.forEach`.
+    const toArray = <T,>(v: unknown): T[] =>
+      Array.isArray(v) ? (v as T[]) : v === null || v === undefined || v === '' ? [] : [v as T];
+    setStatusFilter(toArray<BugStatus>(f.statusFilter));
+    setSeverityFilter(toArray<BugSeverity>(f.severityFilter));
+    setAssigneeFilter(toArray<number>(f.assigneeFilter));
     setExcludeMode(f.excludeMode);
     setSortBy(f.sortBy);
     setSortOrder(f.sortOrder);
