@@ -13,7 +13,7 @@
 
     <groupId>com.github.farzadsedaghatbin</groupId>
     <artifactId>shipflow</artifactId>
-    <version>1.9.0</version>
+    <version>1.9.1</version>
     <name>ShipFlow</name>
     <description>ShipFlow - Shape Up methodology analytics tool</description>
 
@@ -224,7 +224,13 @@
         <dependency>
             <groupId>io.qdrant</groupId>
             <artifactId>client</artifactId>
-            <version>1.18.3</version>
+            <!-- PINNED to 1.7.0: langchain4j-qdrant 0.35.0's QdrantEmbeddingStore calls
+                 io.qdrant.client.PointIdFactory.id(UUID), which was removed in newer
+                 clients (1.18.x). Bumping the client (as Renovate did → 1.18.3) breaks
+                 BOTH compile (getVectorsCount removed) and RUNTIME (NoSuchMethodError on
+                 startup, only surfaced against a live Qdrant — unit tests use in-memory).
+                 Do NOT bump until langchain4j-qdrant is upgraded in lock-step. -->
+            <version>1.7.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>io.grpc</groupId>

@@ -2,5 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Pin io.qdrant:client to 1.7.0 — the version compatible with langchain4j-qdrant 0.35.0. Newer clients (1.18.x) remove PointIdFactory.id(UUID) and CollectionInfo.getVectorsCount(), which breaks compile AND crashes at runtime against a live Qdrant (unit tests use the in-memory store, so CI won't catch it). Do NOT re-enable until langchain4j-qdrant is upgraded in lock-step.",
+      "matchDatasources": ["maven"],
+      "matchPackageNames": ["io.qdrant:client"],
+      "enabled": false
+    }
   ]
 }
