@@ -25,7 +25,7 @@ test.describe('Shape Up Pitch Lifecycle', () => {
     await page.fill('#pitch-title', pitchTitle);
 
     await page.click('button:has-text("Create Pitch"), button:has-text("Save")');
-    await expect(page.locator(`text=${pitchTitle}`)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=${pitchTitle}`).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('move pitch from IDEA to DRAFT', async ({ page }) => {
@@ -36,10 +36,10 @@ test.describe('Shape Up Pitch Lifecycle', () => {
     const pitchTitle = `E2E Draft ${Date.now()}`;
     await page.fill('#pitch-title', pitchTitle);
     await page.click('button:has-text("Create Pitch"), button:has-text("Save")');
-    await expect(page.locator(`text=${pitchTitle}`)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=${pitchTitle}`).first()).toBeVisible({ timeout: 10000 });
 
     // Click on the pitch to open detail
-    await page.click(`text=${pitchTitle}`);
+    await page.locator(`text=${pitchTitle}`).first().click();
     await expect(page).toHaveURL(/\/pitches\/\d+/, { timeout: 10000 });
 
     // Change status to DRAFT — assert control is present so regressions are caught
@@ -62,7 +62,7 @@ test.describe('Shape Up Pitch Lifecycle', () => {
     await expect(appetiteInput).toBeVisible({ timeout: 10000 });
     await appetiteInput.fill('14');
     await page.click('button:has-text("Create Pitch"), button:has-text("Save")');
-    await expect(page.locator(`text=${pitchTitle}`)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=${pitchTitle}`).first()).toBeVisible({ timeout: 10000 });
 
     // Navigate to betting table and verify it loads
     await page.goto('/betting');

@@ -72,7 +72,7 @@ Each step has a `data-tour` attribute on its target element. The table below is 
 | 17 | Meetings | `meetings-menu` | `Layout.tsx:147` (navItem `tourId`) | `/meetings` |
 | 18 | Backlog | `backlog-menu` | `Layout.tsx:354` | `/backlog` |
 | 19 | Work Logs | `worklogs-menu` | `Layout.tsx:367` | `/time/logs` |
-| 20 | Migrate from Jira, Linear, or Asana | `import-nav` | `Layout.tsx` (Import Data nav item `tourId`) | `/import` |
+| 20 | Migrate from Jira, Linear, or Asana | `import-nav` | `ImportPage.tsx` (page container; Import Data moved out of the sidebar into Org Settings) | `/import` |
 | 21 | Task Backlog | `backlog-board` | `BacklogPage.tsx` (outer container div) | `/backlog` |
 | 22 | Reports & Analytics | `reports-overview` | `Reports.tsx` (outer container div) | `/reports` |
 | 23 | Sprint Planning | `sprint-planning-board` | `SprintPlanningPage.tsx` (two-column board container) | `/sprint-planning` — **Conditional: only included in the tour when the active project has `projectType === 'SCRUM'`**. `getTourSteps()` in `TourContext.tsx` filters this step out for non-SCRUM projects (which would otherwise be redirected to `/backlog`, breaking the tour). |
