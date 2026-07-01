@@ -87,6 +87,17 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.9.0',
+      date: 'July 1, 2026',
+      title: t('publicRoadmap.shipped1900Title'),
+      highlights: [
+        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.shipped1900Item0Title'), description: t('publicRoadmap.shipped1900Item0Desc') },
+        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.shipped1900Item1Title'), description: t('publicRoadmap.shipped1900Item1Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.shipped1900Item2Title'), description: t('publicRoadmap.shipped1900Item2Desc') },
+        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.shipped1900Item3Title'), description: t('publicRoadmap.shipped1900Item3Desc') },
+      ],
+    },
+    {
       version: '1.8.0',
       date: 'June 27, 2026',
       title: t('publicRoadmap.shipped180Title'),
@@ -263,13 +274,14 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.9.0',
-      theme: t('publicRoadmap.phaseShTheme'),
+      version: 'v1.10.0',
+      theme: t('publicRoadmap.phaseMobileTheme'),
       status: 'in-progress',
       items: [
-        { icon: <Container className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem0Title'), description: t('publicRoadmap.phaseShItem0Desc') },
-        { icon: <Activity className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem1Title'), description: t('publicRoadmap.phaseShItem1Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phaseShItem2Title'), description: t('publicRoadmap.phaseShItem2Desc') },
+        { icon: <Smartphone className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem0Title'), description: t('publicRoadmap.phaseMobileItem0Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem1Title'), description: t('publicRoadmap.phaseMobileItem1Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem2Title'), description: t('publicRoadmap.phaseMobileItem2Desc') },
+        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem3Title'), description: t('publicRoadmap.phaseMobileItem3Desc') },
       ],
     },
   ];

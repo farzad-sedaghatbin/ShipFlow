@@ -7,6 +7,7 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 | Version | Theme | Date |
 |---------|-------|------|
+| v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, air-gapped AI | July 1, 2026 |
 | v1.8.0 | Custom Fields & Advanced RBAC, Wiki / Docs Space, pluggable Object Storage | June 27, 2026 |
 | v1.7.0 | Workflow Automations — trigger/action engine, 20 templates, full UI | June 16, 2026 |
 | v1.6.0 | MCP Ecosystem — agentic write tools, plugin SDK, Notion/Confluence clients | June 15, 2026 |
@@ -19,19 +20,18 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 ## Active Milestone
 
-### v1.9.0 — Production-Grade Self-Hosting
+### v1.10.0 — Mobile PWA
 
 | Session | Task | Status |
 |---------|------|--------|
-| S54 | Helm chart + Kubernetes manifests (Deployment/Service/Ingress/PVC, HPA, NetworkPolicy) | 🔲 |
-| S55 | OpenTelemetry instrumentation + Prometheus metrics export + Grafana dashboards | 🔲 |
-| S56 | Audit trail export (Envers history → CSV/JSON, filterable UI) + air-gapped AI mode | 🔲 |
+| S57 | Progressive Web App shell + offline support (service worker, background sync) | 🔲 |
+| S58 | Responsive-layout audit across all pages (boards, pitches, hill charts, wiki) | 🔲 |
+| S59 | Web Push notifications + biometric/passkey auth (WebAuthn) | 🔲 |
 
 ## Planned
 
 | Version | Theme |
 |---------|-------|
-| v1.10.0 | Mobile PWA — offline, responsive audit, Web Push, biometric auth |
 | v1.11.0 | Plugin Marketplace — registry, CLI scaffolder, GitLab + Azure DevOps |
 | v1.12.0 | Collaborative Editing — real-time CRDT co-editing for pitches & retros |
 
