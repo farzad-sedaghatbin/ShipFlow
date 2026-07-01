@@ -105,8 +105,8 @@ public class VectorStoreInitializer implements CommandLineRunner {
 
       // Verify collection info
       Collections.CollectionInfo collectionInfo = client.getCollectionInfoAsync(collectionName).get();
-      log.info("Qdrant collection '{}' ready - Status: {}, Vectors count: {}", collectionName,
-          collectionInfo.getStatus(), collectionInfo.getVectorsCount());
+      log.info("Qdrant collection '{}' ready - Status: {}, Points count: {}", collectionName,
+          collectionInfo.getStatus(), collectionInfo.getPointsCount());
 
     } catch (Exception e) {
       log.error("Failed to initialize Qdrant collection '{}': {}", collectionName, e.getMessage());

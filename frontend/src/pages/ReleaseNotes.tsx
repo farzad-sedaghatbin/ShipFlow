@@ -79,9 +79,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.9.0',
-    date: 'In progress',
+    date: 'July 1, 2026',
     title: 'Production-Grade Self-Hosting',
-    upcoming: true,
     highlights: [
       {
         icon: <Layers className="h-5 w-5" />,

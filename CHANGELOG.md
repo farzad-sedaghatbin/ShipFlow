@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-07-01
+
 ### Fixed
 - **Hill Chart banner showed a raw `{count}` token**: the "Showing all scopes from … pitch(es)" info banner on the Cycle Hill Chart leaked the literal `{count}` placeholder because the i18n string used single-brace (`{count}`) instead of i18next's double-brace (`{{count}}`) interpolation syntax. The pitch count now renders correctly in both `en` and `fa`.
 - **Breadcrumbs showed numeric IDs instead of names** (e.g. "Cycle #1", "Wiki › #1 › #1"): added a lightweight `BreadcrumbContext` so detail pages publish a human-readable label for their route. Cycle, pitch, and wiki space/page breadcrumbs now resolve to the entity name; the wiki root also gets a proper "Wiki" crumb.

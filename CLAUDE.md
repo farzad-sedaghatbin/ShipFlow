@@ -5,12 +5,12 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.9.0 — "Production-Grade Self-Hosting"
+## Current Milestone: v1.10.0 — "Mobile PWA"
 
-**Current version**: v1.8.0 (released 2026-06-27)
+**Current version**: v1.9.0 (released 2026-07-01)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Next: Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export (v1.9.0).
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, and air-gapped AI mode (v1.9.0) shipped. Next: Mobile PWA — offline support, responsive audit, Web Push, biometric auth (v1.10.0).
 
 ### v1.3.0 session map
 
