@@ -1390,7 +1390,7 @@ export default function ImportPage() {
   const canSubmit = !!file && !!projectName.trim();
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div data-tour="import-nav" className="mx-auto max-w-2xl px-4 py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">

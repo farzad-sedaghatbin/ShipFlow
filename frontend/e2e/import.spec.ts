@@ -94,12 +94,11 @@ test.describe('Import / Migration', () => {
     expect(fileNameVisible || submitVisible).toBe(true);
   });
 
-  test('import nav link is present in sidebar', async ({ page }) => {
-    await page.goto('/dashboard');
-    await page.locator('[data-tour="sidebar"]').waitFor({ timeout: 10000 });
-
-    // The import nav item should be present in the sidebar (data-tour="import-nav")
-    const importNavLink = page.locator('[data-tour="import-nav"]');
-    await expect(importNavLink).toBeVisible({ timeout: 10000 });
+  test('import page is reachable and carries the tour anchor', async ({ page }) => {
+    // Import Data moved out of the sidebar into Organization Settings; the /import
+    // page itself now carries data-tour="import-nav" — the anchor the onboarding
+    // tour (TourContext importNav step, route '/import') highlights.
+    await page.goto('/import');
+    await expect(page.locator('[data-tour="import-nav"]')).toBeVisible({ timeout: 10000 });
   });
 });
