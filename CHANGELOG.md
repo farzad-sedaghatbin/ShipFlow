@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-07-01
+
+### Fixed
+- **v1.9.0 crashed on startup against a live Qdrant** (`APPLICATION FAILED TO START` — `NoSuchMethodError: io.qdrant.client.PointIdFactory.id(java.util.UUID)`). A Renovate bump of `io.qdrant:client` to 1.18.3 was incompatible with `langchain4j-qdrant:0.35.0`, whose `QdrantEmbeddingStore` calls `PointIdFactory.id(UUID)` (removed in newer clients). Unit tests use the in-memory vector store, so neither the compile-shim nor CI caught it — it only surfaced when the `prod` profile connected to real Qdrant. Reverted the client to the compatible **1.7.0** (the v1.8.0 pairing) and restored `CollectionInfo.getVectorsCount()`. Pinned `io.qdrant:client` in `renovate.json` so it can't be bumped again until `langchain4j-qdrant` is upgraded in lock-step.
+
 ## [1.9.0] - 2026-07-01
 
 ### Fixed
