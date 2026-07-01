@@ -61,6 +61,10 @@ vi.mock('../LanguageSelector', () => ({
   default: () => <div data-testid="language-selector">Language Selector</div>,
 }));
 
+vi.mock('../AirGappedBadge', () => ({
+  AirGappedBadge: () => null,
+}));
+
 vi.mock('../RouteProgressProvider', () => ({
   RouteProgressProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

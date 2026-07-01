@@ -79,6 +79,7 @@ import { QAFloatingButton } from './QAFloatingButton';
 import NotificationCenter from './NotificationCenter';
 import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
+import { AirGappedBadge } from './AirGappedBadge';
 import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
 import MobileBottomNav from './MobileBottomNav';
@@ -670,6 +671,9 @@ export default function Layout({ children }: LayoutProps) {
 
           {/* Right side actions - Touch-friendly */}
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* Air-gapped mode indicator - only rendered when air-gapped mode is enabled */}
+            <AirGappedBadge />
+
             {/* Tour Help Button - hidden on mobile to save space for ProjectSelector */}
             <Tooltip>
               <TooltipTrigger asChild>
