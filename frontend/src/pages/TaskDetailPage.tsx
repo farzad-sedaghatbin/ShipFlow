@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Combobox } from '@/components/ui/combobox';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
 import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch, Team } from '../types';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
@@ -75,7 +76,8 @@ export default function TaskDetailPage() {
   const [workLogNote, setWorkLogNote] = useState('');
   const [stoppingTimer, setStoppingTimer] = useState(false);
   const [viewSubtask, setViewSubtask] = useState<Task | null>(null);
-  
+  const [inlineUpdating, setInlineUpdating] = useState<'status' | 'assignee' | null>(null);
+
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -325,6 +327,41 @@ export default function TaskDetailPage() {
     navigate(`/backlog?addSubtask=${task?.id}`);
   };
 
+  const handleInlineStatusChange = async (newStatus: TaskStatus) => {
+    if (!task || newStatus === task.status) return;
+    const previous = task.status;
+    setTask({ ...task, status: newStatus });
+    setInlineUpdating('status');
+    try {
+      await taskService.updateStatus(task.id, newStatus);
+      toast.success(t('backlogPage.statusUpdated'));
+    } catch (error: any) {
+      setTask((current) => (current ? { ...current, status: previous } : current));
+      toast.error(getUserFriendlyError(error));
+    } finally {
+      setInlineUpdating(null);
+    }
+  };
+
+  const handleInlineAssigneeChange = async (value: string) => {
+    if (!task) return;
+    const newAssigneeId = value ? parseInt(value, 10) : null;
+    if (newAssigneeId === (task.assigneeId ?? null)) return;
+    const previous = { assigneeId: task.assigneeId, assigneeName: task.assigneeName };
+    const newAssignee = newAssigneeId ? persons.find((p) => p.id === newAssigneeId) : undefined;
+    setTask({ ...task, assigneeId: newAssigneeId ?? undefined, assigneeName: newAssignee?.name });
+    setInlineUpdating('assignee');
+    try {
+      await taskService.updateAssignee(task.id, newAssigneeId);
+      toast.success(t('backlogPage.assigneeUpdated'));
+    } catch (error: any) {
+      setTask((current) => (current ? { ...current, ...previous } : current));
+      toast.error(getUserFriendlyError(error));
+    } finally {
+      setInlineUpdating(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -368,9 +405,24 @@ export default function TaskDetailPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={statusOptions.find(s => s.value === task.status)?.variant}>
-                  {statusOptions.find(s => s.value === task.status)?.label}
-                </Badge>
+                <Select
+                  value={task.status}
+                  onValueChange={(value) => handleInlineStatusChange(value as TaskStatus)}
+                  disabled={inlineUpdating === 'status'}
+                >
+                  <SelectTrigger className="h-auto w-auto border-0 px-0 py-0 bg-transparent focus:ring-0 gap-1 [&>svg]:hidden">
+                    <Badge variant={statusOptions.find(s => s.value === task.status)?.variant} className="cursor-pointer">
+                      {statusOptions.find(s => s.value === task.status)?.label}
+                    </Badge>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Badge variant={priorityOptions.find(p => p.value === task.priority)?.variant}>
                   {priorityOptions.find(p => p.value === task.priority)?.label}
                 </Badge>
@@ -444,8 +496,19 @@ export default function TaskDetailPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <Label className="text-xs text-muted-foreground">{t('taskDetailPage.assignee')}</Label>
-              <div className="mt-1 font-medium">
-                {task.assigneeName || t('common.unassigned')}
+              <div className="mt-1">
+                <Combobox
+                  options={[
+                    { value: '', label: t('common.unassigned') },
+                    ...persons.map((person) => ({ value: person.id.toString(), label: person.name })),
+                  ]}
+                  value={task.assigneeId?.toString() ?? ''}
+                  onValueChange={handleInlineAssigneeChange}
+                  disabled={inlineUpdating === 'assignee'}
+                  searchPlaceholder={t('bugReports.filters.searchAssignee', 'Search people...')}
+                  emptyText={t('bugReports.filters.noAssignee', 'No people found')}
+                  triggerClassName="h-auto border-0 px-0 py-0 font-medium justify-start hover:bg-transparent [&>svg]:hidden"
+                />
               </div>
             </div>
             <div>

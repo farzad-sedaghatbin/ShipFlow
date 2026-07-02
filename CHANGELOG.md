@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Task/subtask delete showed a confusing "access denied"**: the trash icon on backlog rows was rendered for every user regardless of role, but the backend restricts `BACKLOG DELETE` to ADMIN/MANAGER (see `PERMISSION_MATRIX.md`). Non-privileged users could click delete and get a 403. The delete action is now hidden client-side unless the current user's role is ADMIN or MANAGER.
+- **Subtasks were indistinguishable from top-level tasks in a Pitch's task list**: `PitchTasksSection` rendered every linked task in one flat list with no indication of parent/child relationships. Subtasks are now grouped directly beneath their parent, indented, marked with a `└─` indicator, and link back to the parent task.
+- **New subtasks defaulted to BACKLOG status instead of TODO**: subtasks are meant to be worked on immediately, not triaged from a backlog. Fixed both in the "Add Subtask" flow and the backend default (`TaskService.createTask`) so any caller gets the corrected default.
+- **Tasks not linked to a pitch still defaulted to the "Pitch Scope" category**: a task created without picking a pitch (e.g. from the Backlog page's "Pitch Tasks" tab) was tagged `PITCH_SCOPE` even with no `pitchId`, mislabeling opportunistic debt/improvement work as shaped pitch scope. Category now defaults to `DEBT_IMPROVEMENT` whenever no pitch is linked, both in the backend default and the Backlog page's save flow.
+- **Backlog assignee picker used a plain dropdown**: the per-row "change assignee" menu on Bug Reports intercepted single-letter app hotkeys via Radix's built-in type-ahead. Replaced with a searchable combobox (matching the existing filter-bar pattern) that also pins the current user to the top of the list as "(Me)".
+
+### Improved
+- **Task Detail — inline edit for Status and Assignee**: these fields no longer require opening the full Edit dialog. Status and Assignee are now editable directly via inline dropdowns with optimistic updates (rollback on error), reusing the existing partial-PATCH endpoints.
+
 ## [1.9.1] - 2026-07-01
 
 ### Fixed

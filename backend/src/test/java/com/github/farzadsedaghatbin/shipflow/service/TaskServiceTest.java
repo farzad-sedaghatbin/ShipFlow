@@ -349,8 +349,20 @@ class TaskServiceTest {
   }
 
   @Test
-  void createTask_WithoutCategory_ShouldDefaultToPitchScope() {
+  void createTask_WithoutCategoryOrPitch_ShouldDefaultToDebtImprovement() {
     testRequest.setCategory(null);
+    testRequest.setPitchId(null);
+
+    TaskDTO result = taskService.createTask(testRequest);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getCategory()).isEqualTo(TaskCategory.DEBT_IMPROVEMENT);
+  }
+
+  @Test
+  void createTask_WithoutCategoryButWithPitch_ShouldDefaultToPitchScope() {
+    testRequest.setCategory(null);
+    testRequest.setPitchId(testPitch.getId());
 
     TaskDTO result = taskService.createTask(testRequest);
 

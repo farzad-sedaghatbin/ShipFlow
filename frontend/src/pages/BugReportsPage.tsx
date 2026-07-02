@@ -48,6 +48,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '../components/ui/command';
 import { Checkbox } from '../components/ui/checkbox';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
@@ -582,6 +591,15 @@ const BugReportsPage: React.FC = () => {
     );
     setPage(0);
   };
+
+  // Current person pinned to the top of assignee pickers so "assign to me" is a single click.
+  const assigneePersons = useMemo(() => {
+    const meId = user?.personId;
+    if (meId == null) return persons;
+    const me = persons.find((p) => p.id === meId);
+    if (!me) return persons;
+    return [me, ...persons.filter((p) => p.id !== meId)];
+  }, [persons, user?.personId]);
 
   // Inline update for status/severity/assignee
   const handleInlineUpdate = async (bugId: number, field: 'status' | 'severity' | 'assignee', value: string) => {
@@ -1297,8 +1315,8 @@ const BugReportsPage: React.FC = () => {
                     <span className="text-muted-foreground">{bug.pitchTitle || '-'}</span>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                    <Popover>
+                      <PopoverTrigger asChild>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1320,26 +1338,36 @@ const BugReportsPage: React.FC = () => {
                             <span className="text-muted-foreground text-sm">{t('bugReports.unassigned')}</span>
                           )}
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-                        {persons.length === 0 ? (
-                          <DropdownMenuItem disabled>{t('bugReports.filters.searchAssignee', 'Search people...')}</DropdownMenuItem>
-                        ) : (
-                          persons.map((person) => (
-                            <DropdownMenuItem
-                              key={person.id}
-                              onClick={() => handleInlineUpdate(bug.id, 'assignee', String(person.id))}
-                            >
-                              <Avatar className="h-5 w-5 mr-2">
-                                <AvatarFallback className="text-[0.6rem]">{person.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              {person.name}
-                              {bug.assigneeId === person.id && <Check className="ml-auto h-4 w-4" />}
-                            </DropdownMenuItem>
-                          ))
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="w-64 p-0">
+                        {/* Command has its own keyboard handling (arrow keys / Enter within the
+                            input) instead of Radix DropdownMenu's built-in type-ahead, which
+                            intercepted single-letter app hotkeys while this menu was open. */}
+                        <Command>
+                          <CommandInput placeholder={t('bugReports.filters.searchAssignee', 'Search people...')} />
+                          <CommandList className="max-h-72">
+                            <CommandEmpty>{t('bugReports.filters.noAssignee', 'No people found')}</CommandEmpty>
+                            <CommandGroup>
+                              {assigneePersons.map((person) => (
+                                <CommandItem
+                                  key={person.id}
+                                  value={person.name}
+                                  onSelect={() => handleInlineUpdate(bug.id, 'assignee', String(person.id))}
+                                >
+                                  <Avatar className="h-5 w-5 mr-2">
+                                    <AvatarFallback className="text-[0.6rem]">{person.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  {person.id === user?.personId
+                                    ? t('bugReports.filters.assigneeMe', '{{name}} (Me)', { name: person.name })
+                                    : person.name}
+                                  {bug.assigneeId === person.id && <Check className="ml-auto h-4 w-4" />}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </TableCell>
                   <TableCell>
                     <span className="text-muted-foreground">{bug.reporterName || '-'}</span>

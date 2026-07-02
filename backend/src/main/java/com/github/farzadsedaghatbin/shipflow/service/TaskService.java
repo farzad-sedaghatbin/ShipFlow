@@ -232,11 +232,19 @@ public class TaskService {
       }
     }
 
+    // Subtasks are created to be worked on right away, not triaged from a backlog — default to
+    // TODO instead of BACKLOG when the caller doesn't specify a status.
+    TaskStatus defaultStatus = parentTask != null ? TaskStatus.TODO : TaskStatus.BACKLOG;
+    // PITCH_SCOPE implies the task is part of a pitch's shaped work — only default to it when
+    // the task is actually linked to a pitch. A task with no pitchId is opportunistic
+    // debt/improvement work, not scoped pitch work, even when logged during a pitch's cycle.
+    TaskCategory defaultCategory =
+        request.getPitchId() != null ? TaskCategory.PITCH_SCOPE : TaskCategory.DEBT_IMPROVEMENT;
     Task task = Task.builder().title(request.getTitle()).description(request.getDescription()).cycle(cycle)
         .project(taskProject) // always populate direct reference for backlog queries
-        .parentTask(parentTask).status(request.getStatus() != null ? request.getStatus() : TaskStatus.BACKLOG)
+        .parentTask(parentTask).status(request.getStatus() != null ? request.getStatus() : defaultStatus)
         .priority(request.getPriority() != null ? request.getPriority() : TaskPriority.MEDIUM)
-        .category(request.getCategory() != null ? request.getCategory() : TaskCategory.PITCH_SCOPE)
+        .category(request.getCategory() != null ? request.getCategory() : defaultCategory)
         .estimateHours(request.getEstimateHours()).actualHours(request.getActualHours())
         .storyPoints(request.getStoryPoints())
         .dueDate(request.getDueDate()).tags(request.getTags()).build();
