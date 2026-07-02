@@ -149,6 +149,15 @@ public class QATestGenerationService {
     context.append("Status: ").append(pitch.getStatus()).append("\n");
     context.append("Appetite: ").append(pitch.getAppetiteDays()).append(" days\n\n");
 
+    // QA-provided requirements are placed first, with an explicit imperative, so they don't get
+    // diluted by the wall of pitch/meeting context that follows — buried mid-context, free-text
+    // notes were being effectively ignored by the LLM.
+    if (request.getAdditionalContext() != null && !request.getAdditionalContext().isBlank()) {
+      context.append("=== QA TEAM REQUIREMENTS (mandatory — every item below MUST be covered by ")
+          .append("at least one generated test case) ===\n").append(request.getAdditionalContext())
+          .append("\n\n");
+    }
+
     // Add all Shape Up methodology fields for comprehensive test generation
     context.append("=== PITCH DETAILS ===\n");
     if (pitch.getDescription() != null && !pitch.getDescription().isEmpty()) {
@@ -183,11 +192,6 @@ public class QATestGenerationService {
               .append("\n");
         }
       }
-    }
-
-    // Add additional context from request
-    if (request.getAdditionalContext() != null && !request.getAdditionalContext().isEmpty()) {
-      context.append("\nAdditional Context:\n").append(request.getAdditionalContext()).append("\n");
     }
 
     // Add focus areas
@@ -303,44 +307,35 @@ public class QATestGenerationService {
     return suggestions;
   }
 
+  private static final String[] FIELD_MARKERS = {"TITLE:", "DESCRIPTION:", "PRECONDITIONS:", "STEPS:", "EXPECTED:",
+      "TYPE:", "PRIORITY:", "TAGS:", "---END---"};
+
+  // Field values often span multiple lines (e.g. the LLM puts a detailed "Expected Result" on
+  // the line(s) after "EXPECTED:" rather than right after the colon). Cutting off at the first
+  // "\n" left the value empty in that case — the field must be delimited by the *next field
+  // marker*, not the next newline, to capture multi-line content correctly.
   private String extractField(String text, String fieldName) {
     int start = text.indexOf(fieldName);
     if (start < 0)
       return null;
 
     start += fieldName.length();
-    int end = text.indexOf("\n", start);
-    if (end < 0)
-      end = text.length();
-
-    String value = text.substring(start, end).trim();
-
-    // Handle multi-line fields that end at next field
-    String[] nextFields = {"TITLE:", "DESCRIPTION:", "PRECONDITIONS:", "STEPS:", "EXPECTED:", "TYPE:", "PRIORITY:",
-        "TAGS:", "---END---"};
-    for (String field : nextFields) {
-      if (!field.equals(fieldName)) {
-        int fieldIdx = value.indexOf(field);
-        if (fieldIdx > 0) {
-          value = value.substring(0, fieldIdx).trim();
-        }
+    int end = text.length();
+    for (String marker : FIELD_MARKERS) {
+      if (marker.equals(fieldName))
+        continue;
+      int markerIdx = text.indexOf(marker, start);
+      if (markerIdx >= 0 && markerIdx < end) {
+        end = markerIdx;
       }
     }
 
+    String value = text.substring(start, end).trim();
     return value.isEmpty() ? null : value;
   }
 
   private String extractSteps(String text) {
-    int start = text.indexOf("STEPS:");
-    if (start < 0)
-      return null;
-
-    start += "STEPS:".length();
-    int end = text.indexOf("EXPECTED:");
-    if (end < 0)
-      end = text.length();
-
-    return text.substring(start, end).trim();
+    return extractField(text, "STEPS:");
   }
 
   /** Retrieve historical test cases for consistency and learning. */
