@@ -72,6 +72,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Task, TaskStatus, TaskPriority, Person } from '../../types';
 import { taskService } from '../../services/taskService';
+import { useAuth } from '../../contexts';
 import { getUserFriendlyError } from '../../utils/errorMessages';
 import EmptyState from '../EmptyState';
 import { EmptyTasksIllustration } from '../illustrations';
@@ -117,6 +118,10 @@ function SortableTaskRow({
   t,
 }: SortableTaskRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  // Backend restricts BACKLOG DELETE to ADMIN/MANAGER (see PERMISSION_MATRIX.md) — hide the
+  // action for other roles instead of letting them click it and hit a confusing 403.
+  const { user } = useAuth();
+  const canDeleteTask = user?.role === 'ADMIN' || user?.role === 'MANAGER';
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -470,21 +475,23 @@ function SortableTaskRow({
               <TooltipContent>{t('backlogPage.edit')}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onDeleteTask(task.id)}
-                  aria-label={t('aria.deleteTask')}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('backlogPage.delete')}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {canDeleteTask && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDeleteTask(task.id)}
+                    aria-label={t('aria.deleteTask')}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t('backlogPage.delete')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
       </TableCell>
     </TableRow>

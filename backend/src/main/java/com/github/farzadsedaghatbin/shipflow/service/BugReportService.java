@@ -39,6 +39,30 @@ public class BugReportService {
   @Value("${app.qa.test-management.enabled:true}")
   private boolean testManagementEnabled;
 
+  /**
+   * Join tag entries into the comma-separated string stored on the entity, dropping blank
+   * entries and normalizing an all-blank list to {@code null}. Without this, {@code
+   * String.join(",", List.of())} (or a list of only whitespace) produces {@code ""} — which is
+   * non-null, so {@link #splitTags} would later split it into a single blank tag and the UI
+   * would render one empty badge instead of hiding the "Tags" section.
+   */
+  private String joinTags(List<String> tags) {
+    if (tags == null)
+      return null;
+    String joined = tags.stream().filter(t -> t != null && !t.isBlank()).map(String::trim)
+        .collect(Collectors.joining(","));
+    return joined.isBlank() ? null : joined;
+  }
+
+  /** Split the stored comma-separated tags string back into a list, dropping blank entries. */
+  private List<String> splitTags(String tags) {
+    if (tags == null || tags.isBlank())
+      return null;
+    List<String> split = Arrays.stream(tags.split(",")).map(String::trim).filter(t -> !t.isEmpty())
+        .collect(Collectors.toList());
+    return split.isEmpty() ? null : split;
+  }
+
   /** Create a new bug report. */
   @Transactional
   public BugReportDTO createBugReport(CreateBugReportRequest request, Long userId) {
@@ -53,7 +77,7 @@ public class BugReportService {
         .environment(request.getEnvironment()).component(request.getComponent())
         .severity(request.getSeverity())
         .status(request.getStatus() != null ? request.getStatus() : BugStatus.OPEN)
-        .tags(request.getTags() != null ? String.join(",", request.getTags()) : null)
+        .tags(joinTags(request.getTags()))
         .attachments(request.getAttachments()).reporter(reporter).build();
 
     // Set direct project relationship first (required for Kanban, optional for
@@ -154,7 +178,7 @@ public class BugReportService {
     if (request.getSeverity() != null)
       bugReport.setSeverity(request.getSeverity());
     if (request.getTags() != null)
-      bugReport.setTags(String.join(",", request.getTags()));
+      bugReport.setTags(joinTags(request.getTags()));
     if (request.getAttachments() != null)
       bugReport.setAttachments(request.getAttachments());
     if (request.getResolution() != null)
@@ -499,7 +523,7 @@ public class BugReportService {
         .taskId(bugReport.getTask() != null ? bugReport.getTask().getId() : null)
         .taskTitle(bugReport.getTask() != null ? bugReport.getTask().getTitle() : null)
         .severity(bugReport.getSeverity()).status(bugReport.getStatus()).tags(bugReport.getTags())
-        .tagList(bugReport.getTags() != null ? Arrays.asList(bugReport.getTags().split(",")) : null)
+        .tagList(splitTags(bugReport.getTags()))
         .attachments(bugReport.getAttachments())
         .reporterId(bugReport.getReporter() != null ? bugReport.getReporter().getId() : null)
         .reporterName(bugReport.getReporter() != null ? bugReport.getReporter().getUsername() : null)

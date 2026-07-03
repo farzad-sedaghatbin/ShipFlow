@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
@@ -26,6 +26,31 @@ export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated }: Pi
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<TaskStatus>('TODO');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
+
+  // Group subtasks directly beneath their parent (instead of a flat list) so the
+  // hierarchy is visible; orphan subtasks (parent not in this pitch's task list) fall
+  // back to top-level order.
+  const orderedTasks = useMemo(() => {
+    const idsInList = new Set(tasks.map((task) => task.id));
+    const childrenByParent = new Map<number, Task[]>();
+    for (const task of tasks) {
+      if (task.parentTaskId != null && idsInList.has(task.parentTaskId)) {
+        const siblings = childrenByParent.get(task.parentTaskId) ?? [];
+        siblings.push(task);
+        childrenByParent.set(task.parentTaskId, siblings);
+      }
+    }
+    const ordered: Task[] = [];
+    for (const task of tasks) {
+      const isNestedChild = task.parentTaskId != null && idsInList.has(task.parentTaskId);
+      if (isNestedChild) continue;
+      ordered.push(task);
+      for (const child of childrenByParent.get(task.id) ?? []) {
+        ordered.push(child);
+      }
+    }
+    return ordered;
+  }, [tasks]);
 
   const resetForm = () => {
     setTitle('');
@@ -85,36 +110,60 @@ export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated }: Pi
             </p>
           ) : (
             <div className="space-y-2">
-              {tasks.map(task => (
-                <Link key={task.id} to={`/backlog/${task.id}`} className="block">
-                  <div className="flex items-center justify-between py-2 px-3 rounded-md border border-border hover:bg-muted/50 transition-colors cursor-pointer">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <Badge
-                        variant={
-                          task.status === 'DONE' ? 'success' :
-                          task.status === 'IN_PROGRESS' ? 'default' :
-                          task.status === 'BLOCKED' ? 'destructive' :
-                          'secondary'
-                        }
-                        className="text-[10px] px-1.5 py-0 shrink-0"
+              {orderedTasks.map(task => {
+                const isSubtask = task.parentTaskId != null;
+                return (
+                  <div
+                    key={task.id}
+                    className={isSubtask ? 'pl-6 border-l-2 border-border ml-2' : ''}
+                  >
+                    <Link
+                      to={`/backlog/${task.id}`}
+                      className={`block rounded-md border transition-colors ${
+                        isSubtask ? 'border-border/60 bg-muted/30' : 'border-border'
+                      } hover:bg-muted/50`}
+                    >
+                      <div className="flex items-center justify-between py-2 px-3 cursor-pointer">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          {isSubtask && (
+                            <span className="text-muted-foreground text-xs shrink-0" aria-hidden="true">└─</span>
+                          )}
+                          <Badge
+                            variant={
+                              task.status === 'DONE' ? 'success' :
+                              task.status === 'IN_PROGRESS' ? 'default' :
+                              task.status === 'BLOCKED' ? 'destructive' :
+                              'secondary'
+                            }
+                            className="text-[10px] px-1.5 py-0 shrink-0"
+                          >
+                            {task.status?.replace(/_/g, ' ')}
+                          </Badge>
+                          <span className="text-sm truncate">{task.title}</span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          {task.assigneeName && (
+                            <span className="text-xs text-muted-foreground">{task.assigneeName}</span>
+                          )}
+                          {task.priority && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              {task.priority}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                    {isSubtask && task.parentTaskTitle && (
+                      <Link
+                        to={`/backlog/${task.parentTaskId}`}
+                        className="text-[10px] text-muted-foreground hover:underline hover:text-foreground pl-3"
                       >
-                        {task.status?.replace(/_/g, ' ')}
-                      </Badge>
-                      <span className="text-sm truncate">{task.title}</span>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-2">
-                      {task.assigneeName && (
-                        <span className="text-xs text-muted-foreground">{task.assigneeName}</span>
-                      )}
-                      {task.priority && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {task.priority}
-                        </Badge>
-                      )}
-                    </div>
+                        {t('pitchDetailPage.subtaskOf', 'Subtask of {{parentTitle}}', { parentTitle: task.parentTaskTitle })}
+                      </Link>
+                    )}
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

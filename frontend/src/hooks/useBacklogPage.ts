@@ -363,7 +363,7 @@ export function useBacklogPage() {
   const handleCloseDialog = () => { setDialogOpen(false); setEditingTask(null); setFieldErrors({}); };
 
   const handleAddSubTask = (parentTask: Task) => {
-    setFormData({ title: '', description: '', cycleId: parentTask.cycleId, parentTaskId: parentTask.id, status: 'BACKLOG', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory });
+    setFormData({ title: '', description: '', cycleId: parentTask.cycleId, parentTaskId: parentTask.id, status: 'TODO', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory });
     setDueDate(null);
     setEditingTask(null);
     setDialogOpen(true);
@@ -421,7 +421,12 @@ export function useBacklogPage() {
     if (!validateTaskForm()) return;
     try {
       setSaving(true);
-      const data = { ...formData, dueDate: dueDate ? dueDate.format('YYYY-MM-DD') : undefined, category: activeCategory };
+      // The "Pitch Tasks" tab only makes sense for tasks actually linked to a pitch — a task
+      // created there without picking a pitch is opportunistic debt/improvement work, not
+      // shaped pitch scope, even though the tab's category is PITCH_SCOPE.
+      const resolvedCategory: TaskCategory =
+        activeCategory === 'PITCH_SCOPE' && !formData.pitchId ? 'DEBT_IMPROVEMENT' : activeCategory;
+      const data = { ...formData, dueDate: dueDate ? dueDate.format('YYYY-MM-DD') : undefined, category: resolvedCategory };
       if (editingTask) { await taskService.update(editingTask.id, data); toast.success(t('backlogPage.taskUpdated')); }
       else { await taskService.create(data); toast.success(t('backlogPage.taskCreated')); }
       handleCloseDialog(); loadTasks(); loadStatistics();

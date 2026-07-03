@@ -2432,6 +2432,7 @@
       "allAssignees": "All Assignees",
       "searchAssignee": "Search people...",
       "noAssignee": "No people found",
+      "assigneeMe": "{{name}} (Me)",
       "allReporters": "All Reporters",
       "searchReporter": "Search reporters...",
       "noReporter": "No reporters found",
@@ -4573,6 +4574,7 @@
     "tasks": "Tasks",
     "viewAllTasks": "View All Tasks",
     "noTasks": "No tasks linked to this pitch yet.",
+    "subtaskOf": "Subtask of {{parentTitle}}",
     "viewAllWorkLogs": "View all {{total}} work logs →",
     "createTask": {
       "button": "Create Task",
