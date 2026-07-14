@@ -23,6 +23,7 @@ import {
   Mail,
   BookmarkCheck,
   Container,
+  Link2,
   FlaskConical,
   Layers,
   Brain,
@@ -86,6 +87,16 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.10.0',
+      date: 'July 14, 2026',
+      title: t('publicRoadmap.shipped1100Title'),
+      highlights: [
+        { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item0Title'), description: t('publicRoadmap.shipped1100Item0Desc') },
+        { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item1Title'), description: t('publicRoadmap.shipped1100Item1Desc') },
+        { icon: <Target className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item2Title'), description: t('publicRoadmap.shipped1100Item2Desc') },
+      ],
+    },
     {
       version: '1.9.0',
       date: 'July 1, 2026',
@@ -274,7 +285,7 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.10.0',
+      version: 'v1.11.0',
       theme: t('publicRoadmap.phaseMobileTheme'),
       status: 'in-progress',
       items: [

@@ -23,16 +23,18 @@ import {
 } from '@/components/ui/dialog';
 import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
-import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch, Team } from '../types';
+import { Task, TaskStatus, TaskPriority, CreateTaskRequest, Cycle, Person, Pitch, Team, Release } from '../types';
 import { taskService } from '../services/taskService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { teamService } from '../services/teamService';
 import { pitchService } from '../services/pitchService';
+import { releaseService } from '../services/releaseService';
 import timerService, { WorkLogTimer } from '../services/timerService';
 import { workLogService } from '../services/workLogService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import TaskAttachments from '../components/TaskAttachments';
+import LinkedWikiPages from '../components/LinkedWikiPages';
 import { CustomFieldsSection } from '../components/CustomFieldsSection';
 import TaskDependencies from '../components/TaskDependencies';
 import Comments from '../components/Comments';
@@ -76,7 +78,8 @@ export default function TaskDetailPage() {
   const [workLogNote, setWorkLogNote] = useState('');
   const [stoppingTimer, setStoppingTimer] = useState(false);
   const [viewSubtask, setViewSubtask] = useState<Task | null>(null);
-  const [inlineUpdating, setInlineUpdating] = useState<'status' | 'assignee' | null>(null);
+  const [inlineUpdating, setInlineUpdating] = useState<'status' | 'assignee' | 'release' | null>(null);
+  const [releases, setReleases] = useState<Release[]>([]);
 
   // Edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -145,10 +148,20 @@ export default function TaskDetailPage() {
       setLoading(true);
       const response = await taskService.getById(id);
       setTask(response.data);
-      
+
       // Load subtasks
       const subtasksResponse = await taskService.getSubTasks(id);
       setSubtasks(subtasksResponse.data || []);
+
+      // Load releases for the target-release picker (standalone, non-pitch tasks only)
+      if (!response.data.pitchId && response.data.projectId) {
+        try {
+          const releasesRes = await releaseService.getByProject(response.data.projectId);
+          setReleases(releasesRes.data);
+        } catch {
+          setReleases([]);
+        }
+      }
     } catch (error: any) {
       console.error('Failed to load task:', error);
       const status = error?.response?.status;
@@ -354,6 +367,29 @@ export default function TaskDetailPage() {
     try {
       await taskService.updateAssignee(task.id, newAssigneeId);
       toast.success(t('backlogPage.assigneeUpdated'));
+    } catch (error: any) {
+      setTask((current) => (current ? { ...current, ...previous } : current));
+      toast.error(getUserFriendlyError(error));
+    } finally {
+      setInlineUpdating(null);
+    }
+  };
+
+  const handleInlineReleaseChange = async (value: string) => {
+    if (!task) return;
+    const newReleaseId = value === 'none' ? null : parseInt(value, 10);
+    if (newReleaseId === (task.targetReleaseId ?? null)) return;
+    const previous = { targetReleaseId: task.targetReleaseId, targetReleaseName: task.targetReleaseName, targetReleaseVersion: task.targetReleaseVersion };
+    setInlineUpdating('release');
+    try {
+      if (newReleaseId) {
+        const response = await taskService.setTargetRelease(task.id, newReleaseId);
+        setTask(response.data);
+      } else {
+        const response = await taskService.clearTargetRelease(task.id);
+        setTask(response.data);
+      }
+      toast.success(t('taskDetailPage.targetReleaseUpdated'));
     } catch (error: any) {
       setTask((current) => (current ? { ...current, ...previous } : current));
       toast.error(getUserFriendlyError(error));
@@ -583,6 +619,36 @@ export default function TaskDetailPage() {
                 </div>
               </div>
             )}
+            {!task.pitchId && (
+              <div>
+                <Label className="text-xs text-muted-foreground">{t('taskDetailPage.targetRelease')}</Label>
+                <div className="mt-1">
+                  <Select
+                    value={task.targetReleaseId ? String(task.targetReleaseId) : 'none'}
+                    onValueChange={handleInlineReleaseChange}
+                    disabled={inlineUpdating === 'release'}
+                  >
+                    <SelectTrigger className="h-auto w-auto border-0 px-0 py-0 bg-transparent focus:ring-0 gap-1 font-medium">
+                      {task.targetReleaseId ? (
+                        <Badge variant="outline" className="cursor-pointer">
+                          v{task.targetReleaseVersion} {task.targetReleaseName}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">{t('taskDetailPage.noTargetRelease')}</span>
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t('taskDetailPage.noTargetRelease')}</SelectItem>
+                      {releases.map((release) => (
+                        <SelectItem key={release.id} value={String(release.id)}>
+                          v{release.version} — {release.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -630,6 +696,9 @@ export default function TaskDetailPage() {
 
       {/* File Attachments */}
       <TaskAttachments taskId={task.id} />
+
+      {/* Linked Wiki Pages */}
+      <LinkedWikiPages entityType="TASK" entityId={task.id} />
 
       {/* Custom Fields */}
       <CustomFieldsSection

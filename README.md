@@ -47,6 +47,7 @@ docker compose up -d
 | **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
 | **Wiki / Docs Space** *(v1.8.0)* | Built-in hierarchical wiki with a Notion-style block editor (headings, tables, code blocks, callouts, slash menu). Every page is versioned, searchable, and auto-ingested into the AI Knowledge Center |
+| **Linked wiki references** *(v1.10.0)* | Link a Pitch or Task straight to a Wiki page for research/documentation, no file upload required. Drag-and-drop task reordering within a pitch, and standalone (debt/improvement) tasks can target a release directly |
 | **Pluggable Object Storage** *(v1.8.0)* | Attachments on AWS S3, MinIO, or local disk — chosen in Org Settings with one-click backend migration and a connection test |
 | **Knowledge Center** | Upload docs and paste URLs that the AI uses for Q&A, test generation, Wise Architecture, and risk analysis — scoped Org / Team / Project, pluggable provider SPI |
 | **GitHub integration** | Auto-link commits and PRs to tasks; auto-close on merge; webhook-driven timeline on every task |

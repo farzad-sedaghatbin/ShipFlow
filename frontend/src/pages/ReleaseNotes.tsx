@@ -78,6 +78,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.10.0',
+    date: 'July 14, 2026',
+    title: 'Wiki References & Task Ordering',
+    highlights: [
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Linked Wiki Pages on Pitches & Tasks',
+        description:
+          'Reference existing research or documentation without uploading another copy. Search and link a wiki page directly from a Pitch or Task — see where it\'s linked from, jump to it, or unlink it. Scoped to Pitches and Tasks; Bug Reports keep file attachments as their evidence type.',
+      },
+      {
+        icon: <GripHorizontal className="h-5 w-5" />,
+        title: 'Drag-and-Drop Task Reordering in a Pitch',
+        description:
+          'Manually reorder a pitch\'s task list by dragging the grip handle. Defaults to priority order until you reorder by hand; subtasks reorder within their own parent group only.',
+      },
+      {
+        icon: <Target className="h-5 w-5" />,
+        title: 'Target Release for Standalone Tasks',
+        description:
+          'Debt/improvement tasks that aren\'t tied to a pitch can now be assigned a target release directly, so they show up on the release and roadmap the same way pitches do.',
+      },
+    ],
+  },
+  {
     version: '1.9.0',
     date: 'July 1, 2026',
     title: 'Production-Grade Self-Hosting',

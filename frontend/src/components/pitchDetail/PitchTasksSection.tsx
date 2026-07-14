@@ -1,9 +1,27 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
+import type { TFunction } from 'i18next';
+import { Plus, GripVertical } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Task, TaskStatus, TaskPriority } from '../../types';
 import { taskService } from '../../services/taskService';
+import { getUserFriendlyError } from '../../utils/errorMessages';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -17,9 +35,146 @@ interface PitchTasksSectionProps {
   pitchId: number;
   cycleId?: number | null;
   onTaskCreated?: (task: Task) => void;
+  /** Fired with the full, updated task list after a drag reorder (optimistic update / rollback). */
+  onReorder?: (tasks: Task[]) => void;
 }
 
-export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated }: PitchTasksSectionProps) {
+const PRIORITY_RANK: Record<TaskPriority, number> = {
+  URGENT: 0,
+  HIGH: 1,
+  MEDIUM: 2,
+  LOW: 3,
+};
+
+/**
+ * Sorts a sibling group for display. If nobody has ever manually reordered this
+ * group (every task still shares the same sortOrder, i.e. the default 0), fall
+ * back to priority order (URGENT > HIGH > MEDIUM > LOW). Once a drag assigns
+ * distinct sortOrder values, plain numeric sort takes over from then on.
+ */
+function sortForDisplay(group: Task[]): Task[] {
+  const hasCustomOrder = group.some((task) => (task.sortOrder ?? 0) !== (group[0]?.sortOrder ?? 0));
+  if (!hasCustomOrder) {
+    return [...group].sort((a, b) => (PRIORITY_RANK[a.priority] ?? 4) - (PRIORITY_RANK[b.priority] ?? 4));
+  }
+  return [...group].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+interface SortableTaskRowProps {
+  task: Task;
+  isSubtask: boolean;
+  t: TFunction;
+}
+
+function SortableTaskRow({ task, isSubtask, t }: SortableTaskRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={isSubtask ? 'pl-6 border-l-2 border-border ml-2' : ''}
+    >
+      <div
+        className={`flex items-center rounded-md border transition-colors ${
+          isSubtask ? 'border-border/60 bg-muted/30' : 'border-border'
+        } hover:bg-muted/50`}
+      >
+        <button
+          {...attributes}
+          {...listeners}
+          type="button"
+          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded shrink-0 px-2 py-2"
+          aria-label={t('backlogPage.dragToReorder')}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <Link
+          to={`/backlog/${task.id}`}
+          className="flex items-center justify-between py-2 pr-3 flex-1 min-w-0 cursor-pointer"
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {isSubtask && (
+              <span className="text-muted-foreground text-xs shrink-0" aria-hidden="true">└─</span>
+            )}
+            <Badge
+              variant={
+                task.status === 'DONE' ? 'success' :
+                task.status === 'IN_PROGRESS' ? 'default' :
+                task.status === 'BLOCKED' ? 'destructive' :
+                'secondary'
+              }
+              className="text-[10px] px-1.5 py-0 shrink-0"
+            >
+              {task.status?.replace(/_/g, ' ')}
+            </Badge>
+            <span className="text-sm truncate">{task.title}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 ml-2">
+            {task.assigneeName && (
+              <span className="text-xs text-muted-foreground">{task.assigneeName}</span>
+            )}
+            {task.priority && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                {task.priority}
+              </Badge>
+            )}
+          </div>
+        </Link>
+      </div>
+      {isSubtask && task.parentTaskTitle && (
+        <Link
+          to={`/backlog/${task.parentTaskId}`}
+          className="text-[10px] text-muted-foreground hover:underline hover:text-foreground pl-3"
+        >
+          {t('pitchDetailPage.subtaskOf', { parentTitle: task.parentTaskTitle })}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+interface SubtaskGroupProps {
+  subtasks: Task[];
+  onDragEndGroup: (activeId: number, overId: number) => void;
+  t: TFunction;
+}
+
+/**
+ * Each parent's subtasks get their own isolated DndContext/SortableContext so a
+ * drag can never cross into the top-level list or another parent's subtasks —
+ * only reordering among siblings under the same parent is possible.
+ */
+function SubtaskGroup({ subtasks, onDragEndGroup, t }: SubtaskGroupProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    if (!e.over || e.active.id === e.over.id) return;
+    onDragEndGroup(Number(e.active.id), Number(e.over.id));
+  };
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={subtasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2">
+          {subtasks.map((task) => (
+            <SortableTaskRow key={task.id} task={task} isSubtask t={t} />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated, onReorder }: PitchTasksSectionProps) {
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -27,29 +182,30 @@ export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated }: Pi
   const [status, setStatus] = useState<TaskStatus>('TODO');
   const [priority, setPriority] = useState<TaskPriority>('MEDIUM');
 
-  // Group subtasks directly beneath their parent (instead of a flat list) so the
-  // hierarchy is visible; orphan subtasks (parent not in this pitch's task list) fall
-  // back to top-level order.
-  const orderedTasks = useMemo(() => {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+  const reorderInFlight = useRef(false);
+
+  // Top-level tasks in this pitch's list (parent not in this list is treated as
+  // top-level here too, matching the previous flat-fallback behavior).
+  const topLevelTasks = useMemo(() => {
     const idsInList = new Set(tasks.map((task) => task.id));
-    const childrenByParent = new Map<number, Task[]>();
+    const roots = tasks.filter((task) => task.parentTaskId == null || !idsInList.has(task.parentTaskId));
+    return sortForDisplay(roots);
+  }, [tasks]);
+
+  const childrenByParent = useMemo(() => {
+    const idsInList = new Set(tasks.map((task) => task.id));
+    const map = new Map<number, Task[]>();
     for (const task of tasks) {
       if (task.parentTaskId != null && idsInList.has(task.parentTaskId)) {
-        const siblings = childrenByParent.get(task.parentTaskId) ?? [];
+        const siblings = map.get(task.parentTaskId) ?? [];
         siblings.push(task);
-        childrenByParent.set(task.parentTaskId, siblings);
+        map.set(task.parentTaskId, siblings);
       }
     }
-    const ordered: Task[] = [];
-    for (const task of tasks) {
-      const isNestedChild = task.parentTaskId != null && idsInList.has(task.parentTaskId);
-      if (isNestedChild) continue;
-      ordered.push(task);
-      for (const child of childrenByParent.get(task.id) ?? []) {
-        ordered.push(child);
-      }
-    }
-    return ordered;
+    return map;
   }, [tasks]);
 
   const resetForm = () => {
@@ -76,6 +232,43 @@ export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated }: Pi
     } finally {
       setSaving(false);
     }
+  };
+
+  // Reorders a single sibling group (top-level tasks, or one parent's subtasks),
+  // merges the new sortOrder values back into the full tasks list, updates
+  // optimistically, then persists via PATCH /api/tasks/reorder — reverting on
+  // failure. Mirrors the drag-to-reorder pattern in BacklogTaskTable.tsx.
+  const reorderGroup = async (group: Task[], activeId: number, overId: number) => {
+    const fromIndex = group.findIndex((task) => task.id === activeId);
+    const toIndex = group.findIndex((task) => task.id === overId);
+    if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return;
+    if (reorderInFlight.current) return;
+    reorderInFlight.current = true;
+
+    const reorderedGroup = arrayMove(group, fromIndex, toIndex);
+    const items = reorderedGroup.map((task, idx) => ({ id: task.id, sortOrder: idx + 1 }));
+    const sortOrderById = new Map(items.map((item) => [item.id, item.sortOrder]));
+
+    const previousTasks = tasks;
+    const updatedTasks = tasks.map((task) =>
+      sortOrderById.has(task.id) ? { ...task, sortOrder: sortOrderById.get(task.id)! } : task
+    );
+    onReorder?.(updatedTasks);
+
+    try {
+      await taskService.reorderTasks(items);
+      toast.success(t('tasks.reorderSuccess'));
+    } catch (err) {
+      toast.error(getUserFriendlyError(err, t('tasks.reorderError')));
+      onReorder?.(previousTasks);
+    } finally {
+      reorderInFlight.current = false;
+    }
+  };
+
+  const handleTopLevelDragEnd = (e: DragEndEvent) => {
+    if (!e.over || e.active.id === e.over.id) return;
+    reorderGroup(topLevelTasks, Number(e.active.id), Number(e.over.id));
   };
 
   return (
@@ -109,62 +302,29 @@ export function PitchTasksSection({ tasks, pitchId, cycleId, onTaskCreated }: Pi
               {t('pitchDetailPage.noTasks', 'No tasks linked to this pitch yet.')}
             </p>
           ) : (
-            <div className="space-y-2">
-              {orderedTasks.map(task => {
-                const isSubtask = task.parentTaskId != null;
-                return (
-                  <div
-                    key={task.id}
-                    className={isSubtask ? 'pl-6 border-l-2 border-border ml-2' : ''}
-                  >
-                    <Link
-                      to={`/backlog/${task.id}`}
-                      className={`block rounded-md border transition-colors ${
-                        isSubtask ? 'border-border/60 bg-muted/30' : 'border-border'
-                      } hover:bg-muted/50`}
-                    >
-                      <div className="flex items-center justify-between py-2 px-3 cursor-pointer">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          {isSubtask && (
-                            <span className="text-muted-foreground text-xs shrink-0" aria-hidden="true">└─</span>
-                          )}
-                          <Badge
-                            variant={
-                              task.status === 'DONE' ? 'success' :
-                              task.status === 'IN_PROGRESS' ? 'default' :
-                              task.status === 'BLOCKED' ? 'destructive' :
-                              'secondary'
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleTopLevelDragEnd}>
+              <SortableContext items={topLevelTasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {topLevelTasks.map((task) => {
+                    const children = childrenByParent.get(task.id);
+                    return (
+                      <div key={task.id} className="space-y-2">
+                        <SortableTaskRow task={task} isSubtask={false} t={t} />
+                        {children && children.length > 0 && (
+                          <SubtaskGroup
+                            subtasks={sortForDisplay(children)}
+                            onDragEndGroup={(activeId, overId) =>
+                              reorderGroup(sortForDisplay(children), activeId, overId)
                             }
-                            className="text-[10px] px-1.5 py-0 shrink-0"
-                          >
-                            {task.status?.replace(/_/g, ' ')}
-                          </Badge>
-                          <span className="text-sm truncate">{task.title}</span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-2">
-                          {task.assigneeName && (
-                            <span className="text-xs text-muted-foreground">{task.assigneeName}</span>
-                          )}
-                          {task.priority && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                              {task.priority}
-                            </Badge>
-                          )}
-                        </div>
+                            t={t}
+                          />
+                        )}
                       </div>
-                    </Link>
-                    {isSubtask && task.parentTaskTitle && (
-                      <Link
-                        to={`/backlog/${task.parentTaskId}`}
-                        className="text-[10px] text-muted-foreground hover:underline hover:text-foreground pl-3"
-                      >
-                        {t('pitchDetailPage.subtaskOf', 'Subtask of {{parentTitle}}', { parentTitle: task.parentTaskTitle })}
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </CardContent>
       </Card>

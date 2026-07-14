@@ -115,7 +115,7 @@ public class PitchService {
   }
 
   public List<PitchDTO> getPitchesByReleaseId(Long releaseId) {
-    return toDTOList(pitchRepository.findByTargetReleaseIdNotDeleted(releaseId));
+    return toDTOList(pitchRepository.findTargetedByReleaseId(releaseId));
   }
 
   @CacheEvict(value = "roadmap", allEntries = true)

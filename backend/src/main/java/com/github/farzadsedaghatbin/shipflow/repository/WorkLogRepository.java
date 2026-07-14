@@ -14,7 +14,14 @@ import org.springframework.stereotype.Repository;
 public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
   // Non-pageable variants kept for internal aggregation use (BettingTableService, etc.)
   // Includes work logs on tasks whose pitch matches, not only direct-pitch logs.
-  @Query("SELECT w FROM WorkLog w LEFT JOIN w.task t WHERE w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)")
+  // Only counts logs from on/after the pitch's bet-into cycle start date: appetite/budget
+  // consumption must not include pre-betting work (e.g. product team logging pitch-shaping
+  // time before a team/cycle was ever assigned).
+  @Query("SELECT w FROM WorkLog w LEFT JOIN w.task t "
+      + "LEFT JOIN w.pitch wp LEFT JOIN wp.cycle wc "
+      + "LEFT JOIN t.pitch tp LEFT JOIN tp.cycle tc "
+      + "WHERE (wp.id = :pitchId AND wc.startDate IS NOT NULL AND w.date >= wc.startDate) "
+      + "OR (tp.id = :pitchId AND tc.startDate IS NOT NULL AND w.date >= tc.startDate)")
   List<WorkLog> findByPitchId(@Param("pitchId") Long pitchId);
 
   List<WorkLog> findByTaskId(Long taskId);
@@ -91,7 +98,12 @@ public interface WorkLogRepository extends JpaRepository<WorkLog, Long> {
          countQuery = "SELECT COUNT(w) FROM WorkLog w LEFT JOIN w.pitch p LEFT JOIN w.task t WHERE (p.cycle.id = :cycleId OR t.cycle.id = :cycleId) AND w.date BETWEEN :from AND :to")
   Page<WorkLog> findByCycleIdAndDateBetween(@Param("cycleId") Long cycleId, @Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
 
-  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.task t WHERE w.pitch.id = :pitchId OR (t IS NOT NULL AND t.pitch IS NOT NULL AND t.pitch.id = :pitchId)")
+  // Same pre-betting exclusion as findByPitchId above — this feeds appetite/budget percentages.
+  @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w LEFT JOIN w.task t "
+      + "LEFT JOIN w.pitch wp LEFT JOIN wp.cycle wc "
+      + "LEFT JOIN t.pitch tp LEFT JOIN tp.cycle tc "
+      + "WHERE (wp.id = :pitchId AND wc.startDate IS NOT NULL AND w.date >= wc.startDate) "
+      + "OR (tp.id = :pitchId AND tc.startDate IS NOT NULL AND w.date >= tc.startDate)")
   Double getTotalHoursByPitchId(@Param("pitchId") Long pitchId);
 
   @Query("SELECT SUM(w.hoursSpent) FROM WorkLog w WHERE w.task.id = :taskId")

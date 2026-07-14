@@ -253,7 +253,7 @@ class ReleaseServiceTest {
   @Test
   void calculateProgress_ShouldReturnProgressDTO() {
     when(releaseRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testRelease));
-    when(pitchRepository.findByTargetReleaseIdNotDeleted(1L)).thenReturn(Arrays.asList());
+    when(pitchRepository.findTargetedByReleaseId(1L)).thenReturn(Arrays.asList());
     when(taskRepository.findByTargetReleaseIdNotDeleted(1L)).thenReturn(Arrays.asList());
     when(bugReportRepository.findByTargetReleaseId(1L)).thenReturn(Arrays.asList());
 

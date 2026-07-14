@@ -9,18 +9,23 @@ import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.Release;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TeamRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -59,6 +64,12 @@ class TaskServiceTest {
 
   @Autowired
   private TeamRepository teamRepository;
+
+  @Autowired
+  private ProjectRepository projectRepository;
+
+  @Autowired
+  private ReleaseRepository releaseRepository;
 
   @Autowired
   private TaskService taskService;
@@ -598,5 +609,70 @@ class TaskServiceTest {
     // Then: Team should be cleared
     assertThat(result.getTeamId()).isNull();
     assertThat(result.getTeamName()).isNull();
+  }
+
+  @Test
+  void setTargetRelease_WhenTaskAndReleaseExist_ShouldSetRelease() {
+    Project project = Project.builder().name("Test Project").projectKey("TRT").isActive(true).build();
+    project = projectRepository.save(project);
+
+    Release release = Release.builder().name("Q3 Release").version("v3.0.0")
+        .status(ReleaseStatus.PLANNING).project(project).build();
+    release = releaseRepository.save(release);
+
+    TaskDTO result = taskService.setTargetRelease(testTask.getId(), release.getId());
+
+    assertThat(result).isNotNull();
+    assertThat(result.getTargetReleaseId()).isEqualTo(release.getId());
+    assertThat(result.getTargetReleaseName()).isEqualTo("Q3 Release");
+    assertThat(result.getTargetReleaseVersion()).isEqualTo("v3.0.0");
+  }
+
+  @Test
+  void setTargetRelease_WhenTaskNotFound_ShouldThrowException() {
+    Project project = Project.builder().name("Test Project").projectKey("TRT2").isActive(true).build();
+    project = projectRepository.save(project);
+
+    Release release = Release.builder().name("Q3 Release").version("v3.0.0")
+        .status(ReleaseStatus.PLANNING).project(project).build();
+    release = releaseRepository.save(release);
+
+    Long releaseId = release.getId();
+    assertThatThrownBy(() -> taskService.setTargetRelease(999L, releaseId))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Task not found");
+  }
+
+  @Test
+  void setTargetRelease_WhenReleaseNotFound_ShouldThrowException() {
+    Long taskId = testTask.getId();
+    assertThatThrownBy(() -> taskService.setTargetRelease(taskId, 999L))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Release not found");
+  }
+
+  @Test
+  void clearTargetRelease_WhenTaskHasRelease_ShouldClearRelease() {
+    Project project = Project.builder().name("Test Project").projectKey("TRT3").isActive(true).build();
+    project = projectRepository.save(project);
+
+    Release release = Release.builder().name("Q3 Release").version("v3.0.0")
+        .status(ReleaseStatus.PLANNING).project(project).build();
+    release = releaseRepository.save(release);
+
+    taskService.setTargetRelease(testTask.getId(), release.getId());
+
+    TaskDTO result = taskService.clearTargetRelease(testTask.getId());
+
+    assertThat(result).isNotNull();
+    assertThat(result.getTargetReleaseId()).isNull();
+    assertThat(result.getTargetReleaseName()).isNull();
+  }
+
+  @Test
+  void clearTargetRelease_WhenTaskNotFound_ShouldThrowException() {
+    assertThatThrownBy(() -> taskService.clearTargetRelease(999L))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Task not found");
   }
 }

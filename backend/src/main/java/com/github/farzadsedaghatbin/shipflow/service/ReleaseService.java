@@ -234,7 +234,7 @@ public class ReleaseService {
         .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + releaseId));
 
     // Get all items linked to this release
-    List<Pitch> pitches = pitchRepository.findByTargetReleaseIdNotDeleted(releaseId);
+    List<Pitch> pitches = pitchRepository.findTargetedByReleaseId(releaseId);
     List<Task> tasks = taskRepository.findByTargetReleaseIdNotDeleted(releaseId);
     List<BugReport> bugs = bugReportRepository.findByTargetReleaseId(releaseId);
 

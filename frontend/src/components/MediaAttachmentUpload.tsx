@@ -35,7 +35,7 @@ interface UploadingFile {
   preview?: string;
 }
 
-const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'webm', 'mov', 'avi'];
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'mp4', 'webm', 'mov', 'avi', 'txt'];
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'avi'];
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
