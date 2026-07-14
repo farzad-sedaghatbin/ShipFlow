@@ -3,9 +3,12 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.pitch.TaskSuggestionDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
@@ -16,8 +19,10 @@ import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.Discipline;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.SuggestionSource;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
@@ -674,5 +679,52 @@ class TaskServiceTest {
     assertThatThrownBy(() -> taskService.clearTargetRelease(999L))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Task not found");
+  }
+
+  // ── bulkCreate ───────────────────────────────────────────────────────────────
+
+  @Test
+  void bulkCreate_WithValidSuggestions_ShouldCreateAllTasksUnderPitchAndCycle() {
+    BulkCreateTaskRequest request = new BulkCreateTaskRequest();
+    request.setPitchId(testPitch.getId());
+    request.setCycleId(testCycle.getId());
+    request.setTasks(List.of(
+        TaskSuggestionDTO.builder().title("Build API endpoint")
+            .description("Backend + mobile deliverable").estimateHours(BigDecimal.valueOf(8))
+            .sourceContext(SuggestionSource.PITCH)
+            .disciplines(List.of(Discipline.BACKEND, Discipline.MOBILE)).build(),
+        TaskSuggestionDTO.builder().title("Write migration script")
+            .description("Pure backend").sourceContext(SuggestionSource.PITCH)
+            .disciplines(List.of(Discipline.BACKEND)).build()));
+
+    BulkCreateTaskResult result = taskService.bulkCreate(request);
+
+    assertThat(result.getSuccessCount()).isEqualTo(2);
+    assertThat(result.getFailureCount()).isZero();
+    assertThat(result.getErrors()).isEmpty();
+    assertThat(result.getCreatedTasks()).hasSize(2);
+    assertThat(result.getCreatedTasks()).extracting(TaskDTO::getTitle)
+        .containsExactlyInAnyOrder("Build API endpoint", "Write migration script");
+    assertThat(result.getCreatedTasks()).allSatisfy(dto -> {
+      assertThat(dto.getPitchId()).isEqualTo(testPitch.getId());
+      assertThat(dto.getCategory()).isEqualTo(TaskCategory.PITCH_SCOPE);
+    });
+  }
+
+  @Test
+  void bulkCreate_WithOneInvalidPitch_ShouldReportPartialFailure() {
+    BulkCreateTaskRequest request = new BulkCreateTaskRequest();
+    request.setPitchId(999L);
+    request.setCycleId(testCycle.getId());
+    request.setTasks(List.of(
+        TaskSuggestionDTO.builder().title("Orphan task").sourceContext(SuggestionSource.PITCH)
+            .disciplines(List.of(Discipline.BACKEND)).build()));
+
+    BulkCreateTaskResult result = taskService.bulkCreate(request);
+
+    assertThat(result.getSuccessCount()).isZero();
+    assertThat(result.getFailureCount()).isEqualTo(1);
+    assertThat(result.getErrors().get(0)).contains("Orphan task").contains("Pitch not found");
+    assertThat(result.getCreatedTasks()).isEmpty();
   }
 }

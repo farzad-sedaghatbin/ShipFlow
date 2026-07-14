@@ -275,6 +275,19 @@ public class SampleDataInitializer implements CommandLineRunner {
                     + "IBAN validation, transfer amount with fee preview, OTP confirmation, "
                     + "and animated success/failure states. Connects to the existing "
                     + "PaymentService. Target: < 5 taps from dashboard to confirmed transfer.")
+            .problemStatement(
+                "Users currently need 8+ taps and two separate screens to send an instant "
+                    + "transfer, and drop-off is highest at the beneficiary-selection step "
+                    + "where there's no search or recent-recipients list.")
+            .solution(
+                "A single-flow transfer screen: beneficiary picker with search and recent "
+                    + "recipients, inline IBAN validation, an amount field with live fee "
+                    + "preview, OTP confirmation, and an animated success/failure state — all "
+                    + "reachable in under 5 taps from the dashboard.")
+            .rabbitHoles("- Do not redesign the beneficiary data model\n- Avoid building a new fee-calculation engine")
+            .noGos("- No international transfers in this pitch\n- No changes to the OTP delivery provider")
+            .risks("- Fee preview depends on PaymentService latency under load")
+            .wireframeLinks("https://www.figma.com/file/demo1nstantTransferUI/Instant-Transfer-UI?node-id=12-345")
             .appetiteDays(6)
             .cycle(mbaActiveCycle)
             .team(paymentsTeam)

@@ -4,5 +4,6 @@ export { PitchTeamCapacity } from './PitchTeamCapacity';
 export { PitchShapingSection } from './PitchShapingSection';
 export { PitchDocumentsSection } from './PitchDocumentsSection';
 export { PitchTasksSection } from './PitchTasksSection';
+export { SuggestedTasksPanel } from './SuggestedTasksPanel';
 export { PitchWorkLogsSection } from './PitchWorkLogsSection';
 export { PitchMeetingsSection } from './PitchMeetingsSection';

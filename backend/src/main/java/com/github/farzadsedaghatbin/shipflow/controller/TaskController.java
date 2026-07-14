@@ -1,6 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.AssignTaskCycleRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskResult;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
@@ -465,6 +467,23 @@ public class TaskController {
   public ResponseEntity<BulkUpdateResult> bulkUpdateTasks(
       @Valid @RequestBody BulkTaskUpdateRequest request) {
     return ResponseEntity.ok(taskService.bulkUpdate(request));
+  }
+
+  @PostMapping("/bulk-create")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'CREATE')")
+  @Operation(
+      summary = "Bulk create tasks under a pitch",
+      description =
+          "Create multiple tasks under a single pitch and cycle in one transaction, e.g. from a"
+              + " batch of accepted AI task suggestions. Returns a result with per-task error"
+              + " details so partial failures are visible to the caller.")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Bulk create completed (check successCount/failureCount)"),
+      @ApiResponse(responseCode = "400", description = "Invalid request")
+  })
+  public ResponseEntity<BulkCreateTaskResult> bulkCreateTasks(
+      @Valid @RequestBody BulkCreateTaskRequest request) {
+    return ResponseEntity.ok(taskService.bulkCreate(request));
   }
 
   // ========== Sub-task Hierarchy Endpoints ==========
