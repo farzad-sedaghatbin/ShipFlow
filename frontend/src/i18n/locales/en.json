@@ -2969,7 +2969,8 @@
     "pendingUpload": "{{count}} file(s) ready to upload",
     "noAttachments": "No attachments",
     "unavailable": "Unavailable",
-    "videoNotSupported": "Your browser does not support video playback"
+    "videoNotSupported": "Your browser does not support video playback",
+    "videoPlaybackFailed": "This video can't be played in your browser — it may use a codec (e.g. HEVC/H.265, common in Microsoft Teams recordings) that isn't supported here. Download it to watch in a local media player."
   },
   "chartConfig": {
     "title": "Chart Configuration",
@@ -5549,6 +5550,8 @@
     "shipped1100Item2Desc": "Debt/improvement tasks that aren't tied to a pitch can now be assigned a target release directly, so they show up on the release and roadmap the same way pitches do.",
     "shipped1100Item3Title": "AI-Recommended Deliverable Tasks",
     "shipped1100Item3Desc": "Generate deliverable task suggestions for a pitch from its problem, solution, and appetite — plus Figma design context when configured. Each suggestion is tagged with the disciplines needed (Design, Backend, Mobile, QA). Select the ones you want and create them in one go.",
+    "shipped1100Item4Title": "Related Test Cases on Pitch Detail",
+    "shipped1100Item4Desc": "A Test Cases card on Pitch Detail lists the test cases already linked to that pitch — key, title, type/priority/status, and pass rate — with a link to the full QA test-management page to view, add, or AI-generate more.",
     "shipped1900Title": "Production-Grade Self-Hosting",
     "shipped1900Item0Title": "Helm Chart & Kubernetes",
     "shipped1900Item0Desc": "A first-party Helm chart deploys ShipFlow to any Kubernetes cluster — configurable replicas, HPA autoscaling, ingress, secrets, persistent uploads, and probes wired to Spring Boot health groups.",
@@ -8407,6 +8410,15 @@
     "disciplineBackend": "Backend",
     "disciplineMobile": "Mobile",
     "disciplineQa": "QA"
+  },
+  "testCasesSection": {
+    "title": "Test Cases",
+    "viewAll": "View All",
+    "empty": "No test cases linked to this pitch yet.",
+    "generateOrAdd": "Add or Generate Test Cases",
+    "notExecuted": "Not yet executed",
+    "passRate": "{{rate}}% pass rate ({{passed}}/{{total}} runs)",
+    "andMore": "+{{count}} more — view all to see the full list"
   },
   "retroSummary": {
     "title": "AI Retrospective Summary",

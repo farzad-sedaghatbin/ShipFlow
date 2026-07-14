@@ -45,6 +45,7 @@ import {
   Key,
   Wand2,
   Zap,
+  ClipboardList,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -96,6 +97,7 @@ export default function PublicRoadmap() {
         { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item1Title'), description: t('publicRoadmap.shipped1100Item1Desc') },
         { icon: <Target className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item2Title'), description: t('publicRoadmap.shipped1100Item2Desc') },
         { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item3Title'), description: t('publicRoadmap.shipped1100Item3Desc') },
+        { icon: <ClipboardList className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item4Title'), description: t('publicRoadmap.shipped1100Item4Desc') },
       ],
     },
     {

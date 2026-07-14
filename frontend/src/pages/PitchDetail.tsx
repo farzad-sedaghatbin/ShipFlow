@@ -35,6 +35,7 @@ import {
   SuggestedTasksPanel,
   PitchWorkLogsSection,
   PitchMeetingsSection,
+  TestCasesSection,
 } from '../components/pitchDetail';
 import type { ShapeUpFields } from '../components/pitchDetail/PitchShapingSection';
 
@@ -621,6 +622,8 @@ export default function PitchDetail() {
           onTaskCreated={(task) => setTasks(prev => [task, ...prev])}
           onReorder={(reordered) => setTasks(reordered)}
         />
+
+        <TestCasesSection pitchId={pitch.id} />
 
         {/* Work Logs and Meetings - Two columns on desktop */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

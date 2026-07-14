@@ -308,6 +308,7 @@ class DocumentServiceTest {
     assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
     assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PDF);
     assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).contains("report.pdf");
+    assertThat(response.getHeaders().getContentLength()).isEqualTo(9L);
     verify(objectStorageService).retrieve(StorageProviderType.S3, "documents/uuid_report.pdf");
   }
 
