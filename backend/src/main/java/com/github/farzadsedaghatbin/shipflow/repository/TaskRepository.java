@@ -196,7 +196,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findRootTasksByCycleId(@Param("cycleId") Long cycleId);
 
     // Pitch and scope queries for traceability
-    List<Task> findByPitchId(Long pitchId);
+    @Query("SELECT t FROM Task t WHERE t.pitch.id = :pitchId AND t.deletedAt IS NULL")
+    List<Task> findByPitchId(@Param("pitchId") Long pitchId);
 
     List<Task> findByScopeId(Long scopeId);
 

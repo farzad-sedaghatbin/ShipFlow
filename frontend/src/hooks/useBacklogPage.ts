@@ -363,11 +363,28 @@ export function useBacklogPage() {
   const handleCloseDialog = () => { setDialogOpen(false); setEditingTask(null); setFieldErrors({}); };
 
   const handleAddSubTask = (parentTask: Task) => {
-    setFormData({ title: '', description: '', cycleId: parentTask.cycleId, parentTaskId: parentTask.id, status: 'TODO', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory });
+    setFormData({ title: '', description: '', cycleId: parentTask.cycleId, parentTaskId: parentTask.id, pitchId: parentTask.pitchId, status: 'TODO', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: parentTask.category || activeCategory });
     setDueDate(null);
     setEditingTask(null);
     setDialogOpen(true);
   };
+
+  // Deep-link from TaskDetailPage's "Add subtask" CTA: /backlog?addSubtask=<parentTaskId>
+  useEffect(() => {
+    const addSubtaskParam = searchParams.get('addSubtask');
+    if (!addSubtaskParam) return;
+    const parentTaskId = Number(addSubtaskParam);
+    if (!parentTaskId) return;
+    taskService.getById(parentTaskId)
+      .then((r) => handleAddSubTask(r.data))
+      .catch((error) => console.error('Failed to load parent task for subtask creation:', error))
+      .finally(() => {
+        const next = new URLSearchParams(searchParams);
+        next.delete('addSubtask');
+        setSearchParams(next, { replace: true });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleSort = (field: 'createdAt' | 'priority' | 'status' | 'dueDate' | 'title') => {
     if (sortBy === field) { setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); } else { setSortBy(field); setSortOrder('desc'); }

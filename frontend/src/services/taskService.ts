@@ -181,6 +181,9 @@ export const taskService = {
     api.patch<Task>(`/tasks/${id}/assignee`, { assigneeId }),
   updateStoryPoints: (id: number, storyPoints: number | null) =>
     api.patch<Task>(`/tasks/${id}/story-points`, { storyPoints }),
+  setTargetRelease: (id: number, releaseId: number) =>
+    api.patch<Task>(`/tasks/${id}/release/${releaseId}`),
+  clearTargetRelease: (id: number) => api.patch<Task>(`/tasks/${id}/unlink-release`),
   delete: (id: number) => api.delete(`/tasks/${id}`),
   
   // Sub-task hierarchy

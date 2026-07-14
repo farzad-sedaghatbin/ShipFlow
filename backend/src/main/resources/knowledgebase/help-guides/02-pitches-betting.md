@@ -21,6 +21,9 @@ A Pitch is a shaped proposal for work to be done in a cycle. It includes:
 - **In Progress** — Approved and being built in a cycle
 - **Completed** — Finished
 
+## Reordering Tasks Within a Pitch
+On a Pitch's detail page, the task list can be manually reordered by dragging the grip handle on each row — useful for signaling execution order within the pitch's scope. Until a list is reordered by hand it displays sorted by priority (Urgent → High → Medium → Low); once you drag anything, that manual order sticks. Subtasks reorder only among their own siblings — you can't drag a subtask out from under its parent or promote it to a top-level task.
+
 ## What is the Betting Table?
 The Betting Table is where stakeholders decide which pitches to bet on for the next cycle. It happens during the BETTING phase.
 

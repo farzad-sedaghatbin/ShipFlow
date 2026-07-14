@@ -104,10 +104,9 @@ Epics are large bodies of work within an initiative that break down into pitches
 4. Link pitches to the epic for end-to-end traceability
 
 ## Linking Work to Releases
-To see pitches, tasks, and bugs on a release milestone:
-1. Open a **Pitch**, **Task**, or **Bug Report**
-2. Set the **Target Release** field to the desired release
-3. The roadmap will automatically count and display these items on the release tooltip
+To see pitches and bugs on a release milestone, open the item and set its **Target Release** field to the desired release — the roadmap automatically counts and displays these on the release tooltip.
+
+For tasks, the **Target Release** field only appears on tasks that aren't linked to a pitch (e.g. `Debt/Improvement` category work). A pitch-scoped task doesn't get its own picker — it's counted against a release through its parent pitch instead. Assigning cycles to a release also pulls in that cycle's pitches automatically, without needing to set each pitch's target release by hand.
 
 ## Initiative → Epic → Pitch Hierarchy
 - **Initiative**: Strategic goal (e.g., "Mobile App Launch")

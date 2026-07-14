@@ -12,6 +12,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Release;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.TaskDependency;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
@@ -32,6 +33,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskAttachmentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
@@ -75,6 +77,7 @@ public class TaskService {
   private final TaskAttachmentRepository attachmentRepository;
   private final TeamRepository teamRepository;
   private final ProjectRepository projectRepository;
+  private final ReleaseRepository releaseRepository;
   private final DashboardNotificationService notificationService;
   private final MessageService messageService;
   private final ApplicationEventPublisher eventPublisher;
@@ -263,11 +266,15 @@ public class TaskService {
       task.setPairAssignee(pairAssignee);
     }
 
-    // Set pitch if provided
+    // Set pitch if provided; a subtask with no explicit pitchId inherits its parent's pitch
+    // so it doesn't silently land in the backlog (e.g. MCP create_task called with only
+    // parentTaskId).
     if (request.getPitchId() != null) {
       Pitch pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
           () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
       task.setPitch(pitch);
+    } else if (parentTask != null && parentTask.getPitch() != null) {
+      task.setPitch(parentTask.getPitch());
     }
 
     // Set scope if provided
@@ -607,6 +614,37 @@ public class TaskService {
 
   public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
     return updateTaskStatus(id, status, null);
+  }
+
+  /**
+   * Set the target release for a task, mirroring {@code PitchService#setTargetRelease}.
+   *
+   * @param taskId    the task to update
+   * @param releaseId the release to target
+   * @return the updated task
+   */
+  public TaskDTO setTargetRelease(Long taskId, Long releaseId) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
+    Release release = releaseRepository.findByIdNotDeleted(releaseId)
+        .orElseThrow(() -> new ResourceNotFoundException("Release not found with id: " + releaseId));
+    task.setTargetRelease(release);
+    task.setUpdatedAt(LocalDateTime.now());
+    return toDTO(taskRepository.save(task));
+  }
+
+  /**
+   * Clear the target release from a task, mirroring {@code PitchService#clearTargetRelease}.
+   *
+   * @param taskId the task to update
+   * @return the updated task
+   */
+  public TaskDTO clearTargetRelease(Long taskId) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
+    task.setTargetRelease(null);
+    task.setUpdatedAt(LocalDateTime.now());
+    return toDTO(taskRepository.save(task));
   }
 
   /**
@@ -1162,6 +1200,9 @@ public class TaskService {
         .projectKey(resolveProjectKey(task))
         .pitchId(task.getPitch() != null ? task.getPitch().getId() : null)
         .pitchTitle(task.getPitch() != null ? task.getPitch().getTitle() : null)
+        .targetReleaseId(task.getTargetRelease() != null ? task.getTargetRelease().getId() : null)
+        .targetReleaseName(task.getTargetRelease() != null ? task.getTargetRelease().getName() : null)
+        .targetReleaseVersion(task.getTargetRelease() != null ? task.getTargetRelease().getVersion() : null)
         .scopeId(task.getScope() != null ? task.getScope().getId() : null)
         .scopeName(task.getScope() != null ? task.getScope().getScope() : null)
         .autoCreatedScopeId(getAutoCreatedScopeId(task))

@@ -357,6 +357,20 @@ public class TaskController {
     return ResponseEntity.ok(taskService.updateTaskPriority(id, priority));
   }
 
+  @PatchMapping("/{id}/release/{releaseId}")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(summary = "Set target release for a task")
+  public ResponseEntity<TaskDTO> setTargetRelease(@PathVariable Long id, @PathVariable Long releaseId) {
+    return ResponseEntity.ok(taskService.setTargetRelease(id, releaseId));
+  }
+
+  @PatchMapping("/{id}/unlink-release")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(summary = "Clear target release from a task")
+  public ResponseEntity<TaskDTO> clearTargetRelease(@PathVariable Long id) {
+    return ResponseEntity.ok(taskService.clearTargetRelease(id));
+  }
+
   @PatchMapping("/{id}/assignee")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(

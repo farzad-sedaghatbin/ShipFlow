@@ -123,6 +123,19 @@ The attachment list appears at the bottom of the page:
 
 ---
 
+## Linking a Wiki Page to a Pitch or Task
+
+File attachments aren't always the right fit — sometimes what a Pitch or Task needs is a *reference* to existing research or documentation, not another uploaded copy of it. Pitches and Tasks each have a **Linked wiki pages** section (next to their file attachments) for exactly this:
+
+1. Open a Pitch or Task, scroll to **Linked wiki pages**.
+2. Use the search box to find an existing wiki page by title.
+3. Select it to link it — it appears in the list with its space, and when it was linked.
+4. Click the external-link icon to jump to the page, or the **×** to unlink it (the wiki page itself is untouched).
+
+This is available on Pitches and Tasks only — Bug Reports keep file attachments (screenshots, logs) as their primary evidence type, since reproduction artifacts aren't documentation.
+
+---
+
 ## Comments and Discussion
 
 Every wiki page has a **comments thread** at the bottom — the same discussion experience used on tasks and bug reports.

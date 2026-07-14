@@ -71,6 +71,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final WorkflowAutomationTemplateRepository workflowAutomationTemplateRepository;
   private final WikiSpaceRepository wikiSpaceRepository;
   private final WikiPageRepository wikiPageRepository;
+  private final EntityWikiLinkRepository entityWikiLinkRepository;
   private final StorageConfigRepository storageConfigRepository;
   private final CommentRepository commentRepository;
   private final CustomFieldDefinitionRepository customFieldDefinitionRepository;
@@ -2214,26 +2215,45 @@ public class SampleDataInitializer implements CommandLineRunner {
             .build());
 
     // Child 1.2: Architecture Overview (position 1 under Getting Started)
-    wikiPageRepository.save(
-        WikiPage.builder()
-            .spaceId(spaceId)
-            .parentId(gettingStarted.getId())
-            .title("Architecture Overview")
-            .slug("architecture-overview")
-            .content(
-                "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
-                    + "\"text\":\"Architecture Overview\"}]},"
-                    + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
-                    + "\"text\":\"ShipFlow is a Spring Boot 3 + React 18 monorepo. "
-                    + "The backend follows a Controller → Service → Repository layering convention. "
-                    + "PostgreSQL is the primary store; Redis is used for caching and session data.\"}]}]")
-            .contentText(
-                "Architecture Overview ShipFlow is a Spring Boot 3 + React 18 monorepo. "
-                    + "The backend follows a Controller → Service → Repository layering convention. "
-                    + "PostgreSQL is the primary store; Redis is used for caching and session data.")
-            .position(1)
-            .createdBy(createdById)
-            .build());
+    WikiPage architectureOverview =
+        wikiPageRepository.save(
+            WikiPage.builder()
+                .spaceId(spaceId)
+                .parentId(gettingStarted.getId())
+                .title("Architecture Overview")
+                .slug("architecture-overview")
+                .content(
+                    "[{\"type\":\"heading\",\"content\":[{\"type\":\"text\","
+                        + "\"text\":\"Architecture Overview\"}]},"
+                        + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\","
+                        + "\"text\":\"ShipFlow is a Spring Boot 3 + React 18 monorepo. "
+                        + "The backend follows a Controller → Service → Repository layering convention. "
+                        + "PostgreSQL is the primary store; Redis is used for caching and session data.\"}]}]")
+                .contentText(
+                    "Architecture Overview ShipFlow is a Spring Boot 3 + React 18 monorepo. "
+                        + "The backend follows a Controller → Service → Repository layering convention. "
+                        + "PostgreSQL is the primary store; Redis is used for caching and session data.")
+                .position(1)
+                .createdBy(createdById)
+                .build());
+
+    // Demo: link this page as reference material on a pitch and a task, if any exist yet.
+    pitchRepository.findAll().stream().findFirst().ifPresent(
+        pitch -> entityWikiLinkRepository.save(
+            EntityWikiLink.builder()
+                .entityType("PITCH")
+                .entityId(pitch.getId())
+                .wikiPage(architectureOverview)
+                .linkedBy(createdByUser)
+                .build()));
+    taskRepository.findAll().stream().findFirst().ifPresent(
+        task -> entityWikiLinkRepository.save(
+            EntityWikiLink.builder()
+                .entityType("TASK")
+                .entityId(task.getId())
+                .wikiPage(architectureOverview)
+                .linkedBy(createdByUser)
+                .build()));
 
     // ── Root page 2: Team Handbook (position 1) ───────────────────────────────
     wikiPageRepository.save(

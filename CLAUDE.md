@@ -5,12 +5,14 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.10.0 — "Mobile PWA"
+## Current Milestone: v1.11.0 — "Mobile PWA"
 
-**Current version**: v1.9.0 (released 2026-07-01)
+**Current version**: v1.10.0 (released 2026-07-14)
 **All PRs target**: `main` branch
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, and air-gapped AI mode (v1.9.0) shipped. Next: Mobile PWA — offline support, responsive audit, Web Push, biometric auth (v1.10.0).
+> **Note on v1.10.0**: shipped as an interim release of session-driven bug fixes and small features (wiki-linking for Pitch/Task, drag-and-drop task reordering, target-release for standalone tasks) rather than the planned "Mobile PWA" milestone — it grabbed the next minor version number ahead of the roadmap sequence. Mobile PWA was renumbered to v1.11.0 (and every subsequent planned milestone shifted by one) to keep the version sequence unambiguous; no Mobile PWA work (S57–S59) has started.
+
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, and air-gapped AI mode (v1.9.0) shipped. Wiki references (Pitch/Task links), drag-and-drop task reordering, and target-release for standalone tasks (v1.10.0) shipped. Next: Mobile PWA — offline support, responsive audit, Web Push, biometric auth (v1.11.0).
 
 ### v1.3.0 session map
 
@@ -125,10 +127,11 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | Version | Theme | Sessions |
 |---------|-------|----------|
 | v1.8.0 ✅ shipped 2026-06-27 | Custom Fields & Advanced RBAC + Wiki / Docs Space + pluggable Object Storage — custom fields on tasks/pitches, project-level permissions, built-in wiki, attachment storage (LOCAL_FS/S3/MinIO) | S48–S53 |
-| v1.9.0 (current) | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
-| v1.10.0 | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
-| v1.11.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
-| v1.12.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
+| v1.9.0 ✅ shipped 2026-07-01 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
+| v1.10.0 ✅ shipped 2026-07-14 | Wiki references (Pitch/Task links), drag-and-drop task reordering, target-release for standalone tasks — interim session-driven release, not part of the planned milestone sequence | — |
+| v1.11.0 (current) | Mobile PWA — offline support, responsive audit, Web Push, biometric auth | S57–S59 |
+| v1.12.0 | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
+| v1.13.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`

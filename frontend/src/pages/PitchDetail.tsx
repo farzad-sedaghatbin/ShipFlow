@@ -13,6 +13,7 @@ import { organizationSettingsService } from '../services/organizationSettingsSer
 import { Pitch, Epic, Meeting, CreateWorkLogForSelfRequest, CreateMeetingRequest, MeetingType, PitchStatus, MeetingChecklistItem, Task, WorkLogPersonSummary } from '../types';
 import { MeetingTypeConfig } from '../types/organizationSettings';
 import { CustomFieldsSection } from '../components/CustomFieldsSection';
+import LinkedWikiPages from '../components/LinkedWikiPages';
 import ProgressBar from '../components/ProgressBar';
 import RiskInsightsCard from '../components/RiskInsightsCard';
 import { PitchDetailSkeleton } from '../components/Skeletons';
@@ -590,6 +591,8 @@ export default function PitchDetail() {
           onUploadComplete={() => loadData(pitch.id)}
         />
 
+        <LinkedWikiPages entityType="PITCH" entityId={pitch.id} />
+
         <CustomFieldsSection
           entityType="PITCH"
           entityId={pitch.id}
@@ -607,6 +610,7 @@ export default function PitchDetail() {
           pitchId={pitch.id}
           cycleId={pitch.cycleId}
           onTaskCreated={(task) => setTasks(prev => [task, ...prev])}
+          onReorder={(reordered) => setTasks(reordered)}
         />
 
         {/* Work Logs and Meetings - Two columns on desktop */}

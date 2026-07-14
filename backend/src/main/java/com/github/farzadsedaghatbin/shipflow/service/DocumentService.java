@@ -77,7 +77,7 @@ public class DocumentService {
    * Allowed media file extensions for bug report attachments.
    */
   private static final java.util.Set<String> ALLOWED_MEDIA_TYPES = java.util.Set.of(
-      "jpg", "jpeg", "png", "gif", "webp", "svg", "mp4", "webm", "mov", "avi"
+      "jpg", "jpeg", "png", "gif", "webp", "svg", "mp4", "webm", "mov", "avi", "txt"
   );
 
   private final UploadedDocumentRepository documentRepository;

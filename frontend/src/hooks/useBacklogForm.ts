@@ -151,6 +151,7 @@ export function useBacklogForm(): UseBacklogFormReturn {
       ...DEFAULT_FORM_DATA,
       cycleId: parentTask.cycleId,
       parentTaskId: parentTask.id,
+      pitchId: parentTask.pitchId,
       category,
     });
     setDueDate(null);

@@ -150,6 +150,15 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.targetRelease.id = :releaseId AND p.deletedAt IS NULL")
   List<Pitch> findByTargetReleaseIdNotDeleted(@Param("releaseId") Long releaseId);
 
+  // "Targeted pitches" for a release: pitches explicitly assigned via targetRelease, PLUS
+  // pitches whose cycle has been linked to the release (release_cycles) — assigning a cycle to
+  // a release should surface that cycle's pitches without requiring a separate manual per-pitch
+  // targetRelease assignment.
+  @Query("SELECT DISTINCT p FROM Pitch p WHERE p.deletedAt IS NULL AND ("
+      + "p.targetRelease.id = :releaseId "
+      + "OR p.cycle.id IN (SELECT c.id FROM Release r JOIN r.cycles c WHERE r.id = :releaseId))")
+  List<Pitch> findTargetedByReleaseId(@Param("releaseId") Long releaseId);
+
   @Query("SELECT p FROM Pitch p WHERE p.epic.id = :epicId AND p.deletedAt IS NULL ORDER BY p.sortOrder ASC, p.id ASC")
   List<Pitch> findByEpicIdNotDeleted(@Param("epicId") Long epicId);
 
