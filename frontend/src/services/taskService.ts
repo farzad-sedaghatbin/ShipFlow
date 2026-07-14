@@ -1,5 +1,5 @@
 import api from './api';
-import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest, EntityHistory, BulkTaskUpdateRequest, BulkUpdateResult } from '../types';
+import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, TaskCategory, Page, TaskDependencies, TaskDependency, CreateTaskDependencyRequest, EntityHistory, BulkTaskUpdateRequest, BulkUpdateResult, BulkCreateTaskRequest, BulkCreateTaskResult } from '../types';
 
 export const taskService = {
   // Current user's tasks
@@ -219,6 +219,8 @@ export const taskService = {
   // Bulk operations
   bulkUpdate: (request: BulkTaskUpdateRequest) =>
     api.post<BulkUpdateResult>('/tasks/bulk-update', request),
+  bulkCreate: (request: BulkCreateTaskRequest) =>
+    api.post<BulkCreateTaskResult>('/tasks/bulk-create', request),
 
   // Drag-to-reorder: send new sort positions, server validates dependency constraints
   reorderTasks: (items: { id: number; sortOrder: number }[]) =>

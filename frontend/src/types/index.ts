@@ -1825,6 +1825,36 @@ export interface BulkUpdateResult {
   errors: string[];
 }
 
+// AI-recommended pitch deliverable tasks
+export type SuggestionSource = 'PITCH' | 'PITCH_DESIGN';
+export type Discipline = 'DESIGN' | 'BACKEND' | 'MOBILE' | 'QA';
+
+export interface TaskSuggestion {
+  title: string;
+  description: string;
+  estimateHours?: number;
+  sourceContext: SuggestionSource;
+  disciplines: Discipline[];
+}
+
+export interface TaskSuggestionResponse {
+  suggestions: TaskSuggestion[];
+  figmaContextUsed: boolean;
+}
+
+export interface BulkCreateTaskRequest {
+  pitchId: number;
+  cycleId: number;
+  tasks: TaskSuggestion[];
+}
+
+export interface BulkCreateTaskResult {
+  successCount: number;
+  failureCount: number;
+  errors: string[];
+  createdTasks: Task[];
+}
+
 // Global Search
 export type GlobalSearchEntityType =
   | 'TASK'

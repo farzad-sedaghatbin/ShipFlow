@@ -100,6 +100,12 @@ const releases: Release[] = [
         description:
           'Debt/improvement tasks that aren\'t tied to a pitch can now be assigned a target release directly, so they show up on the release and roadmap the same way pitches do.',
       },
+      {
+        icon: <Sparkles className="h-5 w-5" />,
+        title: 'AI-Recommended Deliverable Tasks',
+        description:
+          'A "Suggest Tasks with AI" button on Pitch Detail generates deliverable task suggestions grounded in the pitch\'s problem, solution, and appetite — plus Figma design context when your org has a Figma token configured. Each suggestion is tagged with the disciplines needed to deliver it (Design, Backend, Mobile, QA), since most deliverables span more than one. Select the ones you want and create them under the pitch in one go.',
+      },
     ],
   },
   {

@@ -95,6 +95,7 @@ export default function PublicRoadmap() {
         { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item0Title'), description: t('publicRoadmap.shipped1100Item0Desc') },
         { icon: <GripHorizontal className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item1Title'), description: t('publicRoadmap.shipped1100Item1Desc') },
         { icon: <Target className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item2Title'), description: t('publicRoadmap.shipped1100Item2Desc') },
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.shipped1100Item3Title'), description: t('publicRoadmap.shipped1100Item3Desc') },
       ],
     },
     {

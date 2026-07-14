@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **AI-recommended deliverable tasks for a Pitch**: a "Suggest Tasks with AI" button on the Pitch Detail page generates a batch of deliverable task suggestions grounded in the pitch's problem/solution/appetite/rabbit-holes/no-gos, and — when the org's Figma access token is configured and the pitch's wireframe links contain a parseable Figma URL — Figma design context too (reusing the same `FigmaMcpProvider.extractFigmaFileReferences`/`getDesignContext` pattern as Wise Architecture). Each suggestion is tagged with the disciplines needed to deliver it (Design, Backend, Mobile, QA — most deliverables span multiple, since teams ship full-stack) and whether it drew on Figma content. Users multi-select suggestions and create them in one transactional call (`POST /api/tasks/bulk-create`, mirroring the existing `bulk-update` shape) rather than one-by-one. Backend: `PitchTaskSuggestionService` (LLM JSON generation, same pattern as `AIPitchWriterService`), `POST /api/ai/pitch-task-suggestions/{pitchId}/generate` + `GET /status`. Works pitch-only when Figma isn't configured — never blocks on it.
+
 ## [1.10.0] - 2026-07-14
 
 ### Added

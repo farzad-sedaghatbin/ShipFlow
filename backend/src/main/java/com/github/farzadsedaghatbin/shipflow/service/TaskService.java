@@ -1,5 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.service;
 
+import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskResult;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
@@ -8,6 +10,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDependencyDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.pitch.TaskSuggestionDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
@@ -816,6 +819,46 @@ public class TaskService {
         .successCount(successCount)
         .failureCount(errors.size())
         .errors(errors)
+        .build();
+  }
+
+  /**
+   * Create multiple tasks under a single pitch and cycle in one transaction, e.g. from a batch of
+   * accepted AI task suggestions.
+   *
+   * <p>Each suggestion is converted into a {@link CreateTaskRequest} (forcing {@code pitchId} and
+   * {@code cycleId} from the request, category {@code PITCH_SCOPE}) and delegated to {@link
+   * #createTask(CreateTaskRequest)} so it gets the same validation, auto-assigned-pitch-inherits,
+   * and hill-chart scope auto-creation as a single manual task creation. Per-task failures are
+   * collected so partial-success results are visible to the caller, mirroring {@link
+   * #bulkUpdate(BulkTaskUpdateRequest)}.
+   */
+  @Transactional
+  public BulkCreateTaskResult bulkCreate(BulkCreateTaskRequest request) {
+    List<String> errors = new ArrayList<>();
+    List<TaskDTO> created = new ArrayList<>();
+
+    for (TaskSuggestionDTO suggestion : request.getTasks()) {
+      try {
+        CreateTaskRequest createRequest = CreateTaskRequest.builder()
+            .title(suggestion.getTitle())
+            .description(suggestion.getDescription())
+            .cycleId(request.getCycleId())
+            .pitchId(request.getPitchId())
+            .category(TaskCategory.PITCH_SCOPE)
+            .estimateHours(suggestion.getEstimateHours())
+            .build();
+        created.add(createTask(createRequest));
+      } catch (Exception e) {
+        errors.add("Task \"" + suggestion.getTitle() + "\": " + e.getMessage());
+      }
+    }
+
+    return BulkCreateTaskResult.builder()
+        .successCount(created.size())
+        .failureCount(errors.size())
+        .errors(errors)
+        .createdTasks(created)
         .build();
   }
 

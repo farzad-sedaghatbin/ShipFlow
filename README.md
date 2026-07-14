@@ -200,6 +200,7 @@ docker compose up -d
   - Debounced 300ms search with loading, empty, and minimum-chars feedback
   - Requires specific project context (disabled when "All Projects" selected)
 - **AI Pitch Writer** *(v1.5.0)*: Click "Write with AI" on the Pitch Board → type a problem in plain language → get a full Shape Up pitch draft (title, problem statement, solution, appetite, rabbit holes, no-gos, risks) in one step. Pre-fills the New Pitch form for human review before saving.
+- **AI-Recommended Deliverable Tasks** *(v1.10.0)*: "Suggest Tasks with AI" on Pitch Detail generates deliverable task suggestions grounded in the pitch's problem/solution/appetite — plus Figma design context when your org has a Figma access token configured and the pitch links a Figma file. Each suggestion is tagged with the disciplines needed (Design, Backend, Mobile, QA), since most deliverables span more than one. Select the ones you want and create them under the pitch in one transactional call.
 - **AI-Powered Q&A (RAG)**: Conversational assistant over your project knowledge base
   - Ask questions like "What pitches are at risk in Cycle 5?" or "What are the rabbit holes for the mobile checkout pitch?"
   - **Multi-turn memory**: Conversation context persists across follow-up questions — the AI remembers what you asked

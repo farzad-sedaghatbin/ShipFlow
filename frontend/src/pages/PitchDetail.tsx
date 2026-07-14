@@ -32,6 +32,7 @@ import {
   PitchShapingSection,
   PitchDocumentsSection,
   PitchTasksSection,
+  SuggestedTasksPanel,
   PitchWorkLogsSection,
   PitchMeetingsSection,
 } from '../components/pitchDetail';
@@ -604,6 +605,14 @@ export default function PitchDetail() {
           contextId={pitch.id}
           title={t('pitchDetailPage.notes')}
         />
+
+        <div className="flex justify-end">
+          <SuggestedTasksPanel
+            pitchId={pitch.id}
+            cycleId={pitch.cycleId}
+            onTasksCreated={(created) => setTasks(prev => [...created, ...prev])}
+          />
+        </div>
 
         <PitchTasksSection
           tasks={tasks}
