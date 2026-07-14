@@ -443,6 +443,7 @@ public class DocumentService {
     String contentType = determineContentType(document.getFileType());
 
     Resource resource;
+    long contentLength = -1;
     if (document.getStorageKey() != null && !document.getStorageKey().isBlank()) {
       // New row: stream from the object-storage SPI.
       StorageProviderType provider = document.getStorageProvider() != null
@@ -450,6 +451,7 @@ public class DocumentService {
       try {
         DownloadResource dr = objectStorageService.retrieve(provider, document.getStorageKey());
         resource = new InputStreamResource(dr.getStream());
+        contentLength = dr.getSizeBytes();
       } catch (ResourceNotFoundException e) {
         throw e;
       } catch (Exception e) {
@@ -462,10 +464,18 @@ public class DocumentService {
       resource = legacyDiskResource(id, document);
     }
 
-    return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+    ResponseEntity.BodyBuilder builder = ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType(contentType))
         .header(HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=\"" + document.getOriginalFileName() + "\"")
-        .body(resource);
+            "attachment; filename=\"" + document.getOriginalFileName() + "\"");
+    // InputStreamResource.contentLength() always returns -1, so Content-Length must be set
+    // explicitly for object-storage-backed rows (UrlResource in the legacy branch already
+    // reports its real length automatically). Browsers need Content-Length to compute video
+    // duration/seekability — without it a video attachment appears stuck at 0:00.
+    if (contentLength >= 0) {
+      builder = builder.contentLength(contentLength);
+    }
+    return builder.body(resource);
   }
 
   /**

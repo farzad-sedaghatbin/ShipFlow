@@ -104,6 +104,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<UploadedDocument | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [videoPlaybackFailed, setVideoPlaybackFailed] = useState(false);
   // Authenticated blob URLs keyed by attachment ID (avoids auth header issues with <img>/<video> src)
   const [blobUrls, setBlobUrls] = useState<Record<number, string>>({});
   const [failedAttachments, setFailedAttachments] = useState<Set<number>>(new Set());
@@ -226,6 +227,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
       setHistoryPage(0);
       setAttachments([]);
       setPreviewAttachment(null);
+      setVideoPlaybackFailed(false);
       setFailedAttachments(new Set());
       setMembers([]);
       setBlobUrls((prev) => {
@@ -792,6 +794,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                             onClick={() => {
                               if (!failedAttachments.has(attachment.id)) {
                                 setPreviewAttachment(attachment);
+                                setVideoPlaybackFailed(false);
                                 setPreviewOpen(true);
                               }
                             }}
@@ -905,13 +908,21 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
               />
             )}
             {previewAttachment && isVideoFile(previewAttachment.fileType) && (
-              <video
-                src={getAttachmentUrl(previewAttachment)}
-                controls
-                className="max-w-full max-h-full"
-              >
-                {t('bugAttachments.videoNotSupported')}
-              </video>
+              videoPlaybackFailed ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
+                  <Video className="h-8 w-8" />
+                  <p>{t('bugAttachments.videoPlaybackFailed')}</p>
+                </div>
+              ) : (
+                <video
+                  src={getAttachmentUrl(previewAttachment)}
+                  controls
+                  className="max-w-full max-h-full"
+                  onError={() => setVideoPlaybackFailed(true)}
+                >
+                  {t('bugAttachments.videoNotSupported')}
+                </video>
+              )
             )}
           </div>
           <div className="flex justify-end gap-2 pt-2">

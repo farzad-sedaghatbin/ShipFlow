@@ -7,3 +7,4 @@ export { PitchTasksSection } from './PitchTasksSection';
 export { SuggestedTasksPanel } from './SuggestedTasksPanel';
 export { PitchWorkLogsSection } from './PitchWorkLogsSection';
 export { PitchMeetingsSection } from './PitchMeetingsSection';
+export { TestCasesSection } from './TestCasesSection';

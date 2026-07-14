@@ -106,6 +106,12 @@ const releases: Release[] = [
         description:
           'A "Suggest Tasks with AI" button on Pitch Detail generates deliverable task suggestions grounded in the pitch\'s problem, solution, and appetite — plus Figma design context when your org has a Figma token configured. Each suggestion is tagged with the disciplines needed to deliver it (Design, Backend, Mobile, QA), since most deliverables span more than one. Select the ones you want and create them under the pitch in one go.',
       },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Related Test Cases on Pitch Detail',
+        description:
+          'A "Test Cases" card on Pitch Detail now lists the test cases already linked to that pitch — key, title, type/priority/status, and pass rate — with a link to the full QA test-management page to view, add, or AI-generate more.',
+      },
     ],
   },
   {
