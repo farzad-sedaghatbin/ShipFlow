@@ -195,6 +195,78 @@ class AsyncAIAdvisorServiceTest {
   }
 
   // ===========================================
+  // FORCE REFRESH TESTS
+  // ===========================================
+
+  @Nested
+  @DisplayName("Force Refresh Tests")
+  class ForceRefreshTests {
+
+    @Test
+    @DisplayName("Should evict pitch risk cache when force=true")
+    void shouldEvictPitchRiskCacheWhenForced() {
+      // Given
+      Long pitchId = 1L;
+
+      // When
+      asyncService.startPitchRiskAnalysis(pitchId, true);
+
+      // Then
+      verify(cacheService).invalidatePitchRiskCache(pitchId);
+    }
+
+    @Test
+    @DisplayName("Should not evict pitch risk cache when force=false")
+    void shouldNotEvictPitchRiskCacheWhenNotForced() {
+      // Given
+      Long pitchId = 1L;
+
+      // When
+      asyncService.startPitchRiskAnalysis(pitchId, false);
+
+      // Then
+      verify(cacheService, never()).invalidatePitchRiskCache(pitchId);
+    }
+
+    @Test
+    @DisplayName("Should evict cycle risk cache when force=true")
+    void shouldEvictCycleRiskCacheWhenForced() {
+      // Given
+      Long cycleId = 1L;
+
+      // When
+      asyncService.startCycleRiskAnalysis(cycleId, true);
+
+      // Then
+      verify(cacheService).invalidateCycleRiskCache(cycleId);
+    }
+
+    @Test
+    @DisplayName("Should not evict cycle risk cache when force=false")
+    void shouldNotEvictCycleRiskCacheWhenNotForced() {
+      // Given
+      Long cycleId = 1L;
+
+      // When
+      asyncService.startCycleRiskAnalysis(cycleId, false);
+
+      // Then
+      verify(cacheService, never()).invalidateCycleRiskCache(cycleId);
+    }
+
+    @Test
+    @DisplayName("Should not throw when forcing refresh with null cache service")
+    void shouldNotThrowWhenForcingWithNullCacheService() {
+      // Given
+      AsyncAIAdvisorService serviceWithoutCache = new AsyncAIAdvisorService(null, asyncAIExecutor);
+
+      // When / Then - should not throw despite cacheService being null
+      String jobId = serviceWithoutCache.startPitchRiskAnalysis(1L, true);
+      assertThat(jobId).isNotNull();
+    }
+  }
+
+  // ===========================================
   // JOB STATUS TESTS
   // ===========================================
 

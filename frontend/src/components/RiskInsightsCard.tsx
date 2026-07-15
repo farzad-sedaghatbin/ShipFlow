@@ -111,12 +111,13 @@ export default function RiskInsightsCard({ pitchId, onError }: RiskInsightsCardP
       setRefreshing(true);
       setAiJobStatus('Refreshing AI analysis...');
       
-      // Use async refresh for non-blocking behavior
+      // Use async refresh for non-blocking behavior; force=true evicts the cached
+      // result so this actually re-runs the AI analysis instead of re-serving it
       const aiResult = await fetchPitchRiskAsync(pitchId, (status: JobStatusResponse) => {
         if (status.status === 'PROCESSING') {
           setAiJobStatus('AI re-analyzing pitch...');
         }
-      });
+      }, true);
       
       if (aiResult) {
         setRiskData(aiResult);

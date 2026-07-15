@@ -139,6 +139,20 @@ public class AsyncAIAdvisorService {
    * @return jobId for polling
    */
   public String startPitchRiskAnalysis(Long pitchId) {
+    return startPitchRiskAnalysis(pitchId, false);
+  }
+
+  /**
+   * Start async pitch risk analysis with AI.
+   * Includes request deduplication - returns existing job if one is already in progress.
+   * @param force if true, evicts any cached result first so a fresh AI analysis is always run
+   * @return jobId for polling
+   */
+  public String startPitchRiskAnalysis(Long pitchId, boolean force) {
+    if (force && cacheService != null) {
+      cacheService.invalidatePitchRiskCache(pitchId);
+    }
+
     // Deduplication: Check if a job for this pitch is already pending/processing
     Optional<String> existingJobId = findExistingJob("pitch_risk", pitchId);
     if (existingJobId.isPresent()) {
@@ -187,6 +201,20 @@ public class AsyncAIAdvisorService {
    * @return jobId for polling
    */
   public String startCycleRiskAnalysis(Long cycleId) {
+    return startCycleRiskAnalysis(cycleId, false);
+  }
+
+  /**
+   * Start async cycle risk analysis with AI.
+   * Includes request deduplication - returns existing job if one is already in progress.
+   * @param force if true, evicts any cached result first so a fresh AI analysis is always run
+   * @return jobId for polling
+   */
+  public String startCycleRiskAnalysis(Long cycleId, boolean force) {
+    if (force && cacheService != null) {
+      cacheService.invalidateCycleRiskCache(cycleId);
+    }
+
     // Deduplication: Check if a job for this cycle is already pending/processing
     Optional<String> existingJobId = findExistingJob("cycle_risk", cycleId);
     if (existingJobId.isPresent()) {
