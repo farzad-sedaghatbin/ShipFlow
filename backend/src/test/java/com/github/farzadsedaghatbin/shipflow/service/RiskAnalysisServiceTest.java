@@ -210,10 +210,14 @@ class RiskAnalysisServiceTest {
     method.setAccessible(true);
     String context = (String) method.invoke(service, pitch);
 
-    // Same stale pitch.team (B1) as `pitch`, but a different real slot (C1) — must NOT be flagged.
+    // Same stale pitch.team (B1) as `pitch`, but a different real slot (C1) — must NOT be flagged,
+    // and its actual team (C1) must be stated explicitly rather than omitted — an omitted team
+    // reads to the LLM as "unknown" and it will otherwise assume this pitch shares `pitch`'s team.
     assertThat(context).doesNotContain("Manual split verification journey [STARTED] SAME TEAM");
+    assertThat(context).contains("Manual split verification journey [STARTED] [Team: C1]");
     // Different stale pitch.team value from nothing meaningful — what matters is the real slot (A1)
-    // matches `pitch`'s real slot (A1) — must be flagged.
+    // matches `pitch`'s real slot (A1) — must be flagged, with no separate [Team: ...] tag.
     assertThat(context).contains("Recurring cost automation [STARTED] SAME TEAM");
+    assertThat(context).doesNotContain("Recurring cost automation [STARTED] SAME TEAM [Team:");
   }
 }

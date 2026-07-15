@@ -4,6 +4,7 @@ import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.*;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.CycleRiskOverviewDTO.*;
+import com.github.farzadsedaghatbin.shipflow.entity.BettingSlot;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
@@ -699,10 +700,17 @@ public class RiskAnalysisService {
             if (sibling.getAppetiteDays() != null) {
               sb.append(" [Appetite: ").append(sibling.getAppetiteDays()).append(" days]");
             }
-            Long siblingTeamId = bettingSlotRepository.findByPitchId(sibling.getId())
-                .map(slot -> slot.getTeam().getId()).orElse(null);
-            if (siblingTeamId != null && pitchTeamId != null && siblingTeamId.equals(pitchTeamId)) {
-              sb.append(" SAME TEAM");
+            Optional<BettingSlot> siblingSlot = bettingSlotRepository.findByPitchId(sibling.getId());
+            if (siblingSlot.isPresent()) {
+              Long siblingTeamId = siblingSlot.get().getTeam().getId();
+              if (pitchTeamId != null && siblingTeamId.equals(pitchTeamId)) {
+                sb.append(" SAME TEAM");
+              } else {
+                // Always state the actual team, even when it differs — an omitted team
+                // reads to the LLM as "unknown", and it will otherwise assume this pitch
+                // shares the analyzed pitch's team since no other team is mentioned.
+                sb.append(" [Team: ").append(siblingSlot.get().getTeam().getName()).append("]");
+              }
             }
             sb.append("\n");
           }
@@ -719,20 +727,27 @@ public class RiskAnalysisService {
         if (!otherCyclePitches.isEmpty()) {
           // Batch-resolve team-slot assignments for this cycle in one query rather
           // than one findByPitchId per pitch.
-          Map<Long, Long> cycleTeamIdByPitchId = bettingSlotRepository
+          Map<Long, BettingSlot> cycleSlotByPitchId = bettingSlotRepository
               .findByCycleId(pitch.getCycle().getId()).stream()
               .filter(slot -> slot.getPitch() != null)
-              .collect(Collectors.toMap(slot -> slot.getPitch().getId(), slot -> slot.getTeam().getId(),
-                  (a, b) -> a));
+              .collect(Collectors.toMap(slot -> slot.getPitch().getId(), slot -> slot, (a, b) -> a));
 
           sb.append("\n=== CYCLE LOAD ===\n");
           sb.append("Other pitches in this cycle (").append(otherCyclePitches.size()).append("):\n");
           for (Pitch cp : otherCyclePitches) {
             sb.append("  - ").append(cp.getTitle())
                 .append(" [").append(cp.getStatus()).append("]");
-            Long cpTeamId = cycleTeamIdByPitchId.get(cp.getId());
-            if (cpTeamId != null && pitchTeamId != null && cpTeamId.equals(pitchTeamId)) {
-              sb.append(" SAME TEAM");
+            BettingSlot cpSlot = cycleSlotByPitchId.get(cp.getId());
+            if (cpSlot != null) {
+              Long cpTeamId = cpSlot.getTeam().getId();
+              if (pitchTeamId != null && cpTeamId.equals(pitchTeamId)) {
+                sb.append(" SAME TEAM");
+              } else {
+                // Always state the actual team, even when it differs — an omitted team
+                // reads to the LLM as "unknown", and it will otherwise assume this pitch
+                // shares the analyzed pitch's team since no other team is mentioned.
+                sb.append(" [Team: ").append(cpSlot.getTeam().getName()).append("]");
+              }
             }
             sb.append("\n");
           }
