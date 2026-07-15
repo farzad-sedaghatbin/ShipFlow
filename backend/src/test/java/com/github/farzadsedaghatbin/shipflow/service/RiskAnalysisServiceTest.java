@@ -210,10 +210,44 @@ class RiskAnalysisServiceTest {
     method.setAccessible(true);
     String context = (String) method.invoke(service, pitch);
 
-    // Same stale pitch.team (B1) as `pitch`, but a different real slot (C1) — must NOT be flagged.
+    // Same stale pitch.team (B1) as `pitch`, but a different real slot (C1) — must NOT be flagged,
+    // and its actual team (C1) must be stated explicitly rather than omitted — an omitted team
+    // reads to the LLM as "unknown" and it will otherwise assume this pitch shares `pitch`'s team.
     assertThat(context).doesNotContain("Manual split verification journey [STARTED] SAME TEAM");
+    assertThat(context).contains("Manual split verification journey [STARTED] [DIFFERENT TEAM: C1]");
     // Different stale pitch.team value from nothing meaningful — what matters is the real slot (A1)
-    // matches `pitch`'s real slot (A1) — must be flagged.
+    // matches `pitch`'s real slot (A1) — must be flagged, with no separate [DIFFERENT TEAM: ...] tag.
     assertThat(context).contains("Recurring cost automation [STARTED] SAME TEAM");
+    assertThat(context).doesNotContain("Recurring cost automation [STARTED] SAME TEAM [DIFFERENT TEAM:");
+  }
+
+  @Test
+  @DisplayName("AI prompt states the Betting-Table-resolved team (not stale pitch.team) and tells the "
+      + "LLM not to attribute a DIFFERENT TEAM pitch's workload to this pitch's team")
+  void buildAIPrompt_usesBettingSlotTeamAndForbidsCrossTeamMisattribution() throws Exception {
+    Team teamA1 = Team.builder().id(1L).name("A1").build();
+    Team teamB1 = Team.builder().id(2L).name("B1").build(); // stale pitch.team value
+
+    Pitch pitch = Pitch.builder().id(200L).title("Improve expense verification")
+        .status(PitchStatus.STARTED).team(teamB1).appetiteDays(30).build();
+
+    when(bettingSlotRepository.findByPitchId(200L))
+        .thenReturn(Optional.of(BettingSlot.builder().team(teamA1).pitch(pitch).build()));
+    when(riskHistoryRepository.findByPitchIdOrderByRecordedAtDesc(200L)).thenReturn(List.of());
+
+    Method method = RiskAnalysisService.class.getDeclaredMethod("buildAIPrompt", Pitch.class, List.class,
+        double.class, double.class);
+    method.setAccessible(true);
+    String prompt = (String) method.invoke(service, pitch, List.of(), 40.0, 40.0);
+
+    // Real Betting Table slot (A1) is stated, not the stale pitch.team field (B1).
+    assertThat(prompt).contains("Team: A1");
+    assertThat(prompt).doesNotContain("Team: B1");
+
+    // The LLM is explicitly told what "DIFFERENT TEAM" means and forbidden from folding those
+    // pitches into this pitch's own team-capacity narrative.
+    assertThat(prompt).contains(
+        "one tagged \"[DIFFERENT TEAM: X]\" belongs to team X, NOT this pitch's team");
+    assertThat(prompt).contains("adding to \"Team A1's\" workload");
   }
 }
