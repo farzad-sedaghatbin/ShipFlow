@@ -12,6 +12,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.PitchRiskHistory;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkLog;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
+import com.github.farzadsedaghatbin.shipflow.repository.BettingSlotRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
@@ -56,6 +57,7 @@ public class RiskAnalysisService {
   private final CapacityConfigService capacityConfigService;
   private final EpicRepository epicRepository;
   private final InitiativeRepository initiativeRepository;
+  private final BettingSlotRepository bettingSlotRepository;
 
   @Autowired(required = false)
   @Lazy
@@ -71,7 +73,7 @@ public class RiskAnalysisService {
       AICacheService cacheService, PitchRiskHistoryRepository riskHistoryRepository,
       OrganizationSettingsService organizationSettingsService, RiskHistoryService riskHistoryService,
       CapacityConfigService capacityConfigService, EpicRepository epicRepository,
-      InitiativeRepository initiativeRepository) {
+      InitiativeRepository initiativeRepository, BettingSlotRepository bettingSlotRepository) {
     this.aiConfig = aiConfig;
     this.chatLanguageModel = chatLanguageModel;
     this.pitchRepository = pitchRepository;
@@ -84,6 +86,7 @@ public class RiskAnalysisService {
     this.capacityConfigService = capacityConfigService;
     this.epicRepository = epicRepository;
     this.initiativeRepository = initiativeRepository;
+    this.bettingSlotRepository = bettingSlotRepository;
   }
 
   /** Analyze risk for a single pitch (with AI if enabled). */
@@ -638,6 +641,14 @@ public class RiskAnalysisService {
     StringBuilder sb = new StringBuilder();
 
     try {
+      // Resolve this pitch's current team from the Betting Table (the actual
+      // per-cycle team-slot assignment), not pitch.getTeam() — that field is
+      // also written by the standalone assign-team/edit endpoints and isn't
+      // cleared on slot removal, so it can drift from what the Betting Table
+      // UI shows and falsely group pitches under the wrong team.
+      Long pitchTeamId = bettingSlotRepository.findByPitchId(pitch.getId())
+          .map(slot -> slot.getTeam().getId()).orElse(null);
+
       Epic epic = pitch.getEpic();
       if (epic == null && pitch.getEpic() != null) {
         epic = epicRepository.findById(pitch.getEpic().getId()).orElse(null);
@@ -688,8 +699,9 @@ public class RiskAnalysisService {
             if (sibling.getAppetiteDays() != null) {
               sb.append(" [Appetite: ").append(sibling.getAppetiteDays()).append(" days]");
             }
-            if (sibling.getTeam() != null && pitch.getTeam() != null
-                && sibling.getTeam().getId().equals(pitch.getTeam().getId())) {
+            Long siblingTeamId = bettingSlotRepository.findByPitchId(sibling.getId())
+                .map(slot -> slot.getTeam().getId()).orElse(null);
+            if (siblingTeamId != null && pitchTeamId != null && siblingTeamId.equals(pitchTeamId)) {
               sb.append(" SAME TEAM");
             }
             sb.append("\n");
@@ -705,13 +717,21 @@ public class RiskAnalysisService {
             .collect(Collectors.toList());
 
         if (!otherCyclePitches.isEmpty()) {
+          // Batch-resolve team-slot assignments for this cycle in one query rather
+          // than one findByPitchId per pitch.
+          Map<Long, Long> cycleTeamIdByPitchId = bettingSlotRepository
+              .findByCycleId(pitch.getCycle().getId()).stream()
+              .filter(slot -> slot.getPitch() != null)
+              .collect(Collectors.toMap(slot -> slot.getPitch().getId(), slot -> slot.getTeam().getId(),
+                  (a, b) -> a));
+
           sb.append("\n=== CYCLE LOAD ===\n");
           sb.append("Other pitches in this cycle (").append(otherCyclePitches.size()).append("):\n");
           for (Pitch cp : otherCyclePitches) {
             sb.append("  - ").append(cp.getTitle())
                 .append(" [").append(cp.getStatus()).append("]");
-            if (cp.getTeam() != null && pitch.getTeam() != null
-                && cp.getTeam().getId().equals(pitch.getTeam().getId())) {
+            Long cpTeamId = cycleTeamIdByPitchId.get(cp.getId());
+            if (cpTeamId != null && pitchTeamId != null && cpTeamId.equals(pitchTeamId)) {
               sb.append(" SAME TEAM");
             }
             sb.append("\n");

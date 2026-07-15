@@ -7,9 +7,17 @@ import com.github.farzadsedaghatbin.shipflow.config.AIConfig;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.RiskFactor;
 import com.github.farzadsedaghatbin.shipflow.dto.risk.RiskScoreExplanation;
+import com.github.farzadsedaghatbin.shipflow.entity.BettingSlot;
+import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
+import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Team;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RiskLevel;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,6 +58,8 @@ class RiskAnalysisServiceTest {
   private EpicRepository epicRepository;
   @Mock
   private InitiativeRepository initiativeRepository;
+  @Mock
+  private BettingSlotRepository bettingSlotRepository;
 
   private RiskAnalysisService service;
 
@@ -57,7 +67,7 @@ class RiskAnalysisServiceTest {
   void setUp() {
     service = new RiskAnalysisService(aiConfig, null, pitchRepository, cycleRepository, workLogRepository,
         cacheService, riskHistoryRepository, organizationSettingsService, riskHistoryService,
-        capacityConfigService, epicRepository, initiativeRepository);
+        capacityConfigService, epicRepository, initiativeRepository, bettingSlotRepository);
   }
 
   private void stubThresholds(int lowMax, int mediumMax, int highMax) {
@@ -155,5 +165,55 @@ class RiskAnalysisServiceTest {
 
     assertThat(explanation.getFactorContributions()).isEmpty();
     assertThat(explanation.getActiveBand()).isEqualTo(RiskLevel.LOW);
+  }
+
+  @Test
+  @DisplayName("epic/cycle context flags \"SAME TEAM\" from the Betting Table's slot assignment, "
+      + "not the drift-prone pitch.team field")
+  void buildEpicAndInitiativeContext_usesBettingSlotNotPitchTeamField() throws Exception {
+    Team teamA1 = Team.builder().id(1L).name("A1").build();
+    Team teamB1 = Team.builder().id(2L).name("B1").build();
+    Team teamC1 = Team.builder().id(3L).name("C1").build();
+
+    Cycle cycle = Cycle.builder().id(10L).name("Cycle 8").build();
+    Epic epic = Epic.builder().id(20L).name("Spending").build();
+
+    // pitch.team is stale (e.g. left over from a prior assign-team call) and says B1,
+    // but its actual Betting Table slot for this cycle is A1.
+    Pitch pitch = Pitch.builder().id(100L).title("Spending Overview").status(PitchStatus.STARTED)
+        .team(teamB1).cycle(cycle).epic(epic).build();
+
+    // Sibling in the same epic: pitch.team also (incorrectly) says B1, but its real slot is C1 —
+    // a genuinely different team from `pitch`'s actual A1 slot.
+    Pitch sibling = Pitch.builder().id(101L).title("Manual split verification journey")
+        .status(PitchStatus.STARTED).team(teamB1).cycle(cycle).build();
+
+    // Cycle-mate whose pitch.team differs from `pitch`'s (B1 vs B1 — same stale value, irrelevant)
+    // but whose actual slot IS the same team (A1) as `pitch`.
+    Pitch cycleMateSameTeam = Pitch.builder().id(102L).title("Recurring cost automation")
+        .status(PitchStatus.STARTED).team(teamB1).cycle(cycle).build();
+
+    when(pitchRepository.findByEpicIdNotDeleted(20L)).thenReturn(List.of(pitch, sibling));
+    when(pitchRepository.findByCycleIdNotDeleted(10L))
+        .thenReturn(List.of(pitch, sibling, cycleMateSameTeam));
+
+    when(bettingSlotRepository.findByPitchId(100L))
+        .thenReturn(Optional.of(BettingSlot.builder().team(teamA1).pitch(pitch).build()));
+    when(bettingSlotRepository.findByPitchId(101L))
+        .thenReturn(Optional.of(BettingSlot.builder().team(teamC1).pitch(sibling).build()));
+    when(bettingSlotRepository.findByCycleId(10L)).thenReturn(List.of(
+        BettingSlot.builder().team(teamA1).pitch(pitch).build(),
+        BettingSlot.builder().team(teamC1).pitch(sibling).build(),
+        BettingSlot.builder().team(teamA1).pitch(cycleMateSameTeam).build()));
+
+    Method method = RiskAnalysisService.class.getDeclaredMethod("buildEpicAndInitiativeContext", Pitch.class);
+    method.setAccessible(true);
+    String context = (String) method.invoke(service, pitch);
+
+    // Same stale pitch.team (B1) as `pitch`, but a different real slot (C1) — must NOT be flagged.
+    assertThat(context).doesNotContain("Manual split verification journey [STARTED] SAME TEAM");
+    // Different stale pitch.team value from nothing meaningful — what matters is the real slot (A1)
+    // matches `pitch`'s real slot (A1) — must be flagged.
+    assertThat(context).contains("Recurring cost automation [STARTED] SAME TEAM");
   }
 }
