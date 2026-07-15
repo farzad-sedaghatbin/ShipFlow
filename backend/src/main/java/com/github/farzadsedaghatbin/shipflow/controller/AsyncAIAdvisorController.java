@@ -43,21 +43,25 @@ public class AsyncAIAdvisorController {
   // ===========================================
 
   @PostMapping("/pitch/{pitchId}/analyze")
-  @Operation(summary = "Start async pitch risk analysis", 
-      description = "Returns cached result immediately (200) if available, otherwise starts async job (202) and returns jobId for polling.")
+  @Operation(summary = "Start async pitch risk analysis",
+      description = "Returns cached result immediately (200) if available, otherwise starts async job (202) and returns jobId for polling. Pass force=true to evict any cached result and always run a fresh AI analysis.")
   @PreAuthorize("@permissionService.hasPermission('RISK', 'READ')")
-  public ResponseEntity<?> startPitchRiskAnalysis(@PathVariable Long pitchId) {
-    // CACHE-FIRST: Return immediately if cached
-    Optional<PitchRiskDTO> cached = asyncService.getCachedPitchRisk(pitchId);
-    if (cached.isPresent()) {
-      return ResponseEntity.ok(Map.of(
-          "cached", true,
-          "result", cached.get()
-      ));
+  public ResponseEntity<?> startPitchRiskAnalysis(
+      @PathVariable Long pitchId,
+      @RequestParam(defaultValue = "false") boolean force) {
+    // CACHE-FIRST: Return immediately if cached (unless a forced refresh was requested)
+    if (!force) {
+      Optional<PitchRiskDTO> cached = asyncService.getCachedPitchRisk(pitchId);
+      if (cached.isPresent()) {
+        return ResponseEntity.ok(Map.of(
+            "cached", true,
+            "result", cached.get()
+        ));
+      }
     }
-    
-    // Cache miss - start async job
-    String jobId = asyncService.startPitchRiskAnalysis(pitchId);
+
+    // Cache miss (or forced refresh) - start async job
+    String jobId = asyncService.startPitchRiskAnalysis(pitchId, force);
     return ResponseEntity.accepted().body(Map.of(
         "cached", false,
         "jobId", jobId,
@@ -67,21 +71,25 @@ public class AsyncAIAdvisorController {
   }
 
   @PostMapping("/cycle/{cycleId}/analyze")
-  @Operation(summary = "Start async cycle risk analysis", 
-      description = "Returns cached result immediately (200) if available, otherwise starts async job (202) and returns jobId for polling.")
+  @Operation(summary = "Start async cycle risk analysis",
+      description = "Returns cached result immediately (200) if available, otherwise starts async job (202) and returns jobId for polling. Pass force=true to evict any cached result and always run a fresh AI analysis.")
   @PreAuthorize("@permissionService.hasPermission('RISK', 'READ')")
-  public ResponseEntity<?> startCycleRiskAnalysis(@PathVariable Long cycleId) {
-    // CACHE-FIRST: Return immediately if cached
-    Optional<CycleRiskOverviewDTO> cached = asyncService.getCachedCycleRisk(cycleId);
-    if (cached.isPresent()) {
-      return ResponseEntity.ok(Map.of(
-          "cached", true,
-          "result", cached.get()
-      ));
+  public ResponseEntity<?> startCycleRiskAnalysis(
+      @PathVariable Long cycleId,
+      @RequestParam(defaultValue = "false") boolean force) {
+    // CACHE-FIRST: Return immediately if cached (unless a forced refresh was requested)
+    if (!force) {
+      Optional<CycleRiskOverviewDTO> cached = asyncService.getCachedCycleRisk(cycleId);
+      if (cached.isPresent()) {
+        return ResponseEntity.ok(Map.of(
+            "cached", true,
+            "result", cached.get()
+        ));
+      }
     }
-    
-    // Cache miss - start async job
-    String jobId = asyncService.startCycleRiskAnalysis(cycleId);
+
+    // Cache miss (or forced refresh) - start async job
+    String jobId = asyncService.startCycleRiskAnalysis(cycleId, force);
     return ResponseEntity.accepted().body(Map.of(
         "cached", false,
         "jobId", jobId,

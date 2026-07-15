@@ -169,17 +169,19 @@ export const riskService = {
 
   /**
    * Start async pitch risk analysis with AI
-   * Returns immediately with a jobId for polling
+   * Returns immediately with a jobId for polling.
+   * Pass force=true to evict any cached result and always run a fresh AI analysis.
    */
-  startAsyncPitchRiskAnalysis: (pitchId: number) =>
-    api.post<AsyncJobResponse>(`/risk/async/pitch/${pitchId}/analyze`),
+  startAsyncPitchRiskAnalysis: (pitchId: number, force: boolean = false) =>
+    api.post<AsyncJobResponse>(`/risk/async/pitch/${pitchId}/analyze${force ? '?force=true' : ''}`),
 
   /**
    * Start async cycle risk analysis with AI
-   * Returns immediately with a jobId for polling
+   * Returns immediately with a jobId for polling.
+   * Pass force=true to evict any cached result and always run a fresh AI analysis.
    */
-  startAsyncCycleRiskAnalysis: (cycleId: number) =>
-    api.post<AsyncJobResponse>(`/risk/async/cycle/${cycleId}/analyze`),
+  startAsyncCycleRiskAnalysis: (cycleId: number, force: boolean = false) =>
+    api.post<AsyncJobResponse>(`/risk/async/cycle/${cycleId}/analyze${force ? '?force=true' : ''}`),
 
   /**
    * Start async Q&A question
@@ -303,14 +305,16 @@ export async function pollJobStatus(
 /**
  * Convenience function: Start async pitch risk analysis and poll until complete
  * CACHE-FIRST: Returns immediately if result is cached (no polling needed)
+ * Pass force=true to evict any cached result and always run a fresh AI analysis.
  */
 export async function fetchPitchRiskAsync(
   pitchId: number,
-  onStatusChange?: (status: JobStatusResponse) => void
+  onStatusChange?: (status: JobStatusResponse) => void,
+  force: boolean = false
 ): Promise<PitchRiskDTO | null> {
   try {
     // Start the async job (or get cached result)
-    const startResponse = await riskService.startAsyncPitchRiskAnalysis(pitchId);
+    const startResponse = await riskService.startAsyncPitchRiskAnalysis(pitchId, force);
     const data = startResponse.data as AsyncJobResponse;
     
     // CACHE HIT: Return immediately
@@ -347,14 +351,16 @@ export async function fetchPitchRiskAsync(
 /**
  * Convenience function: Start async cycle risk analysis and poll until complete
  * CACHE-FIRST: Returns immediately if result is cached (no polling needed)
+ * Pass force=true to evict any cached result and always run a fresh AI analysis.
  */
 export async function fetchCycleRiskAsync(
   cycleId: number,
-  onStatusChange?: (status: JobStatusResponse) => void
+  onStatusChange?: (status: JobStatusResponse) => void,
+  force: boolean = false
 ): Promise<CycleRiskOverviewDTO | null> {
   try {
     // Start the async job (or get cached result)
-    const startResponse = await riskService.startAsyncCycleRiskAnalysis(cycleId);
+    const startResponse = await riskService.startAsyncCycleRiskAnalysis(cycleId, force);
     const data = startResponse.data as AsyncJobResponse;
     
     // CACHE HIT: Return immediately

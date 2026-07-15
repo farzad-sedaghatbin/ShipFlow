@@ -116,11 +116,13 @@ export default function CycleRiskOverview({
       setRefreshing(true);
       setAiJobStatus('Refreshing AI analysis...');
       
+      // force=true evicts the cached result so this actually re-runs the AI
+      // analysis instead of re-serving it
       const aiResult = await fetchCycleRiskAsync(cycleId, (status: JobStatusResponse) => {
         if (status.status === 'PROCESSING') {
           setAiJobStatus('AI re-analyzing cycle...');
         }
-      });
+      }, true);
       
       if (aiResult) {
         setRiskData(aiResult);
