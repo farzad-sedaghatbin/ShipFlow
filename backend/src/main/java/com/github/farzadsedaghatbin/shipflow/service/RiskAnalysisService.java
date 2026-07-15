@@ -709,7 +709,11 @@ public class RiskAnalysisService {
                 // Always state the actual team, even when it differs — an omitted team
                 // reads to the LLM as "unknown", and it will otherwise assume this pitch
                 // shares the analyzed pitch's team since no other team is mentioned.
-                sb.append(" [Team: ").append(siblingSlot.get().getTeam().getName()).append("]");
+                // "DIFFERENT TEAM" (not the subtler "[Team: X]") because the LLM was still
+                // narrating these as the analyzed pitch's own team-capacity load even with
+                // the team name present — see buildAIPrompt's STRICT RULES for the matching
+                // instruction that tells it how to use this tag.
+                sb.append(" [DIFFERENT TEAM: ").append(siblingSlot.get().getTeam().getName()).append("]");
               }
             }
             sb.append("\n");
@@ -746,7 +750,9 @@ public class RiskAnalysisService {
                 // Always state the actual team, even when it differs — an omitted team
                 // reads to the LLM as "unknown", and it will otherwise assume this pitch
                 // shares the analyzed pitch's team since no other team is mentioned.
-                sb.append(" [Team: ").append(cpSlot.getTeam().getName()).append("]");
+                // "DIFFERENT TEAM" (not the subtler "[Team: X]") — see the note above and
+                // buildAIPrompt's STRICT RULES for why.
+                sb.append(" [DIFFERENT TEAM: ").append(cpSlot.getTeam().getName()).append("]");
               }
             }
             sb.append("\n");
@@ -774,6 +780,13 @@ public class RiskAnalysisService {
   }
 
   private String buildAIPrompt(Pitch pitch, List<RiskFactor> factors, double progress, double cycleProgress) {
+    // Resolve from the Betting Table slot, same as buildEpicAndInitiativeContext — pitch.getTeam()
+    // is the drift-prone field written by the standalone assign-team/edit endpoints and can disagree
+    // with what the Betting Table (and this prompt's own sibling/cycle-mate tags) actually shows.
+    String pitchTeamName = bettingSlotRepository.findByPitchId(pitch.getId())
+        .map(slot -> slot.getTeam().getName())
+        .orElse(pitch.getTeam() != null ? pitch.getTeam().getName() : "Not assigned");
+
     StringBuilder sb = new StringBuilder();
     sb.append("You are a project risk advisor for a software development team using the Shape Up methodology.\n\n");
     sb.append("Analyze the following pitch and provide risk insights:\n\n");
@@ -782,7 +795,7 @@ public class RiskAnalysisService {
     sb.append("Status: ").append(pitch.getStatus()).append("\n");
     sb.append("Progress: ").append(String.format("%.1f", progress)).append("%\n");
     sb.append("Cycle Progress: ").append(String.format("%.1f", cycleProgress)).append("%\n");
-    sb.append("Team: ").append(pitch.getTeam() != null ? pitch.getTeam().getName() : "Not assigned").append("\n\n");
+    sb.append("Team: ").append(pitchTeamName).append("\n\n");
 
     // Include all Shape Up methodology fields for comprehensive analysis
     sb.append("=== PITCH DETAILS ===\n");
@@ -828,6 +841,13 @@ public class RiskAnalysisService {
     sb.append("CONFIDENCE: [0-100]\n\n");
     sb.append("STRICT RULES:\n");
     sb.append("- Reference sibling pitches by name if they share the same team or create competing scope.\n");
+    sb.append(
+        "- A sibling/cycle-mate pitch tagged \"SAME TEAM\" above shares this pitch's team; one tagged "
+            + "\"[DIFFERENT TEAM: X]\" belongs to team X, NOT this pitch's team. NEVER describe a "
+            + "\"[DIFFERENT TEAM: X]\" pitch as adding to \"Team ").append(pitchTeamName)
+        .append("'s\" workload or say this pitch's team is \"running\", \"carrying\", or \"simultaneously "
+            + "handling\" it — attribute any capacity pressure from it to team X instead, or describe the "
+            + "overlap as a cross-team dependency/scope-conflict risk without naming a team as the executor.\n");
     sb.append("- Flag initiative/roadmap pressure explicitly if the initiative is delayed or at risk.\n");
     sb.append("- If risk history shows a worsening trend, call it out.\n");
     sb.append("- Keep insights actionable and specific to this pitch — do not repeat generic advice.");
