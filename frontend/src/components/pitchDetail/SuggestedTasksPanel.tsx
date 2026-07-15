@@ -12,7 +12,6 @@ import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
-import { ScrollArea } from '../ui/scroll-area';
 
 interface SuggestedTasksPanelProps {
   pitchId: number;
@@ -168,7 +167,7 @@ export function SuggestedTasksPanel({ pitchId, cycleId, onTasksCreated }: Sugges
                   {t('suggestedTasksPanel.emptyState')}
                 </p>
               ) : (
-                <ScrollArea className="max-h-[420px] pr-3">
+                <div className="max-h-[420px] overflow-y-auto pr-3">
                   <div className="space-y-2">
                     {suggestions.map((suggestion, index) => (
                       <div
@@ -210,7 +209,7 @@ export function SuggestedTasksPanel({ pitchId, cycleId, onTasksCreated }: Sugges
                       </div>
                     ))}
                   </div>
-                </ScrollArea>
+                </div>
               )}
 
               <DialogFooter>
