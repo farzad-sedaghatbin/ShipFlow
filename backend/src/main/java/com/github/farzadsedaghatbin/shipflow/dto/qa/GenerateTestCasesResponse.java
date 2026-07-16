@@ -19,6 +19,9 @@ public class GenerateTestCasesResponse {
   /** Whether AI generation was available. */
   private Boolean aiEnabled;
 
+  /** Whether Figma design context was fetched and included in the generation prompt. */
+  private Boolean figmaContextUsed;
+
   /** Processing time in milliseconds. */
   private Long processingTimeMs;
 

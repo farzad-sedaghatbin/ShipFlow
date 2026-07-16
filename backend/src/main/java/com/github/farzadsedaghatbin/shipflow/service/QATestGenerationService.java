@@ -15,6 +15,7 @@ import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,8 @@ public class QATestGenerationService {
 
   private final PitchRepository pitchRepository;
   private final MeetingRepository meetingRepository;
+  private final ManualNoteRepository manualNoteRepository;
+  private final FigmaDesignContextService figmaDesignContextService;
   private final EmbeddingModel embeddingModel;
   private final EmbeddingStore<TextSegment> embeddingStore;
   private final ChatLanguageModel chatLanguageModel;
@@ -47,6 +50,7 @@ public class QATestGenerationService {
 
   @Autowired
   public QATestGenerationService(PitchRepository pitchRepository, MeetingRepository meetingRepository,
+      ManualNoteRepository manualNoteRepository, FigmaDesignContextService figmaDesignContextService,
       @Autowired(required = false) EmbeddingModel embeddingModel,
       @Autowired(required = false) EmbeddingStore<TextSegment> embeddingStore,
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
@@ -54,6 +58,8 @@ public class QATestGenerationService {
       @Autowired(required = false) TestCaseValidator testCaseValidator) {
     this.pitchRepository = pitchRepository;
     this.meetingRepository = meetingRepository;
+    this.manualNoteRepository = manualNoteRepository;
+    this.figmaDesignContextService = figmaDesignContextService;
     this.embeddingModel = embeddingModel;
     this.embeddingStore = embeddingStore;
     this.chatLanguageModel = chatLanguageModel;
@@ -82,8 +88,15 @@ public class QATestGenerationService {
       Pitch pitch = pitchRepository.findById(request.getPitchId())
           .orElseThrow(() -> new RuntimeException("Pitch not found: " + request.getPitchId()));
 
-      // Build context from pitch description, meetings, and documents
-      String context = buildPitchContext(pitch, request);
+      // Figma design context is extracted once so the response can report whether it was used —
+      // QA needs to know if UI test cases were grounded in the actual design or pitch text only.
+      String figmaContext = figmaDesignContextService != null
+          ? figmaDesignContextService.extractForPitch(pitch)
+          : null;
+      boolean figmaContextUsed = figmaContext != null && !figmaContext.isBlank();
+
+      // Build context from pitch description, team notes, meetings, and design context
+      String context = buildPitchContext(pitch, request, figmaContext);
 
       if (context.isEmpty()) {
         return GenerateTestCasesResponse.builder().aiEnabled(true)
@@ -131,7 +144,8 @@ public class QATestGenerationService {
 
       return GenerateTestCasesResponse.builder().suggestions(suggestions)
           .contextUsed(context.length() > 500 ? context.substring(0, 500) + "..." : context).aiEnabled(true)
-          .processingTimeMs(System.currentTimeMillis() - startTime).build();
+          .figmaContextUsed(figmaContextUsed).processingTimeMs(System.currentTimeMillis() - startTime)
+          .build();
 
     } catch (Exception e) {
       log.error("Error generating test cases: {}", e.getMessage(), e);
@@ -141,7 +155,7 @@ public class QATestGenerationService {
     }
   }
 
-  private String buildPitchContext(Pitch pitch, GenerateTestCasesRequest request) {
+  private String buildPitchContext(Pitch pitch, GenerateTestCasesRequest request, String figmaContext) {
     StringBuilder context = new StringBuilder();
 
     // Add pitch information
@@ -182,6 +196,13 @@ public class QATestGenerationService {
       context.append("Wireframe/Design Links: ").append(pitch.getWireframeLinks()).append("\n\n");
     }
 
+    if (figmaContext != null && !figmaContext.isBlank()) {
+      context.append("=== DESIGN CONTEXT (from Figma) — cover these screens, components and UI "
+          + "states in UI-facing test cases ===\n").append(figmaContext).append("\n\n");
+    }
+
+    appendManualNotes(context, pitch);
+
     // Add meeting notes
     List<Meeting> meetings = meetingRepository.findByPitchId(pitch.getId());
     if (!meetings.isEmpty()) {
@@ -203,6 +224,38 @@ public class QATestGenerationService {
     }
 
     return context.toString();
+  }
+
+  // Notes can be arbitrarily long (solution designs, data contracts) — cap per-note length and
+  // note count so a single verbose note can't crowd the pitch details out of the token budget.
+  private static final int MAX_NOTES_IN_CONTEXT = 10;
+  private static final int MAX_NOTE_CHARS = 1500;
+
+  /**
+   * Append the manual notes team members (QA, developers, designers) attached to the pitch —
+   * decisions, data contracts, edge cases captured outside the pitch body. Notes whose author
+   * opted out of knowledge sharing ({@code includeInKnowledge=false}) are excluded.
+   */
+  private void appendManualNotes(StringBuilder context, Pitch pitch) {
+    List<ManualNote> notes = manualNoteRepository.findByContextTypeAndContextId("pitch", pitch.getId());
+    List<ManualNote> included = notes.stream().filter(n -> !Boolean.FALSE.equals(n.getIncludeInKnowledge()))
+        .sorted(Comparator.comparing(ManualNote::getCreatedAt,
+            Comparator.nullsFirst(Comparator.naturalOrder())))
+        .limit(MAX_NOTES_IN_CONTEXT).collect(Collectors.toList());
+
+    if (included.isEmpty()) {
+      return;
+    }
+
+    context.append("=== TEAM NOTES (decisions and details added by QA/team members — treat as "
+        + "authoritative requirements) ===\n");
+    for (ManualNote note : included) {
+      String content = note.getContent() == null ? "" : note.getContent();
+      if (content.length() > MAX_NOTE_CHARS) {
+        content = content.substring(0, MAX_NOTE_CHARS) + " [...truncated]";
+      }
+      context.append("- ").append(note.getTitle()).append(":\n").append(content).append("\n\n");
+    }
   }
 
   private String retrieveRelevantKnowledge(String query) {

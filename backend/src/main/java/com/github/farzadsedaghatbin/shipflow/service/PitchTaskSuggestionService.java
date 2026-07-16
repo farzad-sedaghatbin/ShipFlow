@@ -7,7 +7,6 @@ import com.github.farzadsedaghatbin.shipflow.dto.pitch.TaskSuggestionResponseDTO
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
-import com.github.farzadsedaghatbin.shipflow.service.mcp.FigmaMcpProvider;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,21 +29,18 @@ public class PitchTaskSuggestionService {
   private final ChatLanguageModel chatLanguageModel;
   private final ObjectMapper objectMapper;
   private final PitchRepository pitchRepository;
-  private final OrganizationSettingsService settingsService;
-  private final FigmaMcpProvider figmaMcpProvider;
+  private final FigmaDesignContextService figmaDesignContextService;
 
   @Autowired
   public PitchTaskSuggestionService(
       @Autowired(required = false) ChatLanguageModel chatLanguageModel,
       ObjectMapper objectMapper,
       PitchRepository pitchRepository,
-      OrganizationSettingsService settingsService,
-      FigmaMcpProvider figmaMcpProvider) {
+      FigmaDesignContextService figmaDesignContextService) {
     this.chatLanguageModel = chatLanguageModel;
     this.objectMapper = objectMapper;
     this.pitchRepository = pitchRepository;
-    this.settingsService = settingsService;
-    this.figmaMcpProvider = figmaMcpProvider;
+    this.figmaDesignContextService = figmaDesignContextService;
   }
 
   /** Returns {@code true} when a {@link ChatLanguageModel} bean is configured and available. */
@@ -70,7 +66,7 @@ public class PitchTaskSuggestionService {
     Pitch pitch = pitchRepository.findById(pitchId)
         .orElseThrow(() -> new ResourceNotFoundException("Pitch not found with id: " + pitchId));
 
-    String figmaContext = extractFigmaContext(pitch);
+    String figmaContext = figmaDesignContextService.extractForPitch(pitch);
     boolean figmaContextUsed = figmaContext != null && !figmaContext.isBlank();
 
     String prompt = buildPrompt(pitch, figmaContext);
@@ -109,40 +105,6 @@ public class PitchTaskSuggestionService {
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────
-
-  /**
-   * Extract Figma design context from the pitch's wireframe links, exactly mirroring {@code
-   * WiseArchitectureService.extractFigmaContext}: null-guard wireframe links, parse Figma file
-   * references, guard on the org's Figma access token, fetch design context, guard on content.
-   * Returns null (never throws) whenever any guard fails so the caller can degrade gracefully to
-   * a pitch-only prompt.
-   */
-  private String extractFigmaContext(Pitch pitch) {
-    String wireframeLinks = pitch.getWireframeLinks();
-    if (wireframeLinks == null || wireframeLinks.isBlank()) {
-      return null;
-    }
-
-    List<FigmaMcpProvider.FigmaFileReference> figmaRefs =
-        figmaMcpProvider.extractFigmaFileReferences(wireframeLinks);
-    if (figmaRefs.isEmpty()) {
-      return null;
-    }
-
-    String figmaToken = settingsService.getFigmaAccessToken();
-    if (figmaToken == null || figmaToken.isBlank()) {
-      return null;
-    }
-
-    FigmaMcpProvider.FigmaFileReference fileRef = figmaRefs.get(0);
-    FigmaMcpProvider.FigmaDesignContext context = figmaMcpProvider.getDesignContext(fileRef, figmaToken);
-
-    if (context == null || !context.hasContent()) {
-      return null;
-    }
-
-    return context.toPromptString();
-  }
 
   private String buildPrompt(Pitch pitch, String figmaContext) {
     StringBuilder sb = new StringBuilder();
