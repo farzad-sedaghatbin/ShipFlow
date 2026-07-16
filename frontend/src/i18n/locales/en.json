@@ -8391,6 +8391,11 @@
     "unavailable": "AI is not configured on this instance",
     "writeWithAI": "Write with AI"
   },
+  "aiTestGeneration": {
+    "description": "Generate test case suggestions from the pitch details, team notes, meeting notes — and Figma design context when available.",
+    "figmaUnavailableNote": "Design context not available — test cases are based on pitch details and notes only.",
+    "figmaUsedNote": "Figma design context was included — UI test cases reference the linked design."
+  },
   "suggestedTasksPanel": {
     "triggerButton": "Suggest Tasks with AI",
     "dialogTitle": "AI-Suggested Deliverable Tasks",

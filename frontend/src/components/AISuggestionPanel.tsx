@@ -6,6 +6,7 @@ import {
   ChevronUp,
   Check,
   Loader2,
+  Palette,
 } from 'lucide-react';
 import { AILoadingCompact } from './AILoadingState';
 import {
@@ -179,7 +180,10 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">
-          Generate test case suggestions based on the pitch description and meeting notes using AI.
+          {t(
+            'aiTestGeneration.description',
+            'Generate test case suggestions from the pitch details, team notes, meeting notes — and Figma design context when available.'
+          )}
         </p>
 
         <Collapsible open={showOptions}>
@@ -272,6 +276,30 @@ const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
               <p className="text-xs text-muted-foreground mb-4">
                 Generated in {(response.processingTimeMs / 1000).toFixed(2)}s
               </p>
+            )}
+
+            {response.figmaContextUsed === false && (
+              <Alert className="mb-4">
+                <Palette className="h-4 w-4" />
+                <AlertDescription>
+                  {t(
+                    'aiTestGeneration.figmaUnavailableNote',
+                    'Design context not available — test cases are based on pitch details and notes only.'
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {response.figmaContextUsed === true && (
+              <Alert className="mb-4">
+                <Palette className="h-4 w-4" />
+                <AlertDescription>
+                  {t(
+                    'aiTestGeneration.figmaUsedNote',
+                    'Figma design context was included — UI test cases reference the linked design.'
+                  )}
+                </AlertDescription>
+              </Alert>
             )}
 
             {response.suggestions.length === 0 ? (

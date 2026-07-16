@@ -1352,6 +1352,7 @@ export interface GenerateTestCasesResponse {
   suggestions: TestCaseSuggestion[];
   contextUsed?: string;
   aiEnabled: boolean;
+  figmaContextUsed?: boolean;
   processingTimeMs?: number;
   errorMessage?: string;
 }

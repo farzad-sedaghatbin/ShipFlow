@@ -28,6 +28,17 @@ A failed (or flaky) test execution can be tied to **multiple** bug reports — t
 - Filing a bug from a failed run links it to that run automatically.
 - You can also link existing bug reports to a run, and unlink them. A run shows all of its linked defects.
 
+## AI Test Case Generation — what context does it use?
+On a pitch's **Test Management** page, the **AI Test Case Generator** builds its suggestions from:
+- The pitch's Shape Up details (problem, solution, rabbit holes, risks, no-gos)
+- **Team notes** added to the pitch (decisions, data contracts, edge cases) — notes marked "don't include in knowledge" are excluded
+- **Meeting notes** linked to the pitch
+- **Figma design context**, when the pitch's wireframe links contain a Figma URL and your organization has a Figma access token configured (Organization Settings → Integrations). A notice under the results tells you whether design context was actually used.
+- Anything you type into **Additional Context** — treated as mandatory requirements every generated test must cover
+- Similar historical test cases from the knowledge base, for style consistency
+
+If UI test cases don't reference your design, check that the pitch's wireframe link is a Figma URL and the Figma token is configured.
+
 ## Filtering Test Cases
 The Test Cases page can be filtered by status, type, priority, cycle, and pitch, plus:
 - **Source** — show only **Manual** or **AI-generated** test cases.

@@ -76,8 +76,10 @@ class PitchTaskSuggestionServiceTest {
 
   @BeforeEach
   void setUp() {
-    service = new PitchTaskSuggestionService(
-        chatLanguageModel, new ObjectMapper(), pitchRepository, settingsService, figmaMcpProvider);
+    // A real FigmaDesignContextService over the mocked settings/provider keeps the original
+    // guard-chain scenarios (no URL / no token / empty content) exercised end-to-end.
+    service = new PitchTaskSuggestionService(chatLanguageModel, new ObjectMapper(), pitchRepository,
+        new FigmaDesignContextService(settingsService, figmaMcpProvider));
   }
 
   @Nested
@@ -93,8 +95,8 @@ class PitchTaskSuggestionServiceTest {
     @Test
     @DisplayName("returns false when ChatLanguageModel is null (not configured)")
     void returnsFalse_whenModelAbsent() {
-      PitchTaskSuggestionService serviceWithoutModel = new PitchTaskSuggestionService(
-          null, new ObjectMapper(), pitchRepository, settingsService, figmaMcpProvider);
+      PitchTaskSuggestionService serviceWithoutModel = new PitchTaskSuggestionService(null,
+          new ObjectMapper(), pitchRepository, new FigmaDesignContextService(settingsService, figmaMcpProvider));
       assertThat(serviceWithoutModel.isAvailable()).isFalse();
     }
   }
@@ -230,8 +232,8 @@ class PitchTaskSuggestionServiceTest {
     @Test
     @DisplayName("throws IllegalStateException when ChatLanguageModel is null")
     void throwsWhenModelIsNull() {
-      PitchTaskSuggestionService serviceWithoutModel = new PitchTaskSuggestionService(
-          null, new ObjectMapper(), pitchRepository, settingsService, figmaMcpProvider);
+      PitchTaskSuggestionService serviceWithoutModel = new PitchTaskSuggestionService(null,
+          new ObjectMapper(), pitchRepository, new FigmaDesignContextService(settingsService, figmaMcpProvider));
 
       assertThatThrownBy(() -> serviceWithoutModel.suggestTasks(1L))
           .isInstanceOf(IllegalStateException.class)
