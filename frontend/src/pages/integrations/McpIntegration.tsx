@@ -108,6 +108,7 @@ export default function McpIntegration() {
   const [creatingKey, setCreatingKey] = useState(false);
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -390,6 +391,7 @@ export default function McpIntegration() {
       resetKeyForm();
       setCreatedKey(created);
       setCopied(false);
+      setCopiedUrl(false);
       setApiKeys(isAdmin ? await listAllApiKeys() : await listApiKeys());
     } catch (err: any) {
       setError(err.response?.data?.message || t('mcpIntegration.keyCreateError'));
@@ -421,6 +423,17 @@ export default function McpIntegration() {
     } catch {
       // Clipboard may be unavailable (insecure context); leave the key visible to copy manually.
       setCopied(false);
+    }
+  };
+
+  const handleCopyConnectorUrl = async () => {
+    if (!createdKey) return;
+    try {
+      await navigator.clipboard.writeText(`${mcpBaseUrl}/mcp/${createdKey.rawKey}/sse`);
+      setCopiedUrl(true);
+    } catch {
+      // Clipboard may be unavailable (insecure context); leave the URL visible to copy manually.
+      setCopiedUrl(false);
     }
   };
 
@@ -1066,6 +1079,23 @@ export default function McpIntegration() {
                 <p className="text-sm text-muted-foreground">
                   {t('mcpIntegration.connectNoRestart')}
                 </p>
+
+                <div className="pt-2 border-t space-y-2">
+                  <h5 className="text-xs font-semibold text-muted-foreground">
+                    {t('mcpIntegration.connectorUrlAltTitle')}
+                  </h5>
+                  <p className="text-xs text-muted-foreground">
+                    {t('mcpIntegration.connectorUrlAltHint')}
+                  </p>
+                  <div className="text-sm">
+                    <code className="px-1 py-0.5 rounded bg-muted font-mono text-xs">
+                      {`${mcpBaseUrl}/mcp/<api-key>/sse`}
+                    </code>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {t('mcpIntegration.connectorUrlReadOnlyWarning')}
+                  </p>
+                </div>
               </div>
 
               {isAdmin && (
@@ -1308,6 +1338,23 @@ export default function McpIntegration() {
                 <Copy className="h-4 w-4 mr-1" />
                 {copied ? t('mcpIntegration.copied') : t('mcpIntegration.copy')}
               </Button>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">
+                {t('mcpIntegration.connectorUrlLabel')}
+              </Label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 break-all rounded bg-muted px-3 py-2 font-mono text-sm">
+                  {createdKey ? `${mcpBaseUrl}/mcp/${createdKey.rawKey}/sse` : ''}
+                </code>
+                <Button type="button" variant="outline" size="sm" onClick={handleCopyConnectorUrl}>
+                  <Copy className="h-4 w-4 mr-1" />
+                  {copiedUrl ? t('mcpIntegration.copiedUrl') : t('mcpIntegration.copyUrl')}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('mcpIntegration.connectorUrlHint')}
+              </p>
             </div>
           </div>
           <DialogFooter>

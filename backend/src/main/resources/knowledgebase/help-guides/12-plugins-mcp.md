@@ -85,6 +85,17 @@ Go to **MCP Integration** (in the main navigation under Integrations). There are
 4. Use the API key as a bearer token in the `Authorization` header.
 5. Changes take effect immediately — no restart needed.
 
+## How do I connect claude.ai (hosted chat / free tier) to ShipFlow via MCP?
+
+claude.ai's connector settings don't let you set a custom `Authorization` header, so the usual bearer-token setup doesn't work there. ShipFlow supports a secondary connection method for exactly this case: paste one URL, no headers.
+
+1. Go to **MCP Integration → MCP Server** and enable the server.
+2. Go to **MCP Integration → API Keys** and create a key — a `READ`-only key with a short expiry is recommended for this method.
+3. When you create the key, ShipFlow shows a ready-to-copy **Connector URL** alongside the raw key (in the same one-time reveal dialog) — it looks like `https://your-instance/mcp/<api-key>/sse`.
+4. In claude.ai, go to **Settings → Connectors → Add custom connector** and paste that URL.
+
+This connection is always read-only, regardless of the key's configured scope — write tools are not reachable this way. Because the key sits in the URL, it can be logged by proxies or browser history, so treat the URL itself like a secret and revoke the key if you suspect it leaked. For write access, or when your client supports custom headers, use the standard `Authorization: Bearer <api-key>` method instead.
+
 ## Can an AI tool view image attachments on a bug?
 
 Yes. Call `get_bug_attachments` (by `bugKey` or `bugReportId`) to list a bug's files — each one has an `isImage` flag. For image attachments (PNG, JPEG, GIF, WebP) pass the attachment `id` to `download_bug_attachment`, which returns the image itself so the AI client (e.g. Claude Code) can view a design mockup or screenshot directly. PDFs and documents aren't returned as images — read their `extractedText` from `get_bug_attachments` instead. Images over 8 MB are not returned inline.

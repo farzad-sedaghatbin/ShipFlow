@@ -112,6 +112,12 @@ const releases: Release[] = [
         description:
           'A "Test Cases" card on Pitch Detail now lists the test cases already linked to that pitch — key, title, type/priority/status, and pass rate — with a link to the full QA test-management page to view, add, or AI-generate more.',
       },
+      {
+        icon: <Key className="h-5 w-5" />,
+        title: 'MCP Connector URL for claude.ai & Free-Tier Clients',
+        description:
+          'claude.ai\'s connector settings can\'t send a custom Authorization header, so a secondary MCP connection method was added: paste one URL (the API key travels in the path, e.g. /mcp/<api-key>/sse) — no headers needed. This connection is always read-only regardless of the key\'s scope, since a URL-embedded token can be logged by proxies or browser history. The API Keys tab now shows a ready-to-copy connector URL alongside the raw key. The existing header-based Bearer token method is unchanged.',
+      },
     ],
   },
   {
