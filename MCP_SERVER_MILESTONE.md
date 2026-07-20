@@ -253,6 +253,43 @@ and Python MCP server skeletons in a `examples/mcp-server/` directory.
 
 ---
 
+### GAP 11 — OAuth 2.0 Authorization for Hosted Connectors (claude.ai)
+
+**What's missing**: claude.ai's hosted "Add custom connector" feature can't send a custom
+`Authorization` header, so the only way to authenticate it today is embedding the raw API key in
+the connection URL (`/mcp/{api-key}` and `/mcp/{api-key}/sse`, shipped as a stopgap). That token
+grants the key's real scope — including `WRITE`/`ADMIN` if the key has it — and a URL is far more
+likely to be logged by reverse proxies, load balancers, or browser history than a header ever is.
+The mitigation today is entirely operational (create a dedicated, short-lived, easily-rotated key
+scoped to only what the connector needs); there's no structural fix in place.
+
+Per Anthropic's connector-building docs, claude.ai's connectors actually support a proper OAuth 2.0
+flow for exactly this case: Dynamic Client Registration (DCR), authorization code + PKCE, with
+claude.ai's own OAuth callback (`https://claude.ai/api/mcp/auth_callback` for hosted surfaces).
+Under that flow the access token is issued per-session via a real authorization handshake and never
+appears in a URL, in logs, or in browser history — a structurally different (and better) security
+posture than any URL-embedded token can offer, and it would let a user connect from claude.ai
+without pre-generating and pasting a raw API key at all.
+
+**Plan** (not yet started):
+- Stand up an OAuth 2.0 authorization server surface: `/oauth/authorize` (login + consent screen,
+  reusing existing session auth), `/oauth/token` (authorization-code exchange, PKCE required),
+  `/oauth/register` (Dynamic Client Registration per the MCP auth spec) — likely via Spring
+  Authorization Server rather than hand-rolling the protocol.
+- Issued access tokens map to a scoped grant (read/write, expiry, revocable from the UI) the same
+  way `ApiKey` does today — `McpAuthFilter` would gain a third auth branch (OAuth Bearer token,
+  distinct from a raw `sf_...` API key) validating against this new token store.
+- Consent screen shows the user exactly what scope claude.ai is requesting before granting it —
+  this is the piece the current URL-token method has no equivalent of (a key is scoped once, at
+  creation time, with no per-connection visibility into what's about to use it).
+- Once shipped, the URL-embedded-token method stays as a fallback for any client that still can't
+  do OAuth, but the docs/UI should steer claude.ai users toward OAuth as the default.
+
+**Impact**: Not blocking — the URL-token method (GAP-free, already shipped) works today with an
+accepted, documented risk tradeoff. This is the structural fix, not an emergency patch.
+
+---
+
 ## Proposed Architecture
 
 ```

@@ -157,11 +157,12 @@ doesn't let you set a custom `Authorization` header, so ShipFlow exposes this tr
 `/mcp` (header auth) and `/mcp/{api-key}` (API key embedded in the URL — no headers, works
 immediately on the free tier).
 
-1. Generate an API key as described in [Generate an API Key](#generate-an-api-key) above.
-2. **Recommended**: create a key scoped to `READ` only with a short expiry. The URL-token method is
-   always read-only regardless of the key's actual scope (see the warning below), but a
-   scoped-down, short-lived key keeps a leaked URL cheap to rotate.
-3. In claude.ai, go to **Settings → Connectors → Add custom connector** and paste:
+1. Generate an API key as described in [Generate an API Key](#generate-an-api-key) above. **Pick
+   the scope carefully**: this connection grants exactly the scopes the key was created with —
+   `READ` if you only want claude.ai to read your data, `WRITE`/`ADMIN` if you also want it to
+   create/update things. There is no automatic read-only downgrade (see the security note below for
+   why that matters more here than for a header-based key).
+2. In claude.ai, go to **Settings → Connectors → Add custom connector** and paste:
    ```
    https://your-shipflow-instance.example.com/mcp/sf_live_xxxxxxxxxxxxxxxxxxxx
    ```
@@ -173,15 +174,16 @@ immediately on the free tier).
 > 404s/405s. Pasting the `/sse` URL into claude.ai's connector box is the single most common cause
 > of "could not connect."
 
-> ⚠️ **This connection is always read-only**, no matter what scope the key was created with —
-> write tools are unreachable over this transport. Use the Claude Code / Claude Desktop / Cursor /
-> Windsurf header-based methods above if you need write access.
-
-> ⚠️ **Security note**: a token embedded in a URL can be logged by reverse proxies, load balancers,
-> and browser history — this is inherently weaker than sending it in a header. Treat the URL like
-> the key itself: don't paste it into chat, tickets, or shared docs, and revoke the key if you
-> suspect it leaked. Prefer the header-based methods above wherever your client supports custom
-> headers; this method exists specifically for hosted clients that don't.
+> ⚠️ **Security note — read this before pasting a WRITE/ADMIN-scoped key into a URL**: a token
+> embedded in a URL can be logged by reverse proxies, load balancers, and browser history — this is
+> inherently weaker than sending it in a header, and unlike the header methods above, this
+> connection is **not** downgraded to read-only for you. If the URL leaks, whoever has it can act
+> with the full scope of that key until you revoke it. Mitigate this by creating a **dedicated,
+> short-lived, easily-rotated key just for this connector** rather than reusing a long-lived key —
+> and never paste the URL itself into chat, tickets, or shared docs. (A proper OAuth flow, where the
+> token never appears in a URL at all, is the long-term fix for this — see `MCP_SERVER_MILESTONE.md`
+> GAP 11 — but isn't built yet.) Prefer the header-based methods above wherever your client supports
+> custom headers; this method exists specifically for hosted clients that don't.
 
 ---
 
@@ -194,7 +196,7 @@ ShipFlow supports two transports side by side — use whichever your client expe
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/mcp` | POST | Send a JSON-RPC message. `initialize` returns an `Mcp-Session-Id` response header; include that header on every request after (header auth). |
-| `/mcp/{api-key}` | POST | Same, with the API key read from the URL path instead of a header. Always read-only. |
+| `/mcp/{api-key}` | POST | Same, with the API key read from the URL path instead of a header. Grants that key's real configured scopes — not automatically read-only. |
 | `/mcp` / `/mcp/{api-key}` | GET | Not offered — responds `405 Method Not Allowed` (server-to-client push isn't implemented). |
 | `/mcp` / `/mcp/{api-key}` | DELETE | Terminate a session — include `Mcp-Session-Id`. |
 | `/mcp/health` | GET | Server health check (no auth required) |
@@ -205,7 +207,7 @@ ShipFlow supports two transports side by side — use whichever your client expe
 |----------|--------|-------------|
 | `/mcp/sse` | GET | SSE stream — open this to establish the MCP session (header auth) |
 | `/mcp/messages` | POST | Send JSON-RPC 2.0 requests (header auth) |
-| `/mcp/{api-key}/sse` | GET | Same as `/mcp/sse`, but the API key is read from the URL path instead of a header. Always read-only. |
+| `/mcp/{api-key}/sse` | GET | Same as `/mcp/sse`, but the API key is read from the URL path instead of a header. Grants that key's real configured scopes — not automatically read-only. |
 | `/mcp/{api-key}/messages` | POST | Path-token counterpart to `/mcp/messages` — the SSE `endpoint` event for a path-token session already points here, you don't need to construct this URL by hand. |
 | `/mcp/health` | GET | Server health check (no auth required) |
 
@@ -602,10 +604,12 @@ You can enable or disable it at any time with a restart.
 
 ### "403 Forbidden" on write tools
 
-- Your API key may be read-only — regenerate with `mcp_write` scope enabled
+- Your API key may be read-only — check its scope on the API Keys tab, or generate a new key with
+  `WRITE` scope. This applies the same way whether you're connecting via a header or a
+  URL-embedded-token method (`/mcp/{api-key}` / `/mcp/{api-key}/sse`) — both grant exactly the
+  scope the key was created with.
 - Check your ShipFlow role: write tools require `DEVELOPER` role or above
-- If you connected via a URL-embedded-token method (`/mcp/{api-key}` or `/mcp/{api-key}/sse`), this
-  is expected — those are always read-only. Switch to a header-based client for write access.
+- Confirm write tools are enabled org-wide (Integrations → MCP → "Enable write tools")
 
 ### Tools not appearing in Claude Code
 
@@ -629,10 +633,14 @@ You can enable or disable it at any time with a restart.
 - **Rotate keys regularly.** Revoke and regenerate API keys periodically.
 - **Do not share keys.** Each developer should have their own key.
 - **Key scope**: keys are scoped to your user account and can only access data your account can access.
-- **URL-embedded tokens (`/mcp/{api-key}`, `/mcp/{api-key}/sse`) are weaker than headers.** Proxies, load balancers,
-  and browser history can log the full URL, including the key. This method is always forced
-  read-only for that reason. Use a dedicated, short-lived, `READ`-only key for it, and prefer a
-  header-based client whenever the client supports custom headers.
+- **URL-embedded tokens (`/mcp/{api-key}`, `/mcp/{api-key}/sse`) are weaker than headers, and are
+  NOT automatically downgraded to read-only.** Proxies, load balancers, and browser history can log
+  the full URL, including the key — and that key grants exactly the scope it was created with,
+  `WRITE`/`ADMIN` included, over this transport. If you need write access from a client that can
+  only use this method (e.g. claude.ai), create a **dedicated, short-lived key just for it** rather
+  than reusing a broadly-scoped one, so a leaked URL is cheap to contain. Prefer a header-based
+  client whenever the client supports custom headers — this method exists specifically for the ones
+  that don't.
 
 ---
 
