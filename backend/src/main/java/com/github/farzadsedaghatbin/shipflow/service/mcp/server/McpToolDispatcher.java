@@ -108,13 +108,18 @@ public class McpToolDispatcher {
           .collect(Collectors.toUnmodifiableSet());
 
   /**
-   * Process a JSON-RPC 2.0 request from a given session and send the response via SSE.
+   * Computes the JSON-RPC 2.0 response for a request from a given session, without sending it
+   * anywhere. Used by both the legacy SSE transport ({@link #dispatch}, which sends the result
+   * through the session's SSE emitter) and the Streamable HTTP transport (which returns it
+   * directly as the HTTP response body).
    *
    * @param sessionId the session that sent the message
    * @param request the parsed JSON-RPC request body
+   * @return the JSON-RPC response map, or {@code null} for notifications / unknown-method requests
+   *     with no {@code id} (no reply expected)
    */
   @SuppressWarnings("unchecked")
-  public void dispatch(String sessionId, Map<String, Object> request) {
+  public Map<String, Object> process(String sessionId, Map<String, Object> request) {
     Object id = request.get("id");
     String method = (String) request.get("method");
     Map<String, Object> params =
@@ -123,44 +128,60 @@ public class McpToolDispatcher {
     log.debug("MCP dispatch: session={} method={} id={}", sessionId, method, id);
 
     try {
-      Object result = switch (method) {
-        case "initialize" -> handleInitialize(params);
+      Object result;
+      switch (method) {
+        case "initialize" -> result = handleInitialize(params);
         case "notifications/initialized" -> {
           // Client confirms initialization — no response needed
           log.debug("MCP session {} initialized by client", sessionId);
-          yield null;
+          result = null;
         }
-        case "ping" -> Map.of();
-        case "tools/list" -> handleToolsList(sessionId);
-        case "tools/call" -> handleToolCall(sessionId, params);
+        case "ping" -> result = Map.of();
+        case "tools/list" -> result = handleToolsList(sessionId);
+        case "tools/call" -> result = handleToolCall(sessionId, params);
         default -> {
           log.warn("Unknown MCP method [session={}]: {}", sessionId, method);
-          if (id != null) {
-            // JSON-RPC 2.0 §5.1: unknown method must return -32601 so clients don't hang
-            trySendError(sessionId, id, -32601, "Method not found: " + method);
-          }
-          yield null;
+          // JSON-RPC 2.0 §5.1: unknown method must return -32601 so clients don't hang
+          return id != null ? jsonRpcError(id, -32601, "Method not found: " + method) : null;
         }
-      };
+      }
 
       // Notifications (id == null) and unknown-method cases (result == null) need no success reply
       if (result == null || id == null) {
-        return;
+        return null;
       }
 
-      sessionManager.send(sessionId, jsonRpcSuccess(id, result));
+      return jsonRpcSuccess(id, result);
 
     } catch (McpToolException | IllegalArgumentException e) {
       // Invalid/missing tool arguments are a client error (JSON-RPC -32602 Invalid params), not a
       // server fault. Log at WARN without a stack trace so a bad LLM call doesn't look like a crash.
       log.warn("MCP invalid params [session={} method={}]: {}", sessionId, method, e.getMessage());
-      trySendError(sessionId, id, -32602, e.getMessage());
+      return id != null ? jsonRpcError(id, -32602, e.getMessage()) : null;
     } catch (SecurityException e) {
       log.warn("MCP auth error [session={} method={}]: {}", sessionId, method, e.getMessage());
-      trySendError(sessionId, id, -32000, e.getMessage());
+      return id != null ? jsonRpcError(id, -32000, e.getMessage()) : null;
     } catch (Exception e) {
       log.error("MCP internal error [session={} method={}]", sessionId, method, e);
-      trySendError(sessionId, id, -32603, "Internal error: " + e.getMessage());
+      return id != null ? jsonRpcError(id, -32603, "Internal error: " + e.getMessage()) : null;
+    }
+  }
+
+  /**
+   * Process a JSON-RPC 2.0 request from a given session and send the response via SSE.
+   *
+   * @param sessionId the session that sent the message
+   * @param request the parsed JSON-RPC request body
+   */
+  public void dispatch(String sessionId, Map<String, Object> request) {
+    Map<String, Object> response = process(sessionId, request);
+    if (response == null) {
+      return;
+    }
+    try {
+      sessionManager.send(sessionId, response);
+    } catch (IOException | IllegalArgumentException e) {
+      log.warn("Could not send MCP response to session {}: {}", sessionId, e.getMessage());
     }
   }
 
@@ -417,17 +438,6 @@ public class McpToolDispatcher {
     response.put("id", id);
     response.put("error", Map.of("code", code, "message", message));
     return response;
-  }
-
-  private void trySendError(String sessionId, Object id, int code, String message) {
-    if (id == null) {
-      return; // notifications don't get error responses
-    }
-    try {
-      sessionManager.send(sessionId, jsonRpcError(id, code, message));
-    } catch (IOException | IllegalArgumentException ex) {
-      log.warn("Could not send MCP error to session {}: {}", sessionId, ex.getMessage());
-    }
   }
 
   // ── Auth helpers ──────────────────────────────────────────────────────────

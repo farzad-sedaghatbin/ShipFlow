@@ -2119,4 +2119,175 @@ class McpToolDispatcherTest {
     Map<String, Object> error = (Map<String, Object>) captured.get("error");
     assertThat((String) error.get("message")).contains("Write tools are disabled");
   }
+
+  // ── process() — used directly by the Streamable HTTP transport, not just via dispatch()/SSE ──
+
+  @Test
+  void process_initialize_returnsSuccessResponseDirectlyWithoutSendingToSession() throws Exception {
+    ProjectDTO project = ProjectDTO.builder()
+        .id(1L).name("Mobile App").projectKey("MOB")
+        .projectType(ProjectType.SHAPE_UP).isActive(true).activeCycleCount(1).build();
+    when(projectService.findAccessibleProjects()).thenReturn(List.of(project));
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "initialize",
+        "params", Map.of(
+            "protocolVersion", McpToolDispatcher.PROTOCOL_VERSION,
+            "clientInfo", Map.of("name", "test-client")),
+        "id", 100);
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).containsKey("result");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) response.get("result");
+    assertThat(result.get("protocolVersion")).isEqualTo(McpToolDispatcher.PROTOCOL_VERSION);
+    assertThat(result).containsKey("serverInfo");
+
+    // process() must be a pure computation — it never touches the session manager's send() path.
+    org.mockito.Mockito.verify(sessionManager, org.mockito.Mockito.never())
+        .send(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void process_toolsCall_returnsSuccessResponseMap() throws Exception {
+    ProjectDTO project = ProjectDTO.builder()
+        .id(1L).name("Mobile App").projectKey("MOB")
+        .projectType(ProjectType.SHAPE_UP).isActive(true).activeCycleCount(1).build();
+    when(projectService.findAccessibleProjects()).thenReturn(List.of(project));
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "list_projects", "arguments", Map.of()),
+        "id", 101);
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).containsKey("result");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) response.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    assertThat((String) content.get(0).get("text")).contains("Mobile App");
+  }
+
+  @Test
+  void process_invalidParams_returnsErrorMapNotThrown() {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "get_pitch_detail", "arguments", Map.of()), // pitchId omitted
+        "id", 102);
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) response.get("error");
+    assertThat(error.get("code")).isEqualTo(-32602);
+    assertThat((String) error.get("message")).contains("pitchId");
+  }
+
+  @Test
+  void process_securityError_returnsErrorMapNotThrown() {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_task_status",
+            "arguments", Map.of("taskId", 1, "status", "DONE")),
+        "id", 103);
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) response.get("error");
+    assertThat((String) error.get("message")).contains("Write tools are disabled");
+  }
+
+  @Test
+  void process_unknownMethod_returnsMethodNotFoundError() {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "does/not/exist",
+        "id", 104);
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) response.get("error");
+    assertThat(error.get("code")).isEqualTo(-32601);
+  }
+
+  @Test
+  void process_unknownTool_returnsErrorMap() {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of("name", "does_not_exist", "arguments", Map.of()),
+        "id", 105);
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).containsKey("error");
+  }
+
+  @Test
+  void process_notification_returnsNull() {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "notifications/initialized");
+    // No "id" — this is a notification, not a request.
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).isNull();
+  }
+
+  @Test
+  void process_unknownMethodWithNoId_returnsNull() {
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "some/unknown/notification");
+    // No "id" — per JSON-RPC, no reply expected even for an unrecognised method.
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).isNull();
+  }
+
+  @Test
+  void process_ping_returnsEmptySuccessResult() {
+    Map<String, Object> request = Map.of("jsonrpc", "2.0", "method", "ping", "id", 106);
+
+    Map<String, Object> response = dispatcher.process(SESSION_ID, request);
+
+    assertThat(response).containsKey("result");
+    assertThat((Map<?, ?>) response.get("result")).isEmpty();
+  }
+
+  @Test
+  void dispatch_delegatesToProcessAndSendsResultViaSessionManager_unchangedBehaviour()
+      throws Exception {
+    // Regression guard for the process()/dispatch() refactor: dispatch() must still push the exact
+    // same payload process() computes through sessionManager.send(), preserving the legacy SSE
+    // transport's externally-observable behaviour byte-for-byte.
+    Map<String, Object> request = Map.of("jsonrpc", "2.0", "method", "ping", "id", 107);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).isEqualTo(dispatcher.process(SESSION_ID, request));
+  }
 }

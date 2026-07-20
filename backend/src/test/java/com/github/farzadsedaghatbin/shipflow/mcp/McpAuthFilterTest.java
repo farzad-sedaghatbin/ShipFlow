@@ -339,4 +339,183 @@ class McpAuthFilterTest {
     assertThat(res.getStatus()).isEqualTo(401);
     verify(filterChain, never()).doFilter(req, res);
   }
+
+  // ── bare /mcp Streamable HTTP endpoint — shouldNotFilter bug fix ──────────────
+
+  @Test
+  void bareMcpPath_missingAuthHeader_returns401_notSilentlySkipped() throws Exception {
+    // Regression test for the shouldNotFilter bug: "/mcp" (no trailing segment) does not start
+    // with MCP_PATH_PREFIX ("/mcp/"), so before the fix `!uri.startsWith(MCP_PATH_PREFIX)` was
+    // true and shouldNotFilter() returned true, skipping auth entirely — the request would reach
+    // the controller completely unauthenticated instead of being rejected. Post-fix, this path
+    // must be treated exactly like any other MCP path: no Authorization header -> 401.
+    MockHttpServletRequest req = new MockHttpServletRequest("POST", "/mcp");
+    MockHttpServletResponse res = new MockHttpServletResponse();
+
+    filter.doFilter(req, res, filterChain);
+
+    assertThat(res.getStatus()).isEqualTo(401);
+    assertThat(res.getContentAsString()).contains("Missing or malformed");
+    verify(filterChain, never()).doFilter(req, res);
+  }
+
+  @Test
+  void bareMcpPath_validBearerToken_authenticatesAndContinues() throws Exception {
+    com.github.farzadsedaghatbin.shipflow.entity.User entityUser =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    entityUser.setUsername("alice");
+
+    ApiKey apiKey = new ApiKey();
+    apiKey.setScopes(Set.of(ApiKeyScope.READ, ApiKeyScope.WRITE));
+    apiKey.setUser(entityUser);
+
+    when(apiKeyService.validateKey("sf_live_alice")).thenReturn(Optional.of(apiKey));
+    UserDetails userDetails =
+        org.springframework.security.core.userdetails.User.withUsername("alice")
+            .password("")
+            .authorities("ROLE_DEVELOPER")
+            .build();
+    when(userDetailsService.loadUserByUsername("alice")).thenReturn(userDetails);
+
+    MockHttpServletRequest req = new MockHttpServletRequest("POST", "/mcp");
+    req.addHeader("Authorization", "Bearer sf_live_alice");
+    MockHttpServletResponse res = new MockHttpServletResponse();
+
+    filter.doFilter(req, res, filterChain);
+
+    assertThat(res.getStatus()).isNotEqualTo(401);
+    var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+    // Header auth on the bare Streamable HTTP endpoint must not be capped, same as the legacy
+    // header-auth transport.
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isTrue();
+    verify(filterChain).doFilter(req, res);
+  }
+
+  // ── Streamable HTTP 1-segment path-token shape: /mcp/<api-key> ────────────────
+
+  @Test
+  void streamableHttpPathToken_validKeyWithWriteScope_capsToReadOnly() throws Exception {
+    com.github.farzadsedaghatbin.shipflow.entity.User entityUser =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    entityUser.setUsername("alice");
+
+    ApiKey apiKey = new ApiKey();
+    apiKey.setScopes(Set.of(ApiKeyScope.READ, ApiKeyScope.WRITE, ApiKeyScope.ADMIN));
+    apiKey.setUser(entityUser);
+    apiKey.setKeyPrefix("sf_live_a");
+
+    when(apiKeyService.validateKey("sf_live_alice")).thenReturn(Optional.of(apiKey));
+    UserDetails userDetails =
+        org.springframework.security.core.userdetails.User.withUsername("alice")
+            .password("")
+            .authorities("ROLE_DEVELOPER")
+            .build();
+    when(userDetailsService.loadUserByUsername("alice")).thenReturn(userDetails);
+
+    MockHttpServletRequest req = new MockHttpServletRequest("POST", "/mcp/sf_live_alice");
+    MockHttpServletResponse res = new MockHttpServletResponse();
+
+    filter.doFilter(req, res, filterChain);
+
+    assertThat(res.getStatus()).isNotEqualTo(401);
+    var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_READ"))).isTrue();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isFalse();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_ADMIN"))).isFalse();
+    verify(filterChain).doFilter(req, res);
+    verify(apiKeyService).recordUsage(apiKey);
+  }
+
+  @Test
+  void streamableHttpPathToken_getAndDelete_alsoCapToReadOnly() throws Exception {
+    com.github.farzadsedaghatbin.shipflow.entity.User entityUser =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    entityUser.setUsername("alice");
+
+    ApiKey apiKey = new ApiKey();
+    apiKey.setScopes(Set.of(ApiKeyScope.READ, ApiKeyScope.WRITE));
+    apiKey.setUser(entityUser);
+    apiKey.setKeyPrefix("sf_live_a");
+
+    when(apiKeyService.validateKey("sf_live_alice")).thenReturn(Optional.of(apiKey));
+    UserDetails userDetails =
+        org.springframework.security.core.userdetails.User.withUsername("alice")
+            .password("")
+            .authorities("ROLE_DEVELOPER")
+            .build();
+    when(userDetailsService.loadUserByUsername("alice")).thenReturn(userDetails);
+
+    MockHttpServletRequest req = new MockHttpServletRequest("DELETE", "/mcp/sf_live_alice");
+    MockHttpServletResponse res = new MockHttpServletResponse();
+
+    filter.doFilter(req, res, filterChain);
+
+    var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isFalse();
+    verify(filterChain).doFilter(req, res);
+  }
+
+  // ── reserved-segment collision guard: /mcp/sse and /mcp/messages must NOT be hijacked ─────────
+
+  @Test
+  void literalSsePath_stillRequiresAndReadsAuthorizationHeader_notTreatedAsPathToken() throws Exception {
+    // Regression guard: the new 1-segment pattern (^/mcp/([^/]+)$) would, without the reserved-
+    // segment exclusion, match the literal "/mcp/sse" and treat "sse" as if it were the API key —
+    // completely breaking the existing legacy header-based transport. Confirm the literal path
+    // still requires the Authorization header exactly as before.
+    MockHttpServletRequest req = new MockHttpServletRequest("GET", "/mcp/sse");
+    MockHttpServletResponse res = new MockHttpServletResponse();
+
+    filter.doFilter(req, res, filterChain);
+
+    assertThat(res.getStatus()).isEqualTo(401);
+    assertThat(res.getContentAsString()).contains("Missing or malformed");
+    verify(filterChain, never()).doFilter(req, res);
+    // Must never have attempted to validate "sse" as an API key.
+    verify(apiKeyService, never()).validateKey("sse");
+  }
+
+  @Test
+  void literalMessagesPath_stillRequiresAndReadsAuthorizationHeader_notTreatedAsPathToken()
+      throws Exception {
+    MockHttpServletRequest req = new MockHttpServletRequest("POST", "/mcp/messages");
+    MockHttpServletResponse res = new MockHttpServletResponse();
+
+    filter.doFilter(req, res, filterChain);
+
+    assertThat(res.getStatus()).isEqualTo(401);
+    assertThat(res.getContentAsString()).contains("Missing or malformed");
+    verify(filterChain, never()).doFilter(req, res);
+    verify(apiKeyService, never()).validateKey("messages");
+  }
+
+  @Test
+  void literalSsePath_withValidHeaderAuth_stillWorksUnchanged() throws Exception {
+    com.github.farzadsedaghatbin.shipflow.entity.User entityUser =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    entityUser.setUsername("bob");
+
+    ApiKey apiKey = new ApiKey();
+    apiKey.setScopes(Set.of(ApiKeyScope.READ, ApiKeyScope.WRITE));
+    apiKey.setUser(entityUser);
+
+    when(apiKeyService.validateKey("sf_live_bob")).thenReturn(Optional.of(apiKey));
+    UserDetails userDetails =
+        org.springframework.security.core.userdetails.User.withUsername("bob")
+            .password("")
+            .authorities("ROLE_DEVELOPER")
+            .build();
+    when(userDetailsService.loadUserByUsername("bob")).thenReturn(userDetails);
+
+    MockHttpServletRequest req = new MockHttpServletRequest("GET", "/mcp/sse");
+    req.addHeader("Authorization", "Bearer sf_live_bob");
+    MockHttpServletResponse res = new MockHttpServletResponse();
+
+    filter.doFilter(req, res, filterChain);
+
+    assertThat(res.getStatus()).isNotEqualTo(401);
+    var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isTrue();
+    verify(filterChain).doFilter(req, res);
+  }
 }

@@ -87,11 +87,11 @@ Go to **MCP Integration** (in the main navigation under Integrations). There are
 
 ## How do I connect claude.ai (hosted chat / free tier) to ShipFlow via MCP?
 
-claude.ai's connector settings don't let you set a custom `Authorization` header, so the usual bearer-token setup doesn't work there. ShipFlow supports a secondary connection method for exactly this case: paste one URL, no headers.
+claude.ai's connector settings don't let you set a custom `Authorization` header, and its "Add custom connector" feature speaks the newer Streamable HTTP MCP transport (a single endpoint) rather than the older SSE transport ShipFlow's other clients use. ShipFlow supports both: paste one URL, no headers.
 
 1. Go to **MCP Integration → MCP Server** and enable the server.
 2. Go to **MCP Integration → API Keys** and create a key — a `READ`-only key with a short expiry is recommended for this method.
-3. When you create the key, ShipFlow shows a ready-to-copy **Connector URL** alongside the raw key (in the same one-time reveal dialog) — it looks like `https://your-instance/mcp/<api-key>/sse`.
+3. When you create the key, ShipFlow shows a ready-to-copy **Connector URL** alongside the raw key (in the same one-time reveal dialog) — it looks like `https://your-instance/mcp/<api-key>` (no `/sse` suffix — that's a different, older transport and claude.ai won't reliably fall back to it).
 4. In claude.ai, go to **Settings → Connectors → Add custom connector** and paste that URL.
 
 This connection is always read-only, regardless of the key's configured scope — write tools are not reachable this way. Because the key sits in the URL, it can be logged by proxies or browser history, so treat the URL itself like a secret and revoke the key if you suspect it leaked. For write access, or when your client supports custom headers, use the standard `Authorization: Bearer <api-key>` method instead.

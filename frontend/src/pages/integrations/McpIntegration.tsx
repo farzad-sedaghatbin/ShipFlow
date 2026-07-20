@@ -429,7 +429,7 @@ export default function McpIntegration() {
   const handleCopyConnectorUrl = async () => {
     if (!createdKey) return;
     try {
-      await navigator.clipboard.writeText(`${mcpBaseUrl}/mcp/${createdKey.rawKey}/sse`);
+      await navigator.clipboard.writeText(`${mcpBaseUrl}/mcp/${createdKey.rawKey}`);
       setCopiedUrl(true);
     } catch {
       // Clipboard may be unavailable (insecure context); leave the URL visible to copy manually.
@@ -1089,7 +1089,7 @@ export default function McpIntegration() {
                   </p>
                   <div className="text-sm">
                     <code className="px-1 py-0.5 rounded bg-muted font-mono text-xs">
-                      {`${mcpBaseUrl}/mcp/<api-key>/sse`}
+                      {`${mcpBaseUrl}/mcp/<api-key>`}
                     </code>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -1345,7 +1345,7 @@ export default function McpIntegration() {
               </Label>
               <div className="flex items-center gap-2">
                 <code className="flex-1 break-all rounded bg-muted px-3 py-2 font-mono text-sm">
-                  {createdKey ? `${mcpBaseUrl}/mcp/${createdKey.rawKey}/sse` : ''}
+                  {createdKey ? `${mcpBaseUrl}/mcp/${createdKey.rawKey}` : ''}
                 </code>
                 <Button type="button" variant="outline" size="sm" onClick={handleCopyConnectorUrl}>
                   <Copy className="h-4 w-4 mr-1" />

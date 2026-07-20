@@ -7801,7 +7801,7 @@
     "copy": "Copy",
     "copied": "Copied!",
     "connectorUrlLabel": "Connector URL",
-    "connectorUrlHint": "Read-only — for hosted/free-tier connectors (e.g. claude.ai) that can't set custom headers.",
+    "connectorUrlHint": "Read-only — for hosted/free-tier connectors (e.g. claude.ai) that can't set custom headers. Paste this exact URL — don't add /sse to the end.",
     "copyUrl": "Copy URL",
     "copiedUrl": "Copied!",
     "never": "Never",
