@@ -38,11 +38,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li><b>URL path token (secondary)</b> — for clients that cannot set custom HTTP headers (e.g.
  *       free-tier claude.ai hosted connectors), the raw API key can instead be embedded as a path
  *       segment: {@code /mcp/<api-key>/sse} and {@code /mcp/<api-key>/messages} (legacy transport),
- *       or {@code /mcp/<api-key>} (Streamable HTTP transport). Because a token in a URL is far more
- *       likely to be logged by proxies, load balancers, or browser history than a header, a
- *       connection authenticated this way is <b>always capped to {@code SCOPE_READ}</b>, regardless
- *       of the underlying key's actual scopes — even a WRITE or ADMIN key only grants read access
- *       over this transport. Clients that need write access must use the header transport.
+ *       or {@code /mcp/<api-key>} (Streamable HTTP transport). This grants the API key's real
+ *       configured scopes, exactly like the header transport — <b>there is no automatic read-only
+ *       downgrade</b>. A token in a URL is far more likely to be logged by proxies, load balancers,
+ *       or browser history than a header, so a WRITE/ADMIN-scoped key used this way should be
+ *       treated as sensitive as the URL it's embedded in; create a narrowly-scoped, short-lived,
+ *       revocable key matching only the access you actually want to grant this way. (A proper OAuth
+ *       2.0 authorization flow — where the token never appears in a URL at all — is the long-term
+ *       fix for this transport; tracked as a follow-up, see {@code MCP_SERVER_MILESTONE.md} GAP 11.)
  * </ul>
  *
  * <p>Three MCP transports share this filter: the legacy HTTP+SSE transport ({@code GET /mcp/sse} +
@@ -174,18 +177,16 @@ public class McpAuthFilter extends OncePerRequestFilter {
       // here we allow the request through and let the dispatcher reject write tools.
     }
 
-    // Scope authorities from the API key (READ / WRITE / ADMIN) — capped to SCOPE_READ when
-    // authenticated via the weaker URL path-token transport, regardless of the key's real scopes.
-    List<GrantedAuthority> authorities;
+    // Scope authorities from the API key (READ / WRITE / ADMIN) — identical for both auth
+    // transports. Path-token auth is logged separately since it's a materially weaker channel
+    // (the key sits in the URL), but it is not scope-limited: it grants exactly what the key was
+    // created with, same as the header transport.
+    List<GrantedAuthority> authorities = new ArrayList<>(
+        scopes.stream()
+            .map(s -> new SimpleGrantedAuthority("SCOPE_" + s.name()))
+            .collect(Collectors.toList()));
     if (viaPathToken) {
-      authorities = new ArrayList<>();
-      authorities.add(new SimpleGrantedAuthority("SCOPE_READ"));
-      log.info("MCP client authenticated via URL path token (read-only), key={}", apiKey.getKeyPrefix());
-    } else {
-      authorities = new ArrayList<>(
-          scopes.stream()
-              .map(s -> new SimpleGrantedAuthority("SCOPE_" + s.name()))
-              .collect(Collectors.toList()));
+      log.info("MCP client authenticated via URL path token, key={}", apiKey.getKeyPrefix());
     }
 
     // Merge with the user's role authorities so @PreAuthorize / hasRole checks still work

@@ -217,7 +217,11 @@ class McpAuthFilterTest {
   // ── URL path-token transport ───────────────────────────────────────────────
 
   @Test
-  void pathToken_validKeyWithWriteScope_capsToReadOnly() throws Exception {
+  void pathToken_validKeyWithWriteScope_respectsRealScope() throws Exception {
+    // Path-token auth is no longer read-only-capped — it grants exactly what the key was created
+    // with, same as header auth (see the McpAuthFilter class Javadoc for the rationale: claude.ai's
+    // free-tier connector can't send a header, so the URL *is* the only auth channel it has; the
+    // safety net is scoping/rotating the key, not silently downgrading it server-side).
     com.github.farzadsedaghatbin.shipflow.entity.User entityUser =
         new com.github.farzadsedaghatbin.shipflow.entity.User();
     entityUser.setUsername("alice");
@@ -243,8 +247,8 @@ class McpAuthFilterTest {
     assertThat(res.getStatus()).isNotEqualTo(401);
     var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
     assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_READ"))).isTrue();
-    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isFalse();
-    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_ADMIN"))).isFalse();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isTrue();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_ADMIN"))).isTrue();
     verify(filterChain).doFilter(req, res);
     verify(apiKeyService).recordUsage(apiKey);
   }
@@ -291,7 +295,7 @@ class McpAuthFilterTest {
     assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
     var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
     assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_READ"))).isTrue();
-    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isFalse();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isTrue();
     verify(filterChain).doFilter(req, res);
   }
 
@@ -394,7 +398,7 @@ class McpAuthFilterTest {
   // ── Streamable HTTP 1-segment path-token shape: /mcp/<api-key> ────────────────
 
   @Test
-  void streamableHttpPathToken_validKeyWithWriteScope_capsToReadOnly() throws Exception {
+  void streamableHttpPathToken_validKeyWithWriteScope_respectsRealScope() throws Exception {
     com.github.farzadsedaghatbin.shipflow.entity.User entityUser =
         new com.github.farzadsedaghatbin.shipflow.entity.User();
     entityUser.setUsername("alice");
@@ -420,14 +424,14 @@ class McpAuthFilterTest {
     assertThat(res.getStatus()).isNotEqualTo(401);
     var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
     assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_READ"))).isTrue();
-    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isFalse();
-    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_ADMIN"))).isFalse();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isTrue();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_ADMIN"))).isTrue();
     verify(filterChain).doFilter(req, res);
     verify(apiKeyService).recordUsage(apiKey);
   }
 
   @Test
-  void streamableHttpPathToken_getAndDelete_alsoCapToReadOnly() throws Exception {
+  void streamableHttpPathToken_getAndDelete_alsoRespectRealScope() throws Exception {
     com.github.farzadsedaghatbin.shipflow.entity.User entityUser =
         new com.github.farzadsedaghatbin.shipflow.entity.User();
     entityUser.setUsername("alice");
@@ -451,7 +455,7 @@ class McpAuthFilterTest {
     filter.doFilter(req, res, filterChain);
 
     var authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isFalse();
+    assertThat(authorities.stream().anyMatch(a -> a.getAuthority().equals("SCOPE_WRITE"))).isTrue();
     verify(filterChain).doFilter(req, res);
   }
 

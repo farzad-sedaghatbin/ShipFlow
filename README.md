@@ -412,7 +412,7 @@ docker compose up -d
   - **Pitch → Figma chain**: `get_pitch_detail` returns wireframe (Figma) URLs so the AI can chain to Figma MCP for full design context
   - **API key auth** — Bearer token on all `/mcp/**` endpoints; reuses existing API key scopes (READ / WRITE / ADMIN)
   - **Streamable HTTP transport** (MCP spec 2025-06-18) at `/mcp`, alongside the original legacy HTTP+SSE transport at `/mcp/sse` — claude.ai's hosted "custom connector" feature requires the newer single-endpoint transport
-  - **URL-embedded token for hosted/free-tier connectors** — `/mcp/{api-key}` (Streamable HTTP) or `/mcp/{api-key}/sse` (legacy) lets clients that can't set custom headers (e.g. claude.ai connectors) connect with just a URL paste; always forced read-only regardless of the key's scope, since a URL-embedded token can be logged by proxies/browser history
+  - **URL-embedded token for hosted/free-tier connectors** — `/mcp/{api-key}` (Streamable HTTP) or `/mcp/{api-key}/sse` (legacy) lets clients that can't set custom headers (e.g. claude.ai connectors) connect with just a URL paste; grants the key's real configured scope (not automatically read-only), so pick a dedicated key scoped to only what you want that connector to do
   - **Admin usage report** — per-user and per-tool call analytics with 30-day timeline, success rate, and recent-log feed (Integrations → MCP → View Usage Report)
   - See [MCP Client Setup Guide](MCP_CLIENT_SETUP.md) and [VS Code Guide](VSCODE_GUIDE.md)
 - **QA Test Case Generation**: AI-assisted test case generation with validation
