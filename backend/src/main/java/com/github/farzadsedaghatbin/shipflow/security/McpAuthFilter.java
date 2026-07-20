@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +28,22 @@ import org.springframework.web.filter.OncePerRequestFilter;
 /**
  * Authenticates MCP clients connecting to {@code /mcp/**} endpoints.
  *
- * <p>MCP clients send their API key as a Bearer token in the Authorization header:
+ * <p>Two auth transports are supported:
  *
- * <pre>Authorization: Bearer sf_live_xxxxxxxxxxxxxxxxxxxx</pre>
+ * <ul>
+ *   <li><b>Header (primary)</b> — MCP clients send their API key as a Bearer token in the
+ *       Authorization header: {@code Authorization: Bearer sf_live_xxxxxxxxxxxxxxxxxxxx}. This
+ *       grants the API key's real scopes ({@code SCOPE_READ} / {@code SCOPE_WRITE} / {@code
+ *       SCOPE_ADMIN}) as-is.
+ *   <li><b>URL path token (secondary)</b> — for clients that cannot set custom HTTP headers (e.g.
+ *       free-tier claude.ai hosted connectors), the raw API key can instead be embedded as a path
+ *       segment: {@code /mcp/<api-key>/sse} and {@code /mcp/<api-key>/messages}. Because a token
+ *       in a URL is far more likely to be logged by proxies, load balancers, or browser history
+ *       than a header, a connection authenticated this way is <b>always capped to {@code
+ *       SCOPE_READ}</b>, regardless of the underlying key's actual scopes — even a WRITE or ADMIN
+ *       key only grants read access over this transport. Clients that need write access must use
+ *       the header transport.
+ * </ul>
  *
  * <p>This filter is always registered (regardless of {@code mcp.server.enabled}) so that Spring
  * Security can see it. It skips all non-MCP paths, so it has zero cost when MCP is disabled.
@@ -42,6 +57,9 @@ public class McpAuthFilter extends OncePerRequestFilter {
 
   private static final String MCP_PATH_PREFIX = "/mcp/";
   private static final String MCP_HEALTH_PATH = "/mcp/health";
+
+  /** Matches the URL path-token transport shape: {@code /mcp/<api-key>/sse|messages}. */
+  private static final Pattern PATH_TOKEN_PATTERN = Pattern.compile("^/mcp/([^/]+)/(sse|messages)$");
 
   private final ApiKeyService apiKeyService;
   private final CustomUserDetailsService userDetailsService;
@@ -71,16 +89,28 @@ public class McpAuthFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
-    String authHeader = request.getHeader("Authorization");
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-      sendUnauthorized(response, "Missing or malformed Authorization header. Expected: Bearer <api-key>");
-      return;
-    }
+    Matcher pathTokenMatcher = PATH_TOKEN_PATTERN.matcher(request.getRequestURI());
+    boolean viaPathToken = pathTokenMatcher.matches();
 
-    String rawKey = authHeader.substring(7).trim();
-    if (rawKey.isEmpty()) {
-      sendUnauthorized(response, "Empty API key in Authorization header");
-      return;
+    String rawKey;
+    if (viaPathToken) {
+      rawKey = pathTokenMatcher.group(1).trim();
+      if (rawKey.isEmpty()) {
+        sendUnauthorized(response, "Empty API key in URL path");
+        return;
+      }
+    } else {
+      String authHeader = request.getHeader("Authorization");
+      if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        sendUnauthorized(response, "Missing or malformed Authorization header. Expected: Bearer <api-key>");
+        return;
+      }
+
+      rawKey = authHeader.substring(7).trim();
+      if (rawKey.isEmpty()) {
+        sendUnauthorized(response, "Empty API key in Authorization header");
+        return;
+      }
     }
 
     Optional<ApiKey> apiKeyOpt = apiKeyService.validateKey(rawKey);
@@ -100,11 +130,19 @@ public class McpAuthFilter extends OncePerRequestFilter {
       // here we allow the request through and let the dispatcher reject write tools.
     }
 
-    // Scope authorities from the API key (READ / WRITE / ADMIN)
-    List<GrantedAuthority> authorities = new ArrayList<>(
-        scopes.stream()
-            .map(s -> new SimpleGrantedAuthority("SCOPE_" + s.name()))
-            .collect(Collectors.toList()));
+    // Scope authorities from the API key (READ / WRITE / ADMIN) — capped to SCOPE_READ when
+    // authenticated via the weaker URL path-token transport, regardless of the key's real scopes.
+    List<GrantedAuthority> authorities;
+    if (viaPathToken) {
+      authorities = new ArrayList<>();
+      authorities.add(new SimpleGrantedAuthority("SCOPE_READ"));
+      log.info("MCP client authenticated via URL path token (read-only), key={}", apiKey.getKeyPrefix());
+    } else {
+      authorities = new ArrayList<>(
+          scopes.stream()
+              .map(s -> new SimpleGrantedAuthority("SCOPE_" + s.name()))
+              .collect(Collectors.toList()));
+    }
 
     // Merge with the user's role authorities so @PreAuthorize / hasRole checks still work
     UserDetails userDetails = userDetailsService.loadUserByUsername(apiKey.getUser().getUsername());

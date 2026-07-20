@@ -149,17 +149,49 @@ Edit `~/.codeium/windsurf/mcp_config.json`:
 
 ---
 
+## Claude.ai (Hosted Chat / Free-Tier Connectors)
+
+Claude's hosted chat connector settings don't let you set a custom `Authorization` header, so the
+header-based methods above won't work there. ShipFlow supports a **secondary** connection method
+for exactly this case: the API key travels in the URL path instead of a header — paste one URL,
+no headers, works immediately on the free tier.
+
+1. Generate an API key as described in [Generate an API Key](#generate-an-api-key) above.
+2. **Recommended**: create a key scoped to `READ` only with a short expiry. This connection method
+   is always read-only regardless of the key's actual scope (see the warning below), but a
+   scoped-down, short-lived key keeps a leaked URL cheap to rotate.
+3. In claude.ai, go to **Settings → Connectors → Add custom connector** and paste:
+   ```
+   https://your-shipflow-instance.example.com/mcp/sf_live_xxxxxxxxxxxxxxxxxxxx/sse
+   ```
+   Your raw API key goes directly in the URL path — after `/mcp/` and before `/sse`. No `headers`
+   config, no OAuth.
+
+> ⚠️ **This connection is always read-only**, no matter what scope the key was created with —
+> write tools are unreachable over this transport. Use the Claude Code / Claude Desktop / Cursor /
+> Windsurf header-based methods above if you need write access.
+
+> ⚠️ **Security note**: a token embedded in a URL can be logged by reverse proxies, load balancers,
+> and browser history — this is inherently weaker than sending it in a header. Treat the URL like
+> the key itself: don't paste it into chat, tickets, or shared docs, and revoke the key if you
+> suspect it leaked. Prefer the header-based methods above wherever your client supports custom
+> headers; this method exists specifically for hosted clients that don't.
+
+---
+
 ## Generic HTTP+SSE Client
 
 Any MCP client that supports HTTP+SSE transport can connect.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/mcp/sse` | GET | SSE stream — open this to establish the MCP session |
-| `/mcp/messages` | POST | Send JSON-RPC 2.0 requests |
+| `/mcp/sse` | GET | SSE stream — open this to establish the MCP session (header auth) |
+| `/mcp/messages` | POST | Send JSON-RPC 2.0 requests (header auth) |
+| `/mcp/{api-key}/sse` | GET | Same as `/mcp/sse`, but the API key is read from the URL path instead of a header. Always read-only. For clients that can't set custom headers (e.g. claude.ai connectors) — see [Claude.ai](#claudeai-hosted-chat-free-tier-connectors) above. |
+| `/mcp/{api-key}/messages` | POST | Path-token counterpart to `/mcp/messages` — the SSE `endpoint` event for a path-token session already points here, you don't need to construct this URL by hand. |
 | `/mcp/health` | GET | Server health check (no auth required) |
 
-Connection headers:
+Connection headers (header-based auth only — the `/mcp/{api-key}/...` routes need no headers):
 ```
 Authorization: Bearer <api-key>
 Accept: text/event-stream        (for /mcp/sse)
@@ -524,6 +556,8 @@ You can enable or disable it at any time with a restart.
 
 - Your API key may be read-only — regenerate with `mcp_write` scope enabled
 - Check your ShipFlow role: write tools require `DEVELOPER` role or above
+- If you connected via the URL-embedded-token method (`/mcp/{api-key}/sse`), this is expected —
+  that transport is always read-only. Switch to a header-based client for write access.
 
 ### Tools not appearing in Claude Code
 
@@ -547,6 +581,10 @@ You can enable or disable it at any time with a restart.
 - **Rotate keys regularly.** Revoke and regenerate API keys periodically.
 - **Do not share keys.** Each developer should have their own key.
 - **Key scope**: keys are scoped to your user account and can only access data your account can access.
+- **URL-embedded tokens (`/mcp/{api-key}/sse`) are weaker than headers.** Proxies, load balancers,
+  and browser history can log the full URL, including the key. This method is always forced
+  read-only for that reason. Use a dedicated, short-lived, `READ`-only key for it, and prefer a
+  header-based client whenever the client supports custom headers.
 
 ---
 

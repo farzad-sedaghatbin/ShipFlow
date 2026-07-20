@@ -31,6 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
  * principal that opened the target session, preventing one API key from injecting tool calls into
  * another user's session.
  *
+ * <p>Two auth transports are supported (see {@code McpAuthFilter} for details): the primary {@code
+ * Authorization: Bearer <api-key>} header at {@code POST /mcp/messages}, and a secondary URL
+ * path-token transport at {@code POST /mcp/<api-key>/messages} for clients that cannot set custom
+ * headers — always capped to read-only regardless of the key's real scopes. Both shapes are
+ * handled by this same method; authentication already happened in {@code McpAuthFilter} before the
+ * request reaches here, so no extra handling is needed for the path variant.
+ *
  * <p>The MCP server is enabled/disabled at runtime via {@link McpServerSettingsService} (admin
  * toggle, falling back to the {@code mcp.server.enabled} environment default). When disabled, this
  * endpoint responds {@code 503 Service Unavailable}.
@@ -61,7 +68,7 @@ public class McpMessageController {
     this.serverSettings = serverSettings;
   }
 
-  @PostMapping("/messages")
+  @PostMapping({"/messages", "/{apiKeyPathToken}/messages"})
   public ResponseEntity<?> handleMessage(
       @RequestParam String sessionId, @RequestBody Map<String, Object> request) {
 
