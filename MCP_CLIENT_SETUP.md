@@ -151,21 +151,27 @@ Edit `~/.codeium/windsurf/mcp_config.json`:
 
 ## Claude.ai (Hosted Chat / Free-Tier Connectors)
 
-Claude's hosted chat connector settings don't let you set a custom `Authorization` header, so the
-header-based methods above won't work there. ShipFlow supports a **secondary** connection method
-for exactly this case: the API key travels in the URL path instead of a header — paste one URL,
-no headers, works immediately on the free tier.
+Claude's hosted **"Add custom connector"** feature speaks the modern **Streamable HTTP** MCP
+transport — a single endpoint, not the older two-endpoint SSE dance the clients above use. It also
+doesn't let you set a custom `Authorization` header, so ShipFlow exposes this transport two ways:
+`/mcp` (header auth) and `/mcp/{api-key}` (API key embedded in the URL — no headers, works
+immediately on the free tier).
 
 1. Generate an API key as described in [Generate an API Key](#generate-an-api-key) above.
-2. **Recommended**: create a key scoped to `READ` only with a short expiry. This connection method
-   is always read-only regardless of the key's actual scope (see the warning below), but a
+2. **Recommended**: create a key scoped to `READ` only with a short expiry. The URL-token method is
+   always read-only regardless of the key's actual scope (see the warning below), but a
    scoped-down, short-lived key keeps a leaked URL cheap to rotate.
 3. In claude.ai, go to **Settings → Connectors → Add custom connector** and paste:
    ```
-   https://your-shipflow-instance.example.com/mcp/sf_live_xxxxxxxxxxxxxxxxxxxx/sse
+   https://your-shipflow-instance.example.com/mcp/sf_live_xxxxxxxxxxxxxxxxxxxx
    ```
-   Your raw API key goes directly in the URL path — after `/mcp/` and before `/sse`. No `headers`
-   config, no OAuth.
+   Your raw API key goes directly in the URL path, right after `/mcp/`.
+
+> ⚠️ **Use the bare URL — do not add `/sse` at the end.** `/sse` is the older SSE-transport shape
+> (below); claude.ai's connector POSTs directly to the URL you give it and, per the MCP
+> backwards-compatibility spec, isn't guaranteed to fall back to the legacy transport if that POST
+> 404s/405s. Pasting the `/sse` URL into claude.ai's connector box is the single most common cause
+> of "could not connect."
 
 > ⚠️ **This connection is always read-only**, no matter what scope the key was created with —
 > write tools are unreachable over this transport. Use the Claude Code / Claude Desktop / Cursor /
@@ -179,19 +185,31 @@ no headers, works immediately on the free tier.
 
 ---
 
-## Generic HTTP+SSE Client
+## Generic HTTP Clients
 
-Any MCP client that supports HTTP+SSE transport can connect.
+ShipFlow supports two transports side by side — use whichever your client expects.
+
+### Streamable HTTP (recommended — MCP spec 2025-06-18, single endpoint)
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/mcp` | POST | Send a JSON-RPC message. `initialize` returns an `Mcp-Session-Id` response header; include that header on every request after (header auth). |
+| `/mcp/{api-key}` | POST | Same, with the API key read from the URL path instead of a header. Always read-only. |
+| `/mcp` / `/mcp/{api-key}` | GET | Not offered — responds `405 Method Not Allowed` (server-to-client push isn't implemented). |
+| `/mcp` / `/mcp/{api-key}` | DELETE | Terminate a session — include `Mcp-Session-Id`. |
+| `/mcp/health` | GET | Server health check (no auth required) |
+
+### Legacy HTTP+SSE (deprecated by the MCP spec, kept for existing clients)
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/mcp/sse` | GET | SSE stream — open this to establish the MCP session (header auth) |
 | `/mcp/messages` | POST | Send JSON-RPC 2.0 requests (header auth) |
-| `/mcp/{api-key}/sse` | GET | Same as `/mcp/sse`, but the API key is read from the URL path instead of a header. Always read-only. For clients that can't set custom headers (e.g. claude.ai connectors) — see [Claude.ai](#claudeai-hosted-chat-free-tier-connectors) above. |
+| `/mcp/{api-key}/sse` | GET | Same as `/mcp/sse`, but the API key is read from the URL path instead of a header. Always read-only. |
 | `/mcp/{api-key}/messages` | POST | Path-token counterpart to `/mcp/messages` — the SSE `endpoint` event for a path-token session already points here, you don't need to construct this URL by hand. |
 | `/mcp/health` | GET | Server health check (no auth required) |
 
-Connection headers (header-based auth only — the `/mcp/{api-key}/...` routes need no headers):
+Connection headers (header-based auth only — the `/mcp/{api-key}...` routes need no headers):
 ```
 Authorization: Bearer <api-key>
 Accept: text/event-stream        (for /mcp/sse)
@@ -456,7 +474,7 @@ Prompt templates are planned for a future release and are not yet available.
 
 You should see `shipflow` listed with a green status and the available tools count.
 
-### From the terminal
+### From the terminal — legacy transport
 
 ```bash
 curl -N \
@@ -466,6 +484,24 @@ curl -N \
 ```
 
 You should see an SSE stream starting with `event: endpoint`.
+
+### From the terminal — Streamable HTTP transport (what claude.ai uses)
+
+```bash
+curl -i -X POST http://localhost:8080/mcp \
+  -H "Authorization: Bearer sf_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+```
+
+You should get back `200 OK`, an `Mcp-Session-Id: <uuid>` response header, and a JSON-RPC result
+body. Or with the path-token variant (no header):
+
+```bash
+curl -i -X POST http://localhost:8080/mcp/sf_live_xxx \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+```
 
 ### Health check (no auth)
 
@@ -546,6 +582,18 @@ You can enable or disable it at any time with a restart.
 - Confirm MCP is enabled: `curl http://localhost:8080/mcp/health`
 - Check `MCP_SERVER_ENABLED=true` in your environment
 
+### claude.ai says "could not connect" / "Couldn't reach MCP server"
+
+- **Check the URL you pasted doesn't end in `/sse`.** claude.ai's custom connector uses the
+  Streamable HTTP transport and POSTs directly to whatever URL you configured — a URL ending in
+  `/sse` only accepts `GET`, so the POST fails and claude.ai won't reliably fall back to the legacy
+  transport. Use the bare `https://your-instance/mcp/{api-key}` URL instead — see
+  [Claude.ai](#claudeai-hosted-chat-free-tier-connectors) above.
+- Confirm the server actually responds: `curl -i -X POST https://your-instance/mcp/{api-key} -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'` should return `200` with an `Mcp-Session-Id` header.
+- If that curl works but claude.ai still fails, check whether anything sits in front of your
+  instance (reverse proxy, WAF, CDN) that might be blocking or rewriting the request before it
+  reaches ShipFlow — the failure won't show up in ShipFlow's own logs in that case.
+
 ### "401 Unauthorized"
 
 - Verify the API key is correct (copy-paste, no trailing spaces)
@@ -556,8 +604,8 @@ You can enable or disable it at any time with a restart.
 
 - Your API key may be read-only — regenerate with `mcp_write` scope enabled
 - Check your ShipFlow role: write tools require `DEVELOPER` role or above
-- If you connected via the URL-embedded-token method (`/mcp/{api-key}/sse`), this is expected —
-  that transport is always read-only. Switch to a header-based client for write access.
+- If you connected via a URL-embedded-token method (`/mcp/{api-key}` or `/mcp/{api-key}/sse`), this
+  is expected — those are always read-only. Switch to a header-based client for write access.
 
 ### Tools not appearing in Claude Code
 
@@ -581,7 +629,7 @@ You can enable or disable it at any time with a restart.
 - **Rotate keys regularly.** Revoke and regenerate API keys periodically.
 - **Do not share keys.** Each developer should have their own key.
 - **Key scope**: keys are scoped to your user account and can only access data your account can access.
-- **URL-embedded tokens (`/mcp/{api-key}/sse`) are weaker than headers.** Proxies, load balancers,
+- **URL-embedded tokens (`/mcp/{api-key}`, `/mcp/{api-key}/sse`) are weaker than headers.** Proxies, load balancers,
   and browser history can log the full URL, including the key. This method is always forced
   read-only for that reason. Use a dedicated, short-lived, `READ`-only key for it, and prefer a
   header-based client whenever the client supports custom headers.
