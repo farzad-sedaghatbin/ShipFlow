@@ -5733,6 +5733,7 @@
     "pitch": "Pitch",
     "selectPitch": "Select a pitch",
     "scope": "Scope",
+    "scopeTask": "Scope / Task (optional)",
     "selectScope": "Select a scope",
     "searchScopes": "Search scopes...",
     "minCharacters": "Type at least 3 characters to search",
@@ -8428,11 +8429,14 @@
   "testCasesSection": {
     "title": "Test Cases",
     "viewAll": "View All",
+    "addNew": "Add Test Case",
     "empty": "No test cases linked to this pitch yet.",
+    "emptyTask": "No test cases linked to this task yet.",
     "generateOrAdd": "Add or Generate Test Cases",
     "notExecuted": "Not yet executed",
     "passRate": "{{rate}}% pass rate ({{passed}}/{{total}} runs)",
-    "andMore": "+{{count}} more — view all to see the full list"
+    "andMore": "+{{count}} more — view all to see the full list",
+    "andMoreTask": "+{{count}} more test case(s)"
   },
   "retroSummary": {
     "title": "AI Retrospective Summary",

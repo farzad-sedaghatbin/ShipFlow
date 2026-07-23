@@ -14,6 +14,7 @@ vi.mock('react-router-dom', () => ({
 vi.mock('../../services/qaTestManagementService', () => ({
   default: {
     getTestCasesByPitch: vi.fn(),
+    getTestCasesByTask: vi.fn(),
   },
 }));
 
@@ -74,5 +75,27 @@ describe('TestCasesSection', () => {
     await user.click(screen.getByText('testCasesSection.viewAll'));
 
     expect(navigateMock).toHaveBeenCalledWith('/pitches/7/test');
+  });
+
+  it('shows the task-specific empty state and fetches by taskId when taskId is passed', async () => {
+    (qaTestManagementService.getTestCasesByTask as any).mockResolvedValue({ data: [] });
+    renderWithClient(<TestCasesSection taskId={42} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('testCasesSection.emptyTask')).toBeInTheDocument();
+    });
+    expect(qaTestManagementService.getTestCasesByTask).toHaveBeenCalledWith(42);
+    expect(qaTestManagementService.getTestCasesByPitch).not.toHaveBeenCalled();
+  });
+
+  it('navigates to the pre-filled create form when "Add Test Case" is clicked for a task', async () => {
+    (qaTestManagementService.getTestCasesByTask as any).mockResolvedValue({ data: [] });
+    const user = userEvent.setup();
+    renderWithClient(<TestCasesSection taskId={42} />);
+
+    await waitFor(() => screen.getByText('testCasesSection.addNew'));
+    await user.click(screen.getAllByText('testCasesSection.addNew')[0]);
+
+    expect(navigateMock).toHaveBeenCalledWith('/qa/test-cases/new?taskId=42');
   });
 });

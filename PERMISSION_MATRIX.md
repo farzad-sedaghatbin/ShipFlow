@@ -73,7 +73,7 @@ ShapeUp Tracker uses a 4-tier role model with fine-grained permissions:
 | | DELETE | ✅ | ✅ | ❌ | ❌ |
 | | MANAGE | ✅ | ✅ | ❌ | ❌ |
 | **SYSTEM** | MANAGE | ✅ | ❌ | ❌ | ❌ |
-| **INITIATIVE** | CREATE | ✅ | ✅ | ❌ | ❌ |
+| **INITIATIVE** | CREATE | ✅ | ✅ | ✅ | ❌ |
 | | READ | ✅ | ✅ | ✅ | ✅ |
 | | UPDATE | ✅ | ✅ | ❌ | ❌ |
 | | DELETE | ✅ | ✅ | ❌ | ❌ |

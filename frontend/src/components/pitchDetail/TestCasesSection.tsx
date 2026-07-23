@@ -10,20 +10,27 @@ import qaTestManagementService from '../../services/qaTestManagementService';
 import { TestCase } from '../../types';
 
 interface TestCasesSectionProps {
-  pitchId: number;
+  pitchId?: number;
+  taskId?: number;
 }
 
-export function TestCasesSection({ pitchId }: TestCasesSectionProps) {
+export function TestCasesSection({ pitchId, taskId }: TestCasesSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { data: testCases = [], isLoading } = useQuery<TestCase[]>({
-    queryKey: ['test-cases', 'pitch', pitchId],
-    queryFn: () => qaTestManagementService.getTestCasesByPitch(pitchId).then((r) => r.data),
+    queryKey: taskId ? ['test-cases', 'task', taskId] : ['test-cases', 'pitch', pitchId],
+    queryFn: () =>
+      taskId
+        ? qaTestManagementService.getTestCasesByTask(taskId).then((r) => r.data)
+        : qaTestManagementService.getTestCasesByPitch(pitchId!).then((r) => r.data),
+    enabled: taskId != null || pitchId != null,
   });
 
+  const addOrViewHref = taskId ? `/qa/test-cases/new?taskId=${taskId}` : `/pitches/${pitchId}/test`;
+
   return (
-    <Card data-tour="pitch-test-cases">
+    <Card data-tour={taskId ? undefined : 'pitch-test-cases'}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           <ClipboardList className="h-4 w-4" />
@@ -32,8 +39,8 @@ export function TestCasesSection({ pitchId }: TestCasesSectionProps) {
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{testCases.length}</span>
           )}
         </CardTitle>
-        <Button variant="outline" size="sm" onClick={() => navigate(`/pitches/${pitchId}/test`)}>
-          {t('testCasesSection.viewAll')}
+        <Button variant="outline" size="sm" onClick={() => navigate(addOrViewHref)}>
+          {taskId ? t('testCasesSection.addNew') : t('testCasesSection.viewAll')}
         </Button>
       </CardHeader>
       <CardContent>
@@ -43,10 +50,12 @@ export function TestCasesSection({ pitchId }: TestCasesSectionProps) {
           </div>
         ) : testCases.length === 0 ? (
           <div className="py-4 text-center">
-            <p className="mb-3 text-sm text-muted-foreground">{t('testCasesSection.empty')}</p>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/pitches/${pitchId}/test`)}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              {t('testCasesSection.generateOrAdd')}
+            <p className="mb-3 text-sm text-muted-foreground">
+              {taskId ? t('testCasesSection.emptyTask') : t('testCasesSection.empty')}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => navigate(addOrViewHref)}>
+              {taskId ? null : <Sparkles className="mr-2 h-4 w-4" />}
+              {taskId ? t('testCasesSection.addNew') : t('testCasesSection.generateOrAdd')}
             </Button>
           </div>
         ) : (
@@ -89,7 +98,9 @@ export function TestCasesSection({ pitchId }: TestCasesSectionProps) {
         )}
         {testCases.length > 5 && (
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            {t('testCasesSection.andMore', { count: testCases.length - 5 })}
+            {taskId
+              ? t('testCasesSection.andMoreTask', { count: testCases.length - 5 })
+              : t('testCasesSection.andMore', { count: testCases.length - 5 })}
           </p>
         )}
       </CardContent>

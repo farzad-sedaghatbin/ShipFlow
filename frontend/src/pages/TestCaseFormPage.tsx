@@ -7,7 +7,7 @@ import {
   AlertCircle,
   X,
 } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useProject } from '../contexts';
 import { safeParseId } from '../utils/validation';
 import qaTestManagementService from '../services/qaTestManagementService';
@@ -47,6 +47,7 @@ const TestCaseFormPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id: idParam } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { isKanbanProject, currentProject, isAllProjectsSelected } = useProject();
   const id = safeParseId(idParam);
   const isEdit = !!id;
@@ -87,6 +88,12 @@ const TestCaseFormPage: React.FC = () => {
     loadPitches();
     if (isEdit) {
       loadTestCase();
+    } else {
+      const prefillTaskId = safeParseId(searchParams.get('taskId'));
+      if (prefillTaskId) {
+        setFormData((prev) => ({ ...prev, taskId: prefillTaskId }));
+        taskService.getById(prefillTaskId).then((res) => setTasks([res.data])).catch(() => {});
+      }
     }
   }, [id]);
 
@@ -300,7 +307,7 @@ const TestCaseFormPage: React.FC = () => {
                   <Label>{t('testCaseForm.pitch')}</Label>
                   <Select
                     value={formData.pitchId ? String(formData.pitchId) : 'none'}
-                    onValueChange={(value) => setFormData({ ...formData, pitchId: value === 'none' ? undefined : Number(value), scopeId: undefined })}
+                    onValueChange={(value) => setFormData({ ...formData, pitchId: value === 'none' ? undefined : Number(value), scopeId: undefined, taskId: undefined })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={t('testCaseForm.selectPitch')} />
@@ -317,10 +324,18 @@ const TestCaseFormPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t('testCaseForm.scope')}</Label>
+                  <Label>{t('testCaseForm.scopeTask')}</Label>
                   <Select
                     value={formData.scopeId ? String(formData.scopeId) : 'none'}
-                    onValueChange={(value) => setFormData({ ...formData, scopeId: value === 'none' ? undefined : Number(value) })}
+                    onValueChange={(value) => {
+                      if (value === 'none') {
+                        setFormData({ ...formData, scopeId: undefined, taskId: undefined });
+                        return;
+                      }
+                      const scopeId = Number(value);
+                      const selectedScope = scopes.find((s) => s.id === scopeId);
+                      setFormData({ ...formData, scopeId, taskId: selectedScope?.linkedTaskId });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={!formData.pitchId && scopes.length === 0 ? t('testCaseForm.selectScope') : t('testCaseForm.noSpecificScope')} />
@@ -346,7 +361,7 @@ const TestCaseFormPage: React.FC = () => {
                       ) : (
                         scopes.slice(0, 50).map((scope) => (
                           <SelectItem key={scope.id} value={String(scope.id)}>
-                            {scope.scope}
+                            {scope.scope}{scope.linkedTaskTitle ? ` — ${scope.linkedTaskTitle}` : ''}
                           </SelectItem>
                         ))
                       )}
@@ -365,6 +380,7 @@ const TestCaseFormPage: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {isKanbanProject && (
               <div className="space-y-2">
                 <Label>{t('testCaseForm.relatedTask')}</Label>
                 <Select
@@ -410,6 +426,7 @@ const TestCaseFormPage: React.FC = () => {
                   {formData.cycleId ? t('testCaseForm.scopesAvailable', { count: tasks.length }) : t('testCaseForm.minCharsForSearch')}
                 </p>
               </div>
+              )}
 
               <div className="space-y-2">
                 <Label>{t('testCaseForm.type')} *</Label>

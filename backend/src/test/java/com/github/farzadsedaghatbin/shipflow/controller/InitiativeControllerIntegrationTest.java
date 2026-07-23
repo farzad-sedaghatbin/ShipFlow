@@ -49,6 +49,7 @@ class InitiativeControllerIntegrationTest {
   private Project testProject;
   private Initiative testInitiative;
   private Person adminPerson;
+  private Person memberPerson;
 
   @BeforeEach
   void setUp() {
@@ -75,6 +76,24 @@ class InitiativeControllerIntegrationTest {
         .isActive(true)
         .build();
     userRepository.save(adminUser);
+
+    // Create member user (for MEMBER create-initiative coverage)
+    memberPerson = Person.builder()
+        .name("Member User")
+        .email("member@example.com")
+        .isActive(true)
+        .createdAt(LocalDateTime.now())
+        .build();
+    memberPerson = personRepository.save(memberPerson);
+
+    User memberUser = User.builder()
+        .username("member")
+        .password("password")
+        .role(UserRole.MEMBER)
+        .person(memberPerson)
+        .isActive(true)
+        .build();
+    userRepository.save(memberUser);
 
     testProject = Project.builder()
         .name("Test Project")
@@ -145,6 +164,41 @@ class InitiativeControllerIntegrationTest {
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.name", is("New Initiative")))
         .andExpect(jsonPath("$.status", is("DRAFT")));
+  }
+
+  @Test
+  @WithMockUser(username = "member", roles = "MEMBER")
+  void createInitiative_AsMember_ShouldCreateAndReturnInitiative() throws Exception {
+    CreateInitiativeRequest request = CreateInitiativeRequest.builder()
+        .name("Member Initiative")
+        .description("Created by a member")
+        .projectId(testProject.getId())
+        .status(InitiativeStatus.DRAFT)
+        .targetStartDate(LocalDate.of(2025, 7, 1))
+        .targetEndDate(LocalDate.of(2025, 12, 31))
+        .color("#10b981")
+        .build();
+
+    mockMvc.perform(post("/api/initiatives")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.name", is("Member Initiative")));
+  }
+
+  @Test
+  @WithMockUser(username = "member", roles = "MEMBER")
+  void updateInitiative_AsMember_ShouldBeForbidden() throws Exception {
+    CreateInitiativeRequest request = CreateInitiativeRequest.builder()
+        .name("Should Not Update")
+        .projectId(testProject.getId())
+        .status(InitiativeStatus.IN_PROGRESS)
+        .build();
+
+    mockMvc.perform(put("/api/initiatives/{id}", testInitiative.getId())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isForbidden());
   }
 
   @Test
