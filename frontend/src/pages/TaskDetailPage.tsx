@@ -33,6 +33,7 @@ import { releaseService } from '../services/releaseService';
 import timerService, { WorkLogTimer } from '../services/timerService';
 import { workLogService } from '../services/workLogService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
+import { TestCasesSection } from '../components/pitchDetail/TestCasesSection';
 import TaskAttachments from '../components/TaskAttachments';
 import LinkedWikiPages from '../components/LinkedWikiPages';
 import { CustomFieldsSection } from '../components/CustomFieldsSection';
@@ -709,6 +710,9 @@ export default function TaskDetailPage() {
 
       {/* GitHub Integration */}
       <GitHubLinksCard taskId={task.id} />
+
+      {/* Test Cases */}
+      <TestCasesSection taskId={task.id} />
 
       {/* Task Dependencies */}
       <TaskDependencies 

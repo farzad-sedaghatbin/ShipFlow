@@ -56,6 +56,9 @@ class QATestManagementControllerIntegrationTest {
   @Autowired
   private ProjectRepository projectRepository;
 
+  @Autowired
+  private TaskRepository taskRepository;
+
   private Cycle testCycle;
   private User testUser;
   private BugReport testBugReport;
@@ -283,6 +286,28 @@ class QATestManagementControllerIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[?(@.aiGenerated == true)]", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$[?(@.aiGenerated == false)]", hasSize(0)));
+  }
+
+  @Test
+  void getTestCasesByTask_ShouldReturnOnlyTestCasesLinkedToThatTask() throws Exception {
+    Task task = taskRepository.save(Task.builder().title("Implement login validation")
+        .status(TaskStatus.IN_PROGRESS).priority(TaskPriority.HIGH).category(TaskCategory.PITCH_SCOPE)
+        .cycle(testCycle).createdAt(LocalDateTime.now()).build());
+
+    testCaseRepository.save(TestCase.builder().testCaseKey("TC-400").title("Linked to task")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.HIGH).status(TestCaseStatus.READY)
+        .aiGenerated(false).task(task).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+    testCaseRepository.save(TestCase.builder().testCaseKey("TC-401").title("Not linked to task")
+        .type(TestCaseType.FUNCTIONAL).priority(TestCasePriority.LOW).status(TestCaseStatus.READY)
+        .aiGenerated(false).cycle(testCycle).createdBy(testUser).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build());
+
+    mockMvc.perform(get("/api/qa/test-cases/task/{taskId}", task.getId())).andExpect(status().isOk())
+        .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$", hasSize(1)))
+        .andExpect(jsonPath("$[0].testCaseKey", is("TC-400")))
+        .andExpect(jsonPath("$[0].taskId", is(task.getId().intValue())));
   }
 
   @Test

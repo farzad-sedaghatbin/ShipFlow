@@ -59,7 +59,7 @@ public class InitiativeController {
   }
 
   @PostMapping
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'MEMBER')")
   @RequirePermission(resource = ResourceType.INITIATIVE, permission = PermissionType.CREATE)
   @Operation(summary = "Create a new initiative")
   public ResponseEntity<InitiativeDTO> createInitiative(@Valid @RequestBody CreateInitiativeRequest request) {

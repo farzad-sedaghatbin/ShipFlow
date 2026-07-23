@@ -42,8 +42,11 @@ export const qaTestManagementService = {
   getTestCaseByKey: (key: string) => 
     api.get<TestCase>(`/qa/test-cases/key/${key}`),
 
-  getTestCasesByPitch: (pitchId: number) => 
+  getTestCasesByPitch: (pitchId: number) =>
     api.get<TestCase[]>(`/qa/test-cases/pitch/${pitchId}`),
+
+  getTestCasesByTask: (taskId: number) =>
+    api.get<TestCase[]>(`/qa/test-cases/task/${taskId}`),
 
   getTestCasesByCycle: (cycleId: number) => 
     api.get<TestCase[]>(`/qa/test-cases/cycle/${cycleId}`),

@@ -105,6 +105,13 @@ public class QATestManagementController {
     return ResponseEntity.ok(testCaseService.getTestCasesByCycle(cycleId));
   }
 
+  @GetMapping("/test-cases/task/{taskId}")
+  @Operation(summary = "Get test cases by task", description = "Returns all test cases linked to a task")
+  public ResponseEntity<List<TestCaseDTO>> getTestCasesByTask(@PathVariable Long taskId) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(testCaseService.getTestCasesByTask(taskId));
+  }
+
   @GetMapping("/test-cases/status/{status}")
   @Operation(summary = "Get test cases by status", description = "Returns test cases filtered by status")
   public ResponseEntity<List<TestCaseDTO>> getTestCasesByStatus(@PathVariable TestCaseStatus status) {
