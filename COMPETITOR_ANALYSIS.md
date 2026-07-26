@@ -68,12 +68,14 @@ ShipFlow targets teams that:
 | **Built-in team wiki (block editor, version history, @mentions, search)** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Wiki auto-ingested into AI context** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Pluggable object storage (S3 / MinIO / local disk, one-click migration)** | ✅ (v1.8.0) | ❌ | Partial⁴ | ❌ | ❌ | Partial⁴ | ❌ |
+| **Installable PWA with offline support + background sync** | ✅ (v1.11.0) | Partial⁶ | Partial⁶ | ❌ | ❌ | ❌ | ❌ |
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
 ³ Linear has a "Triage" view for overdue issues but no proactive AI-computed insight panel with scope-creep detection or velocity trend analysis.
 ⁴ Jira and Confluence support S3 attachment storage in their Data Center editions but do not expose a UI-driven backend switcher or one-click migration.
 ⁵ **MCP and embedded AI are no longer ShipFlow-only.** Linear (hosted MCP 2025 + MCP agents Apr 2026), Atlassian/Jira (Rovo MCP server + Agents in Jira, GA May 2026), and Asana (MCP + AI Teammates 2026) all shipped these. The ✅/❌ marks on the AI rows above reflect *specific* ShipFlow features (e.g. Shape Up–aware risk scoring, pitch writer); competitors now have their own AI suites (Rovo, Work Graph, AI Studio) — but **all are cloud-only and paid (per-seat or metered AI credits).** ShipFlow's structural, un-copyable edge is the combination: native Shape Up + self-hosted/open-source + **private, air-gapped AI (Ollama) with zero data egress.** See §4 for the full re-benchmark.
+⁶ Linear and Jira ship native/Electron desktop and mobile apps with some offline read caching, but neither is an installable browser-based PWA with Workbox-style background-sync for offline writes — ShipFlow's works from any browser with no app-store install.
 
 ---
 
@@ -207,7 +209,7 @@ Be honest with evaluators:
 
 - **You don't practice Shape Up** — ShipFlow is optimised for it. A general Kanban team may be happier with Linear or Shortcut.
 - **You need a fully operational SSO IdP integration** — the admin UI and login flow are built (v1.4.0); backend SAML2/OIDC Spring Security integration is in progress (S32). SCIM 2.0 auto-provisioning is now live (v1.4.0).
-- **You need a mobile app** — ShipFlow is web-first; mobile is responsive but not a native app.
+- **You need a native app-store app** — ShipFlow is web-first. As of v1.11.0 it's installable as a PWA (offline-capable for already-visited pages, with background-sync for offline writes), which covers most "add to home screen" use cases, but it's still a browser-engine app, not a native binary. A full responsive-layout audit (v1.11.0 S58) is in progress; until then some pages are more comfortable on desktop.
 - **You need thousands of plugins** — Jira's plugin ecosystem is unmatched.
 - **You need non-technical stakeholder tools** (timesheets, resource planning) — Asana/Monday win here. ShipFlow now has interactive Gantt-style timeline bars for initiatives and epics, but not full resource planning.
 
