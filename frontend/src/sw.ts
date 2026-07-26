@@ -119,3 +119,60 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// ─── Web Push notifications (S59) ──────────────────────────────────────────
+// Payload is a flat JSON object `{ title, body, url }` — see
+// `WebPushNotificationService.buildPayload` server-side. `url` is the
+// in-app path to focus/open on click (e.g. `/tasks/42`).
+interface PushNotificationPayload {
+  title?: string;
+  body?: string;
+  url?: string;
+}
+
+self.addEventListener('push', (event: PushEvent) => {
+  let payload: PushNotificationPayload = {};
+  try {
+    payload = event.data ? (event.data.json() as PushNotificationPayload) : {};
+  } catch {
+    // Not JSON (shouldn't happen with our own backend, but don't crash the
+    // worker over a malformed payload) — fall back to a plain-text body.
+    payload = { body: event.data ? event.data.text() : undefined };
+  }
+
+  const title = payload.title || 'ShipFlow';
+  const url = payload.url || '/';
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: payload.body,
+      icon: '/android-chrome-192x192.png',
+      badge: '/android-chrome-192x192.png',
+      data: { url },
+    })
+  );
+});
+
+// Clicking a notification closes it and focuses an already-open ShipFlow tab
+// at that URL, or opens a new one — standard PWA push pattern (MDN:
+// ServiceWorkerGlobalScope: notificationclick event).
+self.addEventListener('notificationclick', (event: NotificationEvent) => {
+  event.notification.close();
+  const url: string = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    (async () => {
+      const targetUrl = new URL(url, self.location.origin);
+      const windowClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+      for (const client of windowClients) {
+        const clientUrl = new URL(client.url);
+        if (clientUrl.pathname === targetUrl.pathname && 'focus' in client) {
+          return client.focus();
+        }
+      }
+
+      return self.clients.openWindow(targetUrl.href);
+    })()
+  );
+});
