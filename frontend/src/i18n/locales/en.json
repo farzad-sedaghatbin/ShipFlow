@@ -257,6 +257,12 @@
     "badge": "Air-gapped",
     "tooltip": "Air-gapped AI mode is active: only the local model is used and all external integrations are disabled — no data leaves this network."
   },
+  "pwa": {
+    "offlineBanner": "You're offline. Changes you make will be saved and sent automatically once you're back online.",
+    "offlineReady": "ShipFlow is ready to work offline.",
+    "syncComplete": "{{count}} offline change synced.",
+    "syncComplete_other": "{{count}} offline changes synced."
+  },
   "welcomeTour": {
     "title": "Welcome to ShipFlow! 👋",
     "description": "ShipFlow helps you manage projects using the Shape Up methodology - with cycles, pitches, and hill charts to track progress.",

@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "shipflow-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5183"],
+      "cwd": "frontend",
+      "port": 5183
+    },
+    {
+      "name": "shipflow-frontend-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--", "--port", "5184"],
+      "cwd": "frontend",
+      "port": 5184
+    }
+  ]
+}

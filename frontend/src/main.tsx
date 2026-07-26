@@ -7,10 +7,13 @@ import { AuthProvider, ToastProvider, ThemeProvider } from './contexts'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { PageErrorBoundary } from '@/components/ErrorBoundary'
 import { queryClient } from '@/lib/queryClient'
+import { initPwa } from '@/lib/pwa'
 import '@/i18n' // Initialize i18n
 import './index.css'
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
+
+initPwa()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <PageErrorBoundary>

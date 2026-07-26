@@ -59,6 +59,7 @@ import {
   Wand2,
   Zap,
   Sliders,
+  WifiOff,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -77,6 +78,20 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.11.0',
+    date: 'Coming soon',
+    title: 'Mobile PWA',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <WifiOff className="h-5 w-5" />,
+        title: 'Installable App + Offline Support',
+        description:
+          "Install ShipFlow like a native app (desktop \"Install\" icon or mobile \"Add to Home Screen\"). Already-visited pages stay browsable when you lose connectivity, and writes made offline — comments, status changes, new tasks — are queued and sent automatically once you're back online, instead of failing silently.",
+      },
+    ],
+  },
   {
     version: '1.10.0',
     date: 'July 14, 2026',

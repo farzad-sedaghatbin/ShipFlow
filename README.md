@@ -54,6 +54,7 @@ docker compose up -d
 | **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs; admin **CSV/JSON export** of the whole trail by entity type and date range *(v1.9.0)* |
 | **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
 | **Production self-hosting** *(v1.9.0)* | First-party **Helm chart** for Kubernetes; **Prometheus** metrics (`/actuator/prometheus`) + a ready-to-import **Grafana** dashboard; optional **OpenTelemetry** tracing and structured JSON logging |
+| **Installable & offline-capable (PWA)** *(v1.11.0)* | Install ShipFlow like a native app; already-visited pages stay browsable offline, and writes made offline (comments, status changes, new tasks) are queued and sent automatically once you're back online |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -542,6 +543,7 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Interactive onboarding tour** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global Search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Installable & offline-capable (PWA, background sync)** *(v1.11.0)* | ✅ | Partial² | ❌ | ❌ | Partial² | ❌ |
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -559,6 +561,8 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 > ¹ **MCP & AI are no longer ShipFlow-only.** Linear (2025), Atlassian/Jira Rovo, and Asana (2026) all shipped MCP servers and embedded agentic AI — so on the AI rows above, treat ✅ as "**built-in, free, and able to run on a fully-private / local LLM**" rather than "competitors have nothing." Every competitor's MCP and AI is **cloud-only and paid** (per-seat or metered AI credits). ShipFlow's durable, structural edge is the *combination* the cloud majors can't match: **native Shape Up + self-hosted + open-source + private, air-gapped AI (Ollama) with zero data egress.** See [COMPETITOR_ANALYSIS.md](COMPETITOR_ANALYSIS.md) §4 for the full June-2026 re-benchmark.
+>
+> ² **Linear and Jira ship native/Electron desktop and mobile apps with some offline read caching**, but neither is an installable web PWA with background-sync-queued writes — ShipFlow's offline support works from any browser, no app-store install required.
 
 **Why Choose ShipFlow?**
 - **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
@@ -612,6 +616,7 @@ ShipFlow is fully responsive and works on all device sizes:
 - **Responsive Tables**: Horizontal scroll for data-heavy views
 - **Optimized Forms**: Full-width inputs and filters on small screens
 - **Mobile Breakpoints**: Optimized for 375px (iPhone SE), 414px (standard phones), and all tablet sizes
+- **Installable, offline-capable PWA** *(v1.11.0)*: install ShipFlow like a native app (desktop "Install" icon, mobile "Add to Home Screen"). Already-visited pages stay browsable offline via a Workbox service worker; writes made offline are queued via background sync and replay automatically once you're back online — see `PWA_GUIDE.md`. A dedicated page-by-page responsive-layout audit is planned for a follow-up v1.11.0 session (S58); until then some data-dense pages (hill charts, wide tables) are more comfortable on tablet/desktop.
 
 ## 🌍 Internationalization (i18n) & RTL Support
 

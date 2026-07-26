@@ -7,6 +7,7 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 | Version | Theme | Date |
 |---------|-------|------|
+| v1.10.0 | Wiki References (Pitch/Task links), Drag-and-Drop Task Reordering, Target Release for Standalone Tasks | July 14, 2026 |
 | v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, air-gapped AI | July 1, 2026 |
 | v1.8.0 | Custom Fields & Advanced RBAC, Wiki / Docs Space, pluggable Object Storage | June 27, 2026 |
 | v1.7.0 | Workflow Automations — trigger/action engine, 20 templates, full UI | June 16, 2026 |
@@ -20,11 +21,11 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 ## Active Milestone
 
-### v1.10.0 — Mobile PWA
+### v1.11.0 — Mobile PWA
 
 | Session | Task | Status |
 |---------|------|--------|
-| S57 | Progressive Web App shell + offline support (service worker, background sync) | 🔲 |
+| S57 | Progressive Web App shell + offline support (service worker, background sync) | ✅ |
 | S58 | Responsive-layout audit across all pages (boards, pitches, hill charts, wiki) | 🔲 |
 | S59 | Web Push notifications + biometric/passkey auth (WebAuthn) | 🔲 |
 
@@ -32,7 +33,7 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 | Version | Theme |
 |---------|-------|
-| v1.11.0 | Plugin Marketplace — registry, CLI scaffolder, GitLab + Azure DevOps |
-| v1.12.0 | Collaborative Editing — real-time CRDT co-editing for pitches & retros |
+| v1.12.0 | Plugin Marketplace — registry, CLI scaffolder, GitLab + Azure DevOps |
+| v1.13.0 | Collaborative Editing — real-time CRDT co-editing for pitches & retros |
 
 For the full session-by-session plan see [CLAUDE.md](./CLAUDE.md).

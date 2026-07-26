@@ -80,6 +80,7 @@ import NotificationCenter from './NotificationCenter';
 import DashboardSwitcher from './DashboardSwitcher';
 import LanguageSelector from './LanguageSelector';
 import { AirGappedBadge } from './AirGappedBadge';
+import { OfflineBanner } from './OfflineBanner';
 import { useProject } from '../contexts';
 import { RouteProgressProvider } from './RouteProgressProvider';
 import MobileBottomNav from './MobileBottomNav';
@@ -648,6 +649,7 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main Content - Full width on mobile */}
       <div className="flex flex-1 flex-col w-full lg:w-auto overflow-hidden">
+        <OfflineBanner />
         {/* Header */}
         <header className="sticky top-0 z-40 flex h-14 items-center gap-2 sm:gap-4 border-b border-border bg-background/95 px-3 sm:px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           {/* Mobile Menu Button - Touch-friendly */}
