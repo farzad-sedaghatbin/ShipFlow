@@ -612,6 +612,7 @@ ShipFlow is fully responsive and works on all device sizes:
 - **Responsive Tables**: Horizontal scroll for data-heavy views
 - **Optimized Forms**: Full-width inputs and filters on small screens
 - **Mobile Breakpoints**: Optimized for 375px (iPhone SE), 414px (standard phones), and all tablet sizes
+- **Responsive-layout audit** *(v1.11.0)*: swept the app for real overflow/usability gaps at 375px — the floating bulk-action toolbar on Backlog, the Wiki page-tree sidebar (now a Sheet drawer below `lg`), five wiki modals that bypassed the shared dialog component, a stat grid, and a task-header action row. A couple of lower-priority items (a dense bug-report table, a 7-column calendar) degrade gracefully and are left for a future pass rather than silently claimed as done.
 
 ## 🌍 Internationalization (i18n) & RTL Support
 

@@ -8691,6 +8691,7 @@
   "wiki": {
     "title": "Wiki",
     "subtitle": "Team knowledge base and documentation",
+    "pageTree": "Page tree",
     "spaces": "Spaces",
     "noSpaces": "No spaces yet. Create your first space.",
     "createSpace": "Create Space",

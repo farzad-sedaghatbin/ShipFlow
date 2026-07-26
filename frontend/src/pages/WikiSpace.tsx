@@ -5,7 +5,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
-import { Plus, FileText, Share2 } from "lucide-react";
+import { Plus, FileText, Share2, Menu } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import WikiTree from "../components/wiki/WikiTree";
 import WikiPermissionsDialog from "../components/wiki/WikiPermissionsDialog";
 import { useBreadcrumbLabel, useAuth } from "../contexts";
@@ -34,6 +41,10 @@ export default function WikiSpace() {
   const [shareOpen, setShareOpen] = useState(false);
   // null = create a top-level page; a number = create a child of that page.
   const [parentId, setParentId] = useState<number | null>(null);
+  // Below `lg` the page tree sidebar is hidden (a fixed 256px column leaves
+  // almost no room for content on a phone/tablet); this drives a Sheet
+  // drawer instead, same pattern as WikiPage.tsx.
+  const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
 
   const numSpaceId = Number(spaceId);
 
@@ -107,10 +118,27 @@ export default function WikiSpace() {
     return <div className="p-8 text-sm text-destructive">Space not found.</div>;
   }
 
+  const treeSidebar = treeLoading ? (
+    <div className="text-xs text-muted-foreground animate-pulse">
+      {t("wiki.pages")}…
+    </div>
+  ) : (
+    <WikiTree
+      spaceId={numSpaceId}
+      nodes={tree ?? []}
+      onAddChild={(pid) => {
+        openCreateDialog(pid);
+        setMobileTreeOpen(false);
+      }}
+    />
+  );
+
   return (
     <div className="flex h-full">
-      {/* Left: tree sidebar */}
-      <aside className="w-64 shrink-0 border-r border-border p-4 space-y-3 overflow-y-auto">
+      {/* Left: tree sidebar — hidden below `lg` (a fixed 256px column leaves
+          almost no room for content on a phone/tablet); the Sheet drawer
+          below gives mobile users the same navigation via a menu button. */}
+      <aside className="hidden lg:block w-64 shrink-0 border-r border-border p-4 space-y-3 overflow-y-auto">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-sm truncate">{space.name}</h2>
           <button
@@ -121,24 +149,38 @@ export default function WikiSpace() {
             <Plus className="w-4 h-4" />
           </button>
         </div>
-        {treeLoading ? (
-          <div className="text-xs text-muted-foreground animate-pulse">
-            {t("wiki.pages")}…
-          </div>
-        ) : (
-          <WikiTree
-            spaceId={numSpaceId}
-            nodes={tree ?? []}
-            onAddChild={(pid) => openCreateDialog(pid)}
-          />
-        )}
+        {treeSidebar}
       </aside>
 
+      {/* Mobile page-tree drawer (< lg only) */}
+      <Sheet open={mobileTreeOpen} onOpenChange={setMobileTreeOpen}>
+        <SheetContent side="start" className="w-72 p-4 space-y-3 overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-sm truncate">{space.name}</h2>
+            <button
+              onClick={() => openCreateDialog(null)}
+              className="text-muted-foreground hover:text-primary transition-colors"
+              aria-label={t("wiki.createPage")}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+          {treeSidebar}
+        </SheetContent>
+      </Sheet>
+
       {/* Right: page list */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto">
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center justify-between gap-2">
-            <h1 className="text-2xl font-semibold truncate">{space.name}</h1>
+            <button
+              onClick={() => setMobileTreeOpen(true)}
+              className="lg:hidden flex items-center justify-center h-8 w-8 shrink-0 rounded-md border border-input hover:bg-muted transition-colors"
+              aria-label={t("wiki.pageTree")}
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+            <h1 className="text-2xl font-semibold truncate flex-1">{space.name}</h1>
             <div className="flex items-center gap-2 flex-none">
               {canManageAccess && (
                 <button
@@ -192,52 +234,55 @@ export default function WikiSpace() {
         onClose={() => setShareOpen(false)}
       />
 
-      {/* Create Page Dialog */}
-      {dialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-background rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <h2 className="text-lg font-semibold">
+      {/* Create Page Dialog — uses the shared Dialog component so it inherits
+          the app-wide mobile fullscreen fallback (max-sm: in ui/dialog.tsx),
+          instead of the fixed max-w-md card the hand-rolled overlay used to
+          render flush against the screen edges on narrow viewports. */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeCreateDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
               {parentId ? t("wiki.addSubpage") : t("wiki.createPage")}
-            </h2>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {t("wiki.pageTitle")} *
-                </label>
-                <input
-                  {...register("title")}
-                  autoFocus
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Getting Started"
-                />
-                {errors.title && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.title.message}
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={closeCreateDialog}
-                  className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
-                >
-                  {t("wiki.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || createPageMutation.isPending}
-                  className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                >
-                  {createPageMutation.isPending
-                    ? t("wiki.saving")
-                    : t("wiki.createPage")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("wiki.pageTitle")} *
+              </label>
+              <input
+                {...register("title")}
+                autoFocus
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Getting Started"
+              />
+              {errors.title && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.title.message}
+                </p>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={closeCreateDialog}
+                className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
+              >
+                {t("wiki.cancel")}
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || createPageMutation.isPending}
+                className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {createPageMutation.isPending
+                  ? t("wiki.saving")
+                  : t("wiki.createPage")}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
