@@ -135,6 +135,12 @@ body.tour-active [data-radix-alert-dialog-content] {
   z-index: 2000000000 !important;
 }
 
+body.tour-active [data-radix-alert-dialog-overlay],
+body.tour-active [data-radix-alert-dialog-content],
+body.tour-active [data-radix-alert-dialog-content] * {
+  pointer-events: auto !important;
+}
+
 /* Animated highlight */
 .driver-active-element {
   animation: pulse-highlight 2s infinite;
