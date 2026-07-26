@@ -1,6 +1,6 @@
 # ShipFlow PWA & Offline Support Guide
 
-Covers the Progressive Web App shell shipped in v1.11.0 (S57): installable app manifest, service worker, caching strategy, and background sync for offline writes. Read this before touching `frontend/src/sw.ts`, `frontend/vite.config.mts`'s `VitePWA` block, or anything under `frontend/src/lib/pwa.ts`.
+Covers the Progressive Web App shell shipped in v1.11.0: installable app manifest, service worker, caching strategy, and background sync for offline writes (S57), plus Web Push notification delivery (S59). Read this before touching `frontend/src/sw.ts`, `frontend/vite.config.mts`'s `VitePWA` block, or anything under `frontend/src/lib/pwa.ts` or `frontend/src/services/pushService.ts`.
 
 ## Why `injectManifest`, not `generateSW`
 
@@ -58,4 +58,19 @@ Then use DevTools → Application → Service Workers (or throttle to "Offline" 
 
 - **New API route that shouldn't be cached** (e.g. a streaming/SSE endpoint): add it to the navigation `denylist` regex list in `src/sw.ts`, or give it its own `registerRoute` with `NetworkOnly` before the generic `GET /api/**` rule.
 - **New mutation type that shouldn't be queued offline** (e.g. a one-time action that must never silently "succeed later," like triggering a payment): exclude its path from the `NetworkOnly` + `BackgroundSyncPlugin` route matcher, or add an explicit higher-priority route for it with a plain `NetworkOnly` (no queue plugin) so it fails immediately instead of queuing.
-- **Push notifications (S59)**: will add a `push` event listener to `src/sw.ts` and a `notificationclick` handler — this file is the right place for that, reusing the existing precache/routing setup already in place.
+## Web Push (S59)
+
+`src/sw.ts` has two additional listeners, additive to everything above:
+
+- `push` — parses the backend's JSON payload (`{title, body, url}`, built by `WebPushNotificationService.buildPayload` server-side) and calls `self.registration.showNotification(...)`. Falls back to a plain-text body if the payload isn't JSON (shouldn't happen with our own backend, but a malformed payload must never crash the worker).
+- `notificationclick` — closes the notification and either focuses an already-open tab at the payload's `url` or opens a new one (standard PWA pattern; see MDN's `ServiceWorkerGlobalScope: notificationclick event` page if extending this).
+
+`frontend/src/services/pushService.ts` orchestrates the subscribe/unsubscribe flow against `navigator.serviceWorker.ready` (the same registration `lib/pwa.ts` set up) and the browser's `PushManager`.
+
+**Encoding gotcha — base64url, not plain base64.** The Push API's `applicationServerKey` (the VAPID public key) and a subscription's `p256dh`/`auth` encryption keys are all **base64url**-encoded, not standard base64 — confirmed by decompiling the backend's `nl.martijndwars:web-push` library (`Utils.loadPublicKey` and `Notification`'s string constructor both call `Base64.getUrlDecoder()`). A naive `atob()`/`btoa()` implementation will throw on a real VAPID key's `-`/`_` characters, or worse, silently produce keys the backend can't decode. `pushService.ts` handles this two ways:
+- Decodes the fetched VAPID public key with a url-safe-aware decoder (mirrors `lib/webauthn.ts`'s `base64urlToBuffer`, kept as a separate local copy so this module doesn't depend on the WebAuthn one).
+- Reads the subscription's own `keys.p256dh`/`keys.auth` via `PushSubscription.toJSON()` — a browser-native method that already base64url-encodes them per spec — instead of hand-building base64 from `subscription.getKey(...)` + `btoa`.
+
+If you ever touch this encoding again: WebAuthn (`lib/webauthn.ts`) and Web Push (`services/pushService.ts`) both happen to use base64url, but for unrelated reasons (their respective specs), and the two modules intentionally don't share a helper — don't assume "whichever encoding the other module uses" without checking the actual spec/library for the field you're touching.
+
+**Configuration**: `app.push.vapid.public-key`/`private-key`/`subject` (backend `application.properties`, all optional — blank disables the feature via `NoOpPushNotificationService`). Generate a keypair with `npx web-push generate-vapid-keys`.

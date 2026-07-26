@@ -55,6 +55,7 @@ docker compose up -d
 | **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
 | **Production self-hosting** *(v1.9.0)* | First-party **Helm chart** for Kubernetes; **Prometheus** metrics (`/actuator/prometheus`) + a ready-to-import **Grafana** dashboard; optional **OpenTelemetry** tracing and structured JSON logging |
 | **Installable & offline-capable (PWA)** *(v1.11.0)* | Install ShipFlow like a native app; already-visited pages stay browsable offline, and writes made offline (comments, status changes, new tasks) are queued and sent automatically once you're back online |
+| **Web Push & Passkey sign-in** *(v1.11.0)* | Native push notifications for mentions, assignments, and cycle events — no email or open tab required. Sign in with Face ID, Touch ID, Windows Hello, or a security key (WebAuthn) instead of a password |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -544,6 +545,8 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **AI Help Search** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Global Search (⌘K)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | **Installable & offline-capable (PWA, background sync)** *(v1.11.0)* | ✅ | Partial² | ❌ | ❌ | Partial² | ❌ |
+| **Web Push notifications** *(v1.11.0)* | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **Passkey / WebAuthn sign-in** *(v1.11.0)* | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Technical Solutions** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **AI Test Generation** | ✅ | ❌ | ❌ | Partial | ❌ | ❌ |
 | **Figma MCP Integration** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
