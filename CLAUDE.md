@@ -10,7 +10,7 @@ Read it before touching any code.
 **Current version**: v1.10.0 (released 2026-07-14)
 **All PRs target**: `main` branch
 
-> **Note on v1.10.0**: shipped as an interim release of session-driven bug fixes and small features (wiki-linking for Pitch/Task, drag-and-drop task reordering, target-release for standalone tasks) rather than the planned "Mobile PWA" milestone — it grabbed the next minor version number ahead of the roadmap sequence. Mobile PWA was renumbered to v1.11.0 (and every subsequent planned milestone shifted by one) to keep the version sequence unambiguous; no Mobile PWA work (S57–S59) has started.
+> **Note on v1.10.0**: shipped as an interim release of session-driven bug fixes and small features (wiki-linking for Pitch/Task, drag-and-drop task reordering, target-release for standalone tasks) rather than the planned "Mobile PWA" milestone — it grabbed the next minor version number ahead of the roadmap sequence. Mobile PWA was renumbered to v1.11.0 (and every subsequent planned milestone shifted by one) to keep the version sequence unambiguous. S57 (PWA shell + offline support) has since shipped — see the v1.11.0 session map below; S58–S59 (responsive audit, Web Push + biometric auth) remain.
 
 ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, and air-gapped AI mode (v1.9.0) shipped. Wiki references (Pitch/Task links), drag-and-drop task reordering, and target-release for standalone tasks (v1.10.0) shipped. Next: Mobile PWA — offline support, responsive audit, Web Push, biometric auth (v1.11.0).
 
@@ -114,13 +114,21 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 
 **v1.7.0 released: 2026-06-16** ✅
 
-### v1.9.0 session map (in progress)
+### v1.9.0 session map (shipped)
 
 | Session | Task | Status |
 |---------|------|--------|
 | S54 | Observability backend — `micrometer-registry-prometheus` + `/actuator/prometheus`, OpenTelemetry OTLP tracing (env-gated), native Spring Boot 3.4 structured JSON logging (`LOG_FORMAT`) with traceId/spanId | ✅ done |
 | S55 | Helm chart (`charts/shipflow`) + monitoring stack — Deployment/Service/Ingress/ConfigMap/Secret/HPA/ServiceMonitor; `docker-compose.monitoring.yml` with Prometheus + pre-provisioned Grafana dashboard | ✅ done |
 | S56 | Audit export — `GET /api/audit/export` (admin-only, CSV/JSON, entity-type + date-range filter) reusing the `csvEscape` pattern; Org-Settings UI | ✅ done |
+
+### v1.11.0 session map (in progress)
+
+| Session | Task | Status |
+|---------|------|--------|
+| S57 | PWA shell + offline support — installable web app manifest (via `vite-plugin-pwa`, `injectManifest` strategy), custom service worker (`frontend/src/sw.ts`) with network-first API/navigation caching and Workbox background sync for queued offline writes, offline banner + sync-complete toast. See `PWA_GUIDE.md`. | ✅ done |
+| S58 | Responsive-layout audit across all pages (boards, pitches, hill charts, wiki) | 🔲 planned |
+| S59 | Web Push notifications + biometric/passkey auth (WebAuthn) | 🔲 planned |
 
 ### Future milestones overview
 
@@ -241,6 +249,7 @@ shipflow/
 | `GITHUB_INTEGRATION_GUIDE.md` | GitHub OAuth + webhooks |
 | `PERMISSION_MATRIX.md` | RBAC roles and permissions |
 | `ENVIRONMENT_SETUP.md` | Local dev setup |
+| `PWA_GUIDE.md` | Service worker, offline caching, background sync (v1.11.0 Mobile PWA) |
 | `MCP_SERVER_MILESTONE.md` | **Next milestone: ShipFlow as MCP Server** |
 
 ---

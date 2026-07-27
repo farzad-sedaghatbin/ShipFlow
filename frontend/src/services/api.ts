@@ -90,7 +90,10 @@ const GLOBAL_ERROR_MESSAGES = {
   forbidden: "You don't have permission to perform this action.",
   serverError: 'Something went wrong on our end.',
   networkError: 'Unable to connect. Please check your internet connection.',
+  offlineQueued: "You're offline — this change will be sent automatically once you're back online.",
 };
+
+const MUTATION_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 
 const api = axios.create({
   baseURL: '/api',
@@ -198,7 +201,16 @@ api.interceptors.response.use(
     } else if (status && status >= 500) {
       showGlobalToast(GLOBAL_ERROR_MESSAGES.serverError, 'error');
     } else if (!error.response) {
-      showGlobalToast(GLOBAL_ERROR_MESSAGES.networkError, 'error');
+      // A failed API write while offline was queued by the service worker's
+      // BackgroundSyncPlugin (see src/sw.ts) and will replay automatically —
+      // that's a materially different situation from "the request failed",
+      // so it gets its own message instead of the generic network-error one.
+      const isQueueableMutation =
+        !navigator.onLine && MUTATION_METHODS.has((error.config?.method ?? '').toLowerCase());
+      showGlobalToast(
+        isQueueableMutation ? GLOBAL_ERROR_MESSAGES.offlineQueued : GLOBAL_ERROR_MESSAGES.networkError,
+        isQueueableMutation ? 'info' : 'error',
+      );
     }
 
     // Log for debugging but don't expose technical details to users
