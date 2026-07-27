@@ -30,6 +30,9 @@ public class UserPreferenceDTO {
   /** Show hill chart animations */
   private Boolean enableAnimations;
 
+  /** Whether Web Push notifications are delivered to this user's subscribed browsers */
+  private Boolean pushEnabled;
+
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 }

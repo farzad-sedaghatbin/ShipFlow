@@ -69,6 +69,7 @@ ShipFlow targets teams that:
 | **Wiki auto-ingested into AI context** | ✅ (v1.8.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Pluggable object storage (S3 / MinIO / local disk, one-click migration)** | ✅ (v1.8.0) | ❌ | Partial⁴ | ❌ | ❌ | Partial⁴ | ❌ |
 | **Installable PWA with offline support + background sync** | ✅ (v1.11.0) | Partial⁶ | Partial⁶ | ❌ | ❌ | ❌ | ❌ |
+| **Passkey / WebAuthn sign-in** | ✅ (v1.11.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 ¹ Basecamp invented Shape Up but does not implement it as a structured workflow in its own app.
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
