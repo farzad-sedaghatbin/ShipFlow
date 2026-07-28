@@ -97,6 +97,10 @@ public class TaskService {
     return taskRepository.findAllNotDeleted(pageable).map(this::toDTO);
   }
 
+  public Page<TaskDTO> getAllTasks(TaskCategory category, Pageable pageable) {
+    return taskRepository.findAllNotDeleted(category, pageable).map(this::toDTO);
+  }
+
   public TaskDTO getTaskById(Long id) {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
@@ -212,11 +216,17 @@ public class TaskService {
           .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
       taskProject = cycle.getProject();
     } else if (request.getProjectId() != null) {
-      // Product backlog task (SCRUM only — validated by the repository query at read time)
+      // No-cycle task: always fine for SCRUM (product backlog). For SHAPE_UP, only
+      // DEBT_IMPROVEMENT tasks may skip the cycle — opportunistic filler work that isn't
+      // shaped/bet on yet, unlike PITCH_SCOPE which must belong to a betting cycle.
       taskProject = projectRepository.findById(request.getProjectId())
           .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + request.getProjectId()));
-      if (taskProject.getProjectType() != ProjectType.SCRUM) {
-        throw new BadRequestException(messageService.getMessage("error.task.backlog.scrum.only"));
+      TaskCategory resolvedCategory = request.getCategory() != null ? request.getCategory()
+          : (request.getPitchId() != null ? TaskCategory.PITCH_SCOPE : TaskCategory.DEBT_IMPROVEMENT);
+      boolean cycleLessAllowed = taskProject.getProjectType() == ProjectType.SCRUM
+          || (taskProject.getProjectType() == ProjectType.SHAPE_UP && resolvedCategory == TaskCategory.DEBT_IMPROVEMENT);
+      if (!cycleLessAllowed) {
+        throw new BadRequestException(messageService.getMessage("error.task.backlog.unsupported"));
       }
     } else {
       throw new BadRequestException("Either cycleId or projectId must be provided");
@@ -932,6 +942,7 @@ public class TaskService {
         task.setDeletedAt(LocalDateTime.now());
         task.setDeletedBy(currentUser);
         taskRepository.save(task);
+        removeLinkedScope(task);
       }
       default -> throw new IllegalArgumentException("Unknown bulk action: " + action);
     }
@@ -952,6 +963,19 @@ public class TaskService {
     task.setDeletedAt(LocalDateTime.now());
     task.setDeletedBy(currentUser);
     taskRepository.save(task);
+
+    removeLinkedScope(task);
+  }
+
+  /**
+   * Remove the auto-created hill chart scope linked to a task once the task is deleted
+   * (Scope-Task Bridge). The scope was created solely to mirror this task on the hill
+   * chart, so it has no purpose once the task is gone — unlike Task, HillChartPoint has
+   * no deletedAt/soft-delete of its own, so this is a real delete.
+   */
+  private void removeLinkedScope(Task task) {
+    hillChartPointRepository.findByLinkedTaskId(task.getId())
+        .ifPresent(hillChartPointRepository::delete);
   }
 
   public TaskStatisticsDTO getTaskStatisticsByCycleId(Long cycleId) {
@@ -1015,9 +1039,19 @@ public class TaskService {
     return tasks.map(this::toDTO);
   }
 
+  public Page<TaskDTO> getMyTasks(TaskCategory category, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return taskRepository.findByPersonId(person.getId(), category, pageable).map(this::toDTO);
+  }
+
   public Page<TaskDTO> getMyTasksByCycle(Long cycleId, Pageable pageable) {
     Person person = getCurrentUserPerson();
     return taskRepository.findByCycleIdAndPersonId(cycleId, person.getId(), pageable).map(this::toDTO);
+  }
+
+  public Page<TaskDTO> getMyTasksByCycle(Long cycleId, TaskCategory category, Pageable pageable) {
+    Person person = getCurrentUserPerson();
+    return taskRepository.findByCycleIdAndPersonId(cycleId, person.getId(), category, pageable).map(this::toDTO);
   }
 
   public List<TaskDTO> getMyTasksByCycle(Long cycleId) {

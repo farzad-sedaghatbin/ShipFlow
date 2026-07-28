@@ -3,17 +3,18 @@ import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, Task
 
 export const taskService = {
   // Current user's tasks
-  getMy: (page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+  getMy: (page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory) => {
     return api.get<Page<Task>>('/tasks/my', {
       params: {
         page: page ?? 0,
         size: size ?? 10,
         sortBy: sortBy ?? 'createdAt',
         sortOrder: sortOrder ?? 'desc',
+        category,
       },
     });
   },
-  getMyByCycle: (cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+  getMyByCycle: (cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory) => {
     if (page !== undefined) {
       return api.get<Page<Task>>(`/tasks/my/cycle/${cycleId}`, {
         params: {
@@ -21,20 +22,22 @@ export const taskService = {
           size: size ?? 10,
           sortBy: sortBy ?? 'createdAt',
           sortOrder: sortOrder ?? 'desc',
+          category,
         },
       });
     }
     return api.get<Task[]>(`/tasks/my/cycle/${cycleId}`);
   },
-  
+
   // General task management
-  getAll: (page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+  getAll: (page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory) => {
     return api.get<Page<Task>>('/tasks', {
       params: {
         page: page ?? 0,
         size: size ?? 10,
         sortBy: sortBy ?? 'createdAt',
         sortOrder: sortOrder ?? 'desc',
+        category,
       },
     });
   },

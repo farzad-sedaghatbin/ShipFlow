@@ -95,6 +95,7 @@ export default function BacklogPage() {
         selectedCycle={bp.selectedCycle}
         viewMode={bp.viewMode}
         exportLoading={bp.exportLoading}
+        canSkipCycle={bp.canSkipCycleForDebtImprovement}
         onCycleChange={bp.setSelectedCycle}
         onViewModeChange={bp.setViewMode}
         onNewTask={() => bp.handleOpenDialog()}

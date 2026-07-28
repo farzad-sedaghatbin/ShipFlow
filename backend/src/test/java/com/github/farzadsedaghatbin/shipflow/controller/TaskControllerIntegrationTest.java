@@ -110,6 +110,28 @@ class TaskControllerIntegrationTest {
   }
 
   @Test
+  void getAllTasks_WithCategoryFilter_ShouldReturnOnlyMatchingCategory() throws Exception {
+    Task debtTask = Task.builder().title("Debt Task").description("Improvement work").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).cycle(testCycle).assignee(testPerson)
+        .category(com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory.DEBT_IMPROVEMENT)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+    taskRepository.save(debtTask);
+    taskRepository.flush();
+
+    mockMvc.perform(get("/api/tasks").param("page", "0").param("size", "10").param("category", "DEBT_IMPROVEMENT"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].title", is("Debt Task")))
+        .andExpect(jsonPath("$.page.totalElements", is(1)));
+
+    mockMvc.perform(get("/api/tasks").param("page", "0").param("size", "10").param("category", "PITCH_SCOPE"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.content", hasSize(1)))
+        .andExpect(jsonPath("$.content[0].title", is("Test Task")))
+        .andExpect(jsonPath("$.page.totalElements", is(1)));
+  }
+
+  @Test
   void getTaskById_WhenExists_ShouldReturnTask() throws Exception {
     mockMvc.perform(get("/api/tasks/{id}", testTask.getId())).andExpect(status().isOk())
         .andExpect(content().contentType(MediaType.APPLICATION_JSON))

@@ -25,6 +25,9 @@ export interface BacklogHeaderProps {
   selectedCycle: number | 'all';
   viewMode: ViewMode;
   exportLoading?: boolean;
+  // True when the active category+methodology combo (Shape Up Debt/Improvement) may skip the
+  // cycle requirement — see useBacklogPage's canSkipCycleForDebtImprovement.
+  canSkipCycle?: boolean;
   onCycleChange: (value: number | 'all') => void;
   onViewModeChange: (mode: ViewMode) => void;
   onNewTask: () => void;
@@ -39,6 +42,7 @@ export function BacklogHeader({
   selectedCycle,
   viewMode,
   exportLoading = false,
+  canSkipCycle = false,
   onCycleChange,
   onViewModeChange,
   onNewTask,
@@ -189,7 +193,7 @@ export function BacklogHeader({
             broken. For non-Kanban projects we additionally require a cycle. */}
         {(() => {
           const isAllProjects = !currentProject;
-          const needsCycle = !isKanbanProject && (selectedCycle === 'all' || !selectedCycle);
+          const needsCycle = !isKanbanProject && (selectedCycle === 'all' || !selectedCycle) && !canSkipCycle;
           const disabled = isAllProjects || needsCycle;
           const hintKey = isAllProjects
             ? 'backlogPage.selectProjectToCreate'

@@ -939,7 +939,7 @@ export default function TaskDetailPage() {
               <Label htmlFor="edit-cycle">Cycle *</Label>
               <Combobox
                 options={cycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))}
-                value={formData.cycleId.toString()}
+                value={formData.cycleId !== undefined ? formData.cycleId.toString() : ''}
                 onValueChange={(value) => {
                   const cycleId = parseInt(value);
                   setFormData({ ...formData, cycleId, pitchId: undefined });

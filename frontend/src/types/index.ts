@@ -913,7 +913,12 @@ export interface TaskAttachment {
 export interface CreateTaskRequest {
   title: string;
   description?: string;
-  cycleId: number;
+  // Optional when projectId is supplied instead — a cycle-less "backlog" task (SCRUM product
+  // backlog, or a Shape Up Debt/Improvement task not yet scheduled to a bet).
+  cycleId?: number;
+  // Direct project reference, required in place of cycleId for cycle-less tasks. Ignored when
+  // cycleId is supplied (project is derived from the cycle).
+  projectId?: number;
   pitchId?: number;
   status?: TaskStatus;
   priority?: TaskPriority;

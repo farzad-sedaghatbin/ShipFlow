@@ -12,7 +12,9 @@ import org.springframework.stereotype.Repository;
 public interface HillChartPointRepository extends JpaRepository<HillChartPoint, Long> {
   List<HillChartPoint> findByPitchId(Long pitchId);
 
-  List<HillChartPoint> findByPitchIdOrderByUpdatedAtDesc(Long pitchId);
+  @Query("SELECT h FROM HillChartPoint h WHERE h.pitch.id = :pitchId "
+      + "AND (h.linkedTask IS NULL OR h.linkedTask.deletedAt IS NULL) ORDER BY h.updatedAt DESC")
+  List<HillChartPoint> findByPitchIdOrderByUpdatedAtDesc(@Param("pitchId") Long pitchId);
 
   void deleteByPitchId(Long pitchId);
 
@@ -39,6 +41,7 @@ public interface HillChartPointRepository extends JpaRepository<HillChartPoint, 
   /**
    * Find all scopes for all pitches in a cycle. Useful for the cycle-level hill chart view.
    */
-  @Query("SELECT h FROM HillChartPoint h WHERE h.pitch.cycle.id = :cycleId ORDER BY h.pitch.id, h.updatedAt DESC")
+  @Query("SELECT h FROM HillChartPoint h WHERE h.pitch.cycle.id = :cycleId "
+      + "AND (h.linkedTask IS NULL OR h.linkedTask.deletedAt IS NULL) ORDER BY h.pitch.id, h.updatedAt DESC")
   List<HillChartPoint> findByPitchCycleId(@Param("cycleId") Long cycleId);
 }

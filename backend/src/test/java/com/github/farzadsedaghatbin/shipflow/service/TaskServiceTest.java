@@ -21,6 +21,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.Discipline;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.SuggestionSource;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
@@ -248,6 +249,55 @@ class TaskServiceTest {
 
     assertThatThrownBy(() -> taskService.createTask(testRequest)).isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Cycle not found");
+  }
+
+  @Test
+  void createTask_DebtImprovementWithoutCycleInShapeUpProject_ShouldCreateBacklogTask() {
+    Project project = Project.builder().name("Shape Up Project").projectKey("SUP1")
+        .projectType(ProjectType.SHAPE_UP).isActive(true).build();
+    project = projectRepository.save(project);
+
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setTitle("Opportunistic cleanup");
+    request.setProjectId(project.getId());
+    request.setCategory(TaskCategory.DEBT_IMPROVEMENT);
+
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getCycleId()).isNull();
+    assertThat(result.getCategory()).isEqualTo(TaskCategory.DEBT_IMPROVEMENT);
+  }
+
+  @Test
+  void createTask_PitchScopeWithoutCycleInShapeUpProject_ShouldThrowException() {
+    Project project = Project.builder().name("Shape Up Project").projectKey("SUP2")
+        .projectType(ProjectType.SHAPE_UP).isActive(true).build();
+    project = projectRepository.save(project);
+
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setTitle("Shaped pitch work");
+    request.setProjectId(project.getId());
+    request.setCategory(TaskCategory.PITCH_SCOPE);
+
+    assertThatThrownBy(() -> taskService.createTask(request))
+        .isInstanceOf(com.github.farzadsedaghatbin.shipflow.exception.BadRequestException.class);
+  }
+
+  @Test
+  void createTask_WithoutCycleInScrumProject_ShouldCreateProductBacklogTask() {
+    Project project = Project.builder().name("Scrum Project").projectKey("SCR1")
+        .projectType(ProjectType.SCRUM).isActive(true).build();
+    project = projectRepository.save(project);
+
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setTitle("Sprint-less backlog item");
+    request.setProjectId(project.getId());
+
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getCycleId()).isNull();
   }
 
   @Test
