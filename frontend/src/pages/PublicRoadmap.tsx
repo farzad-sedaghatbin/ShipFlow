@@ -46,6 +46,9 @@ import {
   Wand2,
   Zap,
   ClipboardList,
+  Puzzle,
+  Fingerprint,
+  WifiOff,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -88,6 +91,17 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.11.0',
+      date: 'July 28, 2026',
+      title: t('publicRoadmap.phaseMobileTheme'),
+      highlights: [
+        { icon: <WifiOff className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem0Title'), description: t('publicRoadmap.phaseMobileItem0Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem1Title'), description: t('publicRoadmap.phaseMobileItem1Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem2Title'), description: t('publicRoadmap.phaseMobileItem2Desc') },
+        { icon: <Fingerprint className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem3Title'), description: t('publicRoadmap.phaseMobileItem3Desc') },
+      ],
+    },
     {
       version: '1.10.0',
       date: 'July 14, 2026',
@@ -289,14 +303,13 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.11.0',
-      theme: t('publicRoadmap.phaseMobileTheme'),
-      status: 'in-progress',
+      version: 'v1.12.0',
+      theme: t('publicRoadmap.phasePluginTheme'),
+      status: 'planned',
       items: [
-        { icon: <Smartphone className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem0Title'), description: t('publicRoadmap.phaseMobileItem0Desc') },
-        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem1Title'), description: t('publicRoadmap.phaseMobileItem1Desc') },
-        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem2Title'), description: t('publicRoadmap.phaseMobileItem2Desc') },
-        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.phaseMobileItem3Title'), description: t('publicRoadmap.phaseMobileItem3Desc') },
+        { icon: <Puzzle className="h-5 w-5" />, title: t('publicRoadmap.phasePluginItem0Title'), description: t('publicRoadmap.phasePluginItem0Desc') },
+        { icon: <Command className="h-5 w-5" />, title: t('publicRoadmap.phasePluginItem1Title'), description: t('publicRoadmap.phasePluginItem1Desc') },
+        { icon: <GitBranch className="h-5 w-5" />, title: t('publicRoadmap.phasePluginItem2Title'), description: t('publicRoadmap.phasePluginItem2Desc') },
       ],
     },
   ];

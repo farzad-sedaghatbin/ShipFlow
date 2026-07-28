@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-07-28
+
+> **Note**: v1.10.0's changelog section below was finalized (features merged, version bumped) but never actually tagged/released — work continued straight into this milestone without cutting a release in between. This release absorbs that gap: the git tag jumps directly from v1.9.1 to v1.11.0, and everything below (including the untagged v1.10.0 entries two sections down) ships together as one release.
+
 ### Added
 - **Web Push notifications + WebAuthn passkey sign-in**: two independent features shipped together as the final session (S59) of the v1.11.0 "Mobile PWA" milestone.
   - **Web Push**: turn on push notifications from your Profile page to get native OS notifications for mentions, assignments, and cycle events even when ShipFlow isn't open in a tab — no app-store install required. Backend: `push_subscriptions` table (one row per browser/device), `IPushNotificationService`/`WebPushNotificationService` (using `nl.martijndwars:web-push` for all RFC 8291 payload encryption and RFC 8292 VAPID signing — no hand-rolled crypto) with a `NoOpPushNotificationService` fallback when no VAPID keys are configured, mirroring the existing email-notification service pattern. Wired into the existing notification pipeline via a new `NotificationCreatedEvent` + `@Async @TransactionalEventListener(AFTER_COMMIT)` listener (per this repo's cross-cutting-side-effect convention) rather than a direct call, so the existing SSE/email delivery paths are untouched. A per-user `pushEnabled` preference (default on) lets you opt out. `POST /api/push/subscribe` / `DELETE /api/push/unsubscribe` / `GET /api/push/vapid-public-key`. Frontend: `services/pushService.ts`'s `enablePushNotifications()`/`disablePushNotifications()` orchestrate the browser's `PushManager` API and the S57 service worker (`frontend/src/sw.ts`), which now has `push`/`notificationclick` listeners (shows a native notification from the payload, click focuses/opens the relevant page).

@@ -7373,7 +7373,14 @@
     "phaseMobileItem2Title": "اعلان‌های Web Push",
     "phaseMobileItem2Desc": "اعلان‌های بومی روی موبایل و دسکتاپ برای منشن‌ها، واگذاری‌ها و رویدادهای چرخه — بدون ایمیل یا تب باز.",
     "phaseMobileItem3Title": "احراز هویت زیستی",
-    "phaseMobileItem3Desc": "ورود با Face ID، Touch ID یا پ‌س‌کی دستگاه (WebAuthn) برای دسترسی سریع و امن روی موبایل."
+    "phaseMobileItem3Desc": "ورود با Face ID، Touch ID یا پ‌س‌کی دستگاه (WebAuthn) برای دسترسی سریع و امن روی موبایل.",
+    "phasePluginTheme": "بازار افزونه‌ها",
+    "phasePluginItem0Title": "رجیستری افزونه‌ها",
+    "phasePluginItem0Desc": "افزونه‌های رسمی و جامعه را از داخل ShipFlow مرور، نصب و مدیریت کنید، بدون پیکربندی دستی.",
+    "phasePluginItem1Title": "ابزار خط فرمان Maven",
+    "phasePluginItem1Desc": "با یک دستور، یک پروژه افزونه جدید بر پایه Plugin SDK موجود بسازید.",
+    "phasePluginItem2Title": "GitLab و Azure DevOps",
+    "phasePluginItem2Desc": "یکپارچه‌سازی کنترل نسخه را فراتر از GitHub گسترش دهید — لینک خودکار کامیت/MR و جدول زمانی مبتنی بر وب‌هوک، دقیقاً مانند یکپارچه‌سازی فعلی GitHub."
   },
   "shortcuts": {
     "title": "میانبرهای صفحه‌کلید",

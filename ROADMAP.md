@@ -7,6 +7,7 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 | Version | Theme | Date |
 |---------|-------|------|
+| v1.11.0 | Mobile PWA — offline support, responsive audit, Web Push notifications, passkey (WebAuthn) sign-in | July 28, 2026 |
 | v1.10.0 | Wiki References (Pitch/Task links), Drag-and-Drop Task Reordering, Target Release for Standalone Tasks | July 14, 2026 |
 | v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, air-gapped AI | July 1, 2026 |
 | v1.8.0 | Custom Fields & Advanced RBAC, Wiki / Docs Space, pluggable Object Storage | June 27, 2026 |
@@ -18,16 +19,6 @@ It is the canonical, always-current source — this file is a contributor-facing
 | v1.2.0 | Competitor Migration Tooling (Jira, Linear, CSV) | May 23, 2026 |
 | v1.1.0 | Scrum Mode — Sprints, Story Points & Velocity | May 19, 2026 |
 | v1.0.0 | Public release — MCP server, audit trail, RBAC, E2E tests | April 2026 |
-
-## Active Milestone
-
-### v1.11.0 — Mobile PWA
-
-| Session | Task | Status |
-|---------|------|--------|
-| S57 | Progressive Web App shell + offline support (service worker, background sync) | ✅ |
-| S58 | Responsive-layout audit across all pages (boards, pitches, hill charts, wiki) | 🔲 |
-| S59 | Web Push notifications + biometric/passkey auth (WebAuthn) | 🔲 |
 
 ## Planned
 

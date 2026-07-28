@@ -83,9 +83,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.11.0',
-    date: 'Coming soon',
+    date: 'July 28, 2026',
     title: 'Mobile PWA',
-    upcoming: true,
     highlights: [
       {
         icon: <WifiOff className="h-5 w-5" />,
