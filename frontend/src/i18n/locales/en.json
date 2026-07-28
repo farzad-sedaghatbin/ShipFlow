@@ -5615,7 +5615,14 @@
     "phaseMobileItem2Title": "Web Push Notifications",
     "phaseMobileItem2Desc": "Native push notifications on mobile and desktop for mentions, assignments, and cycle events — no email or open tab required.",
     "phaseMobileItem3Title": "Biometric Auth",
-    "phaseMobileItem3Desc": "Sign in with Face ID, Touch ID, or a device passkey (WebAuthn) for fast, secure access on mobile."
+    "phaseMobileItem3Desc": "Sign in with Face ID, Touch ID, or a device passkey (WebAuthn) for fast, secure access on mobile.",
+    "phasePluginTheme": "Plugin Marketplace",
+    "phasePluginItem0Title": "Plugin Registry",
+    "phasePluginItem0Desc": "Browse, install, and manage community and first-party plugins from within ShipFlow instead of hand-wiring configuration.",
+    "phasePluginItem1Title": "Maven Archetype CLI",
+    "phasePluginItem1Desc": "Scaffold a new plugin project in one command, building on the existing Plugin SDK.",
+    "phasePluginItem2Title": "GitLab + Azure DevOps",
+    "phasePluginItem2Desc": "Extend source-control integration beyond GitHub — auto-link commits/MRs, webhook-driven timelines, the same way GitHub integration already works."
   },
   "releaseNotes": {
     "title": "Release Notes",
