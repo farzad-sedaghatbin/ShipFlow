@@ -75,11 +75,12 @@ public class TaskController {
       @ApiResponse(responseCode = "400", description = "User not linked to a person profile")})
   public ResponseEntity<Page<TaskDTO>> getMyTasks(@RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortOrder) {
+      @RequestParam(defaultValue = "desc") String sortOrder,
+      @RequestParam(required = false) TaskCategory category) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.getMyTasks(pageable));
+    return ResponseEntity.ok(taskService.getMyTasks(category, pageable));
   }
 
   @GetMapping("/my/cycle/{cycleId}")
@@ -88,11 +89,12 @@ public class TaskController {
   public ResponseEntity<Page<TaskDTO>> getMyTasksByCycle(@PathVariable Long cycleId,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortOrder) {
+      @RequestParam(defaultValue = "desc") String sortOrder,
+      @RequestParam(required = false) TaskCategory category) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.getMyTasksByCycle(cycleId, pageable));
+    return ResponseEntity.ok(taskService.getMyTasksByCycle(cycleId, category, pageable));
   }
 
   // ========== General Task Management ==========
@@ -102,11 +104,12 @@ public class TaskController {
   @Operation(summary = "Get all tasks", description = "Returns all tasks in the system with pagination and sorting")
   public ResponseEntity<Page<TaskDTO>> getAllTasks(@RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortOrder) {
+      @RequestParam(defaultValue = "desc") String sortOrder,
+      @RequestParam(required = false) TaskCategory category) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.getAllTasks(pageable));
+    return ResponseEntity.ok(taskService.getAllTasks(category, pageable));
   }
 
   @GetMapping("/search")

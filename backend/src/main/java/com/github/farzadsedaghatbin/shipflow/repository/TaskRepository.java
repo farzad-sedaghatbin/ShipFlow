@@ -23,6 +23,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.deletedAt IS NULL")
     Page<Task> findAllNotDeleted(Pageable pageable);
 
+    @Query("SELECT t FROM Task t WHERE t.deletedAt IS NULL AND (:category IS NULL OR t.category = :category)")
+    Page<Task> findAllNotDeleted(@Param("category") TaskCategory category, Pageable pageable);
+
     @Query("SELECT t FROM Task t WHERE t.id = :id AND t.deletedAt IS NULL")
     Optional<Task> findByIdNotDeleted(@Param("id") Long id);
 
@@ -49,6 +52,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND (t.assignee.id = :personId OR t.pairAssignee.id = :personId) AND t.deletedAt IS NULL")
     Page<Task> findByCycleIdAndPersonIdNotDeleted(@Param("cycleId") Long cycleId, @Param("personId") Long personId,
             Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND (t.assignee.id = :personId OR t.pairAssignee.id = :personId) "
+            + "AND (:category IS NULL OR t.category = :category)")
+    Page<Task> findByCycleIdAndPersonId(@Param("cycleId") Long cycleId, @Param("personId") Long personId,
+            @Param("category") TaskCategory category, Pageable pageable);
 
     @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND (t.assignee.id = :personId OR t.pairAssignee.id = :personId) AND t.deletedAt IS NULL")
     List<Task> findByCycleIdAndPersonIdNotDeleted(@Param("cycleId") Long cycleId, @Param("personId") Long personId);
@@ -97,6 +105,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT t FROM Task t WHERE t.assignee.id = :personId OR t.pairAssignee.id = :personId")
     Page<Task> findByPersonId(@Param("personId") Long personId, Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE (t.assignee.id = :personId OR t.pairAssignee.id = :personId) "
+            + "AND (:category IS NULL OR t.category = :category)")
+    Page<Task> findByPersonId(@Param("personId") Long personId, @Param("category") TaskCategory category,
+            Pageable pageable);
 
     @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId")
     int countByCycleId(@Param("cycleId") Long cycleId);

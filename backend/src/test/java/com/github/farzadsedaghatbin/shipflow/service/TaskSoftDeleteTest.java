@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,9 @@ class TaskSoftDeleteTest {
 
   @Mock
   private ProjectPermissionService projectPermissionService;
+
+  @Mock
+  private HillChartPointRepository hillChartPointRepository;
 
   @InjectMocks
   private TaskService taskService;
@@ -97,6 +101,23 @@ class TaskSoftDeleteTest {
     verify(taskRepository).save(testTask);
     assertThat(testTask.getDeletedAt()).isNotNull();
     assertThat(testTask.getDeletedBy()).isEqualTo(testUser);
+  }
+
+  @Test
+  @DisplayName("Should remove the linked hill chart scope when deleting a task")
+  void shouldRemoveLinkedHillChartScopeOnDelete() {
+    // Given
+    var linkedScope = com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint.builder().id(5L)
+        .linkedTask(testTask).build();
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+    when(taskRepository.save(any(Task.class))).thenReturn(testTask);
+    when(hillChartPointRepository.findByLinkedTaskId(1L)).thenReturn(Optional.of(linkedScope));
+
+    // When
+    taskService.deleteTask(1L);
+
+    // Then
+    verify(hillChartPointRepository).delete(linkedScope);
   }
 
   @Test

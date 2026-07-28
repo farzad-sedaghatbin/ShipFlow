@@ -34,7 +34,7 @@ export function useBacklogPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category') as TaskCategory | null;
-  const { isKanbanProject, currentProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
+  const { isKanbanProject, isStrictlyShapeUp, currentProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { user } = useAuth();
 
   // Data
@@ -60,6 +60,12 @@ export function useBacklogPage() {
   const [tabValue, setTabValue] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>(isKanbanProject ? 'kanban' : 'list');
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
+
+  // Debt/Improvement work in Shape Up is opportunistic filler picked up when nothing else is
+  // scheduled — it doesn't need to be bet on a specific cycle upfront, unlike shaped pitch scope.
+  // So this one category+methodology combo may skip the cycle requirement (still needs a project
+  // to attach to, since a cycle-less task is stored via a direct project reference).
+  const canSkipCycleForDebtImprovement = isStrictlyShapeUp && activeCategory === 'DEBT_IMPROVEMENT' && !!currentProject;
 
   // Kanban column visibility
   const [visibleColumns, setVisibleColumns] = useState<TaskStatus[]>([
@@ -235,17 +241,15 @@ export function useBacklogPage() {
 
       if (tabValue === 'my') {
         if (selectedCycle === 'all') {
-          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder);
+          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder, activeCategory);
         } else {
-          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder, activeCategory);
         }
-        const filtered = applyCommonFilters((response?.data?.content || []).filter((t: Task) => (t.category || 'PITCH_SCOPE') === activeCategory));
-        setTasks(filtered);
-        setTotalElements(selectedCycle === 'all' ? (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0) : filtered.length);
+        setTasks(applyCommonFilters(response?.data?.content || []));
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else if (selectedCycle === 'all') {
-        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder);
-        const byCat = (response?.data?.content || []).filter((t: Task) => (t.category || 'PITCH_SCOPE') === activeCategory);
-        setTasks(applyCommonFilters(byCat));
+        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder, activeCategory);
+        setTasks(applyCommonFilters(response?.data?.content || []));
         setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
         response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, activeCategory, excludeMode, page, rowsPerPage, sortBy, sortOrder);
@@ -332,6 +336,9 @@ export function useBacklogPage() {
         title: task.title,
         description: task.description || '',
         cycleId: task.cycleId,
+        // Cycle-less tasks (Shape Up Debt/Improvement backlog items) carry a direct project
+        // reference instead — preserve it so re-saving doesn't fail cycle validation.
+        projectId: !task.cycleId ? task.projectId : undefined,
         status: task.status,
         priority: task.priority,
         estimateHours: task.estimateHours,
@@ -347,14 +354,21 @@ export function useBacklogPage() {
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
-      if (!isKanbanProject && (!selectedCycle || selectedCycle === 'all')) { toast.error(t('backlogPage.selectCycleToCreate')); return; }
-      let cycleIdToUse = typeof selectedCycle === 'number' ? selectedCycle : 0;
-      if (isKanbanProject && currentProject && cycleIdToUse === 0) {
+      if (!isKanbanProject && (!selectedCycle || selectedCycle === 'all') && !canSkipCycleForDebtImprovement) {
+        toast.error(t('backlogPage.selectCycleToCreate'));
+        return;
+      }
+      let cycleIdToUse: number | undefined = typeof selectedCycle === 'number' ? selectedCycle : undefined;
+      if (isKanbanProject && currentProject && cycleIdToUse === undefined) {
         const projectCycles = cycles.filter(c => c.projectId === currentProject.id);
         if (projectCycles.length > 0) { cycleIdToUse = projectCycles[0].id; } else { toast.error(t('backlogPage.noDefaultCycle')); return; }
       }
       setEditingTask(null);
-      setFormData({ title: '', description: '', cycleId: cycleIdToUse, status: 'BACKLOG', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory, pitchId: undefined });
+      setFormData({
+        title: '', description: '', cycleId: cycleIdToUse,
+        projectId: cycleIdToUse === undefined && currentProject ? currentProject.id : undefined,
+        status: 'BACKLOG', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory, pitchId: undefined,
+      });
       setDueDate(null);
     }
     setDialogOpen(true);
@@ -363,7 +377,13 @@ export function useBacklogPage() {
   const handleCloseDialog = () => { setDialogOpen(false); setEditingTask(null); setFieldErrors({}); };
 
   const handleAddSubTask = (parentTask: Task) => {
-    setFormData({ title: '', description: '', cycleId: parentTask.cycleId, parentTaskId: parentTask.id, pitchId: parentTask.pitchId, status: 'TODO', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: parentTask.category || activeCategory });
+    setFormData({
+      title: '', description: '', cycleId: parentTask.cycleId,
+      // Parent tasks can be cycle-less (Shape Up Debt/Improvement backlog items) — carry the
+      // project reference through so the subtask isn't left with neither.
+      projectId: !parentTask.cycleId ? parentTask.projectId : undefined,
+      parentTaskId: parentTask.id, pitchId: parentTask.pitchId, status: 'TODO', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: parentTask.category || activeCategory,
+    });
     setDueDate(null);
     setEditingTask(null);
     setDialogOpen(true);
@@ -427,7 +447,10 @@ export function useBacklogPage() {
     const errors: Record<string, string> = {};
     if (!formData.title.trim()) { errors.title = t('backlogPage.titleRequired'); }
     else if (formData.title.trim().length < 3) { errors.title = t('backlogPage.titleMinLength'); }
-    if (!isKanbanProject && (!formData.cycleId || formData.cycleId === 0)) { errors.cycleId = t('backlogPage.cycleRequired'); }
+    const canSkipCycle = isStrictlyShapeUp && activeCategory === 'DEBT_IMPROVEMENT' && !!formData.projectId;
+    if (!isKanbanProject && !canSkipCycle && (!formData.cycleId || formData.cycleId === 0)) {
+      errors.cycleId = t('backlogPage.cycleRequired');
+    }
     if (formData.estimateHours !== undefined && formData.estimateHours < 0) { errors.estimateHours = t('backlogPage.estimatePositive'); }
     if (formData.actualHours !== undefined && formData.actualHours < 0) { errors.actualHours = t('backlogPage.actualPositive'); }
     setFieldErrors(errors);
@@ -571,6 +594,7 @@ export function useBacklogPage() {
     isKanbanProject,
     isSwitchingProject,
     currentProject,
+    canSkipCycleForDebtImprovement,
 
     // Handlers
     handleToggleColumn,
