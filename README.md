@@ -619,6 +619,7 @@ ShipFlow is fully responsive and works on all device sizes:
 - **Responsive Tables**: Horizontal scroll for data-heavy views
 - **Optimized Forms**: Full-width inputs and filters on small screens
 - **Mobile Breakpoints**: Optimized for 375px (iPhone SE), 414px (standard phones), and all tablet sizes
+- **Responsive-layout audit** *(v1.11.0)*: swept the app for real overflow/usability gaps at 375px — the floating bulk-action toolbar on Backlog, the Wiki page-tree sidebar (now a Sheet drawer below `lg`), five wiki modals that bypassed the shared dialog component, a stat grid, and a task-header action row. A couple of lower-priority items (a dense bug-report table, a 7-column calendar) degrade gracefully and are left for a future pass rather than silently claimed as done.
 - **Installable, offline-capable PWA** *(v1.11.0)*: install ShipFlow like a native app (desktop "Install" icon, mobile "Add to Home Screen"). Already-visited pages stay browsable offline via a Workbox service worker; writes made offline are queued via background sync and replay automatically once you're back online — see `PWA_GUIDE.md`. A dedicated page-by-page responsive-layout audit is planned for a follow-up v1.11.0 session (S58); until then some data-dense pages (hill charts, wide tables) are more comfortable on tablet/desktop.
 
 ## 🌍 Internationalization (i18n) & RTL Support

@@ -428,7 +428,11 @@ export default function TaskDetailPage() {
       {/* Task Header */}
       <Card data-tour="task-detail">
         <CardHeader>
-          <div className="flex items-start justify-between">
+          {/* Stacks on mobile; the action row (up to 5 controls — Add
+              Subtask, Start/Stop Timer with live elapsed time, Copy Link,
+              Edit, Delete) also wraps instead of overflowing a narrow
+              viewport. */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
                 {task.parentTaskId && (
@@ -465,7 +469,7 @@ export default function TaskDetailPage() {
                 </Badge>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {!task.parentTaskId && (
                 <Button
                   variant="outline"

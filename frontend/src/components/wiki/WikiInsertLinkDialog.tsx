@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, Link as LinkIcon, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   wikiService,
   type WikiPageSearchDTO,
@@ -58,21 +59,15 @@ export default function WikiInsertLinkDialog({
     };
   }, [query, spaceId, open]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-24"
-      onClick={onClose}
-    >
-      <div
-        className="bg-background rounded-xl shadow-xl w-full max-w-lg p-5 space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <LinkIcon className="w-4 h-4" />
-          {t("wiki.insertPageLink")}
-        </h2>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <LinkIcon className="w-4 h-4" />
+            {t("wiki.insertPageLink")}
+          </DialogTitle>
+        </DialogHeader>
         <p className="text-xs text-muted-foreground">
           {t("wiki.insertPageLinkHint")}
         </p>
@@ -127,7 +122,7 @@ export default function WikiInsertLinkDialog({
             {t("wiki.cancel")}
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -326,10 +326,14 @@ export default function PublicRoadmap() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/releases')}>
+              {/* Below `sm` these two overlapped the "ShipFlow" logo — no
+                  breakpoint hiding at all, unlike every other header in the
+                  app. Hide the secondary links and keep the primary CTA,
+                  matching Landing.tsx's "always show Get Started" pattern. */}
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/releases')}>
                 {t('landing.whatsNew')}
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/compare')}>
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/compare')}>
                 {t('landing.compareToCompetitors')}
               </Button>
               <Button size="sm" onClick={() => navigate('/login')}>

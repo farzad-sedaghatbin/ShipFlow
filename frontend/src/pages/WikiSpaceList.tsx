@@ -7,6 +7,22 @@ import { z } from "zod";
 import { useTranslation } from "react-i18next";
 import { BookOpenText, Plus, Trash2 } from "lucide-react";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   wikiService,
   type CreateWikiSpaceRequest,
 } from "../services/wikiService";
@@ -168,103 +184,103 @@ export default function WikiSpaceList() {
         </ul>
       )}
 
-      {/* Create Space Dialog */}
-      {dialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-background rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <h2 className="text-lg font-semibold">{t("wiki.createSpace")}</h2>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {t("wiki.spaceName")} *
-                </label>
-                <input
-                  {...register("name")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Engineering"
-                />
-                {errors.name && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {t("wiki.spaceKey")} *
-                </label>
-                <input
-                  {...spaceKeyField}
-                  onChange={(e) => {
-                    setKeyEdited(true);
-                    spaceKeyField.onChange(e);
-                  }}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
-                  placeholder="ENG"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("wiki.spaceKeyHint")}
+      {/* Create Space Dialog — shared Dialog component, so it inherits the
+          app-wide mobile fullscreen fallback instead of the fixed max-w-md
+          card the hand-rolled overlay used to render flush against the
+          screen edges on narrow viewports. */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("wiki.createSpace")}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("wiki.spaceName")} *
+              </label>
+              <input
+                {...register("name")}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Engineering"
+              />
+              {errors.name && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.name.message}
                 </p>
-                {errors.spaceKey && (
-                  <p className="text-xs text-destructive mt-1">
-                    {errors.spaceKey.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  {t("wiki.description")}
-                </label>
-                <input
-                  {...register("description")}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="…"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={closeDialog}
-                  className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
-                >
-                  {t("wiki.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || createMutation.isPending}
-                  className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                >
-                  {createMutation.isPending ? t("wiki.saving") : t("wiki.createSpace")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation */}
-      {deleteTarget !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-background rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
-            <p className="text-sm">{t("wiki.deleteSpaceConfirm")}</p>
-            <div className="flex justify-end gap-2">
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("wiki.spaceKey")} *
+              </label>
+              <input
+                {...spaceKeyField}
+                onChange={(e) => {
+                  setKeyEdited(true);
+                  spaceKeyField.onChange(e);
+                }}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
+                placeholder="ENG"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("wiki.spaceKeyHint")}
+              </p>
+              {errors.spaceKey && (
+                <p className="text-xs text-destructive mt-1">
+                  {errors.spaceKey.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("wiki.description")}
+              </label>
+              <input
+                {...register("description")}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="…"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
               <button
-                onClick={() => setDeleteTarget(null)}
+                type="button"
+                onClick={closeDialog}
                 className="px-4 py-2 text-sm rounded-md border border-input hover:bg-muted transition-colors"
               >
                 {t("wiki.cancel")}
               </button>
               <button
-                onClick={() => deleteMutation.mutate(deleteTarget)}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 text-sm rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors disabled:opacity-50"
+                type="submit"
+                disabled={isSubmitting || createMutation.isPending}
+                className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                {t("wiki.delete")}
+                {createMutation.isPending ? t("wiki.saving") : t("wiki.createSpace")}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation — shared AlertDialog, consistent with every
+          other destructive-action confirmation in the app. */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("wiki.delete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("wiki.deleteSpaceConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("wiki.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget !== null && deleteMutation.mutate(deleteTarget)}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("wiki.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
