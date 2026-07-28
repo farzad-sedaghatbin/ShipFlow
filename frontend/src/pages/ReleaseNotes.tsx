@@ -60,6 +60,9 @@ import {
   Zap,
   Sliders,
   Smartphone,
+
+  WifiOff,
+  Fingerprint,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -89,6 +92,22 @@ const releases: Release[] = [
         title: 'Responsive-Layout Audit',
         description:
           "Swept the app for real mobile-usability gaps at 375px, not just cosmetic tweaks. The floating bulk-action toolbar on Backlog, the Wiki page-tree sidebar (now a Sheet drawer below the `lg` breakpoint), five wiki dialogs that had bypassed the shared modal component, a stat grid, and a task-detail action row were all fixed. Along the way, found and fixed a gap in the shared AlertDialog component itself — every confirmation dialog across the app now gets a proper margin on mobile instead of sitting flush against the screen edges.",
+        icon: <WifiOff className="h-5 w-5" />,
+        title: 'Installable App + Offline Support',
+        description:
+          "Install ShipFlow like a native app (desktop \"Install\" icon or mobile \"Add to Home Screen\"). Already-visited pages stay browsable when you lose connectivity, and writes made offline — comments, status changes, new tasks — are queued and sent automatically once you're back online, instead of failing silently.",
+      },
+      {
+        icon: <Bell className="h-5 w-5" />,
+        title: 'Web Push Notifications',
+        description:
+          'Get native push notifications for mentions, assignments, and cycle events — even when ShipFlow isn\'t open in a tab. Turn it on from your Profile page; works on desktop and mobile without any app-store install.',
+      },
+      {
+        icon: <Fingerprint className="h-5 w-5" />,
+        title: 'Sign In with a Passkey',
+        description:
+          'Register a passkey from your Profile page and sign in with Face ID, Touch ID, Windows Hello, or a security key instead of typing a password — built on the WebAuthn standard, no third-party authenticator app required.',
       },
     ],
   },

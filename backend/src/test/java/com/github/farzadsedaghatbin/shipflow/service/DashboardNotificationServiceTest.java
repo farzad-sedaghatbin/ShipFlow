@@ -62,6 +62,9 @@ class DashboardNotificationServiceTest {
   @Mock
   private IEmailNotificationService emailService;
 
+  @Mock
+  private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
   private DashboardNotificationService notificationService;
 
   private User testUser;
@@ -80,7 +83,7 @@ class DashboardNotificationServiceTest {
 
     notificationService = new DashboardNotificationService(notificationRepository, taskRepository,
         cycleRepository, pitchRepository, hillChartPointRepository, userRepository, wikiPageRepository,
-        List.of(slackProvider, teamsProvider), notificationSseManager, emailService);
+        List.of(slackProvider, teamsProvider), notificationSseManager, emailService, eventPublisher);
 
     testUser = User.builder().id(1L).username("testuser").build();
 

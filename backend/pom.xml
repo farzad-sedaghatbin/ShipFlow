@@ -357,6 +357,48 @@
             <artifactId>jsoup</artifactId>
             <version>1.17.2</version>
         </dependency>
+
+        <!-- web-push — RFC 8291 payload encryption + RFC 8292 VAPID signing for Web Push
+             notifications (v1.11.0 Mobile PWA). Never hand-roll this crypto. -->
+        <dependency>
+            <groupId>nl.martijndwars</groupId>
+            <artifactId>web-push</artifactId>
+            <version>5.1.2</version>
+        </dependency>
+        <!-- web-push declares bcprov-jdk15on as <optional>true</optional> in its own POM, so it
+             is not pulled in transitively — it must be added explicitly or PushService/
+             Notification/Subscription fail to load (they reference org.bouncycastle.jce.*
+             types directly). Version pinned to match the one web-push itself depends on. -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.70</version>
+        </dependency>
+        <!-- web-push's PushService.send() returns org.apache.http.HttpResponse (used to detect
+             410/404 for expired-subscription cleanup), but web-push only pulls in httpcore
+             transitively at <scope>runtime</scope> (via httpasyncclient) — not visible at our
+             compile classpath. Added explicitly at (default) compile scope; version matches the
+             one already resolved transitively elsewhere in the dependency tree. -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.4.16</version>
+        </dependency>
+        <!-- PushService.send()/preparePost() throw JoseException (VAPID JWT signing) in their
+             signature; web-push declares jose4j at <scope>runtime</scope> only, so it must also
+             be added explicitly at compile scope for our try/catch to see the type. -->
+        <dependency>
+            <groupId>org.bitbucket.b_c</groupId>
+            <artifactId>jose4j</artifactId>
+            <version>0.7.9</version>
+        </dependency>
+
+        <!-- webauthn4j — WebAuthn/FIDO2 passkey registration + authentication verification (S59, v1.11.0) -->
+        <dependency>
+            <groupId>com.webauthn4j</groupId>
+            <artifactId>webauthn4j-core</artifactId>
+            <version>0.29.1.RELEASE</version>
+        </dependency>
     </dependencies>
 
     <profiles>

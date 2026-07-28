@@ -49,6 +49,9 @@ public class UserPreferenceService {
     if (request.getEnableAnimations() != null) {
       preference.setEnableAnimations(request.getEnableAnimations());
     }
+    if (request.getPushEnabled() != null) {
+      preference.setPushEnabled(request.getPushEnabled());
+    }
 
     UserPreference saved = userPreferenceRepository.save(preference);
     log.info("User preferences updated for user {}", userId);
@@ -76,6 +79,7 @@ public class UserPreferenceService {
     preference.setSecondaryColor(null);
     preference.setCompactView(false);
     preference.setEnableAnimations(true);
+    preference.setPushEnabled(true);
 
     UserPreference saved = userPreferenceRepository.save(preference);
     log.info("Preferences reset to defaults for user {}", userId);
@@ -87,7 +91,7 @@ public class UserPreferenceService {
         .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
     UserPreference preference = UserPreference.builder().user(user).themeMode(ThemeMode.SYSTEM).compactView(false)
-        .enableAnimations(true).build();
+        .enableAnimations(true).pushEnabled(true).build();
 
     return userPreferenceRepository.save(preference);
   }
@@ -97,6 +101,7 @@ public class UserPreferenceService {
         .username(preference.getUser().getUsername()).themeMode(preference.getThemeMode())
         .primaryColor(preference.getPrimaryColor()).secondaryColor(preference.getSecondaryColor())
         .compactView(preference.getCompactView()).enableAnimations(preference.getEnableAnimations())
+        .pushEnabled(preference.getPushEnabled())
         .createdAt(preference.getCreatedAt()).updatedAt(preference.getUpdatedAt()).build();
   }
 }

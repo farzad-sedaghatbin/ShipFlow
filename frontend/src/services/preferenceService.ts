@@ -12,6 +12,8 @@ export interface UserPreferenceDTO {
   secondaryColor?: string;
   compactView: boolean;
   enableAnimations: boolean;
+  /** Whether the current user has enabled Web Push notifications (S59). */
+  pushEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +24,7 @@ export interface UpdatePreferenceRequest {
   secondaryColor?: string;
   compactView?: boolean;
   enableAnimations?: boolean;
+  pushEnabled?: boolean;
 }
 
 // User Preference Service

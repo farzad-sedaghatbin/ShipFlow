@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
   User,
@@ -12,10 +13,20 @@ import {
   Camera,
   Loader2,
   Bell,
+  Smartphone,
 } from 'lucide-react';
 import { useToast } from '../contexts';
 import api from '../services/api';
 import { UserProfile, UpdateProfileRequest, ChangePasswordRequest, NotificationUserMapping } from '../types';
+import { preferenceService } from '../services/preferenceService';
+import {
+  enablePushNotifications,
+  disablePushNotifications,
+  PushNotSupportedError,
+  PushNotConfiguredError,
+  PushPermissionDeniedError,
+} from '../services/pushService';
+import { PasskeysCard } from '../components/PasskeysCard';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -26,6 +37,7 @@ import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Separator } from '../components/ui/separator';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { Switch } from '../components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -60,6 +72,39 @@ export default function Profile() {
   const [slackId, setSlackId] = useState('');
   const [teamsId, setTeamsId] = useState('');
   const [savingMapping, setSavingMapping] = useState<string | null>(null);
+
+  // Push notification preference (S59) — React Query, per the app's server-state convention.
+  const queryClient = useQueryClient();
+  const { data: preferences } = useQuery({
+    queryKey: ['user-preferences'],
+    queryFn: preferenceService.getPreferences,
+  });
+
+  const pushToggleMutation = useMutation({
+    mutationFn: async (nextEnabled: boolean) => {
+      if (nextEnabled) {
+        await enablePushNotifications();
+      } else {
+        await disablePushNotifications();
+      }
+      return preferenceService.updatePreferences({ pushEnabled: nextEnabled });
+    },
+    onSuccess: (_data, nextEnabled) => {
+      queryClient.invalidateQueries({ queryKey: ['user-preferences'] });
+      showToast(t(nextEnabled ? 'profilePage.pushEnabledToast' : 'profilePage.pushDisabledToast'), 'success');
+    },
+    onError: (err: unknown, nextEnabled) => {
+      if (err instanceof PushNotSupportedError) {
+        showToast(t('profilePage.pushNotSupported'), 'error');
+      } else if (err instanceof PushNotConfiguredError) {
+        showToast(t('profilePage.pushNotConfigured'), 'error');
+      } else if (err instanceof PushPermissionDeniedError) {
+        showToast(t('profilePage.pushPermissionDenied'), 'error');
+      } else {
+        showToast(t(nextEnabled ? 'profilePage.pushEnableFailed' : 'profilePage.pushDisableFailed'), 'error');
+      }
+    },
+  });
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -419,6 +464,33 @@ export default function Profile() {
               </div>
               <p className="text-xs text-muted-foreground">{t('profilePage.teamsMemberIdHelp')}</p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Passkeys Card — hidden entirely when the browser lacks WebAuthn support */}
+      <PasskeysCard />
+
+      {/* Push Notifications Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            {t('profilePage.pushNotifications')}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">{t('profilePage.pushNotificationsDesc')}</p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4">
+            <Label htmlFor="push-notifications-toggle" className="cursor-pointer">
+              {t('profilePage.pushNotifications')}
+            </Label>
+            <Switch
+              id="push-notifications-toggle"
+              checked={!!preferences?.pushEnabled}
+              onCheckedChange={(checked) => pushToggleMutation.mutate(checked)}
+              disabled={pushToggleMutation.isPending}
+            />
           </div>
         </CardContent>
       </Card>

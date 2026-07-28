@@ -26,6 +26,7 @@ const TOUR_COMPLETED_KEY = 'shipflow_tour_completed';
 export function TourProvider({ children }: { children: React.ReactNode }) {
   const [isTourActive, setIsTourActive] = useState(false);
   const [driverInstance, setDriverInstance] = useState<Driver | null>(null);
+  const driverInstanceRef = useRef<Driver | null>(null);
   const [hasCompletedTour, setHasCompletedTour] = useState(() => {
     return localStorage.getItem(TOUR_COMPLETED_KEY) === 'true';
   });
@@ -55,7 +56,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         side: 'right',
         align: 'start',
       },
-      route: '/',
+      route: '/dashboard',
     },
     {
       element: '[data-tour="projects-menu"]',
@@ -65,7 +66,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         side: 'right',
         align: 'start',
       },
-      route: '/',
+      route: '/dashboard',
     },
     {
       element: '[data-tour="new-project-btn"]',
@@ -459,17 +460,21 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     setHasCompletedTour(false);
   }, []);
 
+  useEffect(() => {
+    driverInstanceRef.current = driverInstance;
+  }, [driverInstance]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (navTimeoutRef.current) { clearTimeout(navTimeoutRef.current); navTimeoutRef.current = null; }
-      if (driverInstance) {
-        driverInstance.destroy();
+      if (driverInstanceRef.current) {
+        driverInstanceRef.current.destroy();
       }
       document.body.classList.remove('tour-active');
       pendingDestroyRef.current = null;
     };
-  }, [driverInstance]);
+  }, []);
 
   // Stop tour only when the user manually navigates away (not tour-driven navigation)
   useEffect(() => {
