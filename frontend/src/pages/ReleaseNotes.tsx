@@ -59,6 +59,8 @@ import {
   Wand2,
   Zap,
   Sliders,
+  Smartphone,
+
   WifiOff,
   Fingerprint,
 } from 'lucide-react';
@@ -86,6 +88,10 @@ const releases: Release[] = [
     upcoming: true,
     highlights: [
       {
+        icon: <Smartphone className="h-5 w-5" />,
+        title: 'Responsive-Layout Audit',
+        description:
+          "Swept the app for real mobile-usability gaps at 375px, not just cosmetic tweaks. The floating bulk-action toolbar on Backlog, the Wiki page-tree sidebar (now a Sheet drawer below the `lg` breakpoint), five wiki dialogs that had bypassed the shared modal component, a stat grid, and a task-detail action row were all fixed. Along the way, found and fixed a gap in the shared AlertDialog component itself — every confirmation dialog across the app now gets a proper margin on mobile instead of sitting flush against the screen edges.",
         icon: <WifiOff className="h-5 w-5" />,
         title: 'Installable App + Offline Support',
         description:

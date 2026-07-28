@@ -9,6 +9,7 @@ import {
   Shield,
   UserRound,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   wikiPermissionService,
   type WikiSpacePermissionDTO,
@@ -157,8 +158,6 @@ export default function WikiPermissionsDialog({
     onError: () => showError(t("wiki.share.revokeError")),
   });
 
-  if (!open) return null;
-
   const canSubmit =
     granteeType === "USER" ? !!selectedUser : !!selectedRole;
 
@@ -172,23 +171,17 @@ export default function WikiPermissionsDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-20"
-      onClick={onClose}
-    >
-      <div
-        className="bg-background rounded-xl shadow-xl w-full max-w-lg p-5 space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div>
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <Users className="w-4 h-4" />
             {t("wiki.share.title")}
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          </DialogTitle>
+          <DialogDescription>
             {t("wiki.share.subtitle", { space: spaceName })}
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Current grants */}
         <div className="space-y-2">
@@ -403,7 +396,7 @@ export default function WikiPermissionsDialog({
             {t("wiki.share.done")}
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

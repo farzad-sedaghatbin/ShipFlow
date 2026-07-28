@@ -812,8 +812,10 @@ const BugReportsPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-5 gap-3">
+      {/* Stats Cards — grid-cols-5 with no mobile override left ~55-60px per
+          column at 375px, crowding labels like "In Progress"; steps down
+          through 2/3 columns before reaching 5 at lg. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <Card>
           <CardContent className="text-center py-2 px-3">
             <p className="text-xl font-bold">{stats.total}</p>

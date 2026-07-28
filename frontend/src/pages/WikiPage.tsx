@@ -9,7 +9,9 @@ import {
   ChevronUp,
   FileDown,
   Link as LinkIcon,
+  Menu,
 } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import WikiTree from "../components/wiki/WikiTree";
 import WikiBreadcrumbs from "../components/wiki/WikiBreadcrumbs";
 import WikiTableOfContents from "../components/wiki/WikiTableOfContents";
@@ -50,6 +52,9 @@ export default function WikiPage() {
   const [childTitle, setChildTitle] = useState("");
   // Insert-page-link picker (edit mode only).
   const [insertLinkOpen, setInsertLinkOpen] = useState(false);
+  // Below `lg` the page tree sidebar is hidden (it doesn't fit alongside
+  // readable content on a phone/tablet); this drives a Sheet drawer instead.
+  const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<WikiEditorHandle>(null);
@@ -284,9 +289,11 @@ export default function WikiPage() {
 
   return (
     <div className="flex h-full">
-      {/* Left: tree sidebar */}
+      {/* Left: tree sidebar — hidden below `lg` (a fixed 256px column leaves
+          almost no room for content on a phone/tablet); a Sheet drawer below
+          gives mobile users the same navigation via a menu button instead. */}
       {space && (
-        <aside className="w-64 shrink-0 border-r border-border p-4 overflow-y-auto">
+        <aside className="hidden lg:block w-64 shrink-0 border-r border-border p-4 overflow-y-auto">
           <h2 className="font-semibold text-sm truncate mb-3">{space.name}</h2>
           <WikiTree
             spaceId={numSpaceId}
@@ -300,13 +307,39 @@ export default function WikiPage() {
         </aside>
       )}
 
+      {/* Mobile page-tree drawer (< lg only) */}
+      {space && (
+        <Sheet open={mobileTreeOpen} onOpenChange={setMobileTreeOpen}>
+          <SheetContent side="start" className="w-72 p-4 overflow-y-auto">
+            <h2 className="font-semibold text-sm truncate mb-3">{space.name}</h2>
+            <WikiTree
+              spaceId={numSpaceId}
+              nodes={tree ?? []}
+              currentPageId={numPageId}
+              onAddChild={(pid) => {
+                setChildParent(pid);
+                setChildTitle("");
+                setMobileTreeOpen(false);
+              }}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
+
       {/* Main content area */}
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 overflow-y-auto">
           <div id="wiki-print-area" className="max-w-3xl mx-auto py-8 px-6 space-y-6">
             {/* Breadcrumbs */}
             {space && (
-              <div className="no-print">
+              <div className="no-print flex items-center gap-2">
+                <button
+                  onClick={() => setMobileTreeOpen(true)}
+                  className="lg:hidden flex items-center justify-center h-8 w-8 shrink-0 rounded-md border border-input hover:bg-muted transition-colors"
+                  aria-label={t("wiki.pageTree")}
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
                 <WikiBreadcrumbs
                   space={space}
                   ancestors={findAncestors()}
@@ -315,10 +348,14 @@ export default function WikiPage() {
               </div>
             )}
 
-            {/* Title + toolbar */}
-            <div className="flex items-start justify-between gap-4">
+            {/* Title + toolbar — stacks on mobile; the toolbar row also wraps
+                so its buttons drop to a second line instead of overflowing
+                (up to 3 buttons, e.g. "Insert Page Link" / "Cancel" / "Save"
+                in edit mode, comfortably exceeds a ~310px content width once
+                the page-tree drawer trigger and padding are accounted for). */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <h1 className="text-3xl font-bold leading-tight">{page.title}</h1>
-              <div className="flex items-center gap-2 shrink-0 no-print">
+              <div className="flex flex-wrap items-center gap-2 sm:shrink-0 no-print">
                 {editMode ? (
                   <>
                     <button

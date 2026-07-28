@@ -95,9 +95,14 @@ export default function BulkActionBar({ selectedIds, persons, onClear, onSuccess
 
   return (
     <>
-      {/* Sticky bar fixed to bottom of viewport */}
+      {/* Sticky bar fixed to bottom of viewport.
+          Below `sm` this spans the viewport width (minus a small margin) with
+          a horizontally-scrolling button row instead of the desktop
+          centered/fixed-width bar — six actions + separators comfortably
+          exceed 600px, which overflows a 375px (iPhone SE) screen with no
+          way to reach the clipped buttons otherwise. */}
       <div
-        className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 rounded-xl border bg-background px-4 py-2.5 shadow-2xl ring-1 ring-border"
+        className="fixed bottom-4 left-2 right-2 z-50 mx-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border bg-background px-3 py-2 shadow-2xl ring-1 ring-border sm:bottom-6 sm:left-1/2 sm:right-auto sm:w-auto sm:max-w-[calc(100vw-2rem)] sm:-translate-x-1/2 sm:gap-2 sm:px-4 sm:py-2.5"
         role="toolbar"
         aria-label={t('bulkActions.toolbar')}
       >
@@ -106,14 +111,20 @@ export default function BulkActionBar({ selectedIds, persons, onClear, onSuccess
           {t('bulkActions.selected', { count })}
         </Badge>
 
-        <div className="h-5 w-px bg-border" />
+        <div className="h-5 w-px shrink-0 bg-border" />
 
         {/* Assign to */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" disabled={busy} className="gap-1.5">
-              <UserCheck className="h-3.5 w-3.5" />
-              {t('bulkActions.assignTo')}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              className="shrink-0 gap-1.5"
+              aria-label={t('bulkActions.assignTo')}
+            >
+              <UserCheck className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">{t('bulkActions.assignTo')}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="max-h-64 overflow-y-auto">
@@ -133,9 +144,15 @@ export default function BulkActionBar({ selectedIds, persons, onClear, onSuccess
         {/* Change status */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" disabled={busy} className="gap-1.5">
-              <RefreshCw className="h-3.5 w-3.5" />
-              {t('bulkActions.changeStatus')}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              className="shrink-0 gap-1.5"
+              aria-label={t('bulkActions.changeStatus')}
+            >
+              <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">{t('bulkActions.changeStatus')}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center">
@@ -150,9 +167,15 @@ export default function BulkActionBar({ selectedIds, persons, onClear, onSuccess
         {/* Change priority */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" disabled={busy} className="gap-1.5">
-              <ArrowUpDown className="h-3.5 w-3.5" />
-              {t('bulkActions.changePriority')}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              className="shrink-0 gap-1.5"
+              aria-label={t('bulkActions.changePriority')}
+            >
+              <ArrowUpDown className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">{t('bulkActions.changePriority')}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center">
@@ -167,9 +190,15 @@ export default function BulkActionBar({ selectedIds, persons, onClear, onSuccess
         {/* Add tag */}
         <DropdownMenu open={tagOpen} onOpenChange={setTagOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" disabled={busy} className="gap-1.5">
-              <Tag className="h-3.5 w-3.5" />
-              {t('bulkActions.addTag')}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              className="shrink-0 gap-1.5"
+              aria-label={t('bulkActions.addTag')}
+            >
+              <Tag className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">{t('bulkActions.addTag')}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="center" className="p-2 w-52">
@@ -194,25 +223,26 @@ export default function BulkActionBar({ selectedIds, persons, onClear, onSuccess
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="h-5 w-px bg-border" />
+        <div className="h-5 w-px shrink-0 bg-border" />
 
         {/* Delete */}
         <Button
           variant="ghost"
           size="sm"
           disabled={busy}
-          className="gap-1.5 text-destructive hover:text-destructive"
+          className="shrink-0 gap-1.5 text-destructive hover:text-destructive"
+          aria-label={t('common.delete')}
           onClick={() => setDeleteConfirmOpen(true)}
         >
-          <Trash2 className="h-3.5 w-3.5" />
-          {t('common.delete')}
+          <Trash2 className="h-3.5 w-3.5 shrink-0" />
+          <span className="hidden sm:inline">{t('common.delete')}</span>
         </Button>
 
-        <div className="h-5 w-px bg-border" />
+        <div className="h-5 w-px shrink-0 bg-border" />
 
         {/* Loading indicator or Clear */}
         {busy ? (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
         ) : (
           <Button
             variant="ghost"
