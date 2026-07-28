@@ -45,6 +45,11 @@ public class UserPreference {
   @Builder.Default
   private Boolean enableAnimations = true;
 
+  /** Whether Web Push notifications are delivered to this user's subscribed browsers */
+  @Column(name = "push_enabled")
+  @Builder.Default
+  private Boolean pushEnabled = true;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 

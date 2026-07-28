@@ -6,6 +6,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
+import com.github.farzadsedaghatbin.shipflow.event.NotificationCreatedEvent;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
 import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,7 @@ public class DashboardNotificationService {
   private final List<NotificationProvider> notificationProviders;
   private final NotificationSseManager notificationSseManager;
   private final IEmailNotificationService emailService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Autowired(required = false)
   private PitchHealthService pitchHealthService;
@@ -569,6 +572,10 @@ public class DashboardNotificationService {
 
     // Push to the user's live SSE stream (no-op if the user has no active stream)
     notificationSseManager.sendToUser(user.getId(), toDTO(saved));
+
+    // Web Push delivery is a cross-cutting side effect — published as an event and handled by
+    // PushNotificationListener (AFTER_COMMIT) rather than called directly here.
+    eventPublisher.publishEvent(new NotificationCreatedEvent(saved.getId()));
 
     return saved;
   }

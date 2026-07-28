@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, EyeOff, LogIn, Info, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Info, KeyRound, Fingerprint, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth, useToast } from '../contexts';
 import { authService } from '../services/authService';
 import { getEnabledProviders, initiateSSO } from '../services/ssoService';
+import { passkeyService } from '../services/passkeyService';
+import { isWebAuthnSupported, loginWithPasskey, WebAuthnCeremonyError } from '../lib/webauthn';
 import { LoginIllustration } from '../components/illustrations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +33,13 @@ export default function Login() {
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState<number | null>(null);
+
+  // Passkey sign-in — a username-only alternative to the password form,
+  // gated on browser WebAuthn support (Safari/older browsers lack it).
+  const webAuthnSupported = isWebAuthnSupported();
+  const [passkeyMode, setPasskeyMode] = useState(false);
+  const [passkeyUsername, setPasskeyUsername] = useState('');
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   // Fetch SSO providers — silently ignore errors (no SSO configured is fine)
   const { data: ssoProviders = [] } = useQuery({
@@ -94,11 +103,42 @@ export default function Login() {
       showSuccess(t('login.loginSuccess'));
       navigate(from, { replace: true });
     } catch (err: unknown) {
-      const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message 
+      const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         || t('login.invalidCredentials');
       setServerError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasskeyLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passkeyUsername.trim()) return;
+
+    setServerError('');
+    setPasskeyLoading(true);
+
+    try {
+      const options = await passkeyService.getLoginOptions(passkeyUsername.trim());
+      const credential = await loginWithPasskey(options);
+      const response = await passkeyService.verifyLogin({ username: passkeyUsername.trim(), ...credential });
+      const { token, userId, username: user, role, personId, personName } = response;
+
+      login(token, { userId, username: user, role, personId, personName });
+      showSuccess(t('login.loginSuccess'));
+      navigate(from, { replace: true });
+    } catch (err: unknown) {
+      if (err instanceof WebAuthnCeremonyError) {
+        // Cancellation/timeout vs. an actual ceremony failure get distinct,
+        // friendly messages rather than a raw DOMException string.
+        setServerError(t(err.cancelled ? 'passkeys.loginCancelled' : 'passkeys.loginFailed'));
+      } else {
+        const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+          || t('passkeys.loginFailed');
+        setServerError(errorMessage);
+      }
+    } finally {
+      setPasskeyLoading(false);
     }
   };
 
@@ -137,82 +177,146 @@ export default function Login() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">{t('login.username')}</Label>
-                <Input
-                  id="username"
-                  {...register('username')}
-                  autoFocus
-                  autoComplete="username"
-                  placeholder={t('login.username')}
-                  aria-invalid={!!errors.username}
-                  className={cn(errors.username && 'border-destructive focus-visible:ring-destructive')}
-                />
-                {errors.username && (
-                  <p className="text-sm font-medium text-destructive">{errors.username.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('login.password')}</Label>
-                <div className="relative">
+            {!passkeyMode ? (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">{t('login.username')}</Label>
                   <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    {...register('password')}
-                    autoComplete="current-password"
-                    placeholder={t('login.password')}
-                    aria-invalid={!!errors.password}
-                    className={cn('pr-10', errors.password && 'border-destructive focus-visible:ring-destructive')}
+                    id="username"
+                    {...register('username')}
+                    autoFocus
+                    autoComplete="username"
+                    placeholder={t('login.username')}
+                    aria-invalid={!!errors.username}
+                    className={cn(errors.username && 'border-destructive focus-visible:ring-destructive')}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
+                  {errors.username && (
+                    <p className="text-sm font-medium text-destructive">{errors.username.message}</p>
+                  )}
                 </div>
-                {errors.password && (
-                  <p className="text-sm font-medium text-destructive">{errors.password.message}</p>
-                )}
-              </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                />
-                <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
-                  {t('login.rememberMe')}
-                </Label>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t('login.password')}</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      {...register('password')}
+                      autoComplete="current-password"
+                      placeholder={t('login.password')}
+                      aria-invalid={!!errors.password}
+                      className={cn('pr-10', errors.password && 'border-destructive focus-visible:ring-destructive')}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-sm font-medium text-destructive">{errors.password.message}</p>
+                  )}
+                </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={loading}
-                loading={loading}
-              >
-                {!loading && (
-                  <>
-                    <LogIn className="h-4 w-4 mr-2" />
-                    {t('login.signIn')}
-                  </>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+                    {t('login.rememberMe')}
+                  </Label>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={loading}
+                  loading={loading}
+                >
+                  {!loading && (
+                    <>
+                      <LogIn className="h-4 w-4 mr-2" />
+                      {t('login.signIn')}
+                    </>
+                  )}
+                  {loading && t('common.loading')}
+                </Button>
+
+                {webAuthnSupported && (
+                  <button
+                    type="button"
+                    className="w-full text-center text-sm text-primary hover:underline flex items-center justify-center gap-1.5"
+                    onClick={() => {
+                      setServerError('');
+                      setPasskeyUsername('');
+                      setPasskeyMode(true);
+                    }}
+                  >
+                    <Fingerprint className="h-4 w-4" />
+                    {t('passkeys.signInWithPasskey')}
+                  </button>
                 )}
-                {loading && t('common.loading')}
-              </Button>
-            </form>
+              </form>
+            ) : (
+              <form onSubmit={handlePasskeyLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="passkey-username">{t('passkeys.usernameLabel')}</Label>
+                  <Input
+                    id="passkey-username"
+                    value={passkeyUsername}
+                    onChange={(e) => setPasskeyUsername(e.target.value)}
+                    autoFocus
+                    autoComplete="username webauthn"
+                    placeholder={t('login.username')}
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  size="lg"
+                  disabled={passkeyLoading || !passkeyUsername.trim()}
+                  loading={passkeyLoading}
+                >
+                  {!passkeyLoading && (
+                    <>
+                      <Fingerprint className="h-4 w-4 mr-2" />
+                      {t('passkeys.usePasskeyButton')}
+                    </>
+                  )}
+                  {passkeyLoading && (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t('passkeys.authenticating')}
+                    </>
+                  )}
+                </Button>
+
+                <button
+                  type="button"
+                  className="w-full text-center text-sm text-muted-foreground hover:underline"
+                  onClick={() => {
+                    setServerError('');
+                    setPasskeyMode(false);
+                  }}
+                  disabled={passkeyLoading}
+                >
+                  {t('passkeys.backToPassword')}
+                </button>
+              </form>
+            )}
 
             {/* SSO Provider Buttons */}
             {ssoProviders.length > 0 && (
