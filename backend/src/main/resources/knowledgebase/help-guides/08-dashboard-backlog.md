@@ -41,6 +41,9 @@ The Backlog in ShipFlow holds ideas and tasks that haven't been shaped into pitc
 ### Sub-Tasks Group Under Their Parent
 A sub-task always renders directly under its parent task — in the list view regardless of the active sort field, and on the Kanban board when they share a status column. This is especially useful in Kanban-mode projects, which have no Pitch concept to group backlog items by otherwise. If a sub-task's column differs from its parent's, a "N subtasks" badge on the parent and a "Sub-task of ..." caption on the sub-task keep the relationship visible.
 
+### No Feature Tasks / Debt & Improvements Split in Kanban
+Shape Up and Scrum projects split the Backlog into "Pitch Tasks" and "Debt & Improvements" tabs, since that distinguishes shaped bet work from opportunistic filler. Kanban has no Pitch concept, so that split doesn't apply — a Kanban project's Backlog just shows every task together, with no tabs to switch between.
+
 ## Adding Items to the Backlog
 1. Click **Add Item** on the Backlog page
 2. Enter a title and description

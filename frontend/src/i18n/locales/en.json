@@ -3426,6 +3426,7 @@
     "pitchTasks": "Pitch Tasks",
     "featureTasks": "Feature Tasks",
     "debtImprovements": "Debt & Improvements",
+    "allTasks": "Tasks",
     "taskOverview": "Task Overview",
     "total": "Total",
     "todo": "To Do",
@@ -3545,6 +3546,7 @@
     "categoryDescription": {
       "pitchScope": "Tasks within the pitch scope",
       "featureScope": "Feature tasks for this project",
+      "allTasks": "All tasks for this project",
       "debtImprovement": "Technical debt and improvements",
       "bug": "Software defects and issues",
       "feature": "New functionality requests",

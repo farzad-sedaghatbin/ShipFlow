@@ -135,6 +135,7 @@
     },
     "category": "دسته‌بندی",
     "categoryDescription": {
+      "allTasks": "همه وظایف این پروژه",
       "bug": "نقص‌ها و مشکلات نرم‌افزاری",
       "chore": "وظایف نگهداری و پشتیبانی",
       "debtImprovement": "بدهی فنی، بهبودها و کارهای نگهداری",
@@ -257,6 +258,7 @@
     "parentTask": "تسک والد",
     "pitch": "پیچ",
     "pitchTasks": "تسک‌های پیچ",
+    "allTasks": "وظایف",
     "priority": "اولویت",
     "priorityHigh": "بالا",
     "priorityLow": "پایین",
