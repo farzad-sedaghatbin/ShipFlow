@@ -111,24 +111,30 @@ export default function BacklogPage() {
         </Alert>
       )}
 
-      <Tabs value={bp.activeCategory} onValueChange={(v) => bp.handleCategoryChange(v as TaskCategory)} className="w-full">
-        <div className="flex items-center gap-2">
-          <button
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'PITCH_SCOPE' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
-            onClick={() => bp.handleCategoryChange('PITCH_SCOPE')}
-          >
-            <FileText className="h-4 w-4" />
-            {bp.isKanbanProject ? t('backlogPage.featureTasks') : t('backlogPage.pitchTasks')}
-          </button>
-          <button
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'DEBT_IMPROVEMENT' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
-            onClick={() => bp.handleCategoryChange('DEBT_IMPROVEMENT')}
-          >
-            <Wrench className="h-4 w-4" />
-            {t('backlogPage.debtImprovements')}
-          </button>
-        </div>
-      </Tabs>
+      {/* Feature Tasks / Debt & Improvements is a Shape Up-specific distinction
+          (pitch-scoped bet work vs. opportunistic filler) - Kanban has no Pitch
+          concept, so this split isn't meaningful there. loadTasks() in
+          useBacklogPage fetches every task for Kanban regardless of category. */}
+      {!bp.isKanbanProject && (
+        <Tabs value={bp.activeCategory} onValueChange={(v) => bp.handleCategoryChange(v as TaskCategory)} className="w-full">
+          <div className="flex items-center gap-2">
+            <button
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'PITCH_SCOPE' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
+              onClick={() => bp.handleCategoryChange('PITCH_SCOPE')}
+            >
+              <FileText className="h-4 w-4" />
+              {t('backlogPage.pitchTasks')}
+            </button>
+            <button
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'DEBT_IMPROVEMENT' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
+              onClick={() => bp.handleCategoryChange('DEBT_IMPROVEMENT')}
+            >
+              <Wrench className="h-4 w-4" />
+              {t('backlogPage.debtImprovements')}
+            </button>
+          </div>
+        </Tabs>
+      )}
 
       {bp.statistics && <BacklogStatistics statistics={bp.statistics} />}
 
