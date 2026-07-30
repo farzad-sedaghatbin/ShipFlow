@@ -204,9 +204,13 @@ export function useBacklogPage() {
       setTasksLoading(true);
       const timeout = setTimeout(() => setTasksLoading(false), 10000);
       try {
-        // Fix: Kanban fetches a large unpaginated set so all columns are populated
-        const response = await taskService.getByProjectIdAndCategory(
-          currentProject.id, activeCategory, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
+        // Kanban has no Pitch concept, so the Feature Tasks / Debt & Improvements
+        // split isn't meaningful there - fetch every task for the project instead
+        // of filtering by activeCategory (that split is Shape Up-only; see the
+        // hidden category-tab UI in BacklogPage.tsx for the same isKanbanProject
+        // gate). Large unpaginated fetch so all Kanban columns are populated.
+        const response = await taskService.getByProjectIdPaged(
+          currentProject.id, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
         );
         let filtered = applyCommonFilters(response?.data?.content || []);
         if (tabValue === 'my' && user?.personId) filtered = filtered.filter((t) => t.assigneeId === user.personId);
@@ -547,13 +551,16 @@ export function useBacklogPage() {
 
   // ── Derived values ────────────────────────────────────────────────────────────
 
-  const categoryTitle = activeCategory === 'PITCH_SCOPE'
-    ? (isKanbanProject ? t('backlogPage.featureTasks') : t('backlogPage.pitchTasks'))
-    : t('backlogPage.debtImprovements');
+  // Kanban has no Pitch concept, so the Feature Tasks / Debt & Improvements split
+  // isn't meaningful there (see the hidden category-tab UI in BacklogPage.tsx) -
+  // just "Tasks", since loadTasks() above fetches every task regardless of category.
+  const categoryTitle = isKanbanProject
+    ? t('backlogPage.allTasks')
+    : (activeCategory === 'PITCH_SCOPE' ? t('backlogPage.pitchTasks') : t('backlogPage.debtImprovements'));
 
-  const categoryDescription = activeCategory === 'PITCH_SCOPE'
-    ? (isKanbanProject ? t('backlogPage.categoryDescription.featureScope') : t('backlogPage.categoryDescription.pitchScope'))
-    : t('backlogPage.categoryDescription.debtImprovement');
+  const categoryDescription = isKanbanProject
+    ? t('backlogPage.categoryDescription.allTasks')
+    : (activeCategory === 'PITCH_SCOPE' ? t('backlogPage.categoryDescription.pitchScope') : t('backlogPage.categoryDescription.debtImprovement'));
 
   const hasActiveFilters = statusFilter.length > 0 || priorityFilter.length > 0
     || assigneeFilter.length > 0 || dependencyFilter !== 'all' || !!releaseFilter || !!searchQuery;
