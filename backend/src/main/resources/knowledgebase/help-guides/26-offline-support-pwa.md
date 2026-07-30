@@ -4,7 +4,7 @@ ShipFlow can be installed like a native app and keeps working — for already-vi
 
 ## Installing ShipFlow
 
-On desktop Chrome/Edge, click the install icon in the address bar (or the browser menu's "Install ShipFlow…" entry). On mobile, use your browser's "Add to Home Screen" option. Once installed, ShipFlow opens in its own window without browser chrome, using the icon and name from the app's manifest.
+On desktop Chrome/Edge, click the install icon in the address bar (or the browser menu's "Install ShipFlow…" entry). On mobile, use your browser's "Add to Home Screen" option, or accept the install prompt ShipFlow shows automatically right after you log in — a one-time, dismissible offer so you don't have to know the browser menu option exists. This install prompt only appears on Chromium-based mobile browsers (Chrome, Edge, Samsung Internet); iOS Safari has no equivalent API, so you'll need to use its "Add to Home Screen" share-sheet option manually there. Once installed, ShipFlow opens in its own window without browser chrome, using the icon and name from the app's manifest.
 
 ## What Works Offline
 

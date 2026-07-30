@@ -24,6 +24,10 @@ Generate a VAPID keypair with `npx web-push generate-vapid-keys` and set `app.pu
 
 ## Passkey Sign-In
 
+### Post-Login Setup Prompt
+
+If you sign in with your password and don't have a passkey registered yet, you'll see a one-time prompt right after login offering to set one up on the spot — no need to know it's tucked away in Profile settings. Choose "Not now" to dismiss it (it won't ask again), or "Set up passkey" to register one immediately using the same flow described below.
+
 ### Registering a Passkey
 
 On your **Profile** page, find the **Passkeys** card and click **Add a Passkey**. Give it a name (e.g. "MacBook Touch ID") and follow your device's prompt — Face ID, Touch ID, Windows Hello, or a security key, whatever your device offers. You can register more than one passkey (e.g. one per device).

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import dayjs from 'dayjs';
 import {
   Plus,
@@ -78,6 +78,7 @@ import EmptyState from '../EmptyState';
 import { EmptyTasksIllustration } from '../illustrations';
 import BulkActionBar from '../BulkActionBar';
 import { statusOptions, priorityOptions, getStatusBadgeVariant, getPriorityBadgeVariant } from './backlogTypes';
+import { groupTasksByParent } from '../../utils/taskHierarchy';
 
 // ── SortableTaskRow ───────────────────────────────────────────────────────────
 
@@ -255,7 +256,7 @@ function SortableTaskRow({
             )}
           </div>
           {task.description && (
-            <div className="text-sm text-muted-foreground line-clamp-1">
+            <div className="text-sm text-muted-foreground line-clamp-1" title={task.description}>
               {task.description}
             </div>
           )}
@@ -531,7 +532,7 @@ export interface BacklogTaskTableProps {
 }
 
 export function BacklogTaskTable({
-  tasks,
+  tasks: rawTasks,
   totalElements,
   tasksLoading,
   selectedCycle,
@@ -561,6 +562,11 @@ export function BacklogTaskTable({
 }: BacklogTaskTableProps) {
   const { t } = useTranslation();
   const totalPages = Math.ceil(totalElements / rowsPerPage);
+
+  // Grouped for display (parent immediately followed by its sub-tasks) — see
+  // groupTasksByParent's doc comment. Drag-to-reorder below operates on this
+  // same array throughout, so dragging persists sortOrder for this order.
+  const tasks = useMemo(() => groupTasksByParent(rawTasks), [rawTasks]);
 
   // ── Drag-to-reorder state ─────────────────────────────────────────────────────
   const [activeTaskId, setActiveTaskId] = useState<number | null>(null);

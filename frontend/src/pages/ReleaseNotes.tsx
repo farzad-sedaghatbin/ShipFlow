@@ -82,6 +82,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.11.1',
+    date: 'July 30, 2026',
+    title: 'Passkey, Install & Backlog Nudges',
+    highlights: [
+      {
+        icon: <Fingerprint className="h-5 w-5" />,
+        title: 'Passkey Setup Prompt After Login',
+        description:
+          "Sign in with a password and have no passkey registered yet? You'll now see a one-time, dismissible prompt offering to set one up right there, instead of needing to know it's tucked away in Profile settings.",
+      },
+      {
+        icon: <Download className="h-5 w-5" />,
+        title: 'Install Prompt on Mobile Login',
+        description:
+          "On mobile, right after login, ShipFlow now offers to install itself to your home screen instead of relying on the browser's own install affordance, which is easy to miss. Chromium-based mobile browsers only — iOS Safari has no equivalent event to hook into.",
+      },
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Sub-Task Grouping for Kanban Backlogs',
+        description:
+          "Kanban projects have no Pitch concept, so Debt/Improvement backlog tasks previously sat flat with no structural grouping at all. Sub-tasks now render directly under their parent in the Backlog list view (regardless of sort order) and group within a shared column on the Kanban board, with a badge/caption keeping the relationship visible even across columns.",
+      },
+    ],
+  },
+  {
     version: '1.11.0',
     date: 'July 28, 2026',
     title: 'Mobile PWA',

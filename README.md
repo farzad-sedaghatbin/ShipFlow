@@ -54,8 +54,8 @@ docker compose up -d
 | **Full audit trail** | Hibernate Envers versions every entity change; Jira-style activity timeline on tasks and bugs; admin **CSV/JSON export** of the whole trail by entity type and date range *(v1.9.0)* |
 | **Enterprise-ready** | RBAC (6 roles), Slack/Teams notifications, SSE real-time events, rate limiting, ETag + Redis + React Query caching; **SCIM 2.0** auto-provisioning from any IdP (Okta, Azure AD, Entra, Keycloak) |
 | **Production self-hosting** *(v1.9.0)* | First-party **Helm chart** for Kubernetes; **Prometheus** metrics (`/actuator/prometheus`) + a ready-to-import **Grafana** dashboard; optional **OpenTelemetry** tracing and structured JSON logging |
-| **Installable & offline-capable (PWA)** *(v1.11.0)* | Install ShipFlow like a native app; already-visited pages stay browsable offline, and writes made offline (comments, status changes, new tasks) are queued and sent automatically once you're back online |
-| **Web Push & Passkey sign-in** *(v1.11.0)* | Native push notifications for mentions, assignments, and cycle events — no email or open tab required. Sign in with Face ID, Touch ID, Windows Hello, or a security key (WebAuthn) instead of a password |
+| **Installable & offline-capable (PWA)** *(v1.11.0)* | Install ShipFlow like a native app; already-visited pages stay browsable offline, and writes made offline (comments, status changes, new tasks) are queued and sent automatically once you're back online. On mobile, a one-time prompt right after login offers to install it *(v1.11.1)* |
+| **Web Push & Passkey sign-in** *(v1.11.0)* | Native push notifications for mentions, assignments, and cycle events — no email or open tab required. Sign in with Face ID, Touch ID, Windows Hello, or a security key (WebAuthn) instead of a password. Password-login users with no passkey get a one-time setup prompt *(v1.11.1)* |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -123,6 +123,10 @@ docker compose up -d
     - Same-cycle validation for dependency relationships
     - Clean UI for adding/removing dependencies
     - See [Task Dependencies Guide](TASK_DEPENDENCIES.md) for details
+  - **Sub-Task Grouping** *(v1.11.1)*: parent/sub-task hierarchy as a structural grouping, not just creation
+    - Backlog list view: a sub-task always renders directly under its parent, regardless of the active sort field
+    - Kanban board: sub-tasks group under their parent within a shared status column; a "N subtasks" badge and "Sub-task of ..." caption keep the relationship visible when they're in different columns
+    - The only structural grouping available for Kanban-mode projects, which have no Pitch concept to group by
   - **Soft Delete**: Safe deletion with recovery options
     - Records are marked as deleted, not permanently removed
     - Complete audit trail with deletion timestamp and user tracking
