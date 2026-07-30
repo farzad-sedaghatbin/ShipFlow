@@ -628,6 +628,62 @@ public class SampleDataInitializer implements CommandLineRunner {
         TaskStatus.CANCELLED, TaskPriority.LOW, new BigDecimal("20.0"), null,
         kanbanCycle, aliPerson, null, aliPerson, LocalDate.of(2026, 3, 1), "infra,ecs,cancelled");
 
+    // Debt/Improvement with a parent/sub-task hierarchy — demonstrates the Backlog
+    // and Kanban board's sub-task grouping (v1.11.1). Kanban projects have no Pitch
+    // concept, so this hierarchy is the only structural grouping available. Stored
+    // via a direct project reference with no cycle, per the 2026-07-27 architectural
+    // decision (Debt/Improvement tasks in Kanban may skip the cycle requirement).
+    // One child shares the parent's status (demos same-column adjacency grouping on
+    // the Kanban board); the other is in a different column (demos the cross-column
+    // "N subtasks" badge / "Sub-task of ..." caption).
+    Task terraformUpgradeParent =
+        taskRepository.save(
+            Task.builder()
+                .title("Upgrade Terraform providers to v5")
+                .description(
+                    "AWS provider v5 has breaking changes for S3 bucket ACLs and IAM policy "
+                        + "attachments. Split into sub-tasks per module to de-risk the rollout.")
+                .status(TaskStatus.IN_PROGRESS)
+                .priority(TaskPriority.MEDIUM)
+                .category(TaskCategory.DEBT_IMPROVEMENT)
+                .project(devopsProject)
+                .assignee(aliPerson)
+                .createdBy(aliPerson)
+                .dueDate(LocalDate.of(2026, 6, 10))
+                .tags("terraform,tech-debt,aws")
+                .build());
+
+    taskRepository.save(
+        Task.builder()
+            .title("Upgrade RDS module to Terraform provider v5")
+            .description("Migrate aws_db_instance ACL blocks to the new grant-based syntax.")
+            .status(TaskStatus.IN_PROGRESS)
+            .priority(TaskPriority.MEDIUM)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .parentTask(terraformUpgradeParent)
+            .assignee(aliPerson)
+            .createdBy(aliPerson)
+            .dueDate(LocalDate.of(2026, 6, 5))
+            .tags("terraform,tech-debt,aws")
+            .build());
+
+    taskRepository.save(
+        Task.builder()
+            .title("Upgrade S3 module to Terraform provider v5")
+            .description(
+                "Replace deprecated aws_s3_bucket_acl inline blocks with the standalone resource.")
+            .status(TaskStatus.BACKLOG)
+            .priority(TaskPriority.LOW)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .parentTask(terraformUpgradeParent)
+            .assignee(saraPerson)
+            .createdBy(aliPerson)
+            .dueDate(LocalDate.of(2026, 6, 12))
+            .tags("terraform,tech-debt,aws")
+            .build());
+
     // ── Work Logs ─────────────────────────────────────────────────────────────
     createWorkLog(aliPerson, instantTransfer, LocalDate.of(2026, 4, 1), new BigDecimal("7.5"),
         "Set up payment API integration, drafted webhook endpoint");

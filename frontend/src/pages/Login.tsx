@@ -11,6 +11,7 @@ import { getEnabledProviders, initiateSSO } from '../services/ssoService';
 import { passkeyService } from '../services/passkeyService';
 import { isWebAuthnSupported, loginWithPasskey, WebAuthnCeremonyError } from '../lib/webauthn';
 import { LoginIllustration } from '../components/illustrations';
+import { PostLoginPrompts } from '../components/PostLoginPrompts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,6 +34,9 @@ export default function Login() {
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState<number | null>(null);
+  // Gates navigation until any post-login nudges (passkey setup, PWA install)
+  // have been shown and resolved — see PostLoginPrompts.
+  const [showPostLoginPrompts, setShowPostLoginPrompts] = useState(false);
 
   // Passkey sign-in — a username-only alternative to the password form,
   // gated on browser WebAuthn support (Safari/older browsers lack it).
@@ -101,7 +105,7 @@ export default function Login() {
 
       login(token, { userId, username: user, role, personId, personName });
       showSuccess(t('login.loginSuccess'));
-      navigate(from, { replace: true });
+      setShowPostLoginPrompts(true);
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         || t('login.invalidCredentials');
@@ -126,7 +130,7 @@ export default function Login() {
 
       login(token, { userId, username: user, role, personId, personName });
       showSuccess(t('login.loginSuccess'));
-      navigate(from, { replace: true });
+      setShowPostLoginPrompts(true);
     } catch (err: unknown) {
       if (err instanceof WebAuthnCeremonyError) {
         // Cancellation/timeout vs. an actual ceremony failure get distinct,
@@ -372,6 +376,10 @@ export default function Login() {
           </CardContent>
         </div>
       </Card>
+
+      {showPostLoginPrompts && (
+        <PostLoginPrompts onComplete={() => navigate(from, { replace: true })} />
+      )}
     </div>
   );
 }

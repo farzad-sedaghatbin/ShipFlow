@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { 
-  GripVertical, 
-  MoreVertical, 
-  Clock, 
-  Eye, 
-  Pencil, 
+import {
+  GripVertical,
+  MoreVertical,
+  Clock,
+  Eye,
+  Pencil,
   Trash2,
   AlertCircle,
   Shield,
   Plus,
   Settings,
   EyeOff,
+  List,
+  CornerDownRight,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Task, TaskStatus, TaskPriority } from '../types';
 import { useBreakpointHelpers } from '../hooks/useBreakpoint';
+import { groupTasksByParent } from '../utils/taskHierarchy';
 
 // Define the columns for Kanban board based on TaskStatus
 const KANBAN_COLUMNS: { status: TaskStatus; labelKey: string; color: string }[] = [
@@ -154,12 +157,51 @@ function KanbanCard({ task, onViewTask, onEditTask, onDeleteTask, onAddSubtask, 
         </div>
 
         {/* Title */}
-        <h4 
+        <h4
           className="font-medium text-sm mb-2 line-clamp-2 cursor-pointer hover:text-primary"
           onClick={() => onViewTask(task)}
+          title={task.title}
         >
           {task.title}
         </h4>
+
+        {/* Parent/sub-task hierarchy — the only structural grouping available
+            for Kanban-mode projects (no Pitch concept there). A card's
+            sub-tasks may sit in other status columns, so this is a caption/
+            badge rather than nesting the sub-task cards themselves. */}
+        {task.parentTaskId && task.parentTaskTitle && (
+          <div
+            className="flex items-center gap-1 text-xs text-muted-foreground mb-2 truncate"
+            title={t('backlogPage.subtaskOf', { title: task.parentTaskTitle })}
+          >
+            <CornerDownRight className="h-3 w-3 shrink-0" />
+            <span className="truncate">{task.parentTaskTitle}</span>
+          </div>
+        )}
+        {!task.parentTaskId && task.children && task.children.length > 0 && (
+          <div className="mb-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-[10px]">
+                    <List className="h-3 w-3 mr-1" />
+                    {t('backlogPage.subtaskCount', { count: task.children.length })}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <ul className="text-sm space-y-0.5">
+                    {task.children.slice(0, 3).map((child, idx) => (
+                      <li key={idx}>• {child.title}</li>
+                    ))}
+                    {task.children.length > 3 && (
+                      <li className="text-muted-foreground">{t('backlogPage.andMore', { count: task.children.length - 3 })}</li>
+                    )}
+                  </ul>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        )}
 
         {/* Dependency badges */}
         {(isBlocked || isBlocking) && (
@@ -282,7 +324,13 @@ function KanbanColumn({
     }
   };
 
-  const columnTasks = tasks.filter(task => task.status === status);
+  // Grouped within the column so a sub-task renders right after its parent
+  // when both share this status — a card's sub-tasks in other columns still
+  // get the caption/badge in KanbanCard, since they can't be nested here.
+  const columnTasks = useMemo(
+    () => groupTasksByParent(tasks.filter(task => task.status === status)),
+    [tasks, status],
+  );
 
   return (
     <div 

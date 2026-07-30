@@ -153,10 +153,11 @@ function BugKanbanCard({ bug, onViewBug, onEditBug, onDeleteBug, dragging, updat
         </div>
 
         {/* Title */}
-        <h4 
+        <h4
           className="font-medium text-sm mb-2 line-clamp-2 cursor-pointer hover:text-primary"
           onClick={() => onViewBug(bug)}
           dir={detectTextDirection(bug.title)}
+          title={bug.title}
         >
           {bug.title}
         </h4>

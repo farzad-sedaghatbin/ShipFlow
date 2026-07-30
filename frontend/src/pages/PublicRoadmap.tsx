@@ -49,6 +49,7 @@ import {
   Puzzle,
   Fingerprint,
   WifiOff,
+  Download,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -91,6 +92,16 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.11.1',
+      date: 'July 30, 2026',
+      title: t('publicRoadmap.shipped1111Title'),
+      highlights: [
+        { icon: <Fingerprint className="h-5 w-5" />, title: t('publicRoadmap.shipped1111Item0Title'), description: t('publicRoadmap.shipped1111Item0Desc') },
+        { icon: <Download className="h-5 w-5" />, title: t('publicRoadmap.shipped1111Item1Title'), description: t('publicRoadmap.shipped1111Item1Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.shipped1111Item2Title'), description: t('publicRoadmap.shipped1111Item2Desc') },
+      ],
+    },
     {
       version: '1.11.0',
       date: 'July 28, 2026',

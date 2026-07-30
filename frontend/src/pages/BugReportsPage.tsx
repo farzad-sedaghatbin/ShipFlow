@@ -176,7 +176,7 @@ const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete, loading: projectsLoading } = useProject();
   const { user } = useAuth();
   const { showToast } = useToast();
   const [bugReports, setBugReports] = useState<BugReport[]>([]);
@@ -280,6 +280,15 @@ const BugReportsPage: React.FC = () => {
       const next = new URLSearchParams();
       // Carry through non-filter params that may be set by other code
       prev.forEach((v, k) => { if (!FILTER_KEYS.includes(k)) next.set(k, v); });
+      // Filters like `pitch`/`cycle`/`release` are project-scoped IDs — without
+      // also encoding *which* project, a shared link applies them against
+      // whatever project happens to be active for whoever opens it (often a
+      // different one), silently returning zero results. `project=<id>` is
+      // the same deep-link param ProjectContext already reads on load (see
+      // its "open project in new tab" handling) — reusing it here just
+      // means this page's share link switches the recipient to the right
+      // project first.
+      if (currentProject?.id) next.set('project', String(currentProject.id));
       if (searchQuery) next.set('q', searchQuery);
       statusFilter.forEach(s => next.append('status', s));
       severityFilter.forEach(s => next.append('severity', s));
@@ -296,16 +305,29 @@ const BugReportsPage: React.FC = () => {
       return next;
     }, { replace: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, severityFilter, assigneeFilter, reporterFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
+  }, [currentProject?.id, statusFilter, severityFilter, assigneeFilter, reporterFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
 
-  // Reset cycle and pitch filters when project changes to ensure clean filtering
+  // Reset cycle/pitch/release filters only when the user actively SWITCHES
+  // project while already on this page — never during ProjectContext's
+  // initial resolution of the persisted/deep-linked project (which can take
+  // a render or two while `projectsLoading` is true). Without this guard,
+  // a shared link's `project=`/`pitch=`/`cycle=`/`release=` params would
+  // restore correctly for one tick and then immediately get wiped the
+  // moment the project context finished loading, since that resolution
+  // looks identical to a real switch from this effect's point of view.
+  const hasResolvedInitialProject = useRef(false);
   useEffect(() => {
+    if (projectsLoading) return;
+    if (!hasResolvedInitialProject.current) {
+      hasResolvedInitialProject.current = true;
+      return;
+    }
     resetInitial(); // force full skeleton on next project load
     setCycleFilter(undefined);
     setPitchFilter(undefined);
     setReleaseFilter(undefined);
     setPage(0);
-  }, [currentProject?.id, isAllProjectsSelected]);
+  }, [currentProject?.id, isAllProjectsSelected, projectsLoading]);
 
   // Persist user-level filters across page navigations
   useEffect(() => {
