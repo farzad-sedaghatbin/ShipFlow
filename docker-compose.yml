@@ -60,6 +60,13 @@ services:
       RUNPOD_POLL_INTERVAL: ${RUNPOD_POLL_INTERVAL:-2}
       # JWT Secret (Base64-encoded, min 32 bytes)
       JWT_SECRET: ${JWT_SECRET:-c2hhcGV1cC10cmFja2VyLXNlY3JldC1rZXktZm9yLWp3dC10b2tlbi1zaWduaW5nLTI1Ni1iaXRz}
+      # WebAuthn / Passkey — rp-id MUST be exactly the domain the frontend is served
+      # from (no scheme, no port) and rp-origin MUST be the exact scheme+host+port.
+      # Without these set to your real domain, passkey register/login fails with a
+      # browser-level RP-ID/origin-mismatch error (defaults are localhost-only).
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
+      WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-ShipFlow}
+      WEBAUTHN_RP_ORIGIN: ${WEBAUTHN_RP_ORIGIN:-http://localhost:3000}
       APP_AI_RUNPOD_BASE_URL: ${APP_AI_RUNPOD_BASE_URL:-https://api.runpod.ai/v2/your-endpoint-id}
       APP_AI_RUNPOD_API_KEY: ${APP_AI_RUNPOD_API_KEY:-}
       APP_AI_RUNPOD_MODEL: ${APP_AI_RUNPOD_MODEL:-mistral:instruct}
