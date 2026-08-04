@@ -21,8 +21,8 @@ A Pitch is a shaped proposal for work to be done in a cycle. It includes:
 - **In Progress** — Approved and being built in a cycle
 - **Completed** — Finished
 
-## Reordering Tasks Within a Pitch
-On a Pitch's detail page, the task list can be manually reordered by dragging the grip handle on each row — useful for signaling execution order within the pitch's scope. Until a list is reordered by hand it displays sorted by priority (Urgent → High → Medium → Low); once you drag anything, that manual order sticks. Subtasks reorder only among their own siblings — you can't drag a subtask out from under its parent or promote it to a top-level task.
+## The Pitch's Task Board
+A Pitch's detail page shows its linked tasks as a Kanban board — one column per status (Backlog, To Do, In Progress, Blocked, In Review, Done, Cancelled), scoped to just that pitch's work. Drag a card between columns to change its status; the change saves immediately. Use **Create Task** to log a task directly against the pitch (works even before the pitch has been bet to a cycle — see below), or open a card's menu to add a subtask, view, edit, or delete it. This replaced an earlier drag-to-reorder list — manual task ordering within a pitch is no longer available, since the board's column position now carries that signal instead.
 
 ## Tasks No Longer Require Picking a Cycle Up Front
 Creating a task no longer forces you to pick a cycle first. A task's cycle is now a fact that follows from which pitch it's linked to, not something you choose manually when logging work:
