@@ -66,6 +66,12 @@ export function BacklogTaskDialog({
 }: BacklogTaskDialogProps) {
   const { t } = useTranslation();
 
+  // Subtasks can never be set to Backlog (they're meant to be actioned right away, and the
+  // backend rejects it) — filter it out whenever this dialog is creating or editing a subtask.
+  const editableStatusOptions = formData.parentTaskId
+    ? statusOptions.filter((status) => status.value !== 'BACKLOG')
+    : statusOptions;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -122,7 +128,7 @@ export function BacklogTaskDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map((status) => (
+                  {editableStatusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {t(status.labelKey)}
                     </SelectItem>
