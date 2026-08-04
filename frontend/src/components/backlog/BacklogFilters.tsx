@@ -10,9 +10,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import { TabsList, TabsTrigger } from '../ui/tabs';
 import { MultiCombobox } from '../ui/multi-combobox';
-import { TaskStatus, TaskPriority, Person } from '../../types';
+import { TaskStatus, TaskPriority, TaskCategory, Person } from '../../types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '../../constants/backlogConstants';
 
 export interface BacklogFiltersProps {
@@ -21,6 +28,9 @@ export interface BacklogFiltersProps {
   onStatusFilterChange: (status: TaskStatus) => void;
   priorityFilter: TaskPriority[];
   onPriorityFilterChange: (priority: TaskPriority) => void;
+  // Category tabs were removed (see §C.1) — this is now the only way to narrow by category.
+  categoryFilter: TaskCategory | 'all';
+  onCategoryFilterChange: (category: TaskCategory | 'all') => void;
   dependencyFilter: 'all' | 'blocked' | 'blocking';
   onDependencyFilterChange: (filter: 'all' | 'blocked' | 'blocking') => void;
   searchQuery: string;
@@ -38,6 +48,8 @@ export function BacklogFilters({
   onStatusFilterChange,
   priorityFilter,
   onPriorityFilterChange,
+  categoryFilter,
+  onCategoryFilterChange,
   dependencyFilter,
   onDependencyFilterChange,
   searchQuery,
@@ -118,6 +130,21 @@ export function BacklogFilters({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Category Filter — replaces the removed Pitch Tasks / Debt & Improvements tabs */}
+        <Select
+          value={categoryFilter}
+          onValueChange={(value) => onCategoryFilterChange(value as TaskCategory | 'all')}
+        >
+          <SelectTrigger className="w-auto h-9 min-w-[140px]" aria-label={t('backlogPage.filters.category')}>
+            <SelectValue placeholder={t('backlogPage.filters.category')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('backlogPage.filters.allCategory')}</SelectItem>
+            <SelectItem value="PITCH_SCOPE">{t('backlogPage.pitchTasks')}</SelectItem>
+            <SelectItem value="DEBT_IMPROVEMENT">{t('backlogPage.debtImprovements')}</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* Dependency Filter */}
         <DropdownMenu open={dependencyDropdownOpen} onOpenChange={setDependencyDropdownOpen}>

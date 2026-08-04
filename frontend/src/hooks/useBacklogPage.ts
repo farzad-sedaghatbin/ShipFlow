@@ -33,8 +33,7 @@ const KANBAN_PAGE_SIZE = 500;
 export function useBacklogPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const categoryFromUrl = searchParams.get('category') as TaskCategory | null;
-  const { isKanbanProject, isStrictlyShapeUp, currentProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
+  const { isKanbanProject, currentProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { user } = useAuth();
 
   // Data
@@ -56,16 +55,12 @@ export function useBacklogPage() {
 
   // Selection / view
   const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
-  const [activeCategory, setActiveCategory] = useState<TaskCategory>(categoryFromUrl || 'PITCH_SCOPE');
+  // Category is now a filter, not primary navigation (tabs removed — see §C.1). 'all' means no
+  // category filtering, matching the optional `category` param already accepted server-side.
+  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>('all');
   const [tabValue, setTabValue] = useState('all');
   const [viewMode, setViewMode] = useState<ViewMode>(isKanbanProject ? 'kanban' : 'list');
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
-
-  // Debt/Improvement work in Shape Up is opportunistic filler picked up when nothing else is
-  // scheduled — it doesn't need to be bet on a specific cycle upfront, unlike shaped pitch scope.
-  // So this one category+methodology combo may skip the cycle requirement (still needs a project
-  // to attach to, since a cycle-less task is stored via a direct project reference).
-  const canSkipCycleForDebtImprovement = isStrictlyShapeUp && activeCategory === 'DEBT_IMPROVEMENT' && !!currentProject;
 
   // Kanban column visibility
   const [visibleColumns, setVisibleColumns] = useState<TaskStatus[]>([
@@ -129,7 +124,7 @@ export function useBacklogPage() {
     else { setTasks([]); setTotalElements(0); setTasksLoading(false); setStatistics(null); }
   }, [
     selectedCycle, currentProject?.id, isKanbanProject, viewMode,
-    activeCategory, tabValue,
+    categoryFilter, tabValue,
     statusFilter, priorityFilter, assigneeFilter, releaseFilter, searchQuery,
     excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter,
   ]);
@@ -138,10 +133,6 @@ export function useBacklogPage() {
   useEffect(() => {
     setSelectedTaskIds(new Set());
   }, [tasks]);
-
-  useEffect(() => {
-    if (categoryFromUrl && categoryFromUrl !== activeCategory) setActiveCategory(categoryFromUrl);
-  }, [categoryFromUrl]);
 
   // ── Data loaders ──────────────────────────────────────────────────────────────
 
@@ -200,19 +191,23 @@ export function useBacklogPage() {
   };
 
   const loadTasks = async () => {
+    // 'all' means no server-side category filtering — matches the optional `category` param
+    // every endpoint below already accepts (undefined = all categories).
+    const categoryParam = categoryFilter !== 'all' ? categoryFilter : undefined;
+
     if (isKanbanProject && currentProject) {
       setTasksLoading(true);
       const timeout = setTimeout(() => setTasksLoading(false), 10000);
       try {
-        // Kanban has no Pitch concept, so the Feature Tasks / Debt & Improvements
-        // split isn't meaningful there - fetch every task for the project instead
-        // of filtering by activeCategory (that split is Shape Up-only; see the
-        // hidden category-tab UI in BacklogPage.tsx for the same isKanbanProject
-        // gate). Large unpaginated fetch so all Kanban columns are populated.
+        // Kanban has no Pitch concept — the category tabs never applied here even before the
+        // category filter replaced them (see §C.1). Large unpaginated fetch so all Kanban
+        // columns are populated, then the category filter (if any) is applied client-side
+        // alongside the other common filters.
         const response = await taskService.getByProjectIdPaged(
           currentProject.id, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
         );
         let filtered = applyCommonFilters(response?.data?.content || []);
+        if (categoryParam) filtered = filtered.filter((t) => (t.category || 'PITCH_SCOPE') === categoryParam);
         if (tabValue === 'my' && user?.personId) filtered = filtered.filter((t) => t.assigneeId === user.personId);
         setTasks(filtered);
         setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
@@ -232,7 +227,7 @@ export function useBacklogPage() {
         response = await taskService.search(searchQuery.trim(), 0, 500, sortBy, sortOrder);
         let results: Task[] = response?.data?.content || [];
         if (selectedCycle !== 'all') results = results.filter((t) => t.cycleId === selectedCycle);
-        results = results.filter((t) => (t.category || 'PITCH_SCOPE') === activeCategory);
+        if (categoryParam) results = results.filter((t) => (t.category || 'PITCH_SCOPE') === categoryParam);
         if (statusFilter.length > 0) results = results.filter((t) => excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status));
         if (priorityFilter.length > 0) results = results.filter((t) => excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority));
         if (assigneeFilter.length > 0) results = results.filter((t) => excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0));
@@ -245,22 +240,26 @@ export function useBacklogPage() {
 
       if (tabValue === 'my') {
         if (selectedCycle === 'all') {
-          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder, activeCategory);
+          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder, categoryParam);
         } else {
-          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder, activeCategory);
+          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder, categoryParam);
         }
         setTasks(applyCommonFilters(response?.data?.content || []));
         setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else if (selectedCycle === 'all') {
-        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder, activeCategory);
+        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder, categoryParam);
         setTasks(applyCommonFilters(response?.data?.content || []));
         setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
-        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, activeCategory, excludeMode, page, rowsPerPage, sortBy, sortOrder);
+        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, categoryParam, excludeMode, page, rowsPerPage, sortBy, sortOrder);
+        setTasks(applyCommonFilters(response?.data?.content || []));
+        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
+      } else if (categoryParam) {
+        response = await taskService.getByCycleIdAndCategory(selectedCycle, categoryParam, page, rowsPerPage, sortBy, sortOrder);
         setTasks(applyCommonFilters(response?.data?.content || []));
         setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       } else {
-        response = await taskService.getByCycleIdAndCategory(selectedCycle, activeCategory, page, rowsPerPage, sortBy, sortOrder);
+        response = await taskService.getByCycleId(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
         setTasks(applyCommonFilters(response?.data?.content || []));
         setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
       }
@@ -326,9 +325,8 @@ export function useBacklogPage() {
     setFormData({ ...formData, pitchId: pitch });
   };
 
-  const handleCategoryChange = (category: TaskCategory) => {
-    setActiveCategory(category);
-    setSearchParams({ category });
+  const handleCategoryFilterChange = (category: TaskCategory | 'all') => {
+    setCategoryFilter(category);
     setPage(0);
   };
 
@@ -340,8 +338,8 @@ export function useBacklogPage() {
         title: task.title,
         description: task.description || '',
         cycleId: task.cycleId,
-        // Cycle-less tasks (Shape Up Debt/Improvement backlog items) carry a direct project
-        // reference instead — preserve it so re-saving doesn't fail cycle validation.
+        // Cycle-less tasks (Shape Up Debt/Improvement backlog items, or any pitch-linked task
+        // whose pitch hasn't been bet to a cycle yet) carry a direct project reference instead.
         projectId: !task.cycleId ? task.projectId : undefined,
         status: task.status,
         priority: task.priority,
@@ -352,18 +350,18 @@ export function useBacklogPage() {
         pairAssigneeId: task.pairAssigneeId,
         dueDate: task.dueDate,
         tags: task.tags || '',
-        category: task.category || activeCategory,
+        category: task.category,
         pitchId: task.pitchId,
         parentTaskId: task.parentTaskId,
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
-      if (!isKanbanProject && (!selectedCycle || selectedCycle === 'all') && !canSkipCycleForDebtImprovement) {
-        toast.error(t('backlogPage.selectCycleToCreate'));
-        return;
-      }
-      let cycleIdToUse: number | undefined = typeof selectedCycle === 'number' ? selectedCycle : undefined;
-      if (isKanbanProject && currentProject && cycleIdToUse === undefined) {
+      // No task ever requires a cycle at creation anymore — a task's cycle is now purely
+      // derived server-side from being linked to a pitch (see §B.5). Kanban projects are the
+      // one exception: they have no visible cycle picker and no Pitch concept, so their tasks
+      // still need a cycle attached under the hood — keep that hidden derivation as-is.
+      let cycleIdToUse: number | undefined;
+      if (isKanbanProject && currentProject) {
         const projectCycles = cycles.filter(c => c.projectId === currentProject.id);
         if (projectCycles.length > 0) { cycleIdToUse = projectCycles[0].id; } else { toast.error(t('backlogPage.noDefaultCycle')); return; }
       }
@@ -371,7 +369,7 @@ export function useBacklogPage() {
       setFormData({
         title: '', description: '', cycleId: cycleIdToUse,
         projectId: cycleIdToUse === undefined && currentProject ? currentProject.id : undefined,
-        status: 'BACKLOG', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: activeCategory, pitchId: undefined,
+        status: 'BACKLOG', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', pitchId: undefined,
       });
       setDueDate(null);
     }
@@ -383,10 +381,11 @@ export function useBacklogPage() {
   const handleAddSubTask = (parentTask: Task) => {
     setFormData({
       title: '', description: '', cycleId: parentTask.cycleId,
-      // Parent tasks can be cycle-less (Shape Up Debt/Improvement backlog items) — carry the
-      // project reference through so the subtask isn't left with neither.
+      // Parent tasks can be cycle-less (Shape Up Debt/Improvement backlog items, or a
+      // pitch-linked task whose pitch hasn't been bet yet) — carry the project reference
+      // through so the subtask isn't left with neither.
       projectId: !parentTask.cycleId ? parentTask.projectId : undefined,
-      parentTaskId: parentTask.id, pitchId: parentTask.pitchId, status: 'TODO', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: parentTask.category || activeCategory,
+      parentTaskId: parentTask.id, pitchId: parentTask.pitchId, status: 'TODO', priority: 'MEDIUM', estimateHours: undefined, assigneeId: undefined, pairAssigneeId: undefined, dueDate: undefined, tags: '', category: parentTask.category || 'PITCH_SCOPE',
     });
     setDueDate(null);
     setEditingTask(null);
@@ -451,10 +450,6 @@ export function useBacklogPage() {
     const errors: Record<string, string> = {};
     if (!formData.title.trim()) { errors.title = t('backlogPage.titleRequired'); }
     else if (formData.title.trim().length < 3) { errors.title = t('backlogPage.titleMinLength'); }
-    const canSkipCycle = isStrictlyShapeUp && activeCategory === 'DEBT_IMPROVEMENT' && !!formData.projectId;
-    if (!isKanbanProject && !canSkipCycle && (!formData.cycleId || formData.cycleId === 0)) {
-      errors.cycleId = t('backlogPage.cycleRequired');
-    }
     if (formData.estimateHours !== undefined && formData.estimateHours < 0) { errors.estimateHours = t('backlogPage.estimatePositive'); }
     if (formData.actualHours !== undefined && formData.actualHours < 0) { errors.actualHours = t('backlogPage.actualPositive'); }
     setFieldErrors(errors);
@@ -465,14 +460,18 @@ export function useBacklogPage() {
     if (!validateTaskForm()) return;
     try {
       setSaving(true);
-      // The "Pitch Tasks" tab only makes sense for tasks actually linked to a pitch — a task
-      // created there without picking a pitch is opportunistic debt/improvement work, not
-      // shaped pitch scope, even though the tab's category is PITCH_SCOPE.
-      const resolvedCategory: TaskCategory =
-        activeCategory === 'PITCH_SCOPE' && !formData.pitchId ? 'DEBT_IMPROVEMENT' : activeCategory;
-      const data = { ...formData, dueDate: dueDate ? dueDate.format('YYYY-MM-DD') : undefined, category: resolvedCategory };
-      if (editingTask) { await taskService.update(editingTask.id, data); toast.success(t('backlogPage.taskUpdated')); }
-      else { await taskService.create(data); toast.success(t('backlogPage.taskCreated')); }
+      const data: CreateTaskRequest = { ...formData, dueDate: dueDate ? dueDate.format('YYYY-MM-DD') : undefined };
+      if (editingTask) {
+        await taskService.update(editingTask.id, data);
+        toast.success(t('backlogPage.taskUpdated'));
+      } else {
+        // Don't send category on create — the backend already derives PITCH_SCOPE vs
+        // DEBT_IMPROVEMENT from whether pitchId is set (there's no category tab to seed this
+        // from anymore, see §C.1).
+        delete data.category;
+        await taskService.create(data);
+        toast.success(t('backlogPage.taskCreated'));
+      }
       handleCloseDialog(); loadTasks(); loadStatistics();
     } catch (error: any) { toast.error(getUserFriendlyError(error)); }
     finally { setSaving(false); }
@@ -528,7 +527,7 @@ export function useBacklogPage() {
         statuses: statusFilter.length > 0 ? statusFilter : undefined,
         priorities: priorityFilter.length > 0 ? priorityFilter : undefined,
         assigneeIds: assigneeFilter.length > 0 ? assigneeFilter : undefined,
-        category: activeCategory,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
       });
       const blob = new Blob([response.data as unknown as BlobPart], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -551,16 +550,10 @@ export function useBacklogPage() {
 
   // ── Derived values ────────────────────────────────────────────────────────────
 
-  // Kanban has no Pitch concept, so the Feature Tasks / Debt & Improvements split
-  // isn't meaningful there (see the hidden category-tab UI in BacklogPage.tsx) -
-  // just "Tasks", since loadTasks() above fetches every task regardless of category.
-  const categoryTitle = isKanbanProject
-    ? t('backlogPage.allTasks')
-    : (activeCategory === 'PITCH_SCOPE' ? t('backlogPage.pitchTasks') : t('backlogPage.debtImprovements'));
-
-  const categoryDescription = isKanbanProject
-    ? t('backlogPage.categoryDescription.allTasks')
-    : (activeCategory === 'PITCH_SCOPE' ? t('backlogPage.categoryDescription.pitchScope') : t('backlogPage.categoryDescription.debtImprovement'));
+  // Category tabs are gone (see §C.1) — the page always shows one merged task list now,
+  // with category available as a filter in BacklogFilters instead of primary navigation.
+  const categoryTitle = t('backlogPage.allTasks');
+  const categoryDescription = t('backlogPage.categoryDescription.allTasks');
 
   const hasActiveFilters = statusFilter.length > 0 || priorityFilter.length > 0
     || assigneeFilter.length > 0 || dependencyFilter !== 'all' || !!releaseFilter || !!searchQuery;
@@ -570,7 +563,7 @@ export function useBacklogPage() {
     tasks, totalElements, cycles, persons, teams, pitches, releases, statistics, subtasks,
     loading, tasksLoading, saving, exportLoading,
     selectedCycle, setSelectedCycle,
-    activeCategory,
+    categoryFilter,
     tabValue, setTabValue,
     viewMode, setViewMode,
     activeTimerTaskId,
@@ -601,7 +594,6 @@ export function useBacklogPage() {
     isKanbanProject,
     isSwitchingProject,
     currentProject,
-    canSkipCycleForDebtImprovement,
 
     // Handlers
     handleToggleColumn,
@@ -609,7 +601,7 @@ export function useBacklogPage() {
     handleTogglePriorityFilter,
     handleToggleAssigneeFilter,
     handlePitchChange,
-    handleCategoryChange,
+    handleCategoryFilterChange,
     handleOpenDialog,
     handleCloseDialog,
     handleAddSubTask,
