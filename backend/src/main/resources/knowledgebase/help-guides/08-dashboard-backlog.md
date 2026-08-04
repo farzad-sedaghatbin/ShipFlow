@@ -50,6 +50,8 @@ Shape Up and Scrum projects split the Backlog into "Pitch Tasks" and "Debt & Imp
 3. Optionally tag the item with a priority level
 4. Items can later be promoted to pitches for the Betting Table
 
+No task requires picking a cycle up front anymore — link it to a Pitch and its cycle follows the pitch's own bet automatically (including if the pitch is later re-bet onto a different cycle), or leave it unlinked as opportunistic Debt & Improvement work with no cycle at all. See the "Tasks No Longer Require Picking a Cycle Up Front" section of the Pitches & Betting guide for the full picture.
+
 ## Moving Backlog Items to Pitches
 1. Select a backlog item
 2. Click **Convert to Pitch**

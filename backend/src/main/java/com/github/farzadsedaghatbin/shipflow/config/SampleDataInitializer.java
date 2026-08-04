@@ -330,10 +330,37 @@ public class SampleDataInitializer implements CommandLineRunner {
                     + "add frozen_at TIMESTAMPTZ nullable to cards table.")
             .appetiteDays(2)
             .status(PitchStatus.SHAPED)
+            // Not yet bet on a cycle — SHAPED pitches sit in the betting pool with no cycle
+            // until the Betting Table assigns one. A direct project reference (rather than a
+            // cycle or epic) is what keeps it resolvable for task creation in the meantime —
+            // see the "cycle → pitch.project → epic.project" fallback chain used by both
+            // PitchService#toDTO and TaskService#createTask's pitch-derived task location.
+            .project(bankingProject)
             .createdAt(LocalDateTime.of(2026, 3, 15, 9, 0))
             .updatedAt(LocalDateTime.of(2026, 3, 25, 11, 0))
             .build();
     pitchRepository.save(cardFreeze);
+
+    // Demonstrates a pitch-linked (PITCH_SCOPE) task created before its pitch has ever been
+    // bet on a cycle — cycle is left null (no forced cycle-at-creation, per the 2026-08 cycle
+    // model change) and project is set to what TaskService#createTask's pitch-derivation would
+    // resolve for this pitch (cardFreeze.project, since it has no cycle yet). Once cardFreeze is
+    // eventually bet, PitchCycleAssignmentService automatically carries this task's cycle along.
+    taskRepository.save(
+        Task.builder()
+            .title("Design freeze/unfreeze confirmation modal")
+            .description(
+                "Confirmation modal before freezing a card (irreversible-feeling action, "
+                    + "even though unfreeze is instant). Copy review with design — avoid "
+                    + "alarming language since this is a safe, reversible action.")
+            .status(TaskStatus.BACKLOG)
+            .priority(TaskPriority.MEDIUM)
+            .category(TaskCategory.PITCH_SCOPE)
+            .pitch(cardFreeze)
+            .project(bankingProject)
+            .createdBy(saraPerson)
+            .tags("design,ux")
+            .build());
 
     Pitch recurringPayments =
         Pitch.builder()

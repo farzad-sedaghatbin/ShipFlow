@@ -50,6 +50,9 @@ class TaskTraceabilityTest {
   @Mock
   private DashboardNotificationService notificationService;
 
+  @Mock
+  private TaskCycleHistoryService taskCycleHistoryService;
+
   @InjectMocks
   private TaskService taskService;
 

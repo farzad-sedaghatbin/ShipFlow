@@ -54,6 +54,9 @@ class TaskHierarchyServiceTest {
   @Mock
   private ProjectService projectService;
 
+  @Mock
+  private TaskCycleHistoryService taskCycleHistoryService;
+
   @InjectMocks
   private TaskService taskService;
 
