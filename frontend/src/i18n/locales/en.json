@@ -4647,7 +4647,8 @@
       "cycleRequired": "Please select a cycle",
       "noCycles": "No cycles available",
       "submit": "Create Task",
-      "success": "Task created successfully"
+      "success": "Task created successfully",
+      "noProjectTooltip": "This pitch isn't linked to a project yet — add it to an epic or bet it on a cycle first"
     }
   },
   "cycleDetailPage": {
