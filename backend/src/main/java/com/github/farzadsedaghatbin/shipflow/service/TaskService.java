@@ -248,6 +248,12 @@ public class TaskService {
       }
     }
 
+    // A subtask must never be created with an explicit BACKLOG status — subtasks are meant to
+    // be actioned right away (see the default-status comment below).
+    if (parentTask != null && request.getStatus() == TaskStatus.BACKLOG) {
+      throw new BadRequestException(messageService.getMessage("error.task.subtask.backlog.invalid"));
+    }
+
     // Subtasks are created to be worked on right away, not triaged from a backlog — default to
     // TODO instead of BACKLOG when the caller doesn't specify a status.
     TaskStatus defaultStatus = parentTask != null ? TaskStatus.TODO : TaskStatus.BACKLOG;
@@ -429,6 +435,13 @@ public class TaskService {
 
     task.setTitle(request.getTitle());
     task.setDescription(request.getDescription());
+
+    // A subtask must never be moved to BACKLOG — subtasks are meant to be actioned right
+    // away. task.getParentTask() reflects the parent as resolved by the block above, so this
+    // also catches a task being turned into a subtask in the same request.
+    if (request.getStatus() == TaskStatus.BACKLOG && task.getParentTask() != null) {
+      throw new BadRequestException(messageService.getMessage("error.task.subtask.backlog.invalid"));
+    }
 
     if (request.getStatus() != null) {
       task.setStatus(request.getStatus());
@@ -686,6 +699,11 @@ public class TaskService {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
 
+    // A subtask must never be moved to BACKLOG — subtasks are meant to be actioned right away.
+    if (status == TaskStatus.BACKLOG && task.getParentTask() != null) {
+      throw new BadRequestException(messageService.getMessage("error.task.subtask.backlog.invalid"));
+    }
+
     TaskStatus oldStatus = task.getStatus();
     task.setStatus(status);
 
@@ -894,6 +912,11 @@ public class TaskService {
           throw new IllegalArgumentException("Status value must not be blank");
         }
         TaskStatus status = TaskStatus.valueOf(value.trim());
+        // A subtask must never be moved to BACKLOG — subtasks are meant to be actioned
+        // right away.
+        if (status == TaskStatus.BACKLOG && task.getParentTask() != null) {
+          throw new BadRequestException(messageService.getMessage("error.task.subtask.backlog.invalid"));
+        }
         TaskStatus oldStatus = task.getStatus();
         task.setStatus(status);
         if (status == TaskStatus.DONE && oldStatus != TaskStatus.DONE) {

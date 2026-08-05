@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Subtasks could be set to "Backlog" status**: a subtask (`parentTask != null`) is meant to be actioned right away — `TaskService.createTask` already defaulted a subtask's status away from `BACKLOG` when unspecified, but an explicit `BACKLOG` value was never rejected. Now blocked at all four places a task's status can be set: `createTask`, `updateTask` (including a request that both assigns a parent *and* sets `BACKLOG` in the same call), the dedicated `PATCH /tasks/{id}/status` endpoint, and `applyBulkAction`'s `CHANGE_STATUS` case — each throws `BadRequestException` (`error.task.subtask.backlog.invalid`). Frontend defense-in-depth: `BACKLOG` is filtered out of the editable status dropdowns on Task Detail and the Backlog task dialog whenever the task being edited/created is a subtask, and dragging a subtask card onto the Kanban board's Backlog column is now blocked client-side with an explanatory toast instead of silently failing against the backend rejection.
+- **Backlog page pagination could strand users on an empty page**: switching the All/My Tasks tab, the cycle filter, or the dependency filter didn't reset the page index — only some of the filter setters called `setPage(0)`, and none of those three did. A user on page 3 who switched to a filter with fewer results could land on a blank page despite matching tasks existing. Replaced the scattered manual `setPage(0)` calls with one centralized `useEffect` in `useBacklogPage.ts` that resets the page whenever any filter (cycle, tab, status, priority, assignee, release, search, dependency) changes. Also fixed a related count bug: since `dependencyFilter` is applied client-side only (never sent to the backend), `totalElements` used to reflect the server's unfiltered total whenever it was active, making "Page N of M" wrong — it now falls back to the client-filtered array length in that case, in every branch of `loadTasks()`.
+
 ## [1.11.1] - 2026-07-30
 
 ### Added

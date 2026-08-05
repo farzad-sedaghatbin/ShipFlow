@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import {
   GripVertical,
   MoreVertical,
@@ -319,9 +320,17 @@ function KanbanColumn({
     e.preventDefault();
     setIsDragOver(false);
     const taskId = parseInt(e.dataTransfer.getData('taskId'), 10);
-    if (!isNaN(taskId)) {
-      await onStatusChange(taskId, status);
+    if (isNaN(taskId)) {
+      return;
     }
+    // Subtasks can never be moved to Backlog (they're meant to be actioned right away, and the
+    // backend rejects it) — block the drop client-side instead of letting it silently fail.
+    const draggedTask = tasks.find((t) => t.id === taskId);
+    if (draggedTask?.parentTaskId && status === 'BACKLOG') {
+      toast.error(t('backlogPage.kanban.subtaskBacklogNotAllowed'));
+      return;
+    }
+    await onStatusChange(taskId, status);
   };
 
   // Grouped within the column so a sub-task renders right after its parent

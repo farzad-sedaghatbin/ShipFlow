@@ -148,7 +148,7 @@ export default function BacklogPage() {
           dependencyFilter={bp.dependencyFilter}
           onDependencyFilterChange={bp.setDependencyFilter}
           searchQuery={bp.searchQuery}
-          onSearchQueryChange={(q) => { bp.setSearchQuery(q); bp.setPage(0); }}
+          onSearchQueryChange={bp.setSearchQuery}
           persons={bp.persons}
           assigneeFilter={bp.assigneeFilter}
           onAssigneeFilterChange={bp.handleToggleAssigneeFilter}
