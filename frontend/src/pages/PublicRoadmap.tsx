@@ -50,6 +50,8 @@ import {
   Fingerprint,
   WifiOff,
   Download,
+  Kanban,
+  Filter,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -92,6 +94,16 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.11.2',
+      date: 'August 5, 2026',
+      title: t('publicRoadmap.shipped1112Title'),
+      highlights: [
+        { icon: <GitBranch className="h-5 w-5" />, title: t('publicRoadmap.shipped1112Item0Title'), description: t('publicRoadmap.shipped1112Item0Desc') },
+        { icon: <Kanban className="h-5 w-5" />, title: t('publicRoadmap.shipped1112Item1Title'), description: t('publicRoadmap.shipped1112Item1Desc') },
+        { icon: <Filter className="h-5 w-5" />, title: t('publicRoadmap.shipped1112Item2Title'), description: t('publicRoadmap.shipped1112Item2Desc') },
+      ],
+    },
     {
       version: '1.11.1',
       date: 'July 30, 2026',
