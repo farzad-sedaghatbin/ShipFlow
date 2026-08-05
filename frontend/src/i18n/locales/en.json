@@ -3568,7 +3568,8 @@
       "manageColumns": "Manage Columns",
       "columnVisibility": "Column Visibility",
       "showAll": "Show All",
-      "hideOptional": "Hide Optional"
+      "hideOptional": "Hide Optional",
+      "subtaskBacklogNotAllowed": "Subtasks can't be moved to Backlog — they're meant to be worked on right away"
     },
     "blockedBy": "Blocked ({{count}})",
     "blocking": "Blocking ({{count}})",

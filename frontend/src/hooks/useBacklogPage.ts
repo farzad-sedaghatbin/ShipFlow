@@ -134,6 +134,16 @@ export function useBacklogPage() {
     setSelectedTaskIds(new Set());
   }, [tasks]);
 
+  // Centralized page-reset: switching tabs/cycle/any filter can change the result set size, so
+  // always land back on page 0 rather than stranding the user on a now-empty page. Safe on
+  // mount — page is already 0, so this no-ops. Replaces the scattered manual setPage(0) calls
+  // that used to live in individual filter setters (and missed selectedCycle/tabValue/
+  // dependencyFilter entirely).
+  useEffect(() => { setPage(0); }, [
+    selectedCycle, tabValue, categoryFilter, statusFilter, priorityFilter, assigneeFilter,
+    releaseFilter, searchQuery, dependencyFilter,
+  ]);
+
   // ── Data loaders ──────────────────────────────────────────────────────────────
 
   const loadInitialData = async () => {
@@ -210,7 +220,13 @@ export function useBacklogPage() {
         if (categoryParam) filtered = filtered.filter((t) => (t.category || 'PITCH_SCOPE') === categoryParam);
         if (tabValue === 'my' && user?.personId) filtered = filtered.filter((t) => t.assigneeId === user.personId);
         setTasks(filtered);
-        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
+        // dependencyFilter is applied client-side only — fall back to the filtered length so
+        // the count doesn't reflect the server's unfiltered total.
+        setTotalElements(
+          dependencyFilter !== 'all'
+            ? filtered.length
+            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        );
       } catch (error) { console.error('Failed to load project tasks:', error); setTasks([]); setTotalElements(0); }
       finally { clearTimeout(timeout); setTasksLoading(false); }
       return;
@@ -244,24 +260,55 @@ export function useBacklogPage() {
         } else {
           response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder, categoryParam);
         }
-        setTasks(applyCommonFilters(response?.data?.content || []));
-        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
+        const filteredTasks = applyCommonFilters(response?.data?.content || []);
+        setTasks(filteredTasks);
+        // dependencyFilter is applied client-side only (never sent server-side), so the server's
+        // totalElements only reflects the true count when dependencyFilter is 'all' — otherwise
+        // fall back to the filtered array length so "Page N of M" doesn't strand the user.
+        setTotalElements(
+          dependencyFilter !== 'all'
+            ? filteredTasks.length
+            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        );
       } else if (selectedCycle === 'all') {
         response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder, categoryParam);
-        setTasks(applyCommonFilters(response?.data?.content || []));
-        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
+        const filteredTasks = applyCommonFilters(response?.data?.content || []);
+        setTasks(filteredTasks);
+        // dependencyFilter is applied client-side only (never sent server-side), so the server's
+        // totalElements only reflects the true count when dependencyFilter is 'all' — otherwise
+        // fall back to the filtered array length so "Page N of M" doesn't strand the user.
+        setTotalElements(
+          dependencyFilter !== 'all'
+            ? filteredTasks.length
+            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        );
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
         response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, categoryParam, excludeMode, page, rowsPerPage, sortBy, sortOrder);
-        setTasks(applyCommonFilters(response?.data?.content || []));
-        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
+        const filteredTasks = applyCommonFilters(response?.data?.content || []);
+        setTasks(filteredTasks);
+        setTotalElements(
+          dependencyFilter !== 'all'
+            ? filteredTasks.length
+            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        );
       } else if (categoryParam) {
         response = await taskService.getByCycleIdAndCategory(selectedCycle, categoryParam, page, rowsPerPage, sortBy, sortOrder);
-        setTasks(applyCommonFilters(response?.data?.content || []));
-        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
+        const filteredTasks = applyCommonFilters(response?.data?.content || []);
+        setTasks(filteredTasks);
+        setTotalElements(
+          dependencyFilter !== 'all'
+            ? filteredTasks.length
+            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        );
       } else {
         response = await taskService.getByCycleId(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
-        setTasks(applyCommonFilters(response?.data?.content || []));
-        setTotalElements(response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0);
+        const filteredTasks = applyCommonFilters(response?.data?.content || []);
+        setTasks(filteredTasks);
+        setTotalElements(
+          dependencyFilter !== 'all'
+            ? filteredTasks.length
+            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        );
       }
     } catch (error) { console.error('Failed to load tasks:', error); setTasks([]); setTotalElements(0); }
     finally { clearTimeout(timeout); setTasksLoading(false); }
@@ -298,26 +345,26 @@ export function useBacklogPage() {
   };
 
   // Toggle single status in filter (matches new BacklogFilters interface)
+  // Page reset is handled by the centralized effect above (statusFilter is in its deps).
   const handleToggleStatusFilter = (status: TaskStatus) => {
     setStatusFilter(prev =>
       prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status],
     );
-    setPage(0);
   };
 
   // Toggle single priority in filter (matches new BacklogFilters interface)
+  // Page reset is handled by the centralized effect above (priorityFilter is in its deps).
   const handleTogglePriorityFilter = (priority: TaskPriority) => {
     setPriorityFilter(prev =>
       prev.includes(priority) ? prev.filter(p => p !== priority) : [...prev, priority],
     );
-    setPage(0);
   };
 
+  // Page reset is handled by the centralized effect above (assigneeFilter is in its deps).
   const handleToggleAssigneeFilter = (personId: number) => {
     setAssigneeFilter(prev =>
       prev.includes(personId) ? prev.filter(id => id !== personId) : [...prev, personId],
     );
-    setPage(0);
   };
 
   const handlePitchChange = (pitchId: string) => {
@@ -327,7 +374,6 @@ export function useBacklogPage() {
 
   const handleCategoryFilterChange = (category: TaskCategory | 'all') => {
     setCategoryFilter(category);
-    setPage(0);
   };
 
   const handleOpenDialog = (task?: Task) => {
@@ -411,7 +457,6 @@ export function useBacklogPage() {
 
   const handleSort = (field: 'createdAt' | 'priority' | 'status' | 'dueDate' | 'title') => {
     if (sortBy === field) { setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'); } else { setSortBy(field); setSortOrder('desc'); }
-    setPage(0);
   };
 
   const handleStartTimer = async (task: Task) => {
@@ -510,10 +555,10 @@ export function useBacklogPage() {
     setTasks(reorderedTasks);
   };
 
+  // Page reset is handled by the centralized effect above (all of these are in its deps).
   const handleClearFilters = () => {
     setStatusFilter([]); setPriorityFilter([]); setAssigneeFilter([]);
     setDependencyFilter('all'); setReleaseFilter(undefined); setSearchQuery('');
-    setPage(0);
   };
 
   const handleExportCsv = async () => {

@@ -236,7 +236,8 @@
       "manageColumns": "مدیریت ستون‌ها",
       "columnVisibility": "نمایش ستون‌ها",
       "showAll": "نمایش همه",
-      "hideOptional": "مخفی کردن اختیاری"
+      "hideOptional": "مخفی کردن اختیاری",
+      "subtaskBacklogNotAllowed": "زیروظیفه‌ها را نمی‌توان به بک‌لاگ منتقل کرد — آن‌ها باید بلافاصله انجام شوند"
     },
     "loadingCycles": "در حال بارگذاری چرخه‌ها...",
     "loadingPeople": "در حال بارگذاری افراد...",

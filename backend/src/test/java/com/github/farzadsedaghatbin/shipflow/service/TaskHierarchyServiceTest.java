@@ -108,11 +108,14 @@ class TaskHierarchyServiceTest {
   void shouldCreateTaskWithParent() {
     // Given
     createRequest.setParentTaskId(1L);
+    // Subtasks can never have BACKLOG status (see TaskService's subtask-Backlog rejection) —
+    // override the fixture's default BACKLOG status for this parent-task-specific scenario.
+    createRequest.setStatus(TaskStatus.TODO);
     when(cycleRepository.findById(1L)).thenReturn(Optional.of(cycle));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(parentTask));
 
     Task savedTask = Task.builder().id(3L).title("New Task").cycle(cycle).parentTask(parentTask)
-        .status(TaskStatus.BACKLOG).priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE)
+        .status(TaskStatus.TODO).priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE)
         .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
 
     when(taskRepository.save(any(Task.class))).thenReturn(savedTask);
@@ -278,6 +281,9 @@ class TaskHierarchyServiceTest {
         .updatedAt(LocalDateTime.now()).build();
 
     createRequest.setParentTaskId(10L);
+    // Subtasks can never have BACKLOG status (see TaskService's subtask-Backlog rejection) —
+    // override the fixture's default BACKLOG status for this parent-task-specific scenario.
+    createRequest.setStatus(TaskStatus.IN_PROGRESS);
 
     when(taskRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(childTask));
     when(taskRepository.findById(10L)).thenReturn(Optional.of(newParent));

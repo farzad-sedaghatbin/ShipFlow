@@ -326,11 +326,100 @@ class TaskServiceTest {
   }
 
   @Test
+  void createTask_SubtaskWithExplicitBacklogStatus_ShouldThrowException() {
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setTitle("Subtask");
+    request.setCycleId(testCycle.getId());
+    request.setParentTaskId(testTask.getId());
+    request.setStatus(TaskStatus.BACKLOG);
+
+    assertThatThrownBy(() -> taskService.createTask(request))
+        .isInstanceOf(com.github.farzadsedaghatbin.shipflow.exception.BadRequestException.class);
+  }
+
+  @Test
+  void createTask_SubtaskWithoutExplicitStatus_ShouldDefaultToTodoNotBacklog() {
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setTitle("Subtask");
+    request.setCycleId(testCycle.getId());
+    request.setParentTaskId(testTask.getId());
+
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result.getStatus()).isEqualTo(TaskStatus.TODO);
+  }
+
+  @Test
+  void updateTask_SubtaskWithBacklogStatus_ShouldThrowException() {
+    Task subtask = Task.builder().title("Existing Subtask").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).cycle(testCycle)
+        .parentTask(testTask).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+    subtask = taskRepository.save(subtask);
+
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setTitle("Existing Subtask");
+    request.setCycleId(testCycle.getId());
+    request.setParentTaskId(testTask.getId());
+    request.setStatus(TaskStatus.BACKLOG);
+
+    Long subtaskId = subtask.getId();
+    assertThatThrownBy(() -> taskService.updateTask(subtaskId, request))
+        .isInstanceOf(com.github.farzadsedaghatbin.shipflow.exception.BadRequestException.class);
+  }
+
+  @Test
+  void updateTask_AssigningParentAndBacklogStatusInSameRequest_ShouldThrowException() {
+    // A fresh project-linked cycle is needed here (unlike testCycle, which has no project) so
+    // updateTask's "fail closed" parent/project validation doesn't short-circuit before we ever
+    // reach the subtask-Backlog check. This request both makes the task a subtask AND sets
+    // BACKLOG in the same call — must be rejected, not just the "already a subtask" case.
+    Project project = Project.builder().name("Hierarchy Project").projectKey("HP1")
+        .projectType(ProjectType.SHAPE_UP).isActive(true).build();
+    project = projectRepository.save(project);
+
+    Cycle cycle = Cycle.builder().name("Hierarchy Cycle").project(project).startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
+    cycle = cycleRepository.save(cycle);
+
+    Task futureParent = Task.builder().title("Future Parent").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).cycle(cycle)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+    futureParent = taskRepository.save(futureParent);
+
+    Task plainTask = Task.builder().title("Plain Task").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).cycle(cycle)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+    plainTask = taskRepository.save(plainTask);
+
+    CreateTaskRequest request = new CreateTaskRequest();
+    request.setTitle("Plain Task");
+    request.setCycleId(cycle.getId());
+    request.setParentTaskId(futureParent.getId());
+    request.setStatus(TaskStatus.BACKLOG);
+
+    Long taskId = plainTask.getId();
+    assertThatThrownBy(() -> taskService.updateTask(taskId, request))
+        .isInstanceOf(com.github.farzadsedaghatbin.shipflow.exception.BadRequestException.class);
+  }
+
+  @Test
   void updateTaskStatus_ShouldUpdateStatus() {
     TaskDTO result = taskService.updateTaskStatus(testTask.getId(), TaskStatus.IN_PROGRESS);
 
     assertThat(result).isNotNull();
     assertThat(result.getStatus()).isEqualTo(TaskStatus.IN_PROGRESS);
+  }
+
+  @Test
+  void updateTaskStatus_SubtaskToBacklog_ShouldThrowException() {
+    Task subtask = Task.builder().title("Existing Subtask").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).category(TaskCategory.PITCH_SCOPE).cycle(testCycle)
+        .parentTask(testTask).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build();
+    subtask = taskRepository.save(subtask);
+
+    Long subtaskId = subtask.getId();
+    assertThatThrownBy(() -> taskService.updateTaskStatus(subtaskId, TaskStatus.BACKLOG))
+        .isInstanceOf(com.github.farzadsedaghatbin.shipflow.exception.BadRequestException.class);
   }
 
   @Test
