@@ -28,6 +28,15 @@ jobs:
       with:
         node-version: '18'
 
+    # backend/pom.xml depends on com.github.farzadsedaghatbin.shipflow:shipflow-plugin-api as a
+    # regular Maven module dependency (v1.12.0 S60 — real, distributable Plugin SDK artifact, see
+    # plugin-sdk/README.md). It must be `mvn install`ed into the local repo before anything that
+    # touches backend/pom.xml (including spotless:check, which resolves the full effective POM).
+    - name: Build & install shipflow-plugin-api
+      run: |
+        cd plugin-sdk/shipflow-plugin-api
+        mvn -B install -DskipTests
+
     - name: Spotless Check
       run: |
         cd backend
@@ -101,6 +110,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+
+      # See "Build & install shipflow-plugin-api" in the build-and-test job above — same
+      # requirement, separate runner/job so it must be repeated here.
+      - name: Build & install shipflow-plugin-api
+        run: |
+          cd plugin-sdk/shipflow-plugin-api
+          mvn -B install -DskipTests
 
       - name: Start backend
         env:

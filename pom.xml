@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.github.farzadsedaghatbin</groupId>
+  <artifactId>shipflow-reactor</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <name>ShipFlow (reactor)</name>
+  <description>
+    Aggregator POM for building the ShipFlow Maven modules together in dependency order:
+    shipflow-plugin-api (no dependencies) → backend (depends on shipflow-plugin-api).
+
+    This aggregator is a convenience for a single top-down build (`mvn install` from the repo
+    root). It is NOT required for day-to-day development: `backend/` keeps its own parent
+    (spring-boot-starter-parent) and is fully buildable on its own — `cd backend &amp;&amp; ./mvnw verify`
+    works unchanged — as long as shipflow-plugin-api has already been `mvn install`ed into the
+    local repository first (see Dockerfile's backend-builder stage and
+    .github/workflows/ci.yml for where that install step runs in CI/Docker).
+
+    plugin-sdk/shipflow-plugin-archetype is intentionally NOT a module here: it packages Maven
+    archetype resources (Velocity-templated files), not compiled Java, and has no build-order
+    dependency on the other two modules — build/verify it independently, see plugin-sdk/README.md.
+  </description>
+
+  <modules>
+    <module>plugin-sdk/shipflow-plugin-api</module>
+    <module>backend</module>
+  </modules>
+</project>

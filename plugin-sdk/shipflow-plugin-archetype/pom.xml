@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.github.farzadsedaghatbin.shipflow</groupId>
+  <artifactId>shipflow-plugin-archetype</artifactId>
+  <version>1.0.0</version>
+  <packaging>maven-archetype</packaging>
+
+  <name>ShipFlow Plugin Archetype</name>
+  <description>
+    Maven archetype that scaffolds a new ShipFlow plugin project: a pom.xml pre-wired with a
+    &lt;scope&gt;provided&lt;/scope&gt; dependency on shipflow-plugin-api, plus one sample class
+    implementing RiskCalculatorPlugin. Generate a new plugin project with:
+
+      mvn archetype:generate \
+        -DarchetypeGroupId=com.github.farzadsedaghatbin.shipflow \
+        -DarchetypeArtifactId=shipflow-plugin-archetype \
+        -DarchetypeVersion=1.0.0 \
+        -DgroupId=com.example \
+        -DartifactId=my-shipflow-plugin \
+        -DinteractiveMode=false
+
+    See plugin-sdk/README.md for the full workflow (this archetype does NOT enable dynamic
+    runtime JAR loading — the generated project is compiled into the ShipFlow backend build as a
+    regular Maven dependency; see the "Deployment" section of that README).
+  </description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <build>
+    <extensions>
+      <!-- Registers the "maven-archetype" packaging type so this module's own build knows how
+           to package/install itself as an archetype (not a plain jar). -->
+      <extension>
+        <groupId>org.apache.maven.archetype</groupId>
+        <artifactId>archetype-packaging</artifactId>
+        <version>3.2.1</version>
+      </extension>
+    </extensions>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-archetype-plugin</artifactId>
+        <version>3.2.1</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
