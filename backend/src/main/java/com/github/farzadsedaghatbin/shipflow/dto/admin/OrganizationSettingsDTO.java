@@ -81,6 +81,10 @@ public class OrganizationSettingsDTO {
   private String defaultConfluenceDomain;
   private String defaultConfluenceSpaceKey;
 
+  // GitLab MCP Configuration (token not exposed, only flag)
+  private Boolean hasGitlabAccessToken;
+  private String defaultGitlabProjectId;
+
   // SharePoint Graph API (credentials not exposed, only presence flags + non-secret fields)
   private Boolean hasSharepointClientSecret;
   private String sharepointTenantId;

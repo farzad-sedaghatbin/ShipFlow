@@ -79,7 +79,7 @@ The plugin appears automatically in Organization Settings → Plugins the next t
 
 ## What is MCP (Model Context Protocol)?
 
-MCP is a standardized way for AI tools (Claude Code, Cursor, etc.) to query and act on ShipFlow data. ShipFlow acts both as an MCP client (reading from GitHub, Figma, Notion, Confluence) and as an MCP server (letting AI tools read and write ShipFlow tasks and pitches).
+MCP is a standardized way for AI tools (Claude Code, Cursor, etc.) to query and act on ShipFlow data. ShipFlow acts both as an MCP client (reading from GitHub, Figma, Notion, Confluence, GitLab) and as an MCP server (letting AI tools read and write ShipFlow tasks and pitches).
 
 ## How do I configure MCP integrations?
 
@@ -91,6 +91,8 @@ Go to **MCP Integration** (in the main navigation under Integrations). There are
 - **Confluence** — enter an API token plus your Atlassian domain and default space key to read pages from Confluence Cloud.
 - **MCP Server** — toggle the built-in ShipFlow MCP server on or off, and enable write tools.
 - **API Keys** — create and revoke API keys used by external MCP clients to authenticate with ShipFlow.
+
+GitLab MCP (below) has backend support but not yet its own tab in this screen — its token is set via the organization settings API until that UI ships.
 
 ## How do I connect Claude Code or Cursor to ShipFlow via MCP?
 
@@ -129,6 +131,13 @@ Yes. Call `get_bug_attachments` (by `bugKey` or `bugReportId`) to list a bug's f
 2. Go to **MCP Integration → Confluence**.
 3. Enter your API token, your Atlassian domain (e.g. `yourcompany.atlassian.net`), and the default space key (e.g. `ENG`).
 4. Click Save. ShipFlow AI features can now read pages from that Confluence space.
+
+## How do I set up a GitLab MCP connection?
+
+1. Ask a self-hosting administrator to set `MCP_GITLAB_ENABLED=true` and `MCP_GITLAB_SERVER_URL` (your GitLab instance, e.g. `https://gitlab.com` or your self-hosted URL) on the ShipFlow backend, then restart it.
+2. Create a GitLab Personal Access Token with `read_repository` (and `read_api` for search) scope.
+3. Until a dedicated GitLab tab ships in this screen, an admin sets the token via the organization-settings API (the `gitlabAccessToken` field on the same PATCH endpoint used by Org Settings) — ask your administrator or a developer to set it for you.
+4. Once configured, ShipFlow AI features (like Wise Architecture) can read files from your GitLab project by its numeric project ID or its `namespace/project` path.
 
 ## Can I share ShipFlow links in Slack or iMessage with rich previews?
 

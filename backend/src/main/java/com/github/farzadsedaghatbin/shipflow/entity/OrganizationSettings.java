@@ -206,6 +206,13 @@ public class OrganizationSettings {
   @Column(name = "default_confluence_domain", length = 255)
   private String defaultConfluenceDomain;
 
+  // GitLab MCP Configuration (v1.12.0 S61)
+  @Column(name = "gitlab_access_token", columnDefinition = "TEXT")
+  private String gitlabAccessToken;
+
+  @Column(name = "default_gitlab_project_id")
+  private String defaultGitlabProjectId;
+
   // SharePoint Graph API — Azure AD client credentials
   @Column(name = "sharepoint_tenant_id", length = 255)
   private String sharepointTenantId;

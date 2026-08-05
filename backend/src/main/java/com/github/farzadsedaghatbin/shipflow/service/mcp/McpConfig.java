@@ -35,6 +35,11 @@ public class McpConfig {
      */
     private ConfluenceMcpConfig confluence = new ConfluenceMcpConfig();
 
+    /**
+     * GitLab MCP server configuration.
+     */
+    private GitLabMcpConfig gitlab = new GitLabMcpConfig();
+
     @Getter
     @Setter
     public static class GitHubMcpConfig {
@@ -110,6 +115,31 @@ public class McpConfig {
         /**
          * Confluence MCP server URL.
          * Environment variable: MCP_CONFLUENCE_SERVER_URL
+         */
+        private String serverUrl;
+
+        /**
+         * Connection timeout in seconds.
+         */
+        private int timeoutSeconds = 30;
+    }
+
+    @Getter
+    @Setter
+    public static class GitLabMcpConfig {
+        /**
+         * Whether GitLab MCP integration is enabled.
+         * Environment variable: MCP_GITLAB_ENABLED
+         */
+        private boolean enabled = false;
+
+        /**
+         * GitLab instance base URL (e.g. https://gitlab.com or a self-hosted
+         * instance such as https://gitlab.example.com). {@link GitLabMcpProvider}
+         * calls this instance's REST API v4 directly (no separate MCP-server
+         * intermediary process, unlike {@link GitHubMcpConfig#getServerUrl()}) —
+         * see {@link GitLabMcpProvider}'s class Javadoc for why.
+         * Environment variable: MCP_GITLAB_SERVER_URL
          */
         private String serverUrl;
 
