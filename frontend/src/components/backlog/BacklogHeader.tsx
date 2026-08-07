@@ -25,9 +25,6 @@ export interface BacklogHeaderProps {
   selectedCycle: number | 'all';
   viewMode: ViewMode;
   exportLoading?: boolean;
-  // True when the active category+methodology combo (Shape Up Debt/Improvement) may skip the
-  // cycle requirement — see useBacklogPage's canSkipCycleForDebtImprovement.
-  canSkipCycle?: boolean;
   onCycleChange: (value: number | 'all') => void;
   onViewModeChange: (mode: ViewMode) => void;
   onNewTask: () => void;
@@ -42,7 +39,6 @@ export function BacklogHeader({
   selectedCycle,
   viewMode,
   exportLoading = false,
-  canSkipCycle = false,
   onCycleChange,
   onViewModeChange,
   onNewTask,
@@ -190,16 +186,12 @@ export function BacklogHeader({
             Tasks always belong to a single project, so the button is disabled
             while "All Projects" is selected. Show a tooltip that tells the user
             to pick a specific project — otherwise the disabled state looks
-            broken. For non-Kanban projects we additionally require a cycle. */}
+            broken. No cycle is ever required to create a task anymore (see §B.5) —
+            a task's cycle is now purely derived server-side from being linked to a pitch. */}
         {(() => {
           const isAllProjects = !currentProject;
-          const needsCycle = !isKanbanProject && (selectedCycle === 'all' || !selectedCycle) && !canSkipCycle;
-          const disabled = isAllProjects || needsCycle;
-          const hintKey = isAllProjects
-            ? 'backlogPage.selectProjectToCreate'
-            : needsCycle
-              ? 'backlogPage.selectCycleToCreate'
-              : null;
+          const disabled = isAllProjects;
+          const hintKey = isAllProjects ? 'backlogPage.selectProjectToCreate' : null;
           return (
             <TooltipProvider>
               <Tooltip>

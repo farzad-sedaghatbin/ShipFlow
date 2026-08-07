@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
 import { LocalizedDateInput } from '../LocalizedDateInput';
-import { Task, CreateTaskRequest, TaskStatus, TaskPriority, TaskCategory, Person, Pitch, Team } from '../../types';
+import { Task, CreateTaskRequest, TaskStatus, TaskPriority, Person, Pitch, Team } from '../../types';
 import { statusOptions, priorityOptions } from './backlogTypes';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -35,7 +35,6 @@ interface BacklogTaskDialogProps {
   persons: Person[];
   teams: Team[];
   pitches: Pitch[];
-  activeCategory: TaskCategory;
   isKanbanProject: boolean;
   onOpenChange: (open: boolean) => void;
   onFormDataChange: (data: CreateTaskRequest) => void;
@@ -55,7 +54,6 @@ export function BacklogTaskDialog({
   persons,
   teams,
   pitches,
-  activeCategory,
   isKanbanProject,
   onOpenChange,
   onFormDataChange,
@@ -87,7 +85,7 @@ export function BacklogTaskDialog({
           <DialogDescription>
             {formData.parentTaskId
               ? t('backlogPage.subtaskDescription')
-              : activeCategory === 'PITCH_SCOPE'
+              : formData.pitchId
                 ? t('backlogPage.categoryDescription.pitchScope')
                 : t('backlogPage.categoryDescription.debtImprovement')
             }

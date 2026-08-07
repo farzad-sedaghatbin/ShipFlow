@@ -618,9 +618,10 @@ export default function PitchDetail() {
         <PitchTasksSection
           tasks={tasks}
           pitchId={pitch.id}
-          cycleId={pitch.cycleId}
+          projectId={pitch.projectId}
           onTaskCreated={(task) => setTasks(prev => [task, ...prev])}
-          onReorder={(reordered) => setTasks(reordered)}
+          onTaskUpdated={(updated) => setTasks(prev => prev.map(t => t.id === updated.id ? updated : t))}
+          onTaskDeleted={(taskId) => setTasks(prev => prev.filter(t => t.id !== taskId))}
         />
 
         <TestCasesSection pitchId={pitch.id} />

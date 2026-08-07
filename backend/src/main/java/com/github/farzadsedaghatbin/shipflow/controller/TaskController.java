@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskAttachmentDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.TaskCycleHistoryDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateStoryPointsRequest;
@@ -18,6 +19,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.service.AuditService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskAttachmentService;
+import com.github.farzadsedaghatbin.shipflow.service.TaskCycleHistoryService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskAttachmentService.DownloadResult;
 import org.springframework.core.io.Resource;
@@ -52,6 +54,7 @@ public class TaskController {
   private final TaskService taskService;
   private final AuditService auditService;
   private final TaskAttachmentService attachmentService;
+  private final TaskCycleHistoryService taskCycleHistoryService;
   
   // Allowed fields for sorting to prevent runtime errors
   private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
@@ -140,6 +143,15 @@ public class TaskController {
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
     Pageable pageable = PageRequest.of(page, size);
     return ResponseEntity.ok(auditService.getTaskHistory(id, pageable));
+  }
+
+  @GetMapping("/{id}/cycle-history")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Get a task's cycle history", description = "Returns the cycle/status audit trail for a task — "
+      + "one snapshot per creation, status change, or cycle (re)assignment — for reporting on which cycle a task "
+      + "was in, and in which cycle it completed.")
+  public ResponseEntity<List<TaskCycleHistoryDTO>> getTaskCycleHistory(@PathVariable Long id) {
+    return ResponseEntity.ok(taskCycleHistoryService.getHistoryForTask(id));
   }
 
   @GetMapping("/cycle/{cycleId}/all")

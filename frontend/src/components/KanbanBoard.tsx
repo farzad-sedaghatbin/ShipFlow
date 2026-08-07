@@ -52,6 +52,7 @@ const KANBAN_COLUMNS: { status: TaskStatus; labelKey: string; color: string }[] 
   { status: 'BLOCKED', labelKey: 'backlogPage.statusOptions.blocked', color: 'bg-red-500' },
   { status: 'IN_REVIEW', labelKey: 'backlogPage.statusOptions.inReview', color: 'bg-purple-500' },
   { status: 'DONE', labelKey: 'backlogPage.statusOptions.done', color: 'bg-green-500' },
+  { status: 'CANCELLED', labelKey: 'backlogPage.statusOptions.cancelled', color: 'bg-slate-400' },
 ];
 
 const priorityColors: Record<TaskPriority, string> = {
@@ -75,6 +76,10 @@ interface KanbanBoardProps {
   loading?: boolean;
   visibleColumns?: TaskStatus[];
   onToggleColumn?: (status: TaskStatus) => void;
+  // Hides the per-card pitch-title badge — set true when the board is already scoped to a
+  // single pitch (e.g. the per-pitch Kanban board in PitchTasksSection), where the badge would
+  // just repeat the pitch the user is already looking at.
+  hidePitchBadge?: boolean;
 }
 
 interface KanbanCardProps {
@@ -85,9 +90,10 @@ interface KanbanCardProps {
   onAddSubtask?: (task: Task) => void;
   onStartTimer?: (task: Task) => void;
   dragging?: boolean;
+  hidePitchBadge?: boolean;
 }
 
-function KanbanCard({ task, onViewTask, onEditTask, onDeleteTask, onAddSubtask, onStartTimer, dragging }: KanbanCardProps) {
+function KanbanCard({ task, onViewTask, onEditTask, onDeleteTask, onAddSubtask, onStartTimer, dragging, hidePitchBadge }: KanbanCardProps) {
   const { t } = useTranslation();
   
   const handleDragStart = (e: React.DragEvent) => {
@@ -251,7 +257,7 @@ function KanbanCard({ task, onViewTask, onEditTask, onDeleteTask, onAddSubtask, 
               </Badge>
             )}
           </div>
-          {task.pitchTitle && (
+          {!hidePitchBadge && task.pitchTitle && (
             <Badge variant="outline" className="text-[10px]">
               {task.pitchTitle}
             </Badge>
@@ -289,19 +295,21 @@ interface KanbanColumnProps {
   onDeleteTask: (taskId: number) => void;
   onAddSubtask?: (task: Task) => void;
   onStartTimer?: (task: Task) => void;
+  hidePitchBadge?: boolean;
 }
 
-function KanbanColumn({ 
-  status, 
-  labelKey, 
-  color, 
-  tasks, 
-  onStatusChange, 
-  onViewTask, 
-  onEditTask, 
+function KanbanColumn({
+  status,
+  labelKey,
+  color,
+  tasks,
+  onStatusChange,
+  onViewTask,
+  onEditTask,
   onDeleteTask,
   onAddSubtask,
-  onStartTimer
+  onStartTimer,
+  hidePitchBadge
 }: KanbanColumnProps) {
   const { t } = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
@@ -381,6 +389,7 @@ function KanbanColumn({
                 onDeleteTask={onDeleteTask}
                 onAddSubtask={onAddSubtask}
                 onStartTimer={onStartTimer}
+                hidePitchBadge={hidePitchBadge}
               />
             ))
           )}
@@ -400,7 +409,8 @@ export default function KanbanBoard({
   onStartTimer,
   loading,
   visibleColumns = KANBAN_COLUMNS.map(col => col.status),
-  onToggleColumn
+  onToggleColumn,
+  hidePitchBadge
 }: KanbanBoardProps) {
   const { t } = useTranslation();
   const { isMobile } = useBreakpointHelpers();
@@ -523,6 +533,7 @@ export default function KanbanBoard({
               onDeleteTask={onDeleteTask}
               onAddSubtask={onAddSubtask}
               onStartTimer={onStartTimer}
+              hidePitchBadge={hidePitchBadge}
             />
           ))}
       </div>

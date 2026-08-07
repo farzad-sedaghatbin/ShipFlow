@@ -56,6 +56,7 @@ docker compose up -d
 | **Production self-hosting** *(v1.9.0)* | First-party **Helm chart** for Kubernetes; **Prometheus** metrics (`/actuator/prometheus`) + a ready-to-import **Grafana** dashboard; optional **OpenTelemetry** tracing and structured JSON logging |
 | **Installable & offline-capable (PWA)** *(v1.11.0)* | Install ShipFlow like a native app; already-visited pages stay browsable offline, and writes made offline (comments, status changes, new tasks) are queued and sent automatically once you're back online. On mobile, a one-time prompt right after login offers to install it *(v1.11.1)* |
 | **Web Push & Passkey sign-in** *(v1.11.0)* | Native push notifications for mentions, assignments, and cycle events — no email or open tab required. Sign in with Face ID, Touch ID, Windows Hello, or a security key (WebAuthn) instead of a password. Password-login users with no passkey get a one-time setup prompt *(v1.11.1)* |
+| **Flexible task cycles & Pitch Kanban** *(v1.11.2)* | Logging a task no longer requires picking a cycle up front — a pitch-linked task follows whatever cycle its pitch is currently bet on, automatically, with an audit trail for reporting. A pitch's tasks now render as a drag-and-drop Kanban board on its own detail page |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---

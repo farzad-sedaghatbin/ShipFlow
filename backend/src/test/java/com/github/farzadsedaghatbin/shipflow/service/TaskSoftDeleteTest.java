@@ -53,6 +53,9 @@ class TaskSoftDeleteTest {
   @Mock
   private HillChartPointRepository hillChartPointRepository;
 
+  @Mock
+  private TaskCycleHistoryService taskCycleHistoryService;
+
   @InjectMocks
   private TaskService taskService;
 

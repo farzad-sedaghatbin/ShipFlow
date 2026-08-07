@@ -32,11 +32,18 @@ public class CreateTaskRequest {
   private Long cycleId;
 
   /**
-   * Direct project reference. Required when {@code cycleId} is null (SCRUM product backlog tasks).
-   * Ignored when {@code cycleId} is supplied (project is derived from the cycle).
+   * Direct project reference. Used when {@code cycleId} is null and the task isn't pitch-linked
+   * (SCRUM product backlog / Shape Up Debt-Improvement tasks). Ignored when {@code cycleId} is
+   * supplied (project is derived from the cycle).
    */
   private Long projectId;
 
+  /**
+   * Pitch to link this task to. When neither {@code cycleId} nor {@code projectId} is supplied,
+   * the task's cycle and project are derived from this pitch (cycle follows the pitch's current
+   * bet, which may be {@code null}; project follows the same cycle→pitch→epic fallback chain
+   * used by {@code PitchService#toDTO}).
+   */
   private Long pitchId;
 
   private Long scopeId;
@@ -73,13 +80,16 @@ public class CreateTaskRequest {
   private Integer initialHillPosition;
 
   /**
-   * Cross-field validation: at least one of {@code cycleId} or {@code projectId} must be provided.
-   * This constraint is surfaced in OpenAPI and validated at the controller boundary via JSR-303,
-   * so all consumers (including future API integrations and bulk imports) are covered.
+   * Cross-field validation: at least one of {@code cycleId}, {@code projectId}, or {@code
+   * pitchId} must be provided. A pitch-linked task with neither an explicit cycle nor an
+   * explicit project derives both from the pitch (its current bet's cycle/project, or the
+   * epic's project chain when not yet bet) — see {@code TaskService#createTask}. This constraint
+   * is surfaced in OpenAPI and validated at the controller boundary via JSR-303, so all consumers
+   * (including future API integrations and bulk imports) are covered.
    */
-  @AssertTrue(message = "Task location required: provide cycleId (assign to a cycle/sprint) or projectId (SCRUM product backlog)")
+  @AssertTrue(message = "Task location required: provide cycleId (assign to a cycle/sprint), projectId (SCRUM product backlog / Debt-Improvement task), or pitchId (cycle/project derived from the pitch)")
   @SuppressWarnings("unused") // invoked by the Bean Validation framework
   private boolean isTaskLocationValid() {
-    return cycleId != null || projectId != null;
+    return cycleId != null || projectId != null || pitchId != null;
   }
 }
