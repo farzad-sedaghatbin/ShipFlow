@@ -251,7 +251,7 @@ Once connected, your AI assistant has access to these tools:
 | `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId`, `cycleId`, or `taskId` — `taskId` resolves to the task's parent pitch or cycle) |
 | `get_task_context` | **Task-rooted aggregator for coding agents** — given a single `taskId`, returns the task (with dependency graph and subtasks), its parent pitch (Shape Up fields + `wireframeLinks`), parent cycle, sibling tasks under the same pitch, and a server-generated `hints` array (Figma URL guidance, blocked-by detail, thin-context warnings). Use this instead of stitching `get_task` + `get_pitch_detail` + `get_tasks` when the goal is "implement this task". |
 
-### Write Tools (v1.6.0 S41 — 12 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
+### Write Tools (14 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
@@ -266,7 +266,9 @@ Once connected, your AI assistant has access to these tools:
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
 | `create_scope` | Create a Hill Chart scope for a pitch (pitchId, title required; optional: description, progress) |
 | `record_test_run` | Record the result of executing a test case — status (PASSED/FAILED/BLOCKED/SKIPPED/PENDING/RUNNING), notes, actualResult, buildVersion, environment |
+| `create_bug` | Create a bug report (title, description, severity required; optional: projectId, pitchId, cycleId, taskId, stepsToReproduce, expectedBehavior, actualBehavior, environment, assigneeUsername). The calling MCP user becomes the reporter. |
 | `update_bug_status` | Update a bug report's status (OPEN, IN_PROGRESS, RESOLVED, VERIFIED, CLOSED, REOPENED, WONT_FIX, DUPLICATE) and optional resolution text |
+| `update_bug_assignee` | Reassign an existing bug report — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true`. Identify the bug by `bugKey` or `bugReportId`. |
 
 ### Wise Architecture Tools (v0.9.0)
 

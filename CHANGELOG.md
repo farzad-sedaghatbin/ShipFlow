@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **MCP `create_bug` and `update_bug_assignee` write tools**: the MCP server could already create and reassign tasks (`create_task`, `update_task_assignee`) but had no bug-domain equivalent — only `update_bug_status` existed for writes. `create_bug` creates a bug report (title, description, severity required; optional project/pitch/cycle/task association, repro fields, assigneeUsername), with the calling MCP user set as reporter. `update_bug_assignee` reassigns or unassigns a bug's general assignee (by `assigneeUsername`, `assigneeId`, or `mine: true`), mirroring `update_task_assignee`'s semantics; a new `BugReportService.updateBugReportAssignee` service method backs it (`BugReportService.updateBugReport`'s PATCH semantics ignore `null` fields, so it can't clear an assignee — the existing `updateBugReportQaAssignee` precedent was mirrored for the general assignee field instead). Both tools go through `BugReportMcpTools`, registered in `McpToolDispatcher`.
+
 ## [1.11.2] - 2026-08-05
 
 ### Changed
