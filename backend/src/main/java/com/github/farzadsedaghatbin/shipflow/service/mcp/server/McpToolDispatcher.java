@@ -348,7 +348,9 @@ public class McpToolDispatcher {
       case BugReportMcpTools.TOOL_GET_BUG_REPORT -> bugReportTools.getBugReport(args);
       case BugReportMcpTools.TOOL_GET_BUG_ATTACHMENTS -> bugReportTools.getBugAttachments(args);
       case BugReportMcpTools.TOOL_DOWNLOAD_BUG_ATTACHMENT -> bugReportTools.downloadBugAttachment(args);
+      case BugReportMcpTools.TOOL_CREATE_BUG -> bugReportTools.createBug(args, auth);
       case BugReportMcpTools.TOOL_UPDATE_BUG_STATUS -> bugReportTools.updateBugStatus(args, auth);
+      case BugReportMcpTools.TOOL_UPDATE_BUG_ASSIGNEE -> bugReportTools.updateBugAssignee(args, auth);
 
       default -> throw new McpToolException("Unknown tool: " + name);
     };
@@ -401,7 +403,9 @@ public class McpToolDispatcher {
         WiseArchitectureMcpTools.analyzeDefinition(),
         WorklogMcpTools.logWorkDefinition(),
         TestCaseMcpTools.recordTestRunDefinition(),
-        BugReportMcpTools.updateBugStatusDefinition());
+        BugReportMcpTools.createBugDefinition(),
+        BugReportMcpTools.updateBugStatusDefinition(),
+        BugReportMcpTools.updateBugAssigneeDefinition());
   }
 
   /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */
