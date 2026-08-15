@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { motion, AnimatePresence, Variants, Transition } from 'framer-motion';
+import { motion, AnimatePresence, Variants, Transition } from 'motion/react';
 import { useLocation } from 'react-router-dom';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
