@@ -60,6 +60,7 @@ public class PitchService {
   private final ApplicationEventPublisher eventPublisher;
   private final AICacheService cacheService;
   private final CapacityConfigService capacityConfigService;
+  private final PitchCycleAssignmentService pitchCycleAssignmentService;
   @org.springframework.beans.factory.annotation.Autowired(required = false)
   private PitchDependencyRepository pitchDependencyRepository;
   @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -343,9 +344,9 @@ public class PitchService {
     pitch.setStatus(PitchStatus.SHAPED);
     // Shape Up workflow: Clear cycle/team assignment when marked as shaped
     // so it becomes available for betting in the next cycle
-    pitch.setCycle(null);
     pitch.setTeam(null);
-    
+    pitchCycleAssignmentService.applyCycleToPitch(pitch, null);
+
     Pitch saved = pitchRepository.save(pitch);
     log.info("Marked pitch as shaped: {} (→ SHAPED, ready for betting)", saved.getTitle());
 
@@ -369,8 +370,8 @@ public class PitchService {
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
 
     PitchStatus oldStatus = pitch.getStatus();
-    pitch.setCycle(cycle);
     pitch.setStatus(PitchStatus.PENDING);
+    pitchCycleAssignmentService.applyCycleToPitch(pitch, cycle);
     Pitch saved = pitchRepository.save(pitch);
 
     log.info("Assigned pitch to cycle: {} → Cycle {} (SHAPED → PENDING)", saved.getTitle(), cycle.getName());
@@ -398,9 +399,9 @@ public class PitchService {
     }
 
     Long oldCycleId = pitch.getCycle() != null ? pitch.getCycle().getId() : null;
-    pitch.setCycle(null);
     pitch.setTeam(null); // Also clear team assignment
     pitch.setStatus(PitchStatus.SHAPED);
+    pitchCycleAssignmentService.applyCycleToPitch(pitch, null);
     Pitch saved = pitchRepository.save(pitch);
 
     log.info("Unassigned pitch from cycle: {} (PENDING → SHAPED)", saved.getTitle());
@@ -547,8 +548,8 @@ public class PitchService {
     // Shape Up workflow: When a pitch becomes SHAPED, clear cycle/team assignment
     // so it becomes available for betting in the next cycle
     if (request.getStatus() == PitchStatus.SHAPED && oldStatus != PitchStatus.SHAPED) {
-      pitch.setCycle(null);
       pitch.setTeam(null);
+      pitchCycleAssignmentService.applyCycleToPitch(pitch, null);
     }
 
     // Shape Up fields
@@ -609,10 +610,10 @@ public class PitchService {
     // Shape Up workflow: When a pitch becomes SHAPED, clear cycle/team assignment
     // so it becomes available for betting in the next cycle
     if (status == PitchStatus.SHAPED && oldStatus != PitchStatus.SHAPED) {
-      pitch.setCycle(null);
       pitch.setTeam(null);
+      pitchCycleAssignmentService.applyCycleToPitch(pitch, null);
     }
-    
+
     Pitch saved = pitchRepository.save(pitch);
 
     // Invalidate risk analysis cache since status changed
@@ -858,6 +859,13 @@ public class PitchService {
       projectId = pitch.getProject().getId();
       projectName = pitch.getProject().getName();
       projectKey = pitch.getProject().getProjectKey();
+    } else if (pitch.getEpic() != null && pitch.getEpic().getProject() != null) {
+      // Third fallback: pre-cycle pitches (IDEA/DRAFT/SHAPED) linked only to an epic still
+      // resolve to a project via the epic — mirrors the epic-scoping pattern already used in
+      // PitchRepository's pool queries (p.epic IS NULL OR e.project.id = :projectId).
+      projectId = pitch.getEpic().getProject().getId();
+      projectName = pitch.getEpic().getProject().getName();
+      projectKey = pitch.getEpic().getProject().getProjectKey();
     }
 
     return PitchDTO.builder().id(pitch.getId()).title(pitch.getTitle()).description(pitch.getDescription())
@@ -913,7 +921,7 @@ public class PitchService {
 
     if (pitch.getCycle() != null) {
       cacheService.invalidateCycleRiskCache(pitch.getCycle().getId());
-      pitch.setCycle(null);
+      pitchCycleAssignmentService.applyCycleToPitch(pitch, null);
     }
     pitch.setProject(target);
     // Reset betting-stage status back to SHAPED so the pitch can be re-assigned in the new project

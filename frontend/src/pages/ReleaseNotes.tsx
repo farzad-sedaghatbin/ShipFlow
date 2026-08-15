@@ -63,6 +63,8 @@ import {
 
   WifiOff,
   Fingerprint,
+  Kanban,
+  Filter,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -81,6 +83,31 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.11.2',
+    date: 'August 5, 2026',
+    title: 'Flexible Task Cycles & Pitch Kanban',
+    highlights: [
+      {
+        icon: <GitBranch className="h-5 w-5" />,
+        title: 'No More Forced Cycle at Task Creation',
+        description:
+          "Logging a task no longer requires picking a cycle up front. A task linked to a pitch now automatically follows whatever cycle that pitch is currently bet on — including retroactively, if you bet or re-bet the pitch later — while a new audit trail tracks which cycle a task was in at every point, for future reporting.",
+      },
+      {
+        icon: <Kanban className="h-5 w-5" />,
+        title: 'Pitch Detail Now Shows a Kanban Board',
+        description:
+          "A pitch's tasks render as a drag-and-drop Kanban board right on its detail page instead of a flat list — drop a card into a new column to update its status immediately, subtasks group under their parent, and you can create tasks even for a pitch that hasn't been bet to a cycle yet.",
+      },
+      {
+        icon: <Filter className="h-5 w-5" />,
+        title: 'Backlog Category Filter Replaces Tabs',
+        description:
+          "The Pitch Tasks / Debt & Improvements tab switcher is gone — the Backlog page now shows one merged list, with the same distinction available as a filter alongside Status and Priority. Also fixes a pagination bug where switching tabs, cycle, or the dependency filter could strand you on an empty page.",
+      },
+    ],
+  },
   {
     version: '1.11.1',
     date: 'July 30, 2026',

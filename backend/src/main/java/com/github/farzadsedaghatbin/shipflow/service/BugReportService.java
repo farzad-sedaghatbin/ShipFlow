@@ -280,6 +280,31 @@ public class BugReportService {
     return toDTO(bugReport);
   }
 
+  /**
+   * Assign (or unassign) a bug report's general assignee. A null {@code assigneeId} clears the
+   * assignee. All other fields are left untouched. Distinct from {@link
+   * #updateBugReportQaAssignee}, which targets the separate QA-tester field.
+   */
+  @Transactional
+  public BugReportDTO updateBugReportAssignee(Long id, Long assigneeId) {
+    checkFeatureEnabled();
+
+    BugReport bugReport = bugReportRepository.findById(id)
+        .orElseThrow(() -> new IllegalArgumentException("Bug report not found: " + id));
+
+    if (assigneeId == null) {
+      bugReport.setAssignee(null);
+    } else {
+      Person assignee = personRepository.findById(assigneeId)
+          .orElseThrow(() -> new IllegalArgumentException("Assignee not found: " + assigneeId));
+      bugReport.setAssignee(assignee);
+    }
+
+    bugReport = bugReportRepository.save(bugReport);
+    log.info("Updated assignee for bug report: {} -> {}", bugReport.getBugKey(), assigneeId);
+    return toDTO(bugReport);
+  }
+
   /** Delete a bug report. */
   @Transactional
   public void deleteBugReport(Long id) {

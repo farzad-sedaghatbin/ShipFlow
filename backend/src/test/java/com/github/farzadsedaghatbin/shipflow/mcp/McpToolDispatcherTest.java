@@ -485,6 +485,73 @@ class McpToolDispatcherTest {
   }
 
   @Test
+  void toolsCall_createTask_WithPitchIdOnly_ShouldSucceed() throws Exception {
+    // create_task no longer requires cycleId — pitchId (or projectId) alone is enough, mirroring
+    // the REST API's 3-way location choice (cycleId/projectId/pitchId).
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    TaskDTO task = TaskDTO.builder().id(100L).title("Pitch-derived MCP task").pitchId(10L).build();
+    when(taskService.createTask(org.mockito.ArgumentMatchers.any())).thenReturn(task);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "create_task",
+            "arguments", Map.of("pitchId", 10, "title", "Pitch-derived MCP task")),
+        "id", 11);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    assertThat((String) content.get(0).get("text")).contains("Pitch-derived MCP task");
+  }
+
+  @Test
+  void toolsCall_createTask_WithNoLocationArgs_ShouldReturnError() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "create_task",
+            "arguments", Map.of("title", "Nowhere to go")),
+        "id", 12);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).contains("cycleId, projectId, or pitchId");
+  }
+
+  @Test
   void toolsCall_createPitch_returnsCreatedPitch() throws Exception {
     properties.setWriteEnabled(true);
     java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
@@ -1713,6 +1780,180 @@ class McpToolDispatcherTest {
     String text = (String) content.get(0).get("text");
     assertThat(text).contains("RESOLVED");
     assertThat(text).contains("offline buffer");
+  }
+
+  // ── create_bug ────────────────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_createBug_returnsCreatedBug() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+    when(auth.getName()).thenReturn("farzad");
+
+    com.github.farzadsedaghatbin.shipflow.entity.User caller =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    caller.setId(7L);
+    caller.setUsername("farzad");
+    when(userRepository.findByUsernameWithPerson("farzad")).thenReturn(Optional.of(caller));
+
+    com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO created =
+        com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO.builder()
+            .id(2L).bugKey("BUG-2").title("Click handler throws on Safari")
+            .severity(com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity.MAJOR)
+            .build();
+    when(bugReportService.createBugReport(
+        org.mockito.ArgumentMatchers.argThat(req ->
+            req != null
+                && "Click handler throws on Safari".equals(req.getTitle())
+                && com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity.MAJOR.equals(req.getSeverity())),
+        org.mockito.ArgumentMatchers.eq(7L)))
+        .thenReturn(created);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "create_bug",
+            "arguments", Map.of(
+                "title", "Click handler throws on Safari",
+                "description", "TypeError on click",
+                "severity", "MAJOR")),
+        "id", 62);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("BUG-2");
+    assertThat(text).contains("Click handler throws on Safari");
+  }
+
+  // ── update_bug_assignee ───────────────────────────────────────────────────
+
+  @Test
+  void toolsCall_updateBugAssignee_byUsername_resolvesPersonAndUpdates() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+
+    com.github.farzadsedaghatbin.shipflow.entity.Person person =
+        new com.github.farzadsedaghatbin.shipflow.entity.Person();
+    person.setId(42L);
+    person.setName("Farzad Sedaghatbin");
+    com.github.farzadsedaghatbin.shipflow.entity.User assignee =
+        new com.github.farzadsedaghatbin.shipflow.entity.User();
+    assignee.setUsername("farzad");
+    assignee.setPerson(person);
+    when(userRepository.findByUsernameWithPerson("farzad")).thenReturn(Optional.of(assignee));
+
+    com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO updated =
+        com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO.builder()
+            .id(1L).bugKey("BUG-1").title("Click handler fix")
+            .assigneeName("Farzad Sedaghatbin").build();
+    when(bugReportService.updateBugReportAssignee(1L, 42L)).thenReturn(updated);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_bug_assignee",
+            "arguments", Map.of("bugReportId", 1, "assigneeUsername", "farzad")),
+        "id", 63);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    @SuppressWarnings("unchecked")
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    assertThat(result.get("isError")).isEqualTo(false);
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
+    String text = (String) content.get(0).get("text");
+    assertThat(text).contains("Farzad Sedaghatbin");
+    org.mockito.Mockito.verify(bugReportService).updateBugReportAssignee(1L, 42L);
+  }
+
+  @Test
+  void toolsCall_updateBugAssignee_unassign_clearsAssignee() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+
+    com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO updated =
+        com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO.builder()
+            .id(1L).bugKey("BUG-1").title("Click handler fix").build();
+    when(bugReportService.updateBugReportAssignee(1L, null)).thenReturn(updated);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_bug_assignee",
+            "arguments", Map.of("bugReportId", 1, "unassign", true)),
+        "id", 64);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    org.mockito.Mockito.verify(bugReportService).updateBugReportAssignee(1L, null);
+  }
+
+  @Test
+  void toolsCall_updateBugAssignee_byKey_noOption_sendsError() throws Exception {
+    properties.setWriteEnabled(true);
+    when(auth.getAuthorities()).thenReturn(
+        (java.util.Collection) java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")));
+
+    com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO bug =
+        com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO.builder()
+            .id(1L).bugKey("BUG-1").build();
+    when(bugReportService.getBugReportByKey("BUG-1")).thenReturn(bug);
+
+    Map<String, Object> request = Map.of(
+        "jsonrpc", "2.0",
+        "method", "tools/call",
+        "params", Map.of(
+            "name", "update_bug_assignee",
+            "arguments", Map.of("bugKey", "BUG-1")),
+        "id", 65);
+
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+
+    dispatcher.dispatch(SESSION_ID, request);
+
+    assertThat(captured).containsKey("error");
+    @SuppressWarnings("unchecked")
+    Map<String, Object> error = (Map<String, Object>) captured.get("error");
+    assertThat((String) error.get("message")).containsIgnoringCase("assigneeUsername");
   }
 
   // ── Context aggregator surfaces test + bug counts ────────────────────────

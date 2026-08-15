@@ -17,6 +17,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Release;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
+import com.github.farzadsedaghatbin.shipflow.entity.TaskCycleHistory;
 import com.github.farzadsedaghatbin.shipflow.entity.TaskDependency;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
@@ -88,6 +89,7 @@ public class TaskService {
   private final ProjectService projectService;
   private final ScopeProgressService scopeProgressService;
   private final ProjectPermissionService projectPermissionService;
+  private final TaskCycleHistoryService taskCycleHistoryService;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -206,30 +208,40 @@ public class TaskService {
   }
 
   public TaskDTO createTask(CreateTaskRequest request) {
-    // Resolve cycle and project. For SCRUM product-backlog tasks cycleId may be null; in that
-    // case projectId is required so we can set the direct project reference.
+    // Resolve cycle and project. Resolution order:
+    //  1. Explicit cycleId wins (back-compat + Kanban's hidden-cycle mechanism, untouched).
+    //  2. Explicit projectId wins (SCRUM product backlog / Debt-Improvement tasks).
+    //  3. Else, if pitchId is given: derive both from the pitch — cycle follows the pitch's
+    //     current bet (may be null, that's fine, no cycle is required at creation anymore) and
+    //     project follows the same cycle→pitch→epic fallback chain as PitchService#toDTO.
+    //  4. Otherwise the task location cannot be resolved — reject.
+    // No task category/project-type combination requires a cycle at creation anymore.
     Cycle cycle = null;
     Project taskProject = null;
+    Pitch pitch = null;
+
+    // Load the pitch once (if given) — reused below both for cycle/project derivation and for
+    // the "set pitch on task" block further down, instead of fetching it twice.
+    if (request.getPitchId() != null) {
+      pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
+          () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+    }
 
     if (request.getCycleId() != null) {
       cycle = cycleRepository.findById(request.getCycleId())
           .orElseThrow(() -> new IllegalArgumentException("Cycle not found with id: " + request.getCycleId()));
       taskProject = cycle.getProject();
     } else if (request.getProjectId() != null) {
-      // No-cycle task: always fine for SCRUM (product backlog). For SHAPE_UP, only
-      // DEBT_IMPROVEMENT tasks may skip the cycle — opportunistic filler work that isn't
-      // shaped/bet on yet, unlike PITCH_SCOPE which must belong to a betting cycle.
       taskProject = projectRepository.findById(request.getProjectId())
           .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + request.getProjectId()));
-      TaskCategory resolvedCategory = request.getCategory() != null ? request.getCategory()
-          : (request.getPitchId() != null ? TaskCategory.PITCH_SCOPE : TaskCategory.DEBT_IMPROVEMENT);
-      boolean cycleLessAllowed = taskProject.getProjectType() == ProjectType.SCRUM
-          || (taskProject.getProjectType() == ProjectType.SHAPE_UP && resolvedCategory == TaskCategory.DEBT_IMPROVEMENT);
-      if (!cycleLessAllowed) {
-        throw new BadRequestException(messageService.getMessage("error.task.backlog.unsupported"));
+    } else if (pitch != null) {
+      cycle = pitch.getCycle();
+      taskProject = resolvePitchProject(pitch);
+      if (taskProject == null) {
+        throw new BadRequestException(messageService.getMessage("error.task.pitch.no.project"));
       }
     } else {
-      throw new BadRequestException("Either cycleId or projectId must be provided");
+      throw new BadRequestException("Either cycleId, projectId, or pitchId must be provided");
     }
 
     // Validate parent task if provided
@@ -285,12 +297,10 @@ public class TaskService {
       task.setPairAssignee(pairAssignee);
     }
 
-    // Set pitch if provided; a subtask with no explicit pitchId inherits its parent's pitch
-    // so it doesn't silently land in the backlog (e.g. MCP create_task called with only
-    // parentTaskId).
-    if (request.getPitchId() != null) {
-      Pitch pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
-          () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
+    // Set pitch if provided (already loaded above); a subtask with no explicit pitchId inherits
+    // its parent's pitch so it doesn't silently land in the backlog (e.g. MCP create_task
+    // called with only parentTaskId).
+    if (pitch != null) {
       task.setPitch(pitch);
     } else if (parentTask != null && parentTask.getPitch() != null) {
       task.setPitch(parentTask.getPitch());
@@ -320,6 +330,7 @@ public class TaskService {
     }
 
     Task saved = taskRepository.save(task);
+    taskCycleHistoryService.recordSnapshot(saved, TaskCycleHistory.ChangeSource.TASK_CREATED);
 
     // Auto-create hill chart scope for root tasks with pitch (Scope-Task Bridge)
     if (shouldCreateScopeAutomatically(saved)) {
@@ -387,6 +398,12 @@ public class TaskService {
     Person oldAssignee = task.getAssignee();
     TaskStatus oldStatus = task.getStatus();
     TaskPriority oldPriority = task.getPriority();
+    Long oldPitchId = task.getPitch() != null ? task.getPitch().getId() : null;
+    // Set when this request changes task.cycle — either an explicit cycleId, or (below) a
+    // pitchId re-point that re-derives the cycle. Both record one MANUAL_CYCLE_CHANGE snapshot
+    // after save; they're mutually exclusive by construction (the pitch-rederivation branch
+    // only runs when no explicit cycleId was given).
+    boolean cycleChangedManually = false;
 
     // Handle cycle changes first — so parent-task validation uses the correct cycle
     if (request.getCycleId() != null
@@ -396,6 +413,7 @@ public class TaskService {
               "Cycle not found with id: " + request.getCycleId()));
       task.setCycle(newCycle);
       task.setProject(newCycle.getProject());
+      cycleChangedManually = true;
       // Clear parent task if it now belongs to a different cycle
       if (task.getParentTask() != null
           && task.getParentTask().getCycle() != null
@@ -487,6 +505,20 @@ public class TaskService {
       Pitch pitch = pitchRepository.findById(request.getPitchId()).orElseThrow(
           () -> new IllegalArgumentException("Pitch not found with id: " + request.getPitchId()));
       task.setPitch(pitch);
+
+      // Re-derive cycle/project from the new pitch when the pitch actually changed and no
+      // explicit cycleId was given in this same request — otherwise re-pointing a task to a
+      // different pitch would leave it pointing at a stale cycle from the old pitch.
+      boolean pitchChanged = !request.getPitchId().equals(oldPitchId);
+      if (pitchChanged && request.getCycleId() == null) {
+        Project rederivedProject = resolvePitchProject(pitch);
+        if (rederivedProject == null) {
+          throw new BadRequestException(messageService.getMessage("error.task.pitch.no.project"));
+        }
+        task.setCycle(pitch.getCycle());
+        task.setProject(rederivedProject);
+        cycleChangedManually = true;
+      }
     } else {
       task.setPitch(null);
     }
@@ -521,6 +553,12 @@ public class TaskService {
 
     Task saved = taskRepository.save(task);
 
+    // Record one cycle-history snapshot when this update changed the task's cycle (either
+    // directly via cycleId, or indirectly via a pitch re-point that re-derived the cycle).
+    if (cycleChangedManually) {
+      taskCycleHistoryService.recordSnapshot(saved, TaskCycleHistory.ChangeSource.MANUAL_CYCLE_CHANGE);
+    }
+
     // Send notifications after save
     try {
       // Check if assignee changed
@@ -540,6 +578,7 @@ public class TaskService {
 
         // Publish task status changed event for scope progress sync
         publishTaskStatusChangedEvent(saved, oldStatus, request.getStatus());
+        taskCycleHistoryService.recordSnapshot(saved, TaskCycleHistory.ChangeSource.STATUS_CHANGE);
       }
 
       // Check if priority changed to high
@@ -722,6 +761,7 @@ public class TaskService {
     // Publish task status changed event for scope progress sync
     if (!status.equals(oldStatus)) {
       publishTaskStatusChangedEvent(saved, oldStatus, status);
+      taskCycleHistoryService.recordSnapshot(saved, TaskCycleHistory.ChangeSource.STATUS_CHANGE);
     }
 
     return toDTO(saved);
@@ -823,10 +863,13 @@ public class TaskService {
           .build();
     }
 
-    // Validate all active tasks belong to the same project
+    // Validate all active tasks belong to the same project. Uses resolveProjectId (cycle's
+    // project, falling back to the task's direct project reference) rather than assuming
+    // t.getCycle() is non-null — cycle-less PITCH_SCOPE tasks (not yet bet on a cycle) are now
+    // common, and a raw t.getCycle().getProject().getId() NPEs on them.
     Set<Long> projectIds =
         tasks.stream()
-            .map(t -> t.getCycle().getProject().getId())
+            .map(this::resolveProjectId)
             .collect(Collectors.toSet());
     if (projectIds.size() > 1) {
       throw new IllegalArgumentException("All tasks must belong to the same project");
@@ -927,6 +970,7 @@ public class TaskService {
         taskRepository.save(task);
         if (!status.equals(oldStatus)) {
           publishTaskStatusChangedEvent(task, oldStatus, status);
+          taskCycleHistoryService.recordSnapshot(task, TaskCycleHistory.ChangeSource.STATUS_CHANGE);
         }
       }
       case CHANGE_PRIORITY -> {
@@ -1413,6 +1457,25 @@ public class TaskService {
       return task.getCycle().getProject().getId();
     }
     return task.getProject() != null ? task.getProject().getId() : null;
+  }
+
+  /**
+   * Resolve a pitch's project via the same fallback chain used by {@code PitchService#toDTO}:
+   * cycle's project (pitch is bet on a cycle) → pitch's own direct project reference → epic's
+   * project (pre-cycle pitch linked to an epic). Returns {@code null} when none resolve (pitch
+   * has no cycle, no direct project, and no epic — or an epic with no project of its own).
+   */
+  private Project resolvePitchProject(Pitch pitch) {
+    if (pitch.getCycle() != null && pitch.getCycle().getProject() != null) {
+      return pitch.getCycle().getProject();
+    }
+    if (pitch.getProject() != null) {
+      return pitch.getProject();
+    }
+    if (pitch.getEpic() != null && pitch.getEpic().getProject() != null) {
+      return pitch.getEpic().getProject();
+    }
+    return null;
   }
 
   private String resolveProjectName(Task task) {

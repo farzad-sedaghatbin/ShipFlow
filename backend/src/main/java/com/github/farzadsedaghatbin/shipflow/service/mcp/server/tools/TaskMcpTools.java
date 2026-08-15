@@ -122,12 +122,16 @@ public class TaskMcpTools {
         "name",
         TOOL_CREATE_TASK,
         "description",
-            "Create a new task inside a cycle, optionally linked to a pitch or nested under a "
-                + "parent task. Returns the created task. Supply pitchId to wire the task into a "
-                + "Shape Up pitch — this populates the pitch dropdown in the UI and associates the "
-                + "task with the pitch's hill-chart scope. Supply parentTaskId to create the task "
-                + "as a subtask of another task (it will appear under the parent in the task tree "
-                + "and in get_task_context's task.children list). Requires WRITE API key scope.",
+            "Create a new task. Requires exactly one of: cycleId (assign directly to a cycle/"
+                + "sprint), projectId (SCRUM product backlog or Shape Up Debt-Improvement task, "
+                + "no cycle), or pitchId (task's cycle and project are derived from the pitch — "
+                + "the cycle follows the pitch's current bet and may end up unset if the pitch "
+                + "hasn't been bet yet). Optionally nest the task under a parent task. Returns "
+                + "the created task. Supply pitchId to wire the task into a Shape Up pitch — this "
+                + "populates the pitch dropdown in the UI and associates the task with the "
+                + "pitch's hill-chart scope. Supply parentTaskId to create the task as a subtask "
+                + "of another task (it will appear under the parent in the task tree and in "
+                + "get_task_context's task.children list). Requires WRITE API key scope.",
         "inputSchema",
             Map.of(
                 "type",
@@ -135,7 +139,13 @@ public class TaskMcpTools {
                 "properties",
                     Map.of(
                         "cycleId",
-                        Map.of("type", "integer", "description", "ID of the cycle to add the task to"),
+                        Map.of("type", "integer", "description",
+                            "ID of the cycle to add the task to. Alternative to projectId/pitchId."),
+                        "projectId",
+                        Map.of("type", "integer", "description",
+                            "ID of the project to add the task to, with no cycle (SCRUM product "
+                                + "backlog, or Shape Up Debt-Improvement work). Alternative to "
+                                + "cycleId/pitchId."),
                         "title",
                         Map.of("type", "string", "description", "Task title (required)"),
                         "description",
@@ -144,8 +154,9 @@ public class TaskMcpTools {
                         Map.of(
                             "type", "integer",
                             "description",
-                                "Optional pitch ID to link this task to. The pitch must be assigned "
-                                    + "to the same cycle (PENDING or later status)."),
+                                "Pitch ID to link this task to. When cycleId and projectId are "
+                                    + "both omitted, the task's cycle and project are derived "
+                                    + "from this pitch instead. Alternative to cycleId/projectId."),
                         "parentTaskId",
                         Map.of(
                             "type", "integer",
@@ -164,7 +175,7 @@ public class TaskMcpTools {
                             "enum",
                             List.of("LOW", "MEDIUM", "HIGH", "URGENT"))),
                 "required",
-                List.of("cycleId", "title")));
+                List.of("title")));
   }
 
   public static Map<String, Object> updateTaskAssigneeDefinition() {
@@ -422,8 +433,11 @@ public class TaskMcpTools {
 
   public McpTaskDTO createTask(Map<String, Object> args) {
     Object cycleIdArg = args.get("cycleId");
-    if (cycleIdArg == null) {
-      throw new IllegalArgumentException("Missing required argument: cycleId");
+    Object projectIdArg = args.get("projectId");
+    Object pitchIdArg = args.get("pitchId");
+    if (cycleIdArg == null && projectIdArg == null && pitchIdArg == null) {
+      throw new IllegalArgumentException(
+          "Missing required argument: one of cycleId, projectId, or pitchId must be provided");
     }
     Object titleArg = args.get("title");
     if (titleArg == null || titleArg.toString().isBlank()) {
@@ -431,7 +445,12 @@ public class TaskMcpTools {
     }
 
     CreateTaskRequest request = new CreateTaskRequest();
-    request.setCycleId(toLong(cycleIdArg));
+    if (cycleIdArg != null) {
+      request.setCycleId(toLong(cycleIdArg));
+    }
+    if (projectIdArg != null) {
+      request.setProjectId(toLong(projectIdArg));
+    }
     request.setTitle(titleArg.toString().trim());
 
     Object descriptionArg = args.get("description");
@@ -449,7 +468,6 @@ public class TaskMcpTools {
       }
     }
 
-    Object pitchIdArg = args.get("pitchId");
     if (pitchIdArg != null) {
       request.setPitchId(toLong(pitchIdArg));
     }

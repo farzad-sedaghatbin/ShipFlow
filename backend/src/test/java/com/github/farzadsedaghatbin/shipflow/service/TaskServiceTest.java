@@ -5,11 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.BulkCreateTaskResult;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkTaskUpdateRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.BulkUpdateResult;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateTaskRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.pitch.TaskSuggestionDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
@@ -18,8 +21,10 @@ import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CyclePhase;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.Discipline;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ReleaseStatus;
@@ -27,7 +32,9 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.SuggestionSource;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
+import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
@@ -76,6 +83,9 @@ class TaskServiceTest {
 
   @Autowired
   private ReleaseRepository releaseRepository;
+
+  @Autowired
+  private EpicRepository epicRepository;
 
   @Autowired
   private TaskService taskService;
@@ -270,7 +280,10 @@ class TaskServiceTest {
   }
 
   @Test
-  void createTask_PitchScopeWithoutCycleInShapeUpProject_ShouldThrowException() {
+  void createTask_PitchScopeWithoutCycleInShapeUpProject_ShouldCreateBacklogTask() {
+    // Cycle-at-creation is no longer required for any task category/project-type combination
+    // (2026-08 cycle model change) — a PITCH_SCOPE task with an explicit projectId and no
+    // cycle now succeeds, matching the DEBT_IMPROVEMENT no-cycle path.
     Project project = Project.builder().name("Shape Up Project").projectKey("SUP2")
         .projectType(ProjectType.SHAPE_UP).isActive(true).build();
     project = projectRepository.save(project);
@@ -280,8 +293,11 @@ class TaskServiceTest {
     request.setProjectId(project.getId());
     request.setCategory(TaskCategory.PITCH_SCOPE);
 
-    assertThatThrownBy(() -> taskService.createTask(request))
-        .isInstanceOf(com.github.farzadsedaghatbin.shipflow.exception.BadRequestException.class);
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getCycleId()).isNull();
+    assertThat(result.getCategory()).isEqualTo(TaskCategory.PITCH_SCOPE);
   }
 
   @Test
@@ -865,5 +881,128 @@ class TaskServiceTest {
     assertThat(result.getFailureCount()).isEqualTo(1);
     assertThat(result.getErrors().get(0)).contains("Orphan task").contains("Pitch not found");
     assertThat(result.getCreatedTasks()).isEmpty();
+  }
+
+  // ========== createTask cycle/project resolution order (B.2) ==========
+
+  @Test
+  void createTask_WithExplicitCycleId_ShouldWinOverPitchDerivation() {
+    // testPitch (from setUp) is linked to testCycle, which has no project — if cycleId weren't
+    // taking priority, pitch-derivation would fail to resolve a project and throw.
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Explicit cycle wins")
+        .cycleId(testCycle.getId()).pitchId(testPitch.getId()).build();
+
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result.getCycleId()).isEqualTo(testCycle.getId());
+    assertThat(result.getPitchId()).isEqualTo(testPitch.getId());
+  }
+
+  @Test
+  void createTask_WithExplicitProjectId_ShouldWinOverPitchDerivation() {
+    Project project = projectRepository.save(Project.builder().name("Explicit Project Wins")
+        .projectKey("EPW1").projectType(ProjectType.SHAPE_UP).isActive(true).build());
+
+    // pitchId is also supplied, but with no cycleId, explicit projectId must take priority over
+    // pitch-derivation — testPitch's own cycle (testCycle) has no project set, so if
+    // pitch-derivation ran instead it would reject the request with error.task.pitch.no.project.
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Explicit project wins")
+        .projectId(project.getId()).pitchId(testPitch.getId()).build();
+
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result.getCycleId()).isNull();
+    assertThat(result.getProjectId()).isEqualTo(project.getId());
+    assertThat(result.getPitchId()).isEqualTo(testPitch.getId());
+  }
+
+  @Test
+  void createTask_WithOnlyPitchId_ShouldDeriveCycleAndProjectFromPitchCycle() {
+    Project project = projectRepository.save(Project.builder().name("Pitch Derivation Project")
+        .projectKey("PDP1").projectType(ProjectType.SHAPE_UP).isActive(true).build());
+    Cycle pitchCycle = cycleRepository.save(Cycle.builder().name("Pitch Cycle").project(project)
+        .startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(6))
+        .phase(CyclePhase.SHAPING_BUILDING).isActive(true).build());
+    Pitch betPitch = pitchRepository.save(Pitch.builder().title("Bet Pitch").status(PitchStatus.PENDING)
+        .appetiteDays(14).cycle(pitchCycle).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Pitch-derived task")
+        .pitchId(betPitch.getId()).build();
+
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result.getCycleId()).isEqualTo(pitchCycle.getId());
+    assertThat(result.getProjectId()).isEqualTo(project.getId());
+    assertThat(result.getPitchId()).isEqualTo(betPitch.getId());
+  }
+
+  @Test
+  void createTask_WithPitchNotYetBet_ShouldSucceedWithNullCycle() {
+    // A pitch not yet bet (no cycle) but linked to an epic still resolves a project via the
+    // epic fallback (B.1) — the task should be created successfully with cycle = null.
+    Project project = projectRepository.save(Project.builder().name("Epic Fallback Project")
+        .projectKey("EFP1").projectType(ProjectType.SHAPE_UP).isActive(true).build());
+    Epic epic = epicRepository.save(Epic.builder().name("Test Epic").status(EpicStatus.PLANNED)
+        .project(project).build());
+    Pitch unbetPitch = pitchRepository.save(Pitch.builder().title("Unbet Pitch").status(PitchStatus.SHAPED)
+        .appetiteDays(10).epic(epic).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Task on unbet pitch")
+        .pitchId(unbetPitch.getId()).build();
+
+    TaskDTO result = taskService.createTask(request);
+
+    assertThat(result.getCycleId()).isNull();
+    assertThat(result.getProjectId()).isEqualTo(project.getId());
+  }
+
+  @Test
+  void createTask_WithPitchResolvingNoProject_ShouldThrowBadRequestException() {
+    // A pitch with no cycle, no direct project, and no epic cannot resolve a project — must be
+    // rejected with the dedicated error.task.pitch.no.project message, not silently create an
+    // unqueryable project-less task.
+    Pitch orphanPitch = pitchRepository.save(Pitch.builder().title("Orphan Pitch").status(PitchStatus.IDEA)
+        .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Should be rejected")
+        .pitchId(orphanPitch.getId()).build();
+
+    assertThatThrownBy(() -> taskService.createTask(request))
+        .isInstanceOf(BadRequestException.class);
+  }
+
+  @Test
+  void createTask_WithNoCycleProjectOrPitch_ShouldThrowBadRequestException() {
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Nowhere to go").build();
+
+    assertThatThrownBy(() -> taskService.createTask(request))
+        .isInstanceOf(BadRequestException.class);
+  }
+
+  // ========== bulkUpdate NPE fix (cycle-less pitch-scope tasks) ==========
+
+  @Test
+  void bulkUpdate_WithCycleLessPitchScopeTask_ShouldNotThrowNPE() {
+    // Regression test: bulkUpdate used to derive project via t.getCycle().getProject().getId(),
+    // which NPEs once cycle-less PITCH_SCOPE tasks (not yet bet on a cycle) are allowed to exist.
+    Project project = projectRepository.save(Project.builder().name("Bulk Update NPE Project")
+        .projectKey("BUNP1").projectType(ProjectType.SHAPE_UP).isActive(true).build());
+    Pitch unbetPitch = pitchRepository.save(Pitch.builder().title("Unbet Pitch For Bulk").status(PitchStatus.IDEA)
+        .project(project).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now()).build());
+
+    CreateTaskRequest createRequest = CreateTaskRequest.builder().title("Cycle-less pitch task")
+        .pitchId(unbetPitch.getId()).build();
+    TaskDTO created = taskService.createTask(createRequest);
+    assertThat(created.getCycleId()).isNull();
+
+    BulkTaskUpdateRequest bulkRequest = new BulkTaskUpdateRequest();
+    bulkRequest.setTaskIds(List.of(created.getId()));
+    bulkRequest.setAction(BulkAction.CHANGE_PRIORITY);
+    bulkRequest.setValue("HIGH");
+
+    BulkUpdateResult result = taskService.bulkUpdate(bulkRequest);
+
+    assertThat(result.getSuccessCount()).isEqualTo(1);
+    assertThat(result.getFailureCount()).isZero();
   }
 }

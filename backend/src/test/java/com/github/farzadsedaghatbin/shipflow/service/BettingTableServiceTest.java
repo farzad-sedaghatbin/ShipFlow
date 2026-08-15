@@ -51,6 +51,9 @@ class BettingTableServiceTest {
   @Mock
   private CapacityConfigService capacityConfigService;
 
+  @Mock
+  private PitchCycleAssignmentService pitchCycleAssignmentService;
+
   @InjectMocks
   private BettingTableService bettingTableService;
 
@@ -100,6 +103,19 @@ class BettingTableServiceTest {
     lenient().when(capacityConfigService.getOrganizationDefaultHoursPerDay()).thenReturn(8.0);
     lenient().when(capacityConfigService.getEffectiveWorkingDaysPerWeek(any(Team.class)))
         .thenReturn(new CapacityConfigService.CapacityResolution(5.0, "organization"));
+
+    // PitchCycleAssignmentService now owns the pitch.cycle mutation (and its own save) that
+    // assignPitchToSlot / removePitchFromSlot used to do directly — stub it to actually set the
+    // cycle field and call pitchRepository.save(pitch), mirroring the real implementation, so
+    // the rest of this Mockito-only test suite (which asserts on pitch.getCycle() and verifies
+    // pitchRepository.save(...) afterwards) still observes real behavior instead of a no-op mock.
+    lenient().doAnswer(invocation -> {
+      Pitch pitch = invocation.getArgument(0);
+      Cycle newCycle = invocation.getArgument(1);
+      pitch.setCycle(newCycle);
+      pitchRepository.save(pitch);
+      return null;
+    }).when(pitchCycleAssignmentService).applyCycleToPitch(any(Pitch.class), any());
   }
 
   @Test
