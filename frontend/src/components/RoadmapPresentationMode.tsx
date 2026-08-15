@@ -16,7 +16,7 @@ import {
   Sun,
   Maximize2,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { RoadmapTimeline } from '../types';
 
 import { Button } from './ui/button';
