@@ -39,4 +39,10 @@ Teams that live in GitHub, want tight issue-to-PR traceability, and prefer Scrum
 
 Teams adopting Shape Up, wanting full data ownership via self-hosting, or needing a free alternative with AI built in should try ShipFlow.
 
+## Further reading
+
+- [Full feature comparison](/compare) — ShipFlow against Linear, Jira, Asana, Basecamp and more
+- [Shape Up Software](/blog/shape-up-software) — what a Shape Up tool actually needs
+- [What is Shape Up?](/blog/what-is-shape-up) — the methodology behind the difference
+
 [Try ShipFlow free at shipflow.dev](https://shipflow.dev)

@@ -35,4 +35,12 @@ In Scrum, the backlog grows forever. In Shape Up, unbuilt ideas expire. If somet
 
 Many teams blend the two. ShipFlow supports Shape Up, Scrum, and Kanban.
 
+## Further reading
+
+- [Running Shape Up, Scrum, and Kanban in One Workspace](/blog/shape-up-scrum-kanban-together) — you probably need more than one
+- [The Shape Up Process, Step by Step](/blog/the-shape-up-process) — the full cycle in detail
+- [What Is a Betting Table?](/blog/what-is-a-betting-table) — Shape Up's answer to sprint planning
+- [What Is a Hill Chart?](/blog/what-is-a-hill-chart) — the alternative to burndown
+- [Shape Up Software](/blog/shape-up-software) — tooling that supports the method
+
 [Try ShipFlow free at shipflow.dev](https://shipflow.dev)

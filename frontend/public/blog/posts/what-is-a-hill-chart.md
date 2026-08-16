@@ -35,4 +35,11 @@ ShipFlow builds hill charts into every project, updated by the team in real time
 
 No percentages. No fake velocity. Just an honest picture of where things stand.
 
+## Further reading
+
+- [What is Shape Up?](/blog/what-is-shape-up) — the methodology hill charts come from
+- [The Shape Up Process, Step by Step](/blog/the-shape-up-process) — where hill charts fit in the cycle
+- [What Is a Betting Table?](/blog/what-is-a-betting-table) — how the work got chosen
+- [Shape Up Software](/blog/shape-up-software) — what to look for in a tool
+
 [Try ShipFlow free — including hill charts — at shipflow.dev](https://shipflow.dev)

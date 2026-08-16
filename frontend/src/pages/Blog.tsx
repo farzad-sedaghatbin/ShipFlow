@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, BookOpen, Rss } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
+import { useSeo, breadcrumbSchema, SITE_URL } from '@/hooks/useSeo';
 
 // ── Frontmatter parser ────────────────────────────────────────────────────────
 interface PostFrontmatter {
@@ -63,6 +64,36 @@ export default function Blog() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useSeo({
+    title: 'Blog — Shape Up, Scrum & Kanban in Practice',
+    description:
+      'Practical writing on Shape Up — cycles, betting tables, hill charts — and how it compares to Scrum and Kanban when a team runs more than one.',
+    path: '/blog',
+    keywords: [
+      'shape up',
+      'shape up methodology',
+      'hill chart',
+      'betting table',
+      'shape up vs scrum',
+      'product development',
+    ],
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Blog',
+        name: 'ShipFlow Blog',
+        description:
+          'Practical writing on Shape Up, Scrum, and Kanban — cycles, betting tables, hill charts, and choosing between methodologies.',
+        url: `${SITE_URL}/blog`,
+        inLanguage: 'en',
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Blog', path: '/blog' },
+      ]),
+    ],
+  });
+
   useEffect(() => {
     let cancelled = false;
 
@@ -97,7 +128,13 @@ export default function Blog() {
         );
 
         if (!cancelled) {
-          setPosts(summaries.filter((p): p is PostSummary => Boolean(p)));
+          // Sort newest-first rather than trusting index.json's order, so a
+          // newly added slug doesn't land in the middle of the list and so
+          // the freshest post gets the top internal link on the page.
+          const sorted = summaries
+            .filter((p): p is PostSummary => Boolean(p))
+            .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+          setPosts(sorted);
         }
       } catch (err) {
         if (!cancelled) {

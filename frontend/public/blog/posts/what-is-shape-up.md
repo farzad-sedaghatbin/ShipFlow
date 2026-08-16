@@ -2,7 +2,7 @@
 title: "What is Shape Up? A developer's introduction"
 slug: what-is-shape-up
 date: 2026-04-18
-description: "Shape Up is a product development methodology from Basecamp that replaces sprints with six-week cycles, betting tables, and hill charts. Here's what makes it different."
+description: "Basecamp's product development method: six-week cycles, betting tables and hill charts instead of sprints. Here's what makes it different."
 keywords: ["Shape Up", "methodology", "product development", "ShipFlow"]
 author: farzad
 ---
@@ -35,7 +35,16 @@ After each six-week cycle there's a **two-week cooldown** period. No new feature
 
 ShipFlow was built specifically to support teams practicing Shape Up. It implements the full lifecycle: pitch creation → shaping → betting table → cycle assignment → hill chart updates → cooldown activities.
 
-We also support **Kanban** for teams who want a simpler flow without cycles. And **Scrum support** (sprints, velocity, burndown) is on our roadmap for v1.1.
+We also support **Kanban** for teams who want a simpler flow without cycles, and **Scrum** (sprints, velocity, burndown) for teams running both — all three modes live in the same workspace.
+
+## Further reading
+
+- [The Shape Up Process, Step by Step](/blog/the-shape-up-process) — what happens in each phase
+- [What Is a Betting Table?](/blog/what-is-a-betting-table) — how work gets chosen
+- [What Is a Hill Chart?](/blog/what-is-a-hill-chart) — how progress gets reported
+- [Shape Up vs Scrum](/blog/shape-up-vs-scrum) — choosing between them
+- [Running Shape Up, Scrum, and Kanban together](/blog/shape-up-scrum-kanban-together) — most teams need all three
+- [Shape Up Software](/blog/shape-up-software) — what to look for in a tool
 
 ---
 
