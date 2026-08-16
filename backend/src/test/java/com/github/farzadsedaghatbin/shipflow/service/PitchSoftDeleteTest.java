@@ -41,6 +41,9 @@ class PitchSoftDeleteTest {
   @Mock
   private AICacheService cacheService;
 
+  @Mock
+  private PitchCycleAssignmentService pitchCycleAssignmentService;
+
   @InjectMocks
   private PitchService pitchService;
 

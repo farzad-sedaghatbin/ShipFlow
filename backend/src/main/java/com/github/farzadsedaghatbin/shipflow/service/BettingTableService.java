@@ -31,6 +31,7 @@ public class BettingTableService {
   private final WorkLogRepository workLogRepository;
   private final MessageService messageService;
   private final CapacityConfigService capacityConfigService;
+  private final PitchCycleAssignmentService pitchCycleAssignmentService;
 
   /** Get the full betting table view for a cycle */
   public BettingTableDTO getBettingTable(Long cycleId) {
@@ -229,14 +230,15 @@ public class BettingTableService {
     // Assign pitch and update its team and cycle
     slot.setPitch(pitch);
     pitch.setTeam(slot.getTeam());
-    pitch.setCycle(slot.getCycle());
 
     // Update pitch status to STARTED when assigned to betting table
     if (pitch.getStatus() == PitchStatus.SHAPED) {
       pitch.setStatus(PitchStatus.STARTED);
     }
 
-    pitchRepository.save(pitch);
+    // applyCycleToPitch saves the pitch (team/status changes above are on the same managed
+    // instance, so they're persisted in this one call — no separate pitchRepository.save needed).
+    pitchCycleAssignmentService.applyCycleToPitch(pitch, slot.getCycle());
     BettingSlot saved = bettingSlotRepository.save(slot);
 
     return toDTO(saved);
@@ -255,8 +257,7 @@ public class BettingTableService {
       // Clear cycle assignment but do NOT revert status —
       // since shaping and building happen in parallel, the pitch keeps
       // whatever status it has (e.g. STARTED, IN_PROGRESS, TESTING).
-      pitch.setCycle(null);
-      pitchRepository.save(pitch);
+      pitchCycleAssignmentService.applyCycleToPitch(pitch, null);
     }
 
     slot.setPitch(null);

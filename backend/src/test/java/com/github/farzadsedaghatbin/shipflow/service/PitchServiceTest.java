@@ -68,6 +68,9 @@ class PitchServiceTest {
   @Mock
   private CapacityConfigService capacityConfigService;
 
+  @Mock
+  private PitchCycleAssignmentService pitchCycleAssignmentService;
+
   @InjectMocks
   private PitchService pitchService;
 
@@ -315,5 +318,53 @@ class PitchServiceTest {
     assertThatThrownBy(() -> pitchService.reorder(request))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Pitch not found");
+  }
+
+  // ========== Cycle propagation (PitchCycleAssignmentService centralization) ==========
+
+  @Test
+  void assignToCycle_ShouldDelegateToPitchCycleAssignmentService() {
+    Pitch shapedPitch = Pitch.builder().id(1L).title("Shaped Pitch").appetiteDays(14)
+        .status(PitchStatus.SHAPED).build();
+
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(shapedPitch));
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(shapedPitch);
+
+    PitchDTO result = pitchService.assignToCycle(1L, 1L);
+
+    assertThat(result).isNotNull();
+    verify(pitchCycleAssignmentService).applyCycleToPitch(shapedPitch, testCycle);
+    assertThat(shapedPitch.getStatus()).isEqualTo(PitchStatus.PENDING);
+  }
+
+  @Test
+  void unassignFromCycle_ShouldDelegateToPitchCycleAssignmentServiceWithNullCycle() {
+    testPitch.setStatus(PitchStatus.PENDING);
+
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
+
+    PitchDTO result = pitchService.unassignFromCycle(1L);
+
+    assertThat(result).isNotNull();
+    verify(pitchCycleAssignmentService).applyCycleToPitch(testPitch, null);
+    assertThat(testPitch.getStatus()).isEqualTo(PitchStatus.SHAPED);
+    assertThat(testPitch.getTeam()).isNull();
+  }
+
+  @Test
+  void markAsShaped_ShouldDelegateToPitchCycleAssignmentServiceWithNullCycle() {
+    Pitch draftPitch = Pitch.builder().id(1L).title("Draft Pitch").appetiteDays(10)
+        .problemStatement("Some problem").status(PitchStatus.DRAFT).build();
+
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(draftPitch));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(draftPitch);
+
+    PitchDTO result = pitchService.markAsShaped(1L);
+
+    assertThat(result).isNotNull();
+    assertThat(result.getStatus()).isEqualTo(PitchStatus.SHAPED);
+    verify(pitchCycleAssignmentService).applyCycleToPitch(draftPitch, null);
   }
 }

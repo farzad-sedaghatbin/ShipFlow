@@ -1,8 +1,8 @@
 import { useRef } from 'react';
-import { FileText, Wrench, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TaskCategory, Task } from '../types';
+import { Task } from '../types';
 import TimerWidget, { TimerWidgetHandle } from '../components/TimerWidget';
 import KanbanBoard from '../components/KanbanBoard';
 import { BacklogSkeleton } from '../components/Skeletons';
@@ -95,7 +95,6 @@ export default function BacklogPage() {
         selectedCycle={bp.selectedCycle}
         viewMode={bp.viewMode}
         exportLoading={bp.exportLoading}
-        canSkipCycle={bp.canSkipCycleForDebtImprovement}
         onCycleChange={bp.setSelectedCycle}
         onViewModeChange={bp.setViewMode}
         onNewTask={() => bp.handleOpenDialog()}
@@ -111,31 +110,6 @@ export default function BacklogPage() {
         </Alert>
       )}
 
-      {/* Feature Tasks / Debt & Improvements is a Shape Up-specific distinction
-          (pitch-scoped bet work vs. opportunistic filler) - Kanban has no Pitch
-          concept, so this split isn't meaningful there. loadTasks() in
-          useBacklogPage fetches every task for Kanban regardless of category. */}
-      {!bp.isKanbanProject && (
-        <Tabs value={bp.activeCategory} onValueChange={(v) => bp.handleCategoryChange(v as TaskCategory)} className="w-full">
-          <div className="flex items-center gap-2">
-            <button
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'PITCH_SCOPE' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
-              onClick={() => bp.handleCategoryChange('PITCH_SCOPE')}
-            >
-              <FileText className="h-4 w-4" />
-              {t('backlogPage.pitchTasks')}
-            </button>
-            <button
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${bp.activeCategory === 'DEBT_IMPROVEMENT' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}
-              onClick={() => bp.handleCategoryChange('DEBT_IMPROVEMENT')}
-            >
-              <Wrench className="h-4 w-4" />
-              {t('backlogPage.debtImprovements')}
-            </button>
-          </div>
-        </Tabs>
-      )}
-
       {bp.statistics && <BacklogStatistics statistics={bp.statistics} />}
 
       <Tabs value={bp.tabValue} onValueChange={bp.setTabValue} className="w-full">
@@ -145,10 +119,12 @@ export default function BacklogPage() {
           onStatusFilterChange={bp.handleToggleStatusFilter}
           priorityFilter={bp.priorityFilter}
           onPriorityFilterChange={bp.handleTogglePriorityFilter}
+          categoryFilter={bp.categoryFilter}
+          onCategoryFilterChange={bp.handleCategoryFilterChange}
           dependencyFilter={bp.dependencyFilter}
           onDependencyFilterChange={bp.setDependencyFilter}
           searchQuery={bp.searchQuery}
-          onSearchQueryChange={(q) => { bp.setSearchQuery(q); bp.setPage(0); }}
+          onSearchQueryChange={bp.setSearchQuery}
           persons={bp.persons}
           assigneeFilter={bp.assigneeFilter}
           onAssigneeFilterChange={bp.handleToggleAssigneeFilter}
@@ -200,7 +176,6 @@ export default function BacklogPage() {
         persons={bp.persons}
         teams={bp.teams}
         pitches={bp.pitches}
-        activeCategory={bp.activeCategory}
         isKanbanProject={bp.isKanbanProject}
         onOpenChange={bp.setDialogOpen}
         onFormDataChange={bp.setFormData}

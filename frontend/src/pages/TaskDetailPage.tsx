@@ -411,6 +411,13 @@ export default function TaskDetailPage() {
     return null;
   }
 
+  // Subtasks can never be set to Backlog (they're meant to be actioned right away, and the
+  // backend rejects it) — filter it out of the editable status controls when this task is a
+  // subtask. Read-only badges elsewhere still use the unfiltered `statusOptions`.
+  const editableStatusOptions = task.parentTaskId
+    ? statusOptions.filter((option) => option.value !== 'BACKLOG')
+    : statusOptions;
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header with Back Button */}
@@ -457,7 +464,7 @@ export default function TaskDetailPage() {
                     </Badge>
                   </SelectTrigger>
                   <SelectContent>
-                    {statusOptions.map((option) => (
+                    {editableStatusOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
                       </SelectItem>
@@ -921,7 +928,7 @@ export default function TaskDetailPage() {
               <div className="grid gap-2">
                 <Label htmlFor="edit-status">{t('common.status')} *</Label>
                 <Combobox
-                  options={statusOptions.map(opt => ({ value: opt.value, label: opt.label }))}
+                  options={editableStatusOptions.map(opt => ({ value: opt.value, label: opt.label }))}
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value as TaskStatus })}
                   placeholder="Select status"

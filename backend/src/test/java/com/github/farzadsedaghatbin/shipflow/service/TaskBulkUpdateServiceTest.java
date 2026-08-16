@@ -62,6 +62,7 @@ class TaskBulkUpdateServiceTest {
   @Mock ApplicationEventPublisher eventPublisher;
   @Mock PermissionService permissionService;
   @Mock ProjectService projectService;
+  @Mock TaskCycleHistoryService taskCycleHistoryService;
 
   @InjectMocks TaskService taskService;
 
@@ -151,6 +152,25 @@ class TaskBulkUpdateServiceTest {
 
       assertThat(result.getFailureCount()).isEqualTo(2);
       assertThat(result.getErrors()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("setting BACKLOG on a subtask produces a per-task error, not a bulk failure")
+    void backlogOnSubtaskProducesError() {
+      Task parent = new Task();
+      parent.setId(200L);
+      task1.setParentTask(parent);
+      when(taskRepository.findAllById(List.of(101L, 102L))).thenReturn(List.of(task1, task2));
+
+      BulkUpdateResult result = taskService.bulkUpdate(request(BulkAction.CHANGE_STATUS, "BACKLOG"));
+
+      // task1 is a subtask and must be rejected; task2 has no parent so it succeeds
+      assertThat(result.getSuccessCount()).isEqualTo(1);
+      assertThat(result.getFailureCount()).isEqualTo(1);
+      assertThat(task2.getStatus()).isEqualTo(TaskStatus.BACKLOG);
+      // task1 was already BACKLOG from setUp; rejection happens before any mutation so it's a
+      // no-op either way, but the important assertion is the error being reported for task1.
+      assertThat(result.getErrors()).anyMatch(e -> e.contains("101"));
     }
   }
 

@@ -3568,7 +3568,8 @@
       "manageColumns": "Manage Columns",
       "columnVisibility": "Column Visibility",
       "showAll": "Show All",
-      "hideOptional": "Hide Optional"
+      "hideOptional": "Hide Optional",
+      "subtaskBacklogNotAllowed": "Subtasks can't be moved to Backlog — they're meant to be worked on right away"
     },
     "blockedBy": "Blocked ({{count}})",
     "blocking": "Blocking ({{count}})",
@@ -4647,7 +4648,8 @@
       "cycleRequired": "Please select a cycle",
       "noCycles": "No cycles available",
       "submit": "Create Task",
-      "success": "Task created successfully"
+      "success": "Task created successfully",
+      "noProjectTooltip": "This pitch isn't linked to a project yet — add it to an epic or bet it on a cycle first"
     }
   },
   "cycleDetailPage": {
@@ -5616,6 +5618,13 @@
     "shipped1111Item1Desc": "On mobile, right after login, ShipFlow now offers to install itself to your home screen instead of relying on the browser's own install affordance. Chromium-based mobile browsers only.",
     "shipped1111Item2Title": "Sub-Task Grouping for Kanban Backlogs",
     "shipped1111Item2Desc": "Kanban projects have no Pitch concept, so backlog tasks previously sat flat with no structural grouping. Sub-tasks now render directly under their parent in the Backlog list view and group within a shared column on the Kanban board.",
+    "shipped1112Title": "Flexible Task Cycles & Pitch Kanban",
+    "shipped1112Item0Title": "No More Forced Cycle at Task Creation",
+    "shipped1112Item0Desc": "Logging a task no longer requires picking a cycle up front. A task linked to a pitch automatically follows whatever cycle that pitch is currently bet on, even retroactively, while a new audit trail tracks which cycle a task was in at every point for future reporting.",
+    "shipped1112Item1Title": "Pitch Detail Now Shows a Kanban Board",
+    "shipped1112Item1Desc": "A pitch's tasks render as a drag-and-drop Kanban board on its detail page instead of a flat list — drop a card into a new column to update its status, and create tasks even for a pitch that hasn't been bet to a cycle yet.",
+    "shipped1112Item2Title": "Backlog Category Filter Replaces Tabs",
+    "shipped1112Item2Desc": "The Pitch Tasks / Debt & Improvements tab switcher is gone — the Backlog page shows one merged list, with the same distinction available as a filter alongside Status and Priority.",
     "shipped1900Title": "Production-Grade Self-Hosting",
     "shipped1900Item0Title": "Helm Chart & Kubernetes",
     "shipped1900Item0Desc": "A first-party Helm chart deploys ShipFlow to any Kubernetes cluster — configurable replicas, HPA autoscaling, ingress, secrets, persistent uploads, and probes wired to Spring Boot health groups.",

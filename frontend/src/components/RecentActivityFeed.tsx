@@ -10,7 +10,7 @@ import {
   TrendingUp,
   FileText,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { workLogService } from '../services/workLogService';
 import { WorkLog, Pitch, Cycle } from '../types';
 import { pitchService } from '../services/pitchService';

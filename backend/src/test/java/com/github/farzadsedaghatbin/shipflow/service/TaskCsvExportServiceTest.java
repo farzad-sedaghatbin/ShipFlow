@@ -54,6 +54,7 @@ class TaskCsvExportServiceTest {
   @Mock ApplicationEventPublisher eventPublisher;
   @Mock PermissionService permissionService;
   @Mock ProjectService projectService;
+  @Mock TaskCycleHistoryService taskCycleHistoryService;
 
   @InjectMocks TaskService taskService;
 

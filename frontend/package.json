@@ -1,6 +1,6 @@
 {
   "name": "shipflow-frontend",
-  "version": "1.11.1",
+  "version": "1.11.2",
   "private": true,
   "dependencies": {
     "@blocknote/core": "^0.29.1",
@@ -47,7 +47,7 @@
     "date-object": "^2.1.6",
     "dayjs": "^1.11.10",
     "driver.js": "^1.4.0",
-    "framer-motion": "^12.23.26",
+    "motion": "^12.23.26",
     "i18next": "^25.7.4",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",

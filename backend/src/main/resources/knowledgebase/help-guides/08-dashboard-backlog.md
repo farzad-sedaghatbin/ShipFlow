@@ -41,14 +41,16 @@ The Backlog in ShipFlow holds ideas and tasks that haven't been shaped into pitc
 ### Sub-Tasks Group Under Their Parent
 A sub-task always renders directly under its parent task — in the list view regardless of the active sort field, and on the Kanban board when they share a status column. This is especially useful in Kanban-mode projects, which have no Pitch concept to group backlog items by otherwise. If a sub-task's column differs from its parent's, a "N subtasks" badge on the parent and a "Sub-task of ..." caption on the sub-task keep the relationship visible.
 
-### No Feature Tasks / Debt & Improvements Split in Kanban
-Shape Up and Scrum projects split the Backlog into "Pitch Tasks" and "Debt & Improvements" tabs, since that distinguishes shaped bet work from opportunistic filler. Kanban has no Pitch concept, so that split doesn't apply — a Kanban project's Backlog just shows every task together, with no tabs to switch between.
+### Pitch Tasks vs. Debt & Improvements is a Filter, Not a Tab
+The Backlog page shows one merged list of every task for the project — there's no longer a "Pitch Tasks" / "Debt & Improvements" tab to switch between. The distinction (shaped bet work linked to a pitch, vs. opportunistic filler that isn't) is still available as a **Category** filter alongside Status, Priority, and the other filters, so you can narrow the list down when you need to without it being the default view. Kanban projects still have no Pitch concept, so their tasks are effectively all Debt & Improvement-equivalent filler — the Category filter works the same way there, it just rarely has anything to filter to "Pitch Tasks".
 
 ## Adding Items to the Backlog
 1. Click **Add Item** on the Backlog page
 2. Enter a title and description
 3. Optionally tag the item with a priority level
 4. Items can later be promoted to pitches for the Betting Table
+
+No task requires picking a cycle up front anymore — link it to a Pitch and its cycle follows the pitch's own bet automatically (including if the pitch is later re-bet onto a different cycle), or leave it unlinked as opportunistic Debt & Improvement work with no cycle at all. See the "Tasks No Longer Require Picking a Cycle Up Front" section of the Pitches & Betting guide for the full picture.
 
 ## Moving Backlog Items to Pitches
 1. Select a backlog item

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
 import { LocalizedDateInput } from '../LocalizedDateInput';
-import { Task, CreateTaskRequest, TaskStatus, TaskPriority, TaskCategory, Person, Pitch, Team } from '../../types';
+import { Task, CreateTaskRequest, TaskStatus, TaskPriority, Person, Pitch, Team } from '../../types';
 import { statusOptions, priorityOptions } from './backlogTypes';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -35,7 +35,6 @@ interface BacklogTaskDialogProps {
   persons: Person[];
   teams: Team[];
   pitches: Pitch[];
-  activeCategory: TaskCategory;
   isKanbanProject: boolean;
   onOpenChange: (open: boolean) => void;
   onFormDataChange: (data: CreateTaskRequest) => void;
@@ -55,7 +54,6 @@ export function BacklogTaskDialog({
   persons,
   teams,
   pitches,
-  activeCategory,
   isKanbanProject,
   onOpenChange,
   onFormDataChange,
@@ -65,6 +63,12 @@ export function BacklogTaskDialog({
   onClose,
 }: BacklogTaskDialogProps) {
   const { t } = useTranslation();
+
+  // Subtasks can never be set to Backlog (they're meant to be actioned right away, and the
+  // backend rejects it) — filter it out whenever this dialog is creating or editing a subtask.
+  const editableStatusOptions = formData.parentTaskId
+    ? statusOptions.filter((status) => status.value !== 'BACKLOG')
+    : statusOptions;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,7 +85,7 @@ export function BacklogTaskDialog({
           <DialogDescription>
             {formData.parentTaskId
               ? t('backlogPage.subtaskDescription')
-              : activeCategory === 'PITCH_SCOPE'
+              : formData.pitchId
                 ? t('backlogPage.categoryDescription.pitchScope')
                 : t('backlogPage.categoryDescription.debtImprovement')
             }
@@ -122,7 +126,7 @@ export function BacklogTaskDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map((status) => (
+                  {editableStatusOptions.map((status) => (
                     <SelectItem key={status.value} value={status.value}>
                       {t(status.labelKey)}
                     </SelectItem>
