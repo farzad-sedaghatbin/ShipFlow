@@ -107,7 +107,22 @@ real supply-chain cost that this feature does not justify.
 
 ## Adding a blog post
 
-1. Create `frontend/public/blog/posts/{slug}.md` with full frontmatter:
+> **Posts live in the private `ShipFlow-blog` repository, not here.** That is
+> deliberate: a merged pull request against this open-source repo must not be
+> able to publish an article on shipflow.dev. The `.md` files in
+> `frontend/public/blog/posts/` are build-time copies and get overwritten for
+> any filename that exists in both places — see the README in that directory.
+>
+> Write the post in the private repo. Everything below still applies; only the
+> location changes.
+>
+> **Getting posts into a build.** `.github/workflows/docker.yml` injects them,
+> but only on a `v*.*.*` tag push — a plain local `docker build` skips it. Use
+> `npm run build:deploy` (which is `blog:sync` + `build`) for any local
+> production build, or three posts will sit unpublished for months the way
+> `cooldown-periods-matter` and friends did.
+
+1. Create `{slug}.md` in the private repo's `posts/` directory with full frontmatter:
 
    ```yaml
    ---
@@ -120,16 +135,23 @@ real supply-chain cost that this feature does not justify.
    ---
    ```
 
-2. Add the slug to `frontend/public/blog/index.json`.
-3. Add a "Further reading" section linking to two or three related posts, and
+2. Add a "Further reading" section linking to two or three related posts, and
    add a link **to** the new post from at least one existing post. A post that
    nothing links to is much slower to get discovered and ranks worse.
-4. Use root-relative internal links (`/blog/other-post`), never absolute
+3. Use root-relative internal links (`/blog/other-post`), never absolute
    `https://shipflow.dev/...` links.
+4. Don't touch `index.json` — it is generated from every post's frontmatter
+   `date`, newest first, by both `blog:sync` and the CI workflow.
 
-That's all. The sitemap picks it up at build time, `BlogPost.tsx` derives the
-meta tags and `BlogPosting` schema from the frontmatter, and the index sorts it
-into place by date.
+That's all. `blog:sync` rebuilds the index, the sitemap generator picks the post
+up at build time, and `BlogPost.tsx` derives the meta tags and `BlogPosting`
+schema from the frontmatter.
+
+**One canonical page per query.** Before adding a post, check that no existing
+one already targets its primary phrase. Two pages competing for the same query
+split link equity and let Google choose between them semi-arbitrarily — this
+already happened once, with `betting-tables-explained` and
+`what-is-a-betting-table`, resolved by merging into the single deeper page.
 
 ---
 

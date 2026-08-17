@@ -463,7 +463,7 @@ the whole site. See `SEO_GUIDE.md` for the full contract. In short:
 
 1. Call `useSeo({ title, description, path, keywords, jsonLd })` at the top of the page component.
 2. Add the route to `STATIC_ROUTES` in `frontend/scripts/generate-sitemap.mjs`.
-3. For a blog post, add the `.md` to `frontend/public/blog/posts/` plus its slug to `index.json` — the sitemap and meta tags derive from frontmatter automatically.
+3. **Blog posts live in the private `ShipFlow-blog` repo, NOT here** — so a merged PR against this open-source repo can't publish an article on shipflow.dev. The `.md` files in `frontend/public/blog/posts/` are build-time copies and get overwritten. Never hand-edit `index.json` (generated). For any local production build use `npm run build:deploy` (= `blog:sync` + `build`); a plain `docker build` skips the CI injection step and silently ships no new posts.
 4. Cross-link: a new post needs a "Further reading" section *and* a link to it from an existing post.
 5. Never hand-edit `sitemap.xml` (generated) and never reintroduce a blanket `Disallow: /` in `robots.txt` (it once silently blocked the homepage and the entire blog).
 6. SEO meta strings are a deliberate exception to the i18n rule — they stay in English at the call site, because public pages serve one URL per page regardless of language.

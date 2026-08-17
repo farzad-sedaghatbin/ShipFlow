@@ -118,6 +118,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "generate:sitemap": "node scripts/generate-sitemap.mjs"
+    "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "blog:sync": "node scripts/sync-blog.mjs",
+    "build:deploy": "npm run blog:sync && npm run build"
   }
 }
