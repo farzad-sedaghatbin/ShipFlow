@@ -52,5 +52,17 @@ Generated, not hand-maintained — both `blog:sync` and the CI workflow rebuild
 it from the frontmatter `date` of every post on disk, newest first. Don't edit
 it by hand; it will be overwritten.
 
+It is committed as `[]` so that a fresh clone with no private-repo access
+renders the blog's "No posts yet" empty state rather than a fetch error. After
+running `blog:sync` it will show as modified — that is expected, and it should
+not be committed with posts listed. Reset it with:
+
+```bash
+git checkout -- frontend/public/blog/index.json
+```
+
+The synced `.md` files themselves are gitignored, so they cannot be committed
+here even by accident.
+
 See `SEO_GUIDE.md` in the repo root for the wider contract, including title and
 description limits and how a new post gets cross-linked.

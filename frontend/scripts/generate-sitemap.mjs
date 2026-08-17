@@ -136,3 +136,18 @@ writeFileSync(outPath, xml, 'utf8');
 console.log(
   `[sitemap] wrote ${allRoutes.length} URLs (${STATIC_ROUTES.length} static, ${blogRoutes.length} posts) to ${outPath}`,
 );
+
+if (blogRoutes.length === 0) {
+  // Posts are canonical in the private ShipFlow-blog repo and are copied in at
+  // build time. Zero posts in a production build means that copy did not
+  // happen — the blog would ship empty and every article would drop out of the
+  // sitemap. Loud, because it is silent otherwise: this exact failure left
+  // three posts unpublished for months.
+  console.warn(
+    '\n[sitemap] ⚠️  NO BLOG POSTS FOUND — the sitemap has no article URLs.\n' +
+      '[sitemap]     Posts live in the private ShipFlow-blog repo and are copied in at build time.\n' +
+      '[sitemap]     For a production build run `npm run build:deploy` (blog:sync + build),\n' +
+      '[sitemap]     or set BLOG_SYNC_TOKEN / run `gh auth login` first.\n' +
+      '[sitemap]     Ignore this if you are an outside contributor without access to that repo.\n',
+  );
+}
