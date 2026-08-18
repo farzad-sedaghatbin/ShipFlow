@@ -1,5 +1,5 @@
 import { ReactNode, HTMLAttributes } from 'react';
-import { motion, Variants, TargetAndTransition } from 'framer-motion';
+import { motion, Variants, TargetAndTransition } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { useReducedMotion } from '@/hooks/useReducedMotion';

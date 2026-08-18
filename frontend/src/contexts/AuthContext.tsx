@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { clearPendingRedirect } from '../lib/redirect';
 
 interface User {
   userId: number;
@@ -84,6 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
+    // An explicit logout is not an interrupted navigation — drop any stashed
+    // destination so it can't hijack the next sign-in.
+    clearPendingRedirect();
     navigate('/login');
   }, [navigate]);
 

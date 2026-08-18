@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { cn } from '@/lib/utils';
 import { useSeo } from '@/hooks/useSeo';
+import { clearPendingRedirect, rememberRedirect, resolvePostLoginTarget } from '@/lib/redirect';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -56,6 +57,17 @@ export default function Login() {
   const [passkeyUsername, setPasskeyUsername] = useState('');
   const [passkeyLoading, setPasskeyLoading] = useState(false);
 
+  // Where to land after signing in: the route that bounced us here (router
+  // state or `?redirect=`), a destination stashed before an SSO round trip, or
+  // the dashboard. Resolved once on mount so a re-render can't change it, and
+  // sanitised against off-site targets — see lib/redirect.ts.
+  const [from] = useState(() => resolvePostLoginTarget(location));
+
+  const goToDestination = () => {
+    clearPendingRedirect();
+    navigate(from, { replace: true });
+  };
+
   // Fetch SSO providers — silently ignore errors (no SSO configured is fine)
   const { data: ssoProviders = [] } = useQuery({
     queryKey: ['sso-providers-public'],
@@ -68,6 +80,10 @@ export default function Login() {
     setSsoLoading(idpId);
     try {
       const result = await initiateSSO(idpId);
+      // The identity provider is off-origin, so neither router state nor the
+      // login URL survives the round trip — stash the destination for
+      // SsoCallbackPage to pick up when the browser comes back.
+      rememberRedirect(from);
       window.location.href = result.redirectUrl;
     } catch {
       setServerError(t('login.ssoError'));
@@ -87,8 +103,6 @@ export default function Login() {
       password: '',
     },
   });
-
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
 
   // Load remembered username on mount
   useEffect(() => {
@@ -388,9 +402,7 @@ export default function Login() {
         </div>
       </Card>
 
-      {showPostLoginPrompts && (
-        <PostLoginPrompts onComplete={() => navigate(from, { replace: true })} />
-      )}
+      {showPostLoginPrompts && <PostLoginPrompts onComplete={goToDestination} />}
     </div>
   );
 }
