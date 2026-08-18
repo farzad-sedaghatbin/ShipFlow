@@ -69,6 +69,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { useSeo, breadcrumbSchema } from '@/hooks/useSeo';
 
 interface Release {
   version: string;
@@ -1216,6 +1217,18 @@ export default function ReleaseNotes() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const latestShippedIndex = releases.findIndex((r) => !r.upcoming);
+
+  useSeo({
+    title: 'Release Notes & Changelog',
+    description:
+      'Every ShipFlow release, newest first — features, fixes and upgrade notes for the open-source Shape Up, Scrum and Kanban project management platform.',
+    path: '/releases',
+    keywords: ['shipflow changelog', 'shipflow release notes'],
+    jsonLd: breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Releases', path: '/releases' },
+    ]),
+  });
 
   return (
     <div className="min-h-screen bg-background">

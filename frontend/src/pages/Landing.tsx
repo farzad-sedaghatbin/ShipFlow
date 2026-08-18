@@ -39,11 +39,88 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
+import { useSeo, organizationSchema, SITE_URL, DEFAULT_OG_IMAGE } from '@/hooks/useSeo';
 
 export default function Landing() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAuthenticated, isLoading } = useAuth();
+
+  useSeo({
+    title: 'ShipFlow — Open-Source Project Management (Shape Up, Kanban, Scrum)',
+    exactTitle: true,
+    // 153 chars — Google truncates around 160, and the truncated tail is where
+    // the "Scrum and Kanban too" reassurance lives, so it has to fit.
+    description:
+      'Open-source project management for Shape Up, Scrum, and Kanban in one workspace. Hill charts, betting tables, six-week cycles. Free and self-hostable.',
+    path: '/',
+    // Shape Up terms lead because they are the winnable ground — low
+    // competition and exact intent match. The Scrum/Kanban entries are
+    // deliberately the open-source/self-hosted long tail, not the head terms
+    // ("scrum software", "kanban board"), which are unwinnable against Jira,
+    // Trello and monday.com. See SEO_GUIDE.md.
+    keywords: [
+      'shape up software',
+      'shape up methodology',
+      'shape up project management',
+      'hill chart',
+      'betting table',
+      'open source project management',
+      'self-hosted project management',
+      'open source scrum tool',
+      'self-hosted kanban board',
+      'shape up scrum kanban',
+    ],
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        name: 'ShipFlow',
+        applicationCategory: 'BusinessApplication',
+        applicationSubCategory: 'Project Management Software',
+        operatingSystem: 'Web, Docker, Kubernetes',
+        url: SITE_URL,
+        image: DEFAULT_OG_IMAGE,
+        description:
+          'Open-source, methodology-agnostic project management. Runs Shape Up, Scrum, and Kanban projects side by side in one workspace, with hill charts, betting tables, sprints, and AI-assisted planning. Self-hostable.',
+        license: 'https://opensource.org/licenses/MIT',
+        isAccessibleForFree: true,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+          description: 'Free and open source. Self-host with Docker or Kubernetes.',
+        },
+        featureList: [
+          'Shape Up cycles, betting table, and appetite budgeting',
+          'Hill charts for honest progress tracking',
+          'Scrum sprints, velocity, and burndown',
+          'Kanban boards with WIP limits',
+          'Mixed methodologies side by side in one workspace',
+          'AI pitch writer and retrospective summarizer',
+          'MCP server for AI assistants',
+          'Self-hosting with Helm and Docker',
+        ],
+        softwareHelp: `${SITE_URL}/blog`,
+        // schema.org's dedicated field for separating same-named entities.
+        // "ShipFlow" is also the name of unrelated freight/e-commerce shipping
+        // platforms and a ship-hull CFD package; this tells search engines
+        // which ShipFlow this is.
+        disambiguatingDescription:
+          'Software-team project management for the Shape Up, Scrum, and Kanban methodologies. Unrelated to shipping, freight, logistics, or naval-architecture products of the same name.',
+      },
+      organizationSchema,
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'ShipFlow',
+        url: SITE_URL,
+        inLanguage: 'en',
+        description:
+          'Open-source project management for Shape Up, Scrum, and Kanban. Self-hostable and free.',
+      },
+    ],
+  });
 
   const techStack = [
     { name: 'React 18', color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' },

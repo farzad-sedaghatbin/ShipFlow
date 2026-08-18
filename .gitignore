@@ -123,3 +123,13 @@ node_modules/
 backend/uploads/
 frontend/test-results/
 frontend/playwright-report/
+
+# =========================
+# Blog posts — canonical in the PRIVATE ShipFlow-blog repo
+# =========================
+# `npm run blog:sync` copies published articles into public/blog/posts/ at
+# build time. They must never be committed here: keeping them out of the
+# open-source repo is what stops a merged pull request from publishing an
+# article on shipflow.dev. README.md is the exception — it documents this.
+frontend/public/blog/posts/*.md
+!frontend/public/blog/posts/README.md

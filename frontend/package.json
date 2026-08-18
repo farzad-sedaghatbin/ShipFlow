@@ -107,7 +107,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/generate-sitemap.mjs",
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -117,6 +117,9 @@
     "generate:api": "./generate-api-types.sh",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "blog:sync": "node scripts/sync-blog.mjs",
+    "build:deploy": "npm run blog:sync && npm run build"
   }
 }

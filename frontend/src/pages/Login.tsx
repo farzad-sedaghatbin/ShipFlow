@@ -21,12 +21,23 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { cn } from '@/lib/utils';
+import { useSeo } from '@/hooks/useSeo';
 import { clearPendingRedirect, rememberRedirect, resolvePostLoginTarget } from '@/lib/redirect';
 
 export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Crawlable but not indexable: a sign-in form has nothing to rank for, and
+  // indexing it would surface ShipFlow for the "shipflow login" queries that
+  // belong to the unrelated shipping/freight products of the same name.
+  useSeo({
+    title: 'Sign in',
+    description: 'Sign in to your ShipFlow workspace.',
+    path: '/login',
+    noindex: true,
+  });
   const { login } = useAuth();
   const { showSuccess } = useToast();
 
