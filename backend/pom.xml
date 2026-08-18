@@ -34,6 +34,23 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- ShipFlow Plugin API — SPI interfaces (RiskCalculatorPlugin, ReportGeneratorPlugin,
+             IntegrationProviderPlugin) for the v1.12.0 Plugin Marketplace milestone (S60). This
+             is a real, independently-buildable module at plugin-sdk/shipflow-plugin-api — NOT a
+             copy — so backend and third-party plugin projects compile against the exact same
+             interface definitions. Regular (compile) scope, not "provided": the backend itself
+             implements these interfaces (builtin plugins) and consumes them at runtime via
+             PluginRegistry/PluginAutoConfiguration, unlike a plugin project which only needs
+             them at compile time (provided, supplied by the host at runtime).
+             MUST be `mvn install`ed into the local Maven repo before this module can compile —
+             see the Dockerfile backend-builder stage and .github/workflows/ci.yml for the
+             install step. See also the root pom.xml aggregator. -->
+        <dependency>
+            <groupId>com.github.farzadsedaghatbin.shipflow</groupId>
+            <artifactId>shipflow-plugin-api</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- AWS SDK v2 — S3 / MinIO object storage -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>

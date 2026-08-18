@@ -16,11 +16,10 @@ Go to **Organization Settings → Plugins** tab. You will see all registered plu
 
 ## What built-in plugins does ShipFlow include?
 
-ShipFlow ships with three built-in plugins that are always available:
+ShipFlow ships with two built-in plugins that are always available (each labeled "Preview" in the admin list):
 
 1. **Deadline Pressure Risk** (risk) — scores pitches based on the gap between time consumed and task completion ratio. Flags high risk when you are more than 50% through the cycle appetite but less than 50% done with tasks.
 2. **Cycle Health Summary Report** (report) — generates a plain-text cycle health summary you can download or share.
-3. **GitHub Integration** (integration) — exposes GitHub MCP actions (sync tasks, link PRs, fetch commits). Requires the GitHub MCP server to be configured in MCP Integration settings.
 
 ## How do I enable or disable a plugin?
 
@@ -32,17 +31,33 @@ ShipFlow ships with three built-in plugins that are always available:
 
 ## How do I build a custom plugin?
 
-ShipFlow provides a Plugin SDK scaffold in the `plugin-sdk/` directory of the repository.
+ShipFlow provides a real Plugin SDK in the `plugin-sdk/` directory of the repository: a
+distributable `shipflow-plugin-api` jar with the SPI interfaces, and a `shipflow-plugin-archetype`
+Maven archetype that scaffolds a new plugin project for you.
+
+Plugins are Spring beans **compiled into the ShipFlow backend build** — there is no dynamic
+"drop a JAR into a folder" loading. Adding a new plugin (or removing one) requires a rebuild and
+restart of the backend; toggling an *already-registered* plugin on/off does not.
 
 **Quick start:**
 
-1. Copy `plugin-sdk/sample-plugin/` as a starting point.
+1. Generate a project from the archetype:
+   ```bash
+   mvn archetype:generate \
+     -DarchetypeGroupId=com.github.farzadsedaghatbin.shipflow \
+     -DarchetypeArtifactId=shipflow-plugin-archetype \
+     -DarchetypeVersion=1.0.0 \
+     -DgroupId=com.example \
+     -DartifactId=my-shipflow-plugin \
+     -DinteractiveMode=false
+   ```
+   (or copy `plugin-sdk/sample-plugin/` by hand as a starting point instead)
 2. Implement one of the three plugin interfaces:
    - `RiskCalculatorPlugin` for custom risk scoring
    - `ReportGeneratorPlugin` for custom report formats
    - `IntegrationProviderPlugin` for external tool connections
 3. Annotate your class with `@Component` so Spring auto-discovers it.
-4. Build a JAR and add it to the ShipFlow classpath, or include it as a Maven dependency.
+4. Add your generated plugin project as a Maven dependency of `backend/pom.xml`, then rebuild and restart ShipFlow.
 
 **Example — Risk Calculator plugin:**
 
@@ -60,7 +75,7 @@ public class MyRiskPlugin implements RiskCalculatorPlugin {
 }
 ```
 
-The plugin appears automatically in Organization Settings → Plugins once the application restarts with the new JAR on the classpath.
+The plugin appears automatically in Organization Settings → Plugins the next time the application starts with your plugin dependency on the classpath. See `plugin-sdk/README.md` for the full walkthrough.
 
 ## What is MCP (Model Context Protocol)?
 

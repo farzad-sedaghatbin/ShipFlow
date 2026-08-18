@@ -8,6 +8,18 @@ RUN npm run build
 
 # Build stage for backend
 FROM maven:3.9-eclipse-temurin-21 AS backend-builder
+
+# Build & install shipflow-plugin-api into the local Maven repo first — backend/pom.xml depends on
+# it as a regular Maven dependency (v1.12.0 S60: a real, distributable Plugin SDK artifact, not a
+# copy of the SPI interfaces baked into backend). Same local repo (~/.m2) persists across RUN
+# layers in this stage, so the later `mvn dependency:go-offline` for backend resolves it locally.
+# See plugin-sdk/README.md.
+WORKDIR /app/plugin-sdk/shipflow-plugin-api
+COPY plugin-sdk/shipflow-plugin-api/pom.xml ./
+RUN mvn dependency:go-offline -B
+COPY plugin-sdk/shipflow-plugin-api/src ./src
+RUN mvn install -DskipTests -B
+
 WORKDIR /app/backend
 COPY backend/pom.xml ./
 RUN mvn dependency:go-offline -B

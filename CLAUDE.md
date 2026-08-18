@@ -130,6 +130,14 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | S58 | Responsive-layout audit across all pages (boards, pitches, hill charts, wiki) — fixed real mobile overflow bugs in the Backlog bulk-action toolbar, Wiki page-tree sidebar/modals, a stat grid, and a task-detail action row, plus a shared `AlertDialog` mobile-margin gap found along the way | ✅ done |
 | S59 | Web Push notifications (VAPID via `nl.martijndwars:web-push`) + WebAuthn passkey sign-in (`webauthn4j`) — username-first passkey login issuing the same JWT as password login, self-service passkey management, push subscription + preference toggle on Profile. See `PWA_GUIDE.md`. | ✅ done |
 
+### v1.12.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S60 | Plugin SDK completion — real `shipflow-plugin-api` Maven module (`plugin-sdk/shipflow-plugin-api`, moved out of `backend`, aggregated via a new root `pom.xml` reactor; `backend` depends on it as a regular module dependency) and a real `shipflow-plugin-archetype` module (`mvn archetype:generate` verified end-to-end against a scratch project). Corrected `plugin-sdk/README.md`'s and the `12-plugins-mcp.md` help guide's inaccurate "drop a JAR into `plugins/`" runtime-loading claim — plugins still compile into the app as Spring beans (no dynamic runtime loading; out of scope). The admin plugin catalog UI (Organization Settings → Plugins) already existed from v1.6.0/S42 and needed no changes. | ✅ done |
+| S61 | GitLab integration (MCP client pattern, not `IntegrationProviderPlugin`) | planned |
+| S62 | Azure DevOps integration (MCP client pattern, not `IntegrationProviderPlugin`) | planned |
+
 ### Future milestones overview
 
 | Version | Theme | Sessions |
