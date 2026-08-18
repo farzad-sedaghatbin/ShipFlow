@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getStoredToken, clearAuth, showGlobalToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { buildLoginPath, currentRelativePath, isOnAuthPage } from '../lib/redirect';
 
 // ─── ETag Cache ──────────────────────────────────────────────────────────────
 // Stores the last ETag and response body for each GET URL so we can replay
@@ -95,6 +96,12 @@ const GLOBAL_ERROR_MESSAGES = {
 
 const MUTATION_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 
+/**
+ * Sign-in endpoints: a 401 from these means "bad credentials", not "session
+ * expired", so the interceptor must not hijack the page.
+ */
+const AUTH_ENDPOINTS = ['/auth/login', '/auth/passkeys/login'];
+
 const api = axios.create({
   baseURL: '/api',
   headers: {
@@ -176,15 +183,19 @@ api.interceptors.response.use(
     const userMessage = getUserFriendlyError(error);
 
     if (status === 401) {
-      // Skip redirect if this is a login attempt (wrong credentials) — let the login form handle it
-      const isLoginRequest = error.config?.url?.includes('/auth/login');
-      if (!isLoginRequest) {
+      // Skip redirect if this is a sign-in attempt (wrong credentials, failed
+      // passkey ceremony) or we're already on an auth page — the form shows the
+      // error itself, and redirecting would also clobber a captured `?redirect=`.
+      const isAuthAttempt = AUTH_ENDPOINTS.some((path) => error.config?.url?.includes(path));
+      if (!isAuthAttempt && !isOnAuthPage()) {
         // Unauthorized - token expired or invalid
         showGlobalToast(GLOBAL_ERROR_MESSAGES.unauthorized, 'error');
         clearEtagCache(); // free cached payloads and ETags on logout
         clearAuth();
-        // Redirect to login
-        window.location.href = '/login';
+        // Redirect to login, carrying the page the user was on so they land back
+        // there after signing in. This is a full page load (we're outside the
+        // router here), so the destination has to travel in the query string.
+        window.location.href = buildLoginPath(currentRelativePath());
       }
     } else if (status === 403) {
       // Forbidden - no permission
