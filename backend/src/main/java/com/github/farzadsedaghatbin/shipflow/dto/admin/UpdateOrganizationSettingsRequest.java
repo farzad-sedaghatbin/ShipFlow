@@ -63,6 +63,9 @@ public class UpdateOrganizationSettingsRequest {
   private String gitlabAccessToken;
   private String defaultGitlabProjectId;
 
+  // Azure DevOps MCP Configuration (token managed via MCP settings API)
+  private String azureDevOpsAccessToken;
+
   // SharePoint Graph API — Azure AD client credentials (null = leave unchanged, blank = clear)
   private String sharepointTenantId;
   private String sharepointClientId;

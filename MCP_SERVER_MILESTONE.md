@@ -34,6 +34,9 @@ ShipFlow is both an **MCP client** (consuming external servers) and an **MCP ser
 | `service/mcp/McpClientService.java` | Interface for consuming MCP servers |
 | `service/mcp/GitHubMcpProvider.java` | Reads code from GitHub MCP |
 | `service/mcp/FigmaMcpProvider.java` | Reads designs from Figma MCP |
+| `service/mcp/NotionMcpProvider.java` | Reads pages from Notion MCP |
+| `service/mcp/ConfluenceMcpProvider.java` | Reads pages from Confluence MCP |
+| `service/mcp/AzureDevOpsMcpProvider.java` | Reads code from Azure Repos via Azure DevOps MCP (v1.12.0 S62) |
 | `service/mcp/McpConfig.java` | Config for consumed MCP servers |
 
 ### MCP Server (implemented in v0.7.0+)

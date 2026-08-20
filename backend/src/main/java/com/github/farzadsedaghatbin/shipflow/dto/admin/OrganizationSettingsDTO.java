@@ -85,6 +85,9 @@ public class OrganizationSettingsDTO {
   private Boolean hasGitlabAccessToken;
   private String defaultGitlabProjectId;
 
+  // Azure DevOps MCP Configuration (token not exposed, only flag)
+  private Boolean hasAzureDevOpsAccessToken;
+
   // SharePoint Graph API (credentials not exposed, only presence flags + non-secret fields)
   private Boolean hasSharepointClientSecret;
   private String sharepointTenantId;
