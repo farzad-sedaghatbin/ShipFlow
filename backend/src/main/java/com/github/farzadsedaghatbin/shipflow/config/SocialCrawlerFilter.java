@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -33,9 +35,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * protocol downgrade, so the shared link previewed as nothing at all. Forwarding keeps the response
  * at the shared URL — one hop, one scheme, canonical {@code og:url} — and needs nothing of the
  * crawler beyond reading the body it already asked for.
+ *
+ * <p><strong>Filter order.</strong> This must run strictly after {@code ForwardedHeaderFilter}
+ * (so the request already carries the corrected scheme/host before the forward — see the
+ * class-level "why a forward" note above) and after Spring Security's chain (so the SPA-route
+ * authorization decision for the original URL is what applies, not one for {@code /preview/**}).
+ * Both currently precede an unordered filter by Spring Boot's defaults, but that's an assumption
+ * this class previously left unpinned — {@code @Order} makes it explicit instead of relying on
+ * default precedence surviving future filter additions or a Spring Boot upgrade.
  */
 @Component
+@Order(SocialCrawlerFilter.FILTER_ORDER)
 public class SocialCrawlerFilter extends OncePerRequestFilter {
+
+  /**
+   * Comfortably after Spring Security's chain ({@code SecurityProperties.DEFAULT_FILTER_ORDER},
+   * {@code -100}) and after {@code ForwardedHeaderFilter} (registered near
+   * {@code Ordered.HIGHEST_PRECEDENCE} when {@code server.forward-headers-strategy=framework}),
+   * but still ahead of {@code Ordered.LOWEST_PRECEDENCE} where an unordered filter would land.
+   */
+  static final int FILTER_ORDER = Ordered.LOWEST_PRECEDENCE - 1000;
 
   /**
    * Set on the request before forwarding, so {@link
