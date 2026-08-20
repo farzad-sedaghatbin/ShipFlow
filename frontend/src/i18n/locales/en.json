@@ -3523,6 +3523,9 @@
       "assignee": "Assignee",
       "searchAssignee": "Search people...",
       "noAssignee": "No people found",
+      "creator": "Creator",
+      "searchCreator": "Search people...",
+      "noCreator": "No people found",
       "blocked": "Blocked",
       "blocking": "Blocking",
       "dependency": "Dependencies"

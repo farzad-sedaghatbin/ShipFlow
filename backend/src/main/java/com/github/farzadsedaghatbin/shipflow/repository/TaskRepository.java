@@ -159,18 +159,22 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             + "AND (:statuses IS NULL OR t.status IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority IN :priorities) "
             + "AND (:assigneeIds IS NULL OR t.assignee.id IN :assigneeIds) "
+            + "AND (:creatorIds IS NULL OR t.createdBy.id IN :creatorIds) "
             + "AND (:category IS NULL OR t.category = :category)")
     Page<Task> findByCycleIdWithFilters(@Param("cycleId") Long cycleId, @Param("statuses") List<TaskStatus> statuses,
             @Param("priorities") List<TaskPriority> priorities, @Param("assigneeIds") List<Long> assigneeIds,
-            @Param("category") TaskCategory category, Pageable pageable);
+            @Param("creatorIds") List<Long> creatorIds, @Param("category") TaskCategory category,
+            Pageable pageable);
 
     @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId " + "AND t.deletedAt IS NULL "
             + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority NOT IN :priorities) "
-            + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds)")
+            + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds) "
+            + "AND (:creatorIds IS NULL OR t.createdBy IS NULL OR t.createdBy.id NOT IN :creatorIds)")
     Page<Task> findByCycleIdWithExclusionFilters(@Param("cycleId") Long cycleId,
             @Param("statuses") List<TaskStatus> statuses, @Param("priorities") List<TaskPriority> priorities,
-            @Param("assigneeIds") List<Long> assigneeIds, Pageable pageable);
+            @Param("assigneeIds") List<Long> assigneeIds, @Param("creatorIds") List<Long> creatorIds,
+            Pageable pageable);
 
     // Project-based multi-filter queries with pagination
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId "
@@ -178,22 +182,26 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             + "AND (:statuses IS NULL OR t.status IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority IN :priorities) "
             + "AND (:assigneeIds IS NULL OR t.assignee.id IN :assigneeIds) "
+            + "AND (:creatorIds IS NULL OR t.createdBy.id IN :creatorIds) "
             + "AND (:category IS NULL OR t.category = :category)")
     Page<Task> findByProjectIdWithFilters(@Param("projectId") Long projectId,
             @Param("statuses") List<TaskStatus> statuses,
             @Param("priorities") List<TaskPriority> priorities,
             @Param("assigneeIds") List<Long> assigneeIds,
+            @Param("creatorIds") List<Long> creatorIds,
             @Param("category") TaskCategory category, Pageable pageable);
 
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId "
             + "AND t.deletedAt IS NULL "
             + "AND (:statuses IS NULL OR t.status NOT IN :statuses) "
             + "AND (:priorities IS NULL OR t.priority NOT IN :priorities) "
-            + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds)")
+            + "AND (:assigneeIds IS NULL OR t.assignee IS NULL OR t.assignee.id NOT IN :assigneeIds) "
+            + "AND (:creatorIds IS NULL OR t.createdBy IS NULL OR t.createdBy.id NOT IN :creatorIds)")
     Page<Task> findByProjectIdWithExclusionFilters(@Param("projectId") Long projectId,
             @Param("statuses") List<TaskStatus> statuses,
             @Param("priorities") List<TaskPriority> priorities,
-            @Param("assigneeIds") List<Long> assigneeIds, Pageable pageable);
+            @Param("assigneeIds") List<Long> assigneeIds,
+            @Param("creatorIds") List<Long> creatorIds, Pageable pageable);
 
     // Hierarchy queries
     List<Task> findByParentTaskId(Long parentTaskId);

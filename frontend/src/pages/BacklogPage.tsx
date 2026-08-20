@@ -128,6 +128,8 @@ export default function BacklogPage() {
           persons={bp.persons}
           assigneeFilter={bp.assigneeFilter}
           onAssigneeFilterChange={bp.handleToggleAssigneeFilter}
+          creatorFilter={bp.creatorFilter}
+          onCreatorFilterChange={bp.handleToggleCreatorFilter}
           hasActiveFilters={bp.hasActiveFilters}
           onClearFilters={bp.handleClearFilters}
         />
