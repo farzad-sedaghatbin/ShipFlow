@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.config.SocialCrawlerFilter;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
@@ -13,6 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.HtmlUtils;
 
 /**
@@ -28,7 +32,7 @@ import org.springframework.web.util.HtmlUtils;
 @RequiredArgsConstructor
 public class LinkPreviewController {
 
-  private static final String OG_IMAGE = "https://shipflow.dev/android-chrome-512x512.png";
+  private static final String OG_IMAGE_PATH = "/android-chrome-512x512.png";
   private static final int MAX_DESC_LENGTH = 160;
 
   private final PitchRepository pitchRepository;
@@ -50,9 +54,7 @@ public class LinkPreviewController {
     String raw = pitch.getProblemStatement() != null ? pitch.getProblemStatement()
         : (pitch.getDescription() != null ? pitch.getDescription() : "");
     String description = truncate(stripMarkdown(raw));
-    String ogUrl = "https://shipflow.dev/pitches/" + id;
-    String redirectUrl = "/pitches/" + id;
-    return ResponseEntity.ok(buildPreviewHtml(title, description, ogUrl, redirectUrl));
+    return ResponseEntity.ok(buildPreviewHtml(title, description, "/pitches/" + id));
   }
 
   // -------------------------------------------------------------------------
@@ -69,9 +71,7 @@ public class LinkPreviewController {
     String title = task.getTitle();
     String raw = task.getDescription() != null ? task.getDescription() : "";
     String description = truncate(stripMarkdown(raw));
-    String ogUrl = "https://shipflow.dev/backlog/" + id;
-    String redirectUrl = "/backlog/" + id;
-    return ResponseEntity.ok(buildPreviewHtml(title, description, ogUrl, redirectUrl));
+    return ResponseEntity.ok(buildPreviewHtml(title, description, "/backlog/" + id));
   }
 
   // -------------------------------------------------------------------------
@@ -86,16 +86,18 @@ public class LinkPreviewController {
     }
     Cycle cycle = opt.get();
     String title = cycle.getName();
-    int pitchCount = cycle.getPitches() != null ? cycle.getPitches().size() : 0;
+    // Counted with a query, NOT via cycle.getPitches().size(): that collection is lazy and this
+    // controller runs outside any transaction, so touching it threw LazyInitializationException and
+    // every cycle preview 500'd — no preview has ever rendered for a cycle link. The count query
+    // also excludes soft-deleted pitches, which the collection did not.
+    long pitchCount = pitchRepository.countByCycleIdNotDeleted(id);
     String description = String.format(
         "Cycle: %d pitch%s · %s – %s",
         pitchCount,
         pitchCount == 1 ? "" : "es",
         cycle.getStartDate(),
         cycle.getEndDate());
-    String ogUrl = "https://shipflow.dev/cycles/" + id;
-    String redirectUrl = "/cycles/" + id;
-    return ResponseEntity.ok(buildPreviewHtml(title, description, ogUrl, redirectUrl));
+    return ResponseEntity.ok(buildPreviewHtml(title, description, "/cycles/" + id));
   }
 
   // -------------------------------------------------------------------------
@@ -106,16 +108,48 @@ public class LinkPreviewController {
     String html = buildPreviewHtml(
         "ShipFlow",
         "Project management built around Shape Up.",
-        "https://shipflow.dev",
         fallbackRedirect);
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(html);
   }
 
-  private String buildPreviewHtml(
-      String title, String description, String ogUrl, String redirectUrl) {
+  /**
+   * Absolute origin of the instance actually being browsed, e.g. {@code https://shipflow.dev} or
+   * {@code https://shipflow.acme.internal}.
+   *
+   * <p>These URLs used to be hardcoded to {@code https://shipflow.dev}, which meant every
+   * self-hosted deployment advertised someone else's host in {@code og:url} and {@code og:image} —
+   * previews of a private instance linked to the public demo, and the image 404'd or leaked the
+   * demo's branding. Derived from the current request instead, so it is right everywhere with no
+   * extra configuration. Behind a TLS-terminating proxy this needs {@code X-Forwarded-Proto} to be
+   * honoured, which {@code server.forward-headers-strategy=framework} (set in the prod profile)
+   * takes care of.
+   */
+  private String currentOrigin() {
+    return ServletUriComponentsBuilder.fromCurrentContextPath().replacePath(null).build()
+        .toUriString();
+  }
+
+  /**
+   * True when {@link SocialCrawlerFilter} forwarded a crawler here, so this HTML is already being
+   * served at the entity's canonical URL.
+   */
+  private boolean servedInPlace() {
+    return RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs
+        && Boolean.TRUE.equals(attrs.getRequest().getAttribute(SocialCrawlerFilter.IN_PLACE_ATTRIBUTE));
+  }
+
+  private String buildPreviewHtml(String title, String description, String canonicalPath) {
     String safeTitle = HtmlUtils.htmlEscape(title);
     String safeDesc = HtmlUtils.htmlEscape(description);
-    String safeRedirect = HtmlUtils.htmlEscape(redirectUrl);
+    String safeRedirect = HtmlUtils.htmlEscape(canonicalPath);
+    String ogUrl = currentOrigin() + canonicalPath;
+    String ogImage = currentOrigin() + OG_IMAGE_PATH;
+    // Served in place, the bounce script would point at the URL we are already on and reload
+    // forever — which JS-executing crawlers (Googlebot renders pages) would actually do. Only the
+    // direct /preview/** hit, a genuinely different URL, gets the bounce.
+    String bounce = servedInPlace()
+        ? ""
+        : "<script>window.location.replace('%s');</script>".formatted(safeRedirect);
     return """
         <!DOCTYPE html>
         <html lang="en">
@@ -131,14 +165,15 @@ public class LinkPreviewController {
           <meta name="twitter:title" content="%s — ShipFlow"/>
           <meta name="twitter:description" content="%s"/>
           <title>%s — ShipFlow</title>
-          <script>window.location.replace('%s');</script>
+          %s
         </head>
-        <body><p>Redirecting&#8230;</p></body>
+        <body><p><a href="%s">%s</a></p></body>
         </html>
         """.formatted(
-        safeTitle, safeDesc, ogUrl, OG_IMAGE,
+        safeTitle, safeDesc, ogUrl, ogImage,
         safeTitle, safeDesc,
-        safeTitle, safeRedirect);
+        safeTitle, bounce,
+        safeRedirect, safeTitle);
   }
 
   /** Remove the most common Markdown syntax so descriptions read cleanly in OG previews. */
