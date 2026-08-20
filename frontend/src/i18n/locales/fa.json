@@ -7430,7 +7430,19 @@
     "phasePluginItem1Title": "ابزار خط فرمان Maven",
     "phasePluginItem1Desc": "با یک دستور، یک پروژه افزونه جدید بر پایه Plugin SDK موجود بسازید.",
     "phasePluginItem2Title": "GitLab و Azure DevOps",
-    "phasePluginItem2Desc": "یکپارچه‌سازی کنترل نسخه را فراتر از GitHub گسترش دهید — لینک خودکار کامیت/MR و جدول زمانی مبتنی بر وب‌هوک، دقیقاً مانند یکپارچه‌سازی فعلی GitHub."
+    "phasePluginItem2Desc": "یکپارچه‌سازی کنترل نسخه را فراتر از GitHub گسترش دهید — لینک خودکار کامیت/MR و جدول زمانی مبتنی بر وب‌هوک، دقیقاً مانند یکپارچه‌سازی فعلی GitHub.",
+    "shipped1120Title": "ابزارهای Plugin SDK و یکپارچه‌سازی کنترل نسخه",
+    "shipped1120Item0Title": "Plugin SDK واقعی و ابزار خط فرمان اسکلت‌سازی",
+    "shipped1120Item0Desc": "shipflow-plugin-api اکنون یک ماژول واقعی و قابل‌توزیع Maven است، نه صرفاً رابط‌هایی داخل بک‌اند اصلی، و shipflow-plugin-archetype جدید امکان اسکلت‌سازی یک پروژه افزونه را با یک دستور mvn archetype:generate فراهم می‌کند، بدون کپی دستی فایل‌ها.",
+    "shipped1120Item1Title": "زمینه کد GitLab برای قابلیت‌های هوش مصنوعی",
+    "shipped1120Item1Desc": "قابلیت‌های هوش مصنوعی مانند Wise Architecture اکنون می‌توانند زمینه کد مخزن را از GitLab — چه gitlab.com و چه نمونه خوداستقرار — در کنار یکپارچه‌سازی‌های موجود GitHub، Figma، Notion و Confluence دریافت کنند.",
+    "shipped1120Item2Title": "زمینه کد Azure DevOps برای قابلیت‌های هوش مصنوعی",
+    "shipped1120Item2Desc": "همین یکپارچه‌سازی زمینه کد اکنون برای Azure Repos نیز در دسترس است، هم روی Azure DevOps Services و هم Azure DevOps Server خوداستقرار — و پوشش کنترل نسخه را در GitHub، GitLab و Azure DevOps کامل می‌کند.",
+    "phaseCollabTheme": "ویرایش مشترک",
+    "phaseCollabItem0Title": "ویرایش هم‌زمان پیچ",
+    "phaseCollabItem0Desc": "چند نفر می‌توانند هم‌زمان یک پیچ را شکل دهند، با نشانگرهای زنده و ادغام بدون تعارض با استفاده از CRDT.",
+    "phaseCollabItem1Title": "ویرایش هم‌زمان بازنگری",
+    "phaseCollabItem1Desc": "یک بازنگری را به‌صورت هم‌زمان اجرا کنید، به‌جای ادغام یادداشت‌های جداگانه پس از آن."
   },
   "shortcuts": {
     "title": "میانبرهای صفحه‌کلید",
