@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.github.farzadsedaghatbin.shipflow</groupId>
+  <artifactId>shipflow-plugin-api</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <name>ShipFlow Plugin API</name>
+  <description>
+    SPI (Service Provider Interface) contracts for building ShipFlow plugins: risk calculators,
+    report generators, and integration providers. This is the real, independently-buildable
+    artifact that plugin projects depend on with &lt;scope&gt;provided&lt;/scope&gt; — see
+    plugin-sdk/README.md. The backend module depends on this same artifact (default/compile
+    scope, since it also implements and consumes these interfaces at runtime) so the interface
+    definitions live in exactly one place and cannot drift between "what a plugin author sees"
+    and "what the backend actually loads".
+  </description>
+
+  <!-- Deliberately standalone (no parent) — this module must be buildable and distributable on
+       its own, independent of ShipFlow's Spring Boot backend build. It has zero runtime
+       dependencies: the SPI interfaces only reference java.util types. -->
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.15.0</version>
+      </plugin>
+      <!-- Publish a sources jar alongside the classes jar — plugin authors depending on this
+           artifact get inline Javadoc/navigation in their IDE without a separate download. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.3.1</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

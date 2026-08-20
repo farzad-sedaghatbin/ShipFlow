@@ -16,11 +16,10 @@ Go to **Organization Settings → Plugins** tab. You will see all registered plu
 
 ## What built-in plugins does ShipFlow include?
 
-ShipFlow ships with three built-in plugins that are always available:
+ShipFlow ships with two built-in plugins that are always available (each labeled "Preview" in the admin list):
 
 1. **Deadline Pressure Risk** (risk) — scores pitches based on the gap between time consumed and task completion ratio. Flags high risk when you are more than 50% through the cycle appetite but less than 50% done with tasks.
 2. **Cycle Health Summary Report** (report) — generates a plain-text cycle health summary you can download or share.
-3. **GitHub Integration** (integration) — exposes GitHub MCP actions (sync tasks, link PRs, fetch commits). Requires the GitHub MCP server to be configured in MCP Integration settings.
 
 ## How do I enable or disable a plugin?
 
@@ -32,17 +31,33 @@ ShipFlow ships with three built-in plugins that are always available:
 
 ## How do I build a custom plugin?
 
-ShipFlow provides a Plugin SDK scaffold in the `plugin-sdk/` directory of the repository.
+ShipFlow provides a real Plugin SDK in the `plugin-sdk/` directory of the repository: a
+distributable `shipflow-plugin-api` jar with the SPI interfaces, and a `shipflow-plugin-archetype`
+Maven archetype that scaffolds a new plugin project for you.
+
+Plugins are Spring beans **compiled into the ShipFlow backend build** — there is no dynamic
+"drop a JAR into a folder" loading. Adding a new plugin (or removing one) requires a rebuild and
+restart of the backend; toggling an *already-registered* plugin on/off does not.
 
 **Quick start:**
 
-1. Copy `plugin-sdk/sample-plugin/` as a starting point.
+1. Generate a project from the archetype:
+   ```bash
+   mvn archetype:generate \
+     -DarchetypeGroupId=com.github.farzadsedaghatbin.shipflow \
+     -DarchetypeArtifactId=shipflow-plugin-archetype \
+     -DarchetypeVersion=1.0.0 \
+     -DgroupId=com.example \
+     -DartifactId=my-shipflow-plugin \
+     -DinteractiveMode=false
+   ```
+   (or copy `plugin-sdk/sample-plugin/` by hand as a starting point instead)
 2. Implement one of the three plugin interfaces:
    - `RiskCalculatorPlugin` for custom risk scoring
    - `ReportGeneratorPlugin` for custom report formats
    - `IntegrationProviderPlugin` for external tool connections
 3. Annotate your class with `@Component` so Spring auto-discovers it.
-4. Build a JAR and add it to the ShipFlow classpath, or include it as a Maven dependency.
+4. Add your generated plugin project as a Maven dependency of `backend/pom.xml`, then rebuild and restart ShipFlow.
 
 **Example — Risk Calculator plugin:**
 
@@ -60,11 +75,11 @@ public class MyRiskPlugin implements RiskCalculatorPlugin {
 }
 ```
 
-The plugin appears automatically in Organization Settings → Plugins once the application restarts with the new JAR on the classpath.
+The plugin appears automatically in Organization Settings → Plugins the next time the application starts with your plugin dependency on the classpath. See `plugin-sdk/README.md` for the full walkthrough.
 
 ## What is MCP (Model Context Protocol)?
 
-MCP is a standardized way for AI tools (Claude Code, Cursor, etc.) to query and act on ShipFlow data. ShipFlow acts both as an MCP client (reading from GitHub, Figma, Notion, Confluence) and as an MCP server (letting AI tools read and write ShipFlow tasks and pitches).
+MCP is a standardized way for AI tools (Claude Code, Cursor, etc.) to query and act on ShipFlow data. ShipFlow acts both as an MCP client (reading from GitHub, Figma, Notion, Confluence, GitLab, Azure DevOps) and as an MCP server (letting AI tools read and write ShipFlow tasks and pitches).
 
 ## How do I configure MCP integrations?
 
@@ -76,6 +91,8 @@ Go to **MCP Integration** (in the main navigation under Integrations). There are
 - **Confluence** — enter an API token plus your Atlassian domain and default space key to read pages from Confluence Cloud.
 - **MCP Server** — toggle the built-in ShipFlow MCP server on or off, and enable write tools.
 - **API Keys** — create and revoke API keys used by external MCP clients to authenticate with ShipFlow.
+
+GitLab and Azure DevOps MCP (below) have backend support but not yet their own tabs in this screen — their tokens are set via the organization settings API until that UI ships.
 
 ## How do I connect Claude Code or Cursor to ShipFlow via MCP?
 
@@ -114,6 +131,20 @@ Yes. Call `get_bug_attachments` (by `bugKey` or `bugReportId`) to list a bug's f
 2. Go to **MCP Integration → Confluence**.
 3. Enter your API token, your Atlassian domain (e.g. `yourcompany.atlassian.net`), and the default space key (e.g. `ENG`).
 4. Click Save. ShipFlow AI features can now read pages from that Confluence space.
+
+## How do I set up a GitLab MCP connection?
+
+1. Ask a self-hosting administrator to set `MCP_GITLAB_ENABLED=true` and `MCP_GITLAB_SERVER_URL` (your GitLab instance, e.g. `https://gitlab.com` or your self-hosted URL) on the ShipFlow backend, then restart it.
+2. Create a GitLab Personal Access Token with `read_repository` (and `read_api` for search) scope.
+3. Until a dedicated GitLab tab ships in this screen, an admin sets the token via the organization-settings API (the `gitlabAccessToken` field on the same PATCH endpoint used by Org Settings) — ask your administrator or a developer to set it for you.
+4. Once configured, ShipFlow AI features (like Wise Architecture) can read files from your GitLab project by its numeric project ID or its `namespace/project` path.
+
+## How do I set up an Azure DevOps MCP connection?
+
+1. Ask a self-hosting administrator to set `MCP_AZURE_DEVOPS_ENABLED=true` and `MCP_AZURE_DEVOPS_SERVER_URL` on the ShipFlow backend, then restart it. This works against both Azure DevOps Services (`dev.azure.com`) and a self-hosted Azure DevOps Server, since the organization/project/repository are supplied per request rather than baked into the URL.
+2. Create an Azure DevOps Personal Access Token with **Code (Read)** scope.
+3. Until a dedicated Azure DevOps tab ships in this screen, an admin sets the token via the organization-settings API (the `azureDevOpsAccessToken` field on the same PATCH endpoint used by Org Settings) — ask your administrator or a developer to set it for you.
+4. Once configured, ShipFlow AI features (like Wise Architecture) can read files from your Azure Repos repository by organization, project, and repository name.
 
 ## Can I share ShipFlow links in Slack or iMessage with rich previews?
 

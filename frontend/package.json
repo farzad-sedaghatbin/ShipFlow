@@ -1,6 +1,6 @@
 {
   "name": "shipflow-frontend",
-  "version": "1.11.2",
+  "version": "1.12.0",
   "private": true,
   "dependencies": {
     "@blocknote/core": "^0.54.0",
@@ -90,7 +90,7 @@
     "autoprefixer": "^10.4.23",
     "jsdom": "^23.2.0",
     "openapi-typescript": "^7.12.0",
-    "openapi-typescript-codegen": "^0.30.0",
+    "openapi-typescript-codegen": "^0.31.0",
     "postcss": "^8.5.6",
     "storybook": "^8.6.15",
     "tailwindcss": "^4.1.18",
@@ -107,7 +107,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/generate-sitemap.mjs",
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -117,6 +117,9 @@
     "generate:api": "./generate-api-types.sh",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "blog:sync": "node scripts/sync-blog.mjs",
+    "build:deploy": "npm run blog:sync && npm run build"
   }
 }

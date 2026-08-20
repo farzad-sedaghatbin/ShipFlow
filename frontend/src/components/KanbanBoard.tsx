@@ -80,6 +80,17 @@ interface KanbanBoardProps {
   // single pitch (e.g. the per-pitch Kanban board in PitchTasksSection), where the badge would
   // just repeat the pitch the user is already looking at.
   hidePitchBadge?: boolean;
+  // Height class for each column's internal ScrollArea. Defaults to a viewport-relative height
+  // tuned for the Backlog page, where the board is the page's main content near the top of the
+  // viewport. A board embedded further down the page (e.g. inside a Card) must pass a smaller,
+  // fixed height instead — otherwise the column tries to fill nearly the full viewport height
+  // from wherever it happens to sit, producing a huge card and fighting the page's own scroll.
+  columnScrollClassName?: string;
+  // Applies the "-mx-4 px-4" edge-to-edge mobile scroll trick, which assumes the board sits
+  // directly under a page container with matching 1rem horizontal padding. Set false when the
+  // board is nested inside a Card (different padding), where the trick just pokes content past
+  // the card's own border. Defaults to true to preserve the Backlog page's existing behavior.
+  edgeToEdgeMobileScroll?: boolean;
 }
 
 interface KanbanCardProps {
@@ -296,6 +307,7 @@ interface KanbanColumnProps {
   onAddSubtask?: (task: Task) => void;
   onStartTimer?: (task: Task) => void;
   hidePitchBadge?: boolean;
+  columnScrollClassName: string;
 }
 
 function KanbanColumn({
@@ -309,7 +321,8 @@ function KanbanColumn({
   onDeleteTask,
   onAddSubtask,
   onStartTimer,
-  hidePitchBadge
+  hidePitchBadge,
+  columnScrollClassName,
 }: KanbanColumnProps) {
   const { t } = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
@@ -373,7 +386,7 @@ function KanbanColumn({
       </div>
 
       {/* Tasks */}
-      <ScrollArea className="h-[calc(100vh-280px)]">
+      <ScrollArea className={columnScrollClassName}>
         <div className="pr-2">
           {columnTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
@@ -410,7 +423,9 @@ export default function KanbanBoard({
   loading,
   visibleColumns = KANBAN_COLUMNS.map(col => col.status),
   onToggleColumn,
-  hidePitchBadge
+  hidePitchBadge,
+  columnScrollClassName = 'h-[calc(100vh-280px)]',
+  edgeToEdgeMobileScroll = true,
 }: KanbanBoardProps) {
   const { t } = useTranslation();
   const { isMobile } = useBreakpointHelpers();
@@ -513,7 +528,8 @@ export default function KanbanBoard({
         className={cn(
           "flex gap-4 overflow-x-auto pb-4",
           // Mobile: scroll snap for better touch navigation
-          isMobile && "snap-x snap-mandatory scroll-smooth -mx-4 px-4",
+          isMobile && "snap-x snap-mandatory scroll-smooth",
+          isMobile && edgeToEdgeMobileScroll && "-mx-4 px-4",
           // Touch-friendly scrolling
           "touch-pan-x"
         )}
@@ -534,6 +550,7 @@ export default function KanbanBoard({
               onAddSubtask={onAddSubtask}
               onStartTimer={onStartTimer}
               hidePitchBadge={hidePitchBadge}
+              columnScrollClassName={columnScrollClassName}
             />
           ))}
       </div>

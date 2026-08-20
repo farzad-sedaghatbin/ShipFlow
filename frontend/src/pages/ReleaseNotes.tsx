@@ -65,10 +65,12 @@ import {
   Fingerprint,
   Kanban,
   Filter,
+  Puzzle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { useSeo, breadcrumbSchema } from '@/hooks/useSeo';
 
 interface Release {
   version: string;
@@ -83,6 +85,31 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.12.0',
+    date: 'August 20, 2026',
+    title: 'Plugin Marketplace: SDK Tooling & Source Control Integrations',
+    highlights: [
+      {
+        icon: <Puzzle className="h-5 w-5" />,
+        title: 'Real Plugin SDK & Scaffolding CLI',
+        description:
+          "The Plugin SDK's shipflow-plugin-api is now a real, distributable Maven module instead of interfaces living inside the main backend, and a new shipflow-plugin-archetype lets you scaffold a plugin project with one mvn archetype:generate command instead of copying files by hand. Plugins still compile into the ShipFlow build as Spring beans — this closes the SDK tooling gap, not a move to dynamic runtime loading.",
+      },
+      {
+        icon: <GitBranch className="h-5 w-5" />,
+        title: 'GitLab Code Context for AI Features',
+        description:
+          "AI features like Wise Architecture can now pull repository code context from GitLab — gitlab.com or a self-hosted instance — alongside the existing GitHub, Figma, Notion, and Confluence integrations. Authenticate with a Personal Access Token in Organization Settings and point it at your instance.",
+      },
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'Azure DevOps Code Context for AI Features',
+        description:
+          "The same code-context integration is now available for Azure Repos, on both Azure DevOps Services (dev.azure.com) and a self-hosted Azure DevOps Server — rounding out ShipFlow's source-control coverage across GitHub, GitLab, and Azure DevOps.",
+      },
+    ],
+  },
   {
     version: '1.11.2',
     date: 'August 5, 2026',
@@ -1216,6 +1243,18 @@ export default function ReleaseNotes() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const latestShippedIndex = releases.findIndex((r) => !r.upcoming);
+
+  useSeo({
+    title: 'Release Notes & Changelog',
+    description:
+      'Every ShipFlow release, newest first — features, fixes and upgrade notes for the open-source Shape Up, Scrum and Kanban project management platform.',
+    path: '/releases',
+    keywords: ['shipflow changelog', 'shipflow release notes'],
+    jsonLd: breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Releases', path: '/releases' },
+    ]),
+  });
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
+import { Plus, List, Kanban } from 'lucide-react';
 import { toast } from 'sonner';
 import { Task, TaskStatus, TaskPriority } from '../../types';
 import { taskService } from '../../services/taskService';
@@ -14,6 +14,9 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import KanbanBoard from '../KanbanBoard';
+import { PitchTaskList } from './PitchTaskList';
+
+type PitchTaskViewMode = 'list' | 'board';
 
 interface PitchTasksSectionProps {
   tasks: Task[];
@@ -39,6 +42,10 @@ export function PitchTasksSection({
 }: PitchTasksSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // Defaults to list: unlike the Kanban board (which scatters a task's sub-tasks across whatever
+  // status column each one happens to be in), the list groups sub-tasks under their parent and
+  // collapses them by default, which is what actually makes top-level tasks easy to find.
+  const [viewMode, setViewMode] = useState<PitchTaskViewMode>('list');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState('');
@@ -123,6 +130,36 @@ export function PitchTasksSection({
           <div className="flex justify-between items-center">
             <CardTitle>{t('pitchDetailPage.tasks', 'Tasks')}</CardTitle>
             <div className="flex items-center gap-2">
+              <div className="flex items-center border rounded-md">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={viewMode === 'list' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('list')}
+                        className="rounded-r-none border-r"
+                      >
+                        <List className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('backlogPage.viewMode.list')}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={viewMode === 'board' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode('board')}
+                        className="rounded-l-none"
+                      >
+                        <Kanban className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('backlogPage.viewMode.kanban')}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -158,12 +195,27 @@ export function PitchTasksSection({
             <p className="text-muted-foreground text-sm">
               {t('pitchDetailPage.noTasks', 'No tasks linked to this pitch yet.')}
             </p>
+          ) : viewMode === 'list' ? (
+            <PitchTaskList
+              tasks={tasks}
+              onStatusChange={handleStatusChange}
+              onViewTask={handleViewTask}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
+              onAddSubtask={handleAddSubtask}
+            />
           ) : (
             // Note: KanbanBoard's drag-and-drop is native HTML5 (draggable/dataTransfer), which
             // has no touch-device support without a polyfill — same limitation as the existing
             // project-level Kanban board on the Backlog page, not a new regression introduced
             // here. This replaces the previous @dnd-kit drag-to-reorder list (which did support
             // touch) per the move to a Kanban board (see §C.2).
+            //
+            // columnScrollClassName/edgeToEdgeMobileScroll override KanbanBoard's Backlog-page
+            // defaults: this board is nested inside a Card partway down the pitch page rather
+            // than being the page's own top-level content, so a viewport-relative column height
+            // and the page-padding-matched mobile edge-bleed trick both misbehave here (see the
+            // scroll feedback in the pitch-page task section).
             <KanbanBoard
               tasks={tasks}
               onStatusChange={handleStatusChange}
@@ -173,6 +225,8 @@ export function PitchTasksSection({
               onAddSubtask={handleAddSubtask}
               hidePitchBadge
               loading={false}
+              columnScrollClassName="h-[420px]"
+              edgeToEdgeMobileScroll={false}
             />
           )}
         </CardContent>

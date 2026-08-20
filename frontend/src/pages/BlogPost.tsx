@@ -9,6 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { format, parseISO } from 'date-fns';
+import {
+  useSeo,
+  breadcrumbSchema,
+  SITE_URL,
+  SITE_NAME,
+  DEFAULT_OG_IMAGE,
+} from '@/hooks/useSeo';
 
 // ── Frontmatter parser (shared logic with Blog.tsx) ───────────────────────────
 interface PostFrontmatter {
@@ -96,6 +103,54 @@ export default function BlogPost() {
       return dateStr;
     }
   };
+
+  // ── SEO ─────────────────────────────────────────────────────────────────────
+  // Frontmatter arrives asynchronously, so the first paint carries a generic
+  // title and the tags are rewritten once the post resolves. Crawlers that
+  // execute JS (Googlebot, Bingbot, GPTBot, ClaudeBot) read the settled DOM.
+  const postUrl = `${SITE_URL}/blog/${slug ?? ''}`;
+  const seoTitle = meta.title ?? 'Blog';
+  const seoDescription =
+    meta.description ??
+    'Shape Up, hill charts, and product development practice from the ShipFlow team.';
+
+  useSeo({
+    title: seoTitle,
+    description: seoDescription,
+    path: `/blog/${slug ?? ''}`,
+    keywords: meta.keywords,
+    type: 'article',
+    publishedTime: meta.date,
+    modifiedTime: meta.date,
+    author: meta.author,
+    // A post that failed to load has no content worth indexing.
+    noindex: Boolean(error),
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: seoTitle,
+        description: seoDescription,
+        datePublished: meta.date,
+        dateModified: meta.date,
+        author: { '@type': 'Person', name: meta.author ?? 'Farzad Sedaghatbin' },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_NAME,
+          logo: { '@type': 'ImageObject', url: DEFAULT_OG_IMAGE },
+        },
+        mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+        url: postUrl,
+        keywords: meta.keywords?.join(', '),
+        inLanguage: 'en',
+      },
+      breadcrumbSchema([
+        { name: 'Home', path: '/' },
+        { name: 'Blog', path: '/blog' },
+        { name: seoTitle, path: `/blog/${slug ?? ''}` },
+      ]),
+    ],
+  });
 
   return (
     <div className="min-h-screen bg-background">

@@ -4,6 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import {
+  consumeRedirect,
+  DEFAULT_POST_LOGIN_PATH,
+  REDIRECT_PARAM,
+  sanitizeRedirect,
+} from '../lib/redirect';
 
 /**
  * SsoCallbackPage — handles the browser redirect back from an SSO provider.
@@ -25,7 +31,13 @@ export default function SsoCallbackPage() {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    const redirect = searchParams.get('redirect') || '/dashboard';
+    // Either the backend passed the deep link through, or Login stashed it in
+    // sessionStorage before handing off to the identity provider. Both are
+    // sanitised — the query string reaches us straight from an external redirect.
+    const redirect =
+      sanitizeRedirect(searchParams.get(REDIRECT_PARAM))
+      ?? consumeRedirect()
+      ?? DEFAULT_POST_LOGIN_PATH;
 
     if (!token) {
       setError(t('ssoCallback.noToken'));

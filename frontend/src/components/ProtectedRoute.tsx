@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts';
 import { ReactNode } from 'react';
+import { buildLoginPath, toRelativePath } from '../lib/redirect';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -21,8 +22,16 @@ export default function ProtectedRoute({ children, requiredRoles }: ProtectedRou
   }
 
   if (!isAuthenticated) {
-    // Redirect to login while saving the attempted location
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Redirect to login while saving the attempted location. It travels twice:
+    // in router state (survives the client-side navigation) and in `?redirect=`
+    // (survives a reload of the login page or a copy/pasted URL).
+    return (
+      <Navigate
+        to={buildLoginPath(toRelativePath(location))}
+        state={{ from: location }}
+        replace
+      />
+    );
   }
 
   // Check role-based access if requiredRoles is specified

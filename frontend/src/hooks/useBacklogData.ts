@@ -199,6 +199,7 @@ export function useBacklogTasks(params: TaskQueryParams) {
           statusFilter?.length ? statusFilter : undefined,
           priorityFilter?.length ? priorityFilter : undefined,
           assigneeFilter?.length ? assigneeFilter : undefined,
+          undefined,
           category,
           excludeMode,
           page,

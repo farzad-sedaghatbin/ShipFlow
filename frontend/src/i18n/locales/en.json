@@ -3523,6 +3523,9 @@
       "assignee": "Assignee",
       "searchAssignee": "Search people...",
       "noAssignee": "No people found",
+      "creator": "Creator",
+      "searchCreator": "Search people...",
+      "noCreator": "No people found",
       "blocked": "Blocked",
       "blocking": "Blocking",
       "dependency": "Dependencies"
@@ -5649,7 +5652,19 @@
     "phasePluginItem1Title": "Maven Archetype CLI",
     "phasePluginItem1Desc": "Scaffold a new plugin project in one command, building on the existing Plugin SDK.",
     "phasePluginItem2Title": "GitLab + Azure DevOps",
-    "phasePluginItem2Desc": "Extend source-control integration beyond GitHub — auto-link commits/MRs, webhook-driven timelines, the same way GitHub integration already works."
+    "phasePluginItem2Desc": "Extend source-control integration beyond GitHub — auto-link commits/MRs, webhook-driven timelines, the same way GitHub integration already works.",
+    "shipped1120Title": "Plugin SDK Tooling & Source Control Integrations",
+    "shipped1120Item0Title": "Real Plugin SDK & Scaffolding CLI",
+    "shipped1120Item0Desc": "The Plugin SDK's shipflow-plugin-api is now a real, distributable Maven module instead of interfaces living inside the main backend, and a new shipflow-plugin-archetype lets you scaffold a plugin project with one mvn archetype:generate command instead of copying files by hand.",
+    "shipped1120Item1Title": "GitLab Code Context for AI Features",
+    "shipped1120Item1Desc": "AI features like Wise Architecture can now pull repository code context from GitLab — gitlab.com or a self-hosted instance — alongside the existing GitHub, Figma, Notion, and Confluence integrations.",
+    "shipped1120Item2Title": "Azure DevOps Code Context for AI Features",
+    "shipped1120Item2Desc": "The same code-context integration is now available for Azure Repos, on both Azure DevOps Services and a self-hosted Azure DevOps Server — rounding out source-control coverage across GitHub, GitLab, and Azure DevOps.",
+    "phaseCollabTheme": "Collaborative Editing",
+    "phaseCollabItem0Title": "Real-Time Pitch Co-Editing",
+    "phaseCollabItem0Desc": "Multiple people can shape a pitch together at the same time, with live cursors and conflict-free merging powered by CRDTs.",
+    "phaseCollabItem1Title": "Real-Time Retrospective Co-Editing",
+    "phaseCollabItem1Desc": "Run a retrospective together in real time instead of merging separate notes afterward."
   },
   "releaseNotes": {
     "title": "Release Notes",
