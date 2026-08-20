@@ -87,23 +87,24 @@ class TaskCsvExportServiceTest {
   @Test
   @DisplayName("CSV header row is always present")
   void exportTasksCsv_ShouldAlwaysIncludeHeader() {
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of()));
 
-    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
-    assertThat(content).startsWith("ID,Title,Status,Priority,Assignee,Pitch,Cycle,Estimate(h),Actual(h),Tags,Created,Updated");
+    assertThat(content).startsWith(
+        "ID,Title,Status,Priority,Assignee,Creator,Pitch,Cycle,Estimate(h),Actual(h),Tags,Created,Updated");
   }
 
   @Test
   @DisplayName("Each task is emitted as a CSV row with correct field ordering")
   void exportTasksCsv_ShouldEmitOneRowPerTask() {
     Task task = buildTask(42L, "Fix login bug");
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(task)));
 
-    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
     String[] lines = content.split("\n");
@@ -116,10 +117,10 @@ class TaskCsvExportServiceTest {
   @DisplayName("Title containing commas and quotes is properly escaped")
   void exportTasksCsv_ShouldEscapeTitleWithCommasAndQuotes() {
     Task task = buildTask(1L, "Fix \"auth\", login");
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(task)));
 
-    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
     assertThat(content).contains("\"Fix \"\"auth\"\", login\"");
@@ -140,10 +141,10 @@ class TaskCsvExportServiceTest {
     pitch.setTitle("Search Redesign");
     task.setPitch(pitch);
 
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(task)));
 
-    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
     assertThat(content).contains("Alice Smith");
@@ -156,10 +157,10 @@ class TaskCsvExportServiceTest {
     Task task = buildTask(1L, "Tagged task");
     task.setTags("bug,ui,critical");
 
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(task)));
 
-    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
     // tags field is comma-separated; the csvEscape wraps it in quotes
@@ -170,24 +171,24 @@ class TaskCsvExportServiceTest {
   @DisplayName("When cycleId is provided, the cycle-scoped repository method is used")
   void exportTasksCsv_WhenCycleIdProvided_ShouldUseCycleScopedQuery() {
     Task task = buildTask(1L, "Cycle task");
-    when(taskRepository.findByCycleIdWithFilters(eq(10L), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByCycleIdWithFilters(eq(10L), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(task)));
 
-    byte[] csv = taskService.exportTasksCsv(1L, 10L, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, 10L, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
     assertThat(content).contains("Cycle task");
-    verify(taskRepository, never()).findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class));
-    verify(taskRepository).findByCycleIdWithFilters(eq(10L), any(), any(), any(), any(), any(Pageable.class));
+    verify(taskRepository, never()).findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class));
+    verify(taskRepository).findByCycleIdWithFilters(eq(10L), any(), any(), any(), any(), any(), any(Pageable.class));
   }
 
   @Test
   @DisplayName("Empty project returns only the header row")
   void exportTasksCsv_WhenNoTasks_ShouldReturnHeaderOnly() {
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of()));
 
-    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8).trim();
 
     // Only the header, no trailing empty line when split
@@ -200,11 +201,11 @@ class TaskCsvExportServiceTest {
     Task task = buildTask(1L, "Minimal task");
     // assignee, pitch, estimate, tags are all null / empty by default
 
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(task)));
 
     assertThatNoException().isThrownBy(
-        () -> taskService.exportTasksCsv(1L, null, null, null, null, null));
+        () -> taskService.exportTasksCsv(1L, null, null, null, null, null, null));
   }
 
   @Test
@@ -214,10 +215,10 @@ class TaskCsvExportServiceTest {
     Task deleted = buildTask(2L, "Deleted task");
     deleted.setDeletedAt(LocalDateTime.of(2026, 3, 10, 8, 0));
 
-    when(taskRepository.findByCycleIdWithFilters(eq(10L), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByCycleIdWithFilters(eq(10L), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(active, deleted)));
 
-    byte[] csv = taskService.exportTasksCsv(null, 10L, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(null, 10L, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
     assertThat(content).contains("Active task");
@@ -229,10 +230,10 @@ class TaskCsvExportServiceTest {
   void exportTasksCsv_WhenTitleStartsWithEquals_ShouldPrefixApostrophe() {
     Task task = buildTask(1L, "=SUM(A1:A10)");
 
-    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(Pageable.class)))
+    when(taskRepository.findByProjectIdWithFilters(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(task)));
 
-    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null);
+    byte[] csv = taskService.exportTasksCsv(1L, null, null, null, null, null, null);
     String content = new String(csv, StandardCharsets.UTF_8);
 
     // The escaped value should be prefixed with ' and then wrapped in quotes

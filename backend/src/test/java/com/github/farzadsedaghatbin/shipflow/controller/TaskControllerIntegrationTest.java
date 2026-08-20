@@ -329,4 +329,18 @@ class TaskControllerIntegrationTest {
         .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
         .andExpect(jsonPath("$.content[0].assigneeId", is(testPerson.getId().intValue())));
   }
+
+  @Test
+  void getTasksWithFilters_ByCreators_ShouldReturnFilteredTasks() throws Exception {
+    Task createdByTestPerson = Task.builder().title("Created By Test Person").status(TaskStatus.TODO)
+        .priority(TaskPriority.MEDIUM).cycle(testCycle).createdBy(testPerson).createdAt(LocalDateTime.now())
+        .updatedAt(LocalDateTime.now()).build();
+    taskRepository.save(createdByTestPerson);
+
+    mockMvc.perform(get("/api/tasks/cycle/{cycleId}/filter", testCycle.getId())
+        .param("creatorIds", testPerson.getId().toString()).param("exclude", "false"))
+        .andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+        .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
+        .andExpect(jsonPath("$.content[0].createdById", is(testPerson.getId().intValue())));
+  }
 }
