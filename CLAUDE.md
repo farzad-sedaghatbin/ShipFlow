@@ -130,6 +130,14 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | S58 | Responsive-layout audit across all pages (boards, pitches, hill charts, wiki) — fixed real mobile overflow bugs in the Backlog bulk-action toolbar, Wiki page-tree sidebar/modals, a stat grid, and a task-detail action row, plus a shared `AlertDialog` mobile-margin gap found along the way | ✅ done |
 | S59 | Web Push notifications (VAPID via `nl.martijndwars:web-push`) + WebAuthn passkey sign-in (`webauthn4j`) — username-first passkey login issuing the same JWT as password login, self-service passkey management, push subscription + preference toggle on Profile. See `PWA_GUIDE.md`. | ✅ done |
 
+### v1.12.0 session map
+
+| Session | Task | Status |
+|---------|------|--------|
+| S60 | Plugin SDK completion — real `shipflow-plugin-api` Maven module (`plugin-sdk/shipflow-plugin-api`, moved out of `backend`, aggregated via a new root `pom.xml` reactor; `backend` depends on it as a regular module dependency) and a real `shipflow-plugin-archetype` module (`mvn archetype:generate` verified end-to-end against a scratch project). Corrected `plugin-sdk/README.md`'s and the `12-plugins-mcp.md` help guide's inaccurate "drop a JAR into `plugins/`" runtime-loading claim — plugins still compile into the app as Spring beans (no dynamic runtime loading; out of scope). The admin plugin catalog UI (Organization Settings → Plugins) already existed from v1.6.0/S42 and needed no changes. | ✅ done |
+| S61 | GitLab integration (MCP client pattern, not `IntegrationProviderPlugin`) | planned |
+| S62 | Azure DevOps integration (MCP client pattern, not `IntegrationProviderPlugin`) | planned |
+
 ### Future milestones overview
 
 | Version | Theme | Sessions |
@@ -250,6 +258,7 @@ shipflow/
 | `PERMISSION_MATRIX.md` | RBAC roles and permissions |
 | `ENVIRONMENT_SETUP.md` | Local dev setup |
 | `PWA_GUIDE.md` | Service worker, offline caching, background sync (v1.11.0 Mobile PWA) |
+| `SEO_GUIDE.md` | Public-page indexing — `useSeo` hook, robots policy, generated sitemap, blog posts |
 | `MCP_SERVER_MILESTONE.md` | **Next milestone: ShipFlow as MCP Server** |
 
 ---
@@ -453,6 +462,20 @@ The MCP server is live as of v0.7.0. To add a new tool:
 4. If it is a write tool, ensure `properties.isWriteEnabled()` is checked before dispatching
 5. Add unit tests in `McpToolDispatcherTest` (no Spring context needed)
 6. Update `MCP_CLIENT_SETUP.md` tool reference table
+
+### Add a new public page or blog post
+
+Every public page needs its own title, description, canonical URL, and sitemap
+entry, or it cannot rank — the SPA otherwise serves one identical `<title>` for
+the whole site. See `SEO_GUIDE.md` for the full contract. In short:
+
+1. Call `useSeo({ title, description, path, keywords, jsonLd })` at the top of the page component.
+2. Add the route to `STATIC_ROUTES` in `frontend/scripts/generate-sitemap.mjs`.
+3. **Blog posts live in the private `ShipFlow-blog` repo, NOT here** — so a merged PR against this open-source repo can't publish an article on shipflow.dev. The `.md` files in `frontend/public/blog/posts/` are build-time copies and get overwritten. Never hand-edit `index.json` (generated). For any local production build use `npm run build:deploy` (= `blog:sync` + `build`); a plain `docker build` skips the CI injection step and silently ships no new posts.
+4. Cross-link: a new post needs a "Further reading" section *and* a link to it from an existing post.
+5. Never hand-edit `sitemap.xml` (generated) and never reintroduce a blanket `Disallow: /` in `robots.txt` (it once silently blocked the homepage and the entire blog).
+6. SEO meta strings are a deliberate exception to the i18n rule — they stay in English at the call site, because public pages serve one URL per page regardless of language.
+7. **Name all three methodologies.** ShipFlow is methodology-agnostic (Shape Up + Scrum + Kanban). Shape Up leads in copy because it is the differentiator and the winnable search ground, but never write a description implying it is all ShipFlow does — and keep descriptions ≤160 chars, since the coverage reassurance is what gets truncated first.
 
 ### Add a new Knowledge Center provider
 

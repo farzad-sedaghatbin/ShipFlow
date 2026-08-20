@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
+import { useSeo, breadcrumbSchema } from '@/hooks/useSeo';
 
 interface ComparisonFeature {
   category: string;
@@ -160,6 +161,26 @@ const renderFeatureCell = (value: boolean | 'partial' | 'coming') => {
 export default function CompetitorsComparison() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useSeo({
+    title: 'ShipFlow vs Linear, Jira, Asana & Basecamp',
+    description:
+      'ShipFlow compared feature-by-feature with Linear, Jira, Asana and Basecamp — Shape Up, Scrum and Kanban support, self-hosting, pricing and licensing.',
+    path: '/compare',
+    keywords: [
+      'linear alternative',
+      'jira alternative',
+      'asana alternative',
+      'open source project management',
+      'open source scrum tool',
+      'self-hosted kanban board',
+      'shape up software',
+    ],
+    jsonLd: breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Compare', path: '/compare' },
+    ]),
+  });
 
   // Get competitor data from translations
   const competitors = [

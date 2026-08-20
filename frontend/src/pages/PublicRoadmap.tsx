@@ -56,6 +56,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { useSeo, breadcrumbSchema } from '@/hooks/useSeo';
 
 interface RoadmapRelease {
   version: string;
@@ -74,6 +75,18 @@ interface RoadmapPhase {
 export default function PublicRoadmap() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useSeo({
+    title: 'Public Roadmap',
+    description:
+      'What ships next in ShipFlow — the open-source Shape Up, Scrum and Kanban platform. Current milestone, planned features, and recently shipped releases.',
+    path: '/public-roadmap',
+    keywords: ['shipflow roadmap', 'open source project management roadmap'],
+    jsonLd: breadcrumbSchema([
+      { name: 'Home', path: '/' },
+      { name: 'Roadmap', path: '/public-roadmap' },
+    ]),
+  });
 
   const statusConfig = {
     'in-progress': {

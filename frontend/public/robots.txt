@@ -1,7 +1,71 @@
+# robots.txt for shipflow.dev
+#
+# Policy: public marketing + content pages are fully crawlable.
+# Only the authenticated application, the API, and operational endpoints
+# are disallowed. ShipFlow is an open-source project — being read and
+# cited by search engines and AI assistants is a goal, not a risk.
+#
+# NOTE: do not reintroduce a blanket `Disallow: /`. A blanket disallow with
+# a short Allow list silently blocked the homepage and every /blog/ post,
+# which are the pages this site actually needs indexed.
+
 User-agent: *
-Disallow: /
-Allow: /compare
-Allow: /releases
-Allow: /public-roadmap
-Allow: /login
+Allow: /
+
+# --- Authenticated application routes (no value to searchers, never public) ---
+Disallow: /automations
+Disallow: /backlog
+Disallow: /betting
+Disallow: /bugs
+Disallow: /cycles
+Disallow: /dashboard
+Disallow: /dashboards
+Disallow: /health
+Disallow: /integrations
+Disallow: /meetings
+Disallow: /metrics
+Disallow: /my-worklogs
+Disallow: /people
+Disallow: /permissions
+Disallow: /pitches
+Disallow: /profile
+Disallow: /projects
+Disallow: /qa
+Disallow: /reports
+Disallow: /retros
+Disallow: /settings
+Disallow: /slack
+Disallow: /sprint-planning
+Disallow: /tasks
+Disallow: /teams
+Disallow: /time
+Disallow: /users
+Disallow: /worklogs
+
+# --- API, operational and auth-callback endpoints ---
+Disallow: /api/
+Disallow: /actuator/
+Disallow: /mcp
+Disallow: /sso-callback
+Disallow: /preview/
+
+# --- Search-result and session noise ---
+Disallow: /*?*token=
+Disallow: /*?*apiKey=
+
+# AI assistants and answer engines are explicitly welcome to read the
+# public docs and blog. Listed individually so a future tightening of the
+# wildcard rule above does not silently cut them off.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 Sitemap: https://shipflow.dev/sitemap.xml

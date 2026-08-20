@@ -32,7 +32,7 @@ jobs:
           const fs = require('fs');
           const dir = 'frontend/public/blog/posts';
           const posts = fs.readdirSync(dir)
-            .filter(f => f.endsWith('.md'))
+            .filter(f => f.endsWith('.md') && f.toLowerCase() !== 'readme.md')
             .map(f => {
               const content = fs.readFileSync(dir + '/' + f, 'utf8');
               const match = content.match(/^---[\s\S]*?date:\s*(\S+)[\s\S]*?---/);

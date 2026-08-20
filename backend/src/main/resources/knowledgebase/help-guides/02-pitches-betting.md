@@ -21,8 +21,12 @@ A Pitch is a shaped proposal for work to be done in a cycle. It includes:
 - **In Progress** — Approved and being built in a cycle
 - **Completed** — Finished
 
-## The Pitch's Task Board
-A Pitch's detail page shows its linked tasks as a Kanban board — one column per status (Backlog, To Do, In Progress, Blocked, In Review, Done, Cancelled), scoped to just that pitch's work. Drag a card between columns to change its status; the change saves immediately. Use **Create Task** to log a task directly against the pitch (works even before the pitch has been bet to a cycle — see below), or open a card's menu to add a subtask, view, edit, or delete it. This replaced an earlier drag-to-reorder list — manual task ordering within a pitch is no longer available, since the board's column position now carries that signal instead.
+## The Pitch's Task Section
+A Pitch's detail page shows its linked tasks scoped to just that pitch's work, in either of two views (toggle in the section header):
+- **List** (default) — one row per top-level task, with its sub-tasks collapsed underneath; click the arrow to expand a task's sub-tasks. This is the easier view for finding a pitch's main tasks when it has a lot of sub-task detail.
+- **Board** — a Kanban board, one column per status (Backlog, To Do, In Progress, Blocked, In Review, Done, Cancelled). Drag a card between columns to change its status; the change saves immediately. A task's sub-tasks can land in different columns than their parent here, since each card only shows its own status.
+
+Both views support the same actions: use **Create Task** to log a task directly against the pitch (works even before the pitch has been bet to a cycle — see below), or open a task's menu to add a subtask, view, edit, or delete it. Manual task ordering within a pitch isn't available in either view — status (Board) or list position under its parent (List) carries that signal instead.
 
 ## Tasks No Longer Require Picking a Cycle Up Front
 Creating a task no longer forces you to pick a cycle first. A task's cycle is now a fact that follows from which pitch it's linked to, not something you choose manually when logging work:
