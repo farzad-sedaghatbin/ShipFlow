@@ -40,6 +40,11 @@ public class McpConfig {
      */
     private GitLabMcpConfig gitlab = new GitLabMcpConfig();
 
+    /**
+     * Azure DevOps MCP server configuration.
+     */
+    private AzureDevOpsMcpConfig azureDevOps = new AzureDevOpsMcpConfig();
+
     @Getter
     @Setter
     public static class GitHubMcpConfig {
@@ -140,6 +145,32 @@ public class McpConfig {
          * intermediary process, unlike {@link GitHubMcpConfig#getServerUrl()}) —
          * see {@link GitLabMcpProvider}'s class Javadoc for why.
          * Environment variable: MCP_GITLAB_SERVER_URL
+         */
+        private String serverUrl;
+
+        /**
+         * Connection timeout in seconds.
+         */
+        private int timeoutSeconds = 30;
+    }
+
+    @Getter
+    @Setter
+    public static class AzureDevOpsMcpConfig {
+        /**
+         * Whether Azure DevOps MCP integration is enabled.
+         * Environment variable: MCP_AZURE_DEVOPS_ENABLED
+         */
+        private boolean enabled = false;
+
+        /**
+         * Azure DevOps MCP server URL. This is the MCP server endpoint (not the Azure DevOps
+         * REST API itself), matching the {@code /mcp/v1/tools/call} convention used by the
+         * other providers in this file. Works against both dev.azure.com (Azure DevOps
+         * Services) and a self-hosted Azure DevOps Server base URL, since the actual
+         * organization/project/repository routing is passed as tool arguments, not baked into
+         * this URL.
+         * Environment variable: MCP_AZURE_DEVOPS_SERVER_URL
          */
         private String serverUrl;
 

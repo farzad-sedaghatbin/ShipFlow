@@ -380,6 +380,46 @@ class OrganizationSettingsServiceTest {
       assertThat(result.getOrganizationName()).isEqualTo("New Org");
       verify(settingsRepository, times(2)).save(any(OrganizationSettings.class)); // Create + Update
     }
+
+    @Test
+    @DisplayName("Should store Azure DevOps access token and expose only the presence flag")
+    void shouldStoreAzureDevOpsAccessTokenAndExposePresenceFlagOnly() {
+      // Given
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+      when(settingsRepository.save(any(OrganizationSettings.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .azureDevOpsAccessToken("fake-pat-value").build();
+
+      // When
+      OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
+
+      // Then
+      assertThat(result.getHasAzureDevOpsAccessToken()).isTrue();
+      assertThat(testSettings.getAzureDevOpsAccessToken()).isEqualTo("fake-pat-value");
+      assertThat(settingsService.getAzureDevOpsAccessToken()).isEqualTo("fake-pat-value");
+    }
+
+    @Test
+    @DisplayName("Should clear Azure DevOps access token when a blank value is submitted")
+    void shouldClearAzureDevOpsAccessTokenWhenBlank() {
+      // Given
+      testSettings.setAzureDevOpsAccessToken("existing-pat");
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+      when(settingsRepository.save(any(OrganizationSettings.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .azureDevOpsAccessToken("").build();
+
+      // When
+      OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
+
+      // Then
+      assertThat(result.getHasAzureDevOpsAccessToken()).isFalse();
+      assertThat(testSettings.getAzureDevOpsAccessToken()).isNull();
+    }
   }
 
   @Nested

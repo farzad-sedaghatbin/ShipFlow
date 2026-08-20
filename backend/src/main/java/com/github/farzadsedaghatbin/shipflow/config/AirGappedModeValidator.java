@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
  * <ol>
  *   <li>Fails startup if the configured active AI provider is NOT local (only Ollama qualifies).
  *   <li>Fails startup if any external MCP client (GitHub / Figma / Notion / Confluence / GitLab /
- *       SharePoint) is active.
+ *       Azure DevOps / SharePoint) is active.
  *   <li>Fails startup if the Ollama base URL host is an obviously public HTTPS endpoint; private /
  *       loopback / RFC-1918 / cluster-internal hostnames are allowed (conservative to avoid false
  *       positives on Kubernetes service names).

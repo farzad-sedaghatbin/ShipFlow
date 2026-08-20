@@ -186,6 +186,12 @@ public class OrganizationSettingsService {
           request.getDefaultGitlabProjectId().isBlank() ? null : request.getDefaultGitlabProjectId());
     }
 
+    // Azure DevOps MCP Configuration (token only, managed via MCP settings API)
+    if (request.getAzureDevOpsAccessToken() != null) {
+      settings.setAzureDevOpsAccessToken(
+          request.getAzureDevOpsAccessToken().isBlank() ? null : request.getAzureDevOpsAccessToken());
+    }
+
     // SharePoint Graph API credentials
     if (request.getSharepointTenantId() != null) {
       settings.setSharepointTenantId(
@@ -300,6 +306,19 @@ public class OrganizationSettingsService {
   public String getDefaultGitlabProjectId() {
     return settingsRepository.findFirstByOrderByIdAsc()
         .map(OrganizationSettings::getDefaultGitlabProjectId)
+        .orElse(null);
+  }
+
+  /**
+   * Get Azure DevOps access token (Personal Access Token) for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Azure DevOps PAT or null if not configured
+   */
+  public String getAzureDevOpsAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getAzureDevOpsAccessToken)
         .orElse(null);
   }
 
@@ -698,6 +717,7 @@ public class OrganizationSettingsService {
         .defaultConfluenceSpaceKey(entity.getDefaultConfluenceSpaceKey())
         .hasGitlabAccessToken(entity.getGitlabAccessToken() != null && !entity.getGitlabAccessToken().isBlank())
         .defaultGitlabProjectId(entity.getDefaultGitlabProjectId())
+        .hasAzureDevOpsAccessToken(entity.getAzureDevOpsAccessToken() != null && !entity.getAzureDevOpsAccessToken().isBlank())
         .hasSharepointClientSecret(entity.getSharepointClientSecret() != null && !entity.getSharepointClientSecret().isBlank())
         .sharepointTenantId(entity.getSharepointTenantId())
         .sharepointClientId(entity.getSharepointClientId())

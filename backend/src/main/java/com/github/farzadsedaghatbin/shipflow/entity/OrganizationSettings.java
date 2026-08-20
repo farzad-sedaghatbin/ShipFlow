@@ -213,6 +213,10 @@ public class OrganizationSettings {
   @Column(name = "default_gitlab_project_id")
   private String defaultGitlabProjectId;
 
+  // Azure DevOps MCP Configuration (v1.12.0 S62, V2026_08_05_0002)
+  @Column(name = "azure_devops_access_token", columnDefinition = "TEXT")
+  private String azureDevOpsAccessToken;
+
   // SharePoint Graph API — Azure AD client credentials
   @Column(name = "sharepoint_tenant_id", length = 255)
   private String sharepointTenantId;
