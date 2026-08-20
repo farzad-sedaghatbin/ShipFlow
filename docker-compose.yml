@@ -29,8 +29,12 @@ services:
     container_name: shipflow-app
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      # Localhost patterns let self-hosters access the API from a browser on the same machine.
-      # Override via CORS_ALLOWED_ORIGINS env var to lock down to your domain in production.
+      # REQUIRED when serving from a real domain. If your public origin is not in
+      # this list, browsers get "403 Invalid CORS request" on every POST and the
+      # sign-in form reports it as "Invalid username or password" — a config
+      # problem that looks exactly like a wrong password. curl will NOT reproduce
+      # it, because CORS only applies to requests carrying an Origin header.
+      # Set CORS_ALLOWED_ORIGINS in .env, e.g. https://pm.example.com
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:*,http://127.0.0.1:*}
       DB_HOST: db
       DB_PORT: 5432
@@ -64,6 +68,10 @@ services:
       # from (no scheme, no port) and rp-origin MUST be the exact scheme+host+port.
       # Without these set to your real domain, passkey register/login fails with a
       # browser-level RP-ID/origin-mismatch error (defaults are localhost-only).
+      # REQUIRED when serving from a real domain. rp-id must be exactly the domain
+      # the frontend is served from (no scheme, no port) and rp-origin the exact
+      # origin. Left as localhost, the browser refuses passkey registration before
+      # the request reaches the server — surfacing only as "Failed to add passkey".
       WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
       WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-ShipFlow}
       WEBAUTHN_RP_ORIGIN: ${WEBAUTHN_RP_ORIGIN:-http://localhost:3000}
