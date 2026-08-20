@@ -35,7 +35,7 @@ The Backlog in ShipFlow holds ideas and tasks that haven't been shaped into pitc
 ## How to Use the Backlog
 1. Navigate to **Backlog** from the sidebar
 2. View all unscheduled items
-3. Filter by priority, assignee, or release
+3. Filter by priority, assignee, creator, or release
 4. Drag items to reorder by priority
 
 ### Sub-Tasks Group Under Their Parent
