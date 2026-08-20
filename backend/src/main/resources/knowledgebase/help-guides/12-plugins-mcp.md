@@ -79,7 +79,7 @@ The plugin appears automatically in Organization Settings → Plugins the next t
 
 ## What is MCP (Model Context Protocol)?
 
-MCP is a standardized way for AI tools (Claude Code, Cursor, etc.) to query and act on ShipFlow data. ShipFlow acts both as an MCP client (reading from GitHub, Figma, Notion, Confluence, GitLab) and as an MCP server (letting AI tools read and write ShipFlow tasks and pitches).
+MCP is a standardized way for AI tools (Claude Code, Cursor, etc.) to query and act on ShipFlow data. ShipFlow acts both as an MCP client (reading from GitHub, Figma, Notion, Confluence, GitLab, Azure DevOps) and as an MCP server (letting AI tools read and write ShipFlow tasks and pitches).
 
 ## How do I configure MCP integrations?
 
@@ -92,7 +92,7 @@ Go to **MCP Integration** (in the main navigation under Integrations). There are
 - **MCP Server** — toggle the built-in ShipFlow MCP server on or off, and enable write tools.
 - **API Keys** — create and revoke API keys used by external MCP clients to authenticate with ShipFlow.
 
-GitLab MCP (below) has backend support but not yet its own tab in this screen — its token is set via the organization settings API until that UI ships.
+GitLab and Azure DevOps MCP (below) have backend support but not yet their own tabs in this screen — their tokens are set via the organization settings API until that UI ships.
 
 ## How do I connect Claude Code or Cursor to ShipFlow via MCP?
 
@@ -138,6 +138,13 @@ Yes. Call `get_bug_attachments` (by `bugKey` or `bugReportId`) to list a bug's f
 2. Create a GitLab Personal Access Token with `read_repository` (and `read_api` for search) scope.
 3. Until a dedicated GitLab tab ships in this screen, an admin sets the token via the organization-settings API (the `gitlabAccessToken` field on the same PATCH endpoint used by Org Settings) — ask your administrator or a developer to set it for you.
 4. Once configured, ShipFlow AI features (like Wise Architecture) can read files from your GitLab project by its numeric project ID or its `namespace/project` path.
+
+## How do I set up an Azure DevOps MCP connection?
+
+1. Ask a self-hosting administrator to set `MCP_AZURE_DEVOPS_ENABLED=true` and `MCP_AZURE_DEVOPS_SERVER_URL` on the ShipFlow backend, then restart it. This works against both Azure DevOps Services (`dev.azure.com`) and a self-hosted Azure DevOps Server, since the organization/project/repository are supplied per request rather than baked into the URL.
+2. Create an Azure DevOps Personal Access Token with **Code (Read)** scope.
+3. Until a dedicated Azure DevOps tab ships in this screen, an admin sets the token via the organization-settings API (the `azureDevOpsAccessToken` field on the same PATCH endpoint used by Org Settings) — ask your administrator or a developer to set it for you.
+4. Once configured, ShipFlow AI features (like Wise Architecture) can read files from your Azure Repos repository by organization, project, and repository name.
 
 ## Can I share ShipFlow links in Slack or iMessage with rich previews?
 

@@ -5,14 +5,14 @@ Read it before touching any code.
 
 ---
 
-## Current Milestone: v1.12.0 — "Plugin Marketplace"
+## Current Milestone: v1.13.0 — "Collaborative Editing"
 
-**Current version**: v1.11.2 (released 2026-08-05)
+**Current version**: v1.12.0 (released 2026-08-20)
 **All PRs target**: `main` branch
 
 > **Note on versioning**: v1.10.0 (wiki-linking, drag-and-drop task reordering, target-release for standalone tasks) was fully built and merged on 2026-07-14 but never actually tagged/released — work continued straight into the "Mobile PWA" sessions without cutting a release in between. v1.11.0's release absorbed that gap: the git tag jumps directly from v1.9.1 to v1.11.0. See `CHANGELOG.md`'s `[1.11.0]` entry for the full note. All three Mobile PWA sessions (S57 PWA shell/offline, S58 responsive audit, S59 Web Push + passkey auth) shipped as independent PRs — see the v1.11.0 session map below.
 
-ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, and air-gapped AI mode (v1.9.0) shipped. Wiki references (Pitch/Task links), drag-and-drop task reordering, and target-release for standalone tasks (v1.10.0) shipped. Mobile PWA — offline support, responsive audit, Web Push, passkey auth (v1.11.0) shipped. Next: Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps (v1.12.0).
+ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.1.0 shipped). Competitor migration tooling (v1.2.0) shipped. MCP Server Admin & API Keys (v1.3.0) shipped. Enterprise Auth & UX Depth (v1.4.0) shipped. AI Copilot v2 — AI Pitch Writer, Retrospective Summarizer, Proactive Dashboard Insights (v1.5.0) shipped. MCP Ecosystem (v1.6.0) shipped. Workflow Automations — trigger/action engine, 20 templates, full UI (v1.7.0) shipped. Custom Fields & Advanced RBAC, Wiki / Docs Space, and pluggable Object Storage (v1.8.0) shipped. Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, and air-gapped AI mode (v1.9.0) shipped. Wiki references (Pitch/Task links), drag-and-drop task reordering, and target-release for standalone tasks (v1.10.0) shipped. Mobile PWA — offline support, responsive audit, Web Push, passkey auth (v1.11.0) shipped. Plugin SDK completion, GitLab + Azure DevOps MCP client integrations (v1.12.0) shipped. Next: Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives (v1.13.0).
 
 ### v1.3.0 session map
 
@@ -130,7 +130,7 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | S58 | Responsive-layout audit across all pages (boards, pitches, hill charts, wiki) — fixed real mobile overflow bugs in the Backlog bulk-action toolbar, Wiki page-tree sidebar/modals, a stat grid, and a task-detail action row, plus a shared `AlertDialog` mobile-margin gap found along the way | ✅ done |
 | S59 | Web Push notifications (VAPID via `nl.martijndwars:web-push`) + WebAuthn passkey sign-in (`webauthn4j`) — username-first passkey login issuing the same JWT as password login, self-service passkey management, push subscription + preference toggle on Profile. See `PWA_GUIDE.md`. | ✅ done |
 
-### v1.12.0 session map
+### v1.12.0 session map (shipped 2026-08-20)
 
 | Session | Task | Status |
 |---------|------|--------|
@@ -146,8 +146,8 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | v1.9.0 ✅ shipped 2026-07-01 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export | S54–S56 |
 | v1.10.0 ✅ shipped (untagged; absorbed into v1.11.0) | Wiki references (Pitch/Task links), drag-and-drop task reordering, target-release for standalone tasks — interim session-driven release, not part of the planned milestone sequence | — |
 | v1.11.0 ✅ shipped 2026-07-28 | Mobile PWA — offline support, responsive audit, Web Push, passkey auth | S57–S59 |
-| v1.12.0 (current) | Plugin Marketplace — plugin registry, Maven archetype CLI, GitLab + Azure DevOps | S60–S62 |
-| v1.13.0 | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
+| v1.12.0 ✅ shipped 2026-08-20 | Plugin Marketplace — Plugin SDK completion tooling (`shipflow-plugin-api`/`shipflow-plugin-archetype`), GitLab + Azure DevOps MCP client integrations | S60–S62 |
+| v1.13.0 (current) | Collaborative Editing — real-time CRDT co-editing on pitches and retrospectives | S63–S65 |
 
 Full session prompts (S01–S29 through v1.0.0) are in:
 `/Users/farzad/.claude/plans/smooth-shimmying-catmull.md`
