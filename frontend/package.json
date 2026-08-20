@@ -1,6 +1,6 @@
 {
   "name": "shipflow-frontend",
-  "version": "1.11.2",
+  "version": "1.12.0",
   "private": true,
   "dependencies": {
     "@blocknote/core": "^0.29.1",
@@ -90,7 +90,7 @@
     "autoprefixer": "^10.4.23",
     "jsdom": "^23.2.0",
     "openapi-typescript": "^7.12.0",
-    "openapi-typescript-codegen": "^0.30.0",
+    "openapi-typescript-codegen": "^0.31.0",
     "postcss": "^8.5.6",
     "storybook": "^8.6.15",
     "tailwindcss": "^4.1.18",

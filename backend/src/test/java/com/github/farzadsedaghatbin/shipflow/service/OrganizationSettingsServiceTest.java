@@ -277,6 +277,45 @@ class OrganizationSettingsServiceTest {
     }
 
     @Test
+    @DisplayName("Should update GitLab MCP token and default project id")
+    void shouldUpdateGitlabMcpSettings() {
+      // Given
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+      when(settingsRepository.save(any(OrganizationSettings.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .gitlabAccessToken("glpat-xxxxxxxxxxxxxxxxxxxx").defaultGitlabProjectId("group/project").build();
+
+      // When
+      OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
+
+      // Then
+      assertThat(result.getHasGitlabAccessToken()).isTrue();
+      assertThat(result.getDefaultGitlabProjectId()).isEqualTo("group/project");
+      assertThat(settingsService.getGitlabAccessToken()).isEqualTo("glpat-xxxxxxxxxxxxxxxxxxxx");
+    }
+
+    @Test
+    @DisplayName("Should clear GitLab MCP token when blank string is sent")
+    void shouldClearGitlabMcpToken() {
+      // Given
+      testSettings.setGitlabAccessToken("existing-token");
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+      when(settingsRepository.save(any(OrganizationSettings.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .gitlabAccessToken("").build();
+
+      // When
+      OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
+
+      // Then
+      assertThat(result.getHasGitlabAccessToken()).isFalse();
+    }
+
+    @Test
     @DisplayName("Should update only provided fields (partial update)")
     void shouldUpdateOnlyProvidedFields() {
       // Given
@@ -340,6 +379,46 @@ class OrganizationSettingsServiceTest {
       assertThat(result).isNotNull();
       assertThat(result.getOrganizationName()).isEqualTo("New Org");
       verify(settingsRepository, times(2)).save(any(OrganizationSettings.class)); // Create + Update
+    }
+
+    @Test
+    @DisplayName("Should store Azure DevOps access token and expose only the presence flag")
+    void shouldStoreAzureDevOpsAccessTokenAndExposePresenceFlagOnly() {
+      // Given
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+      when(settingsRepository.save(any(OrganizationSettings.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .azureDevOpsAccessToken("fake-pat-value").build();
+
+      // When
+      OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
+
+      // Then
+      assertThat(result.getHasAzureDevOpsAccessToken()).isTrue();
+      assertThat(testSettings.getAzureDevOpsAccessToken()).isEqualTo("fake-pat-value");
+      assertThat(settingsService.getAzureDevOpsAccessToken()).isEqualTo("fake-pat-value");
+    }
+
+    @Test
+    @DisplayName("Should clear Azure DevOps access token when a blank value is submitted")
+    void shouldClearAzureDevOpsAccessTokenWhenBlank() {
+      // Given
+      testSettings.setAzureDevOpsAccessToken("existing-pat");
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+      when(settingsRepository.save(any(OrganizationSettings.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
+      UpdateOrganizationSettingsRequest request = UpdateOrganizationSettingsRequest.builder()
+          .azureDevOpsAccessToken("").build();
+
+      // When
+      OrganizationSettingsDTO result = settingsService.updateSettings(request, testUsername);
+
+      // Then
+      assertThat(result.getHasAzureDevOpsAccessToken()).isFalse();
+      assertThat(testSettings.getAzureDevOpsAccessToken()).isNull();
     }
   }
 
@@ -606,6 +685,37 @@ class OrganizationSettingsServiceTest {
       assertThat(result.getMeetingTypes()).hasSize(1);
       assertThat(result.getMeetingTypes().get(0).getDorItems()).hasSize(1);
       assertThat(result.getMeetingTypes().get(0).getDodItems()).hasSize(1);
+    }
+  }
+
+  @Nested
+  @DisplayName("GitLab MCP Token Accessor Tests")
+  class GitlabTokenAccessorTests {
+
+    @Test
+    @DisplayName("getGitlabAccessToken returns the stored token")
+    void returnsStoredToken() {
+      testSettings.setGitlabAccessToken("glpat-secret");
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+
+      assertThat(settingsService.getGitlabAccessToken()).isEqualTo("glpat-secret");
+    }
+
+    @Test
+    @DisplayName("getGitlabAccessToken returns null when no settings row exists")
+    void returnsNullWhenNoSettings() {
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.empty());
+
+      assertThat(settingsService.getGitlabAccessToken()).isNull();
+    }
+
+    @Test
+    @DisplayName("getDefaultGitlabProjectId returns the stored project id")
+    void returnsStoredProjectId() {
+      testSettings.setDefaultGitlabProjectId("group/project");
+      when(settingsRepository.findFirstByOrderByIdAsc()).thenReturn(Optional.of(testSettings));
+
+      assertThat(settingsService.getDefaultGitlabProjectId()).isEqualTo("group/project");
     }
   }
 }

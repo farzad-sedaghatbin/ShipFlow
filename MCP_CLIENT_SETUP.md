@@ -646,6 +646,28 @@ You can enable or disable it at any time with a restart.
 
 ---
 
+## Appendix: Outbound MCP Client Providers (ShipFlow → external tools)
+
+Everything above documents ShipFlow acting as an **MCP server** for external AI tools. ShipFlow also
+acts as an **MCP client**, pulling context *from* external tools into its own AI features (Wise
+Architecture, risk analysis, etc.). Each provider is a `service/mcp/*McpProvider.java` bean
+implementing the shared `McpClientService` interface — see `CLAUDE.md`'s "MCP Integration (Current
+State)" section for the source-of-truth list. Reference:
+
+| Provider | Class | Server URL env var | Enable env var | Token source | Notes |
+|----------|-------|---------------------|-----------------|---------------|-------|
+| GitHub | `GitHubMcpProvider` | `MCP_GITHUB_SERVER_URL` | `MCP_GITHUB_ENABLED` | Org Settings → MCP Integration → GitHub | Proxies through a separate GitHub MCP server via JSON-RPC `tools/call`; wired into Wise Architecture's repository code analysis via the `GitHubRepository` entity. |
+| Figma | `FigmaMcpProvider` | `MCP_FIGMA_SERVER_URL` | `MCP_FIGMA_ENABLED` | Org Settings → MCP Integration → Figma | Same JSON-RPC pattern; extracts design context from a pitch's `wireframeLinks`. |
+| Notion | `NotionMcpProvider` | `MCP_NOTION_SERVER_URL` | `MCP_NOTION_ENABLED` | Org Settings → MCP Integration → Notion | Same JSON-RPC pattern. |
+| Confluence | `ConfluenceMcpProvider` | `MCP_CONFLUENCE_SERVER_URL` | `MCP_CONFLUENCE_ENABLED` | Org Settings → MCP Integration → Confluence | Same JSON-RPC pattern. |
+| GitLab (v1.12.0 S61) | `GitLabMcpProvider` | `MCP_GITLAB_SERVER_URL` | `MCP_GITLAB_ENABLED` | Organization-settings API (`gitlabAccessToken` field) — no dedicated Org Settings UI tab yet | **Calls GitLab's REST API v4 directly** on the configured instance (`{serverUrl}/api/v4/...`, gitlab.com or self-hosted) instead of going through a separate JSON-RPC MCP server — see `GitLabMcpProvider`'s class Javadoc for why. Authenticates with a Personal Access Token via GitLab's `PRIVATE-TOKEN` header. Context keys: `projectId` (numeric ID or URL-encoded `namespace/project` path) and optional `ref` (default `main`). Automatically covered by air-gapped-mode enforcement and system-status reporting (both inject `List<McpClientService>` generically); **not yet integrated into Wise Architecture's pitch-level repository scanning** — that is coupled to the GitHub-specific `GitHubRepository` entity and has no GitLab equivalent yet (tracked as follow-up). |
+| Azure DevOps (v1.12.0 S62) | `AzureDevOpsMcpProvider` | `MCP_AZURE_DEVOPS_SERVER_URL` | `MCP_AZURE_DEVOPS_ENABLED` | Organization-settings API (`azureDevOpsAccessToken` field) — no dedicated Org Settings UI tab yet | Reads Azure Repos (Azure DevOps Services `dev.azure.com` or a self-hosted Azure DevOps Server — organization/project/repository/optional `branch` are passed as tool arguments in the `context` map, not baked into the server URL, so both work against the same config). Auth uses HTTP Basic with an empty username and the PAT as the password — the Azure DevOps REST API 7.1 convention — unlike the Bearer-token auth the other providers use. `searchFiles` falls back to a client-side filtered `listFiles` when the underlying `azuredevops_search_code` tool errors or finds nothing, since Azure DevOps Code Search is a separate, optional extension not guaranteed to be installed on every organization. Same air-gapped-mode/system-status coverage as GitLab above; not yet integrated into Wise Architecture's repository scanning either. |
+
+All tokens are stored write-only (never returned in a DTO — only a `has*AccessToken` presence
+flag) and never logged, per this repo's integration-secret convention.
+
+---
+
 ## Related Documentation
 
 | File | Topic |

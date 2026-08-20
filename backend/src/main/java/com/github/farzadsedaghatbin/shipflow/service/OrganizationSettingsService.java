@@ -176,6 +176,22 @@ public class OrganizationSettingsService {
           request.getDefaultConfluenceSpaceKey().isBlank() ? null : request.getDefaultConfluenceSpaceKey());
     }
 
+    // GitLab MCP Configuration (token only, managed via MCP settings API)
+    if (request.getGitlabAccessToken() != null) {
+      settings.setGitlabAccessToken(
+          request.getGitlabAccessToken().isBlank() ? null : request.getGitlabAccessToken());
+    }
+    if (request.getDefaultGitlabProjectId() != null) {
+      settings.setDefaultGitlabProjectId(
+          request.getDefaultGitlabProjectId().isBlank() ? null : request.getDefaultGitlabProjectId());
+    }
+
+    // Azure DevOps MCP Configuration (token only, managed via MCP settings API)
+    if (request.getAzureDevOpsAccessToken() != null) {
+      settings.setAzureDevOpsAccessToken(
+          request.getAzureDevOpsAccessToken().isBlank() ? null : request.getAzureDevOpsAccessToken());
+    }
+
     // SharePoint Graph API credentials
     if (request.getSharepointTenantId() != null) {
       settings.setSharepointTenantId(
@@ -267,6 +283,42 @@ public class OrganizationSettingsService {
   public String getConfluenceAccessToken() {
     return settingsRepository.findFirstByOrderByIdAsc()
         .map(OrganizationSettings::getConfluenceAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get GitLab access token (Personal Access Token) for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the GitLab access token or null if not configured
+   */
+  public String getGitlabAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getGitlabAccessToken)
+        .orElse(null);
+  }
+
+  /**
+   * Get the default GitLab project ID/path for MCP integration.
+   * @return the default GitLab project identifier or null if not configured
+   */
+  public String getDefaultGitlabProjectId() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getDefaultGitlabProjectId)
+        .orElse(null);
+  }
+
+  /**
+   * Get Azure DevOps access token (Personal Access Token) for MCP integration.
+   * <p><strong>WARNING:</strong> This method returns a plaintext access token.
+   * It is intended ONLY for internal use by MCP service components.
+   * DO NOT expose this via REST endpoints or log the returned value.</p>
+   * @return the Azure DevOps PAT or null if not configured
+   */
+  public String getAzureDevOpsAccessToken() {
+    return settingsRepository.findFirstByOrderByIdAsc()
+        .map(OrganizationSettings::getAzureDevOpsAccessToken)
         .orElse(null);
   }
 
@@ -663,6 +715,9 @@ public class OrganizationSettingsService {
         .hasConfluenceAccessToken(entity.getConfluenceAccessToken() != null && !entity.getConfluenceAccessToken().isBlank())
         .defaultConfluenceDomain(entity.getDefaultConfluenceDomain())
         .defaultConfluenceSpaceKey(entity.getDefaultConfluenceSpaceKey())
+        .hasGitlabAccessToken(entity.getGitlabAccessToken() != null && !entity.getGitlabAccessToken().isBlank())
+        .defaultGitlabProjectId(entity.getDefaultGitlabProjectId())
+        .hasAzureDevOpsAccessToken(entity.getAzureDevOpsAccessToken() != null && !entity.getAzureDevOpsAccessToken().isBlank())
         .hasSharepointClientSecret(entity.getSharepointClientSecret() != null && !entity.getSharepointClientSecret().isBlank())
         .sharepointTenantId(entity.getSharepointTenantId())
         .sharepointClientId(entity.getSharepointClientId())
