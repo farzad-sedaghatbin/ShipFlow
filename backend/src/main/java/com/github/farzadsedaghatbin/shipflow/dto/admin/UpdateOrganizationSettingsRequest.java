@@ -59,6 +59,10 @@ public class UpdateOrganizationSettingsRequest {
   private String defaultConfluenceDomain;
   private String defaultConfluenceSpaceKey;
 
+  // GitLab MCP Configuration (token managed via MCP settings API)
+  private String gitlabAccessToken;
+  private String defaultGitlabProjectId;
+
   // SharePoint Graph API — Azure AD client credentials (null = leave unchanged, blank = clear)
   private String sharepointTenantId;
   private String sharepointClientId;
