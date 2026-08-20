@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   buildLoginPath,
   clearPendingRedirect,
-  consumeRedirect,
   DEFAULT_POST_LOGIN_PATH,
   isOnAuthPage,
   peekRedirect,
@@ -24,6 +23,15 @@ describe('sanitizeRedirect', () => {
     expect(sanitizeRedirect('//evil.com')).toBeNull();
     expect(sanitizeRedirect('/\\evil.com')).toBeNull();
     expect(sanitizeRedirect('javascript:alert(1)')).toBeNull();
+  });
+
+  it('rejects dot-segment paths that normalise into a scheme-relative URL', () => {
+    // `new URL()` collapses a leading `/./` or `/../` segment, which can turn
+    // an input that doesn't itself start with `//` into a pathname that does
+    // — the exact bypass the leading-`//` check above is meant to catch.
+    expect(sanitizeRedirect('/.//evil.com')).toBeNull();
+    expect(sanitizeRedirect('/..//evil.com')).toBeNull();
+    expect(sanitizeRedirect('/./..//evil.com')).toBeNull();
   });
 
   it('rejects values with whitespace or control characters', () => {
@@ -88,8 +96,7 @@ describe('pending redirect storage', () => {
   it('stashes and reads back a sanitised destination', () => {
     rememberRedirect('/wiki/3/12');
     expect(peekRedirect()).toBe('/wiki/3/12');
-    expect(consumeRedirect()).toBe('/wiki/3/12');
-    // consume clears it
+    clearPendingRedirect();
     expect(peekRedirect()).toBeNull();
   });
 

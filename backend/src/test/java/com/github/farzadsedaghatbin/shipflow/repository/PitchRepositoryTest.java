@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.farzadsedaghatbin.shipflow.entity.BettingSlot;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Team;
@@ -29,6 +30,9 @@ class PitchRepositoryTest {
 
   @Autowired
   private TeamRepository teamRepository;
+
+  @Autowired
+  private BettingSlotRepository bettingSlotRepository;
 
   private Cycle testCycle;
   private Team testTeam;
@@ -216,5 +220,28 @@ class PitchRepositoryTest {
     // Assert
     assertThat(countForTestCycle).isEqualTo(2); // pitch1 + testPitch
     assertThat(countForAnotherCycle).isEqualTo(1);
+  }
+
+  @Test
+  void countByCycleIdNotDeleted_ShouldIncludePitchesBettedIntoTheCycleViaABettingSlot() {
+    // A pitch shaped in one cycle but betted into another via BettingSlot must count
+    // for the cycle it was betted into, not just its own `cycle` field — matching
+    // findByCycleIdNotDeleted's definition of "belongs to this cycle" exactly, so the
+    // two queries never disagree on the same pitch set.
+    Cycle bettingCycle = Cycle.builder().name("Betting Cycle").startDate(LocalDate.now())
+        .endDate(LocalDate.now().plusWeeks(6)).phase(CyclePhase.SHAPING_BUILDING).isActive(true).build();
+    bettingCycle = cycleRepository.save(bettingCycle);
+
+    Pitch shapedElsewhere = Pitch.builder().title("Shaped Elsewhere").description("Description")
+        .appetiteDays(6).cycle(testCycle).status(PitchStatus.PENDING).build();
+    shapedElsewhere = pitchRepository.save(shapedElsewhere);
+
+    BettingSlot slot = BettingSlot.builder().cycle(bettingCycle).team(testTeam).pitch(shapedElsewhere)
+        .position(0).startDate(LocalDate.now()).endDate(LocalDate.now().plusWeeks(6)).build();
+    bettingSlotRepository.save(slot);
+
+    long count = pitchRepository.countByCycleIdNotDeleted(bettingCycle.getId());
+
+    assertThat(count).isEqualTo(1);
   }
 }

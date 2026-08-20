@@ -32,7 +32,10 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT DISTINCT p FROM Pitch p WHERE p.deletedAt IS NULL AND (p.cycle.id = :cycleId OR EXISTS (SELECT s FROM BettingSlot s WHERE s.pitch = p AND s.cycle.id = :cycleId))") 
   List<Pitch> findByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
 
-  @Query("SELECT COUNT(p) FROM Pitch p WHERE p.cycle.id = :cycleId AND p.deletedAt IS NULL")
+  // Mirrors findByCycleIdNotDeleted's definition of "belongs to this cycle" — direct
+  // cycle assignment OR betted into this cycle via a BettingSlot — so the two never disagree
+  // on which pitches count as a cycle's.
+  @Query("SELECT COUNT(DISTINCT p) FROM Pitch p WHERE p.deletedAt IS NULL AND (p.cycle.id = :cycleId OR EXISTS (SELECT s FROM BettingSlot s WHERE s.pitch = p AND s.cycle.id = :cycleId))")
   long countByCycleIdNotDeleted(@Param("cycleId") Long cycleId);
 
   @Query("SELECT p FROM Pitch p WHERE p.team.id = :teamId AND p.deletedAt IS NULL")

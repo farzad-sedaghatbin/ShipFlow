@@ -9,6 +9,8 @@ import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,6 +41,15 @@ public class LinkPreviewController {
   private final TaskRepository taskRepository;
   private final CycleRepository cycleRepository;
 
+  /**
+   * Same override the app already uses for OAuth callback and webhook URLs
+   * ({@code GitHubAppOAuthService}, {@code InboundWebhookConfigService}) — set when a
+   * self-hoster's request-derived origin isn't the public one (a proxy that doesn't forward
+   * {@code X-Forwarded-*}, non-standard routing). Falls back to request derivation when unset.
+   */
+  @Value("${app.base-url:}")
+  private String configuredBaseUrl;
+
   // -------------------------------------------------------------------------
   // Pitch preview
   // -------------------------------------------------------------------------
@@ -47,14 +58,14 @@ public class LinkPreviewController {
   public ResponseEntity<String> pitchPreview(@PathVariable Long id) {
     Optional<Pitch> opt = pitchRepository.findById(id);
     if (opt.isEmpty()) {
-      return notFound("Pitch not found", "/pitches");
+      return notFound("Pitch not found", "/pitches/" + id);
     }
     Pitch pitch = opt.get();
     String title = pitch.getTitle();
     String raw = pitch.getProblemStatement() != null ? pitch.getProblemStatement()
         : (pitch.getDescription() != null ? pitch.getDescription() : "");
     String description = truncate(stripMarkdown(raw));
-    return ResponseEntity.ok(buildPreviewHtml(title, description, "/pitches/" + id));
+    return preview(HttpStatus.OK, buildPreviewHtml(title, description, "/pitches/" + id));
   }
 
   // -------------------------------------------------------------------------
@@ -65,13 +76,13 @@ public class LinkPreviewController {
   public ResponseEntity<String> taskPreview(@PathVariable Long id) {
     Optional<Task> opt = taskRepository.findById(id);
     if (opt.isEmpty()) {
-      return notFound("Task not found", "/backlog");
+      return notFound("Task not found", "/backlog/" + id);
     }
     Task task = opt.get();
     String title = task.getTitle();
     String raw = task.getDescription() != null ? task.getDescription() : "";
     String description = truncate(stripMarkdown(raw));
-    return ResponseEntity.ok(buildPreviewHtml(title, description, "/backlog/" + id));
+    return preview(HttpStatus.OK, buildPreviewHtml(title, description, "/backlog/" + id));
   }
 
   // -------------------------------------------------------------------------
@@ -82,7 +93,7 @@ public class LinkPreviewController {
   public ResponseEntity<String> cyclePreview(@PathVariable Long id) {
     Optional<Cycle> opt = cycleRepository.findById(id);
     if (opt.isEmpty()) {
-      return notFound("Cycle not found", "/cycles");
+      return notFound("Cycle not found", "/cycles/" + id);
     }
     Cycle cycle = opt.get();
     String title = cycle.getName();
@@ -97,19 +108,35 @@ public class LinkPreviewController {
         pitchCount == 1 ? "" : "es",
         cycle.getStartDate(),
         cycle.getEndDate());
-    return ResponseEntity.ok(buildPreviewHtml(title, description, "/cycles/" + id));
+    return preview(HttpStatus.OK, buildPreviewHtml(title, description, "/cycles/" + id));
   }
 
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
 
-  private ResponseEntity<String> notFound(String reason, String fallbackRedirect) {
+  /**
+   * {@code canonicalPath} is the entity's own URL (e.g. {@code /backlog/999}), not a generic
+   * list fallback — an id that 404s here still deserves an accurate {@code og:url}, and the
+   * SPA's own route can render its usual "not found" state for it.
+   */
+  private ResponseEntity<String> notFound(String reason, String canonicalPath) {
     String html = buildPreviewHtml(
         "ShipFlow",
         "Project management built around Shape Up.",
-        fallbackRedirect);
-    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(html);
+        canonicalPath);
+    return preview(HttpStatus.NOT_FOUND, html);
+  }
+
+  /**
+   * Wraps the HTML with {@code Cache-Control: no-store}. Serving this from a forward means the
+   * response can be cached under the *shared* URL a real browser also uses (the forward keeps
+   * the address bar on e.g. {@code /backlog/1}, not {@code /preview/task/1}) — without this, a
+   * CDN that caches the first response it sees for that URL could serve the crawler-only OG stub
+   * to real visitors, or vice versa.
+   */
+  private ResponseEntity<String> preview(HttpStatus status, String html) {
+    return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(html);
   }
 
   /**
@@ -119,12 +146,16 @@ public class LinkPreviewController {
    * <p>These URLs used to be hardcoded to {@code https://shipflow.dev}, which meant every
    * self-hosted deployment advertised someone else's host in {@code og:url} and {@code og:image} —
    * previews of a private instance linked to the public demo, and the image 404'd or leaked the
-   * demo's branding. Derived from the current request instead, so it is right everywhere with no
-   * extra configuration. Behind a TLS-terminating proxy this needs {@code X-Forwarded-Proto} to be
-   * honoured, which {@code server.forward-headers-strategy=framework} (set in the prod profile)
-   * takes care of.
+   * demo's branding. {@code app.base-url}, when configured, wins outright — it needs no proxy
+   * cooperation and is the same knob self-hosters already reach for elsewhere. Otherwise this
+   * derives the origin from the current request, which behind a TLS-terminating proxy needs
+   * {@code X-Forwarded-Proto} to be honoured — {@code server.forward-headers-strategy=framework}
+   * (set in the prod profile) takes care of that.
    */
   private String currentOrigin() {
+    if (configuredBaseUrl != null && !configuredBaseUrl.isBlank()) {
+      return configuredBaseUrl;
+    }
     return ServletUriComponentsBuilder.fromCurrentContextPath().replacePath(null).build()
         .toUriString();
   }
