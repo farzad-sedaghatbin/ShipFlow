@@ -33,7 +33,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.13.0</version>
+        <version>3.15.0</version>
       </plugin>
       <!-- Publish a sources jar alongside the classes jar — plugin authors depending on this
            artifact get inline Javadoc/navigation in their IDE without a separate download. -->
