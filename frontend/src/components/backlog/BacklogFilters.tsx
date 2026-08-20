@@ -38,6 +38,8 @@ export interface BacklogFiltersProps {
   persons: Person[];
   assigneeFilter: number[];
   onAssigneeFilterChange: (personId: number) => void;
+  creatorFilter: number[];
+  onCreatorFilterChange: (personId: number) => void;
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
@@ -57,6 +59,8 @@ export function BacklogFilters({
   persons,
   assigneeFilter,
   onAssigneeFilterChange,
+  creatorFilter,
+  onCreatorFilterChange,
   hasActiveFilters,
   onClearFilters,
 }: BacklogFiltersProps) {
@@ -188,6 +192,27 @@ export function BacklogFilters({
             placeholder={t('backlogPage.filters.assignee')}
             searchPlaceholder={t('backlogPage.filters.searchAssignee', 'Search people...')}
             emptyText={t('backlogPage.filters.noAssignee', 'No people found')}
+            triggerClassName="h-9 min-h-9 w-[200px]"
+            maxDisplay={2}
+          />
+        )}
+
+        {/* Creator Filter — same searchable pattern as the Assignee filter above, reusing the
+            same persons list since task creators are Persons too. */}
+        {persons.length > 0 && (
+          <MultiCombobox
+            options={persons.filter((p) => p.isActive).map((p) => ({ value: String(p.id), label: p.name }))}
+            value={creatorFilter.map(String)}
+            onValueChange={(vals) => {
+              const next = vals.map(Number);
+              const toggled =
+                next.find((id) => !creatorFilter.includes(id)) ??
+                creatorFilter.find((id) => !next.includes(id));
+              if (toggled !== undefined) onCreatorFilterChange(toggled);
+            }}
+            placeholder={t('backlogPage.filters.creator')}
+            searchPlaceholder={t('backlogPage.filters.searchCreator', 'Search people...')}
+            emptyText={t('backlogPage.filters.noCreator', 'No people found')}
             triggerClassName="h-9 min-h-9 w-[200px]"
             maxDisplay={2}
           />

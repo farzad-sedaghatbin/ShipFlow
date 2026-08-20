@@ -1130,40 +1130,44 @@ public class TaskService {
   // ========== Multi-filter methods ==========
 
   public Page<TaskDTO> getTasksWithFilters(Long cycleId, List<TaskStatus> statuses, List<TaskPriority> priorities,
-      List<Long> assigneeIds, TaskCategory category, Boolean exclude, Pageable pageable) {
+      List<Long> assigneeIds, List<Long> creatorIds, TaskCategory category, Boolean exclude, Pageable pageable) {
 
     // Convert empty lists to null for the query
     List<TaskStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
     List<TaskPriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    List<Long> creatorList = (creatorIds != null && !creatorIds.isEmpty()) ? creatorIds : null;
 
     if (exclude != null && exclude) {
       return taskRepository
-          .findByCycleIdWithExclusionFilters(cycleId, statusList, priorityList, assigneeList, pageable)
+          .findByCycleIdWithExclusionFilters(cycleId, statusList, priorityList, assigneeList, creatorList, pageable)
           .map(this::toDTO);
     } else {
       return taskRepository
-          .findByCycleIdWithFilters(cycleId, statusList, priorityList, assigneeList, category, pageable)
+          .findByCycleIdWithFilters(cycleId, statusList, priorityList, assigneeList, creatorList, category, pageable)
           .map(this::toDTO);
     }
   }
 
-  public Page<TaskDTO> getTasksByProjectIdWithFilters(Long projectId, List<TaskStatus> statuses, 
-      List<TaskPriority> priorities, List<Long> assigneeIds, TaskCategory category, Boolean exclude, 
-      Pageable pageable) {
+  public Page<TaskDTO> getTasksByProjectIdWithFilters(Long projectId, List<TaskStatus> statuses,
+      List<TaskPriority> priorities, List<Long> assigneeIds, List<Long> creatorIds, TaskCategory category,
+      Boolean exclude, Pageable pageable) {
 
     // Convert empty lists to null for the query
     List<TaskStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
     List<TaskPriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    List<Long> creatorList = (creatorIds != null && !creatorIds.isEmpty()) ? creatorIds : null;
 
     if (exclude != null && exclude) {
       return taskRepository
-          .findByProjectIdWithExclusionFilters(projectId, statusList, priorityList, assigneeList, pageable)
+          .findByProjectIdWithExclusionFilters(projectId, statusList, priorityList, assigneeList, creatorList,
+              pageable)
           .map(this::toDTO);
     } else {
       return taskRepository
-          .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, category, pageable)
+          .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, creatorList, category,
+              pageable)
           .map(this::toDTO);
     }
   }
@@ -1172,16 +1176,17 @@ public class TaskService {
 
   @Transactional(readOnly = true)
   public byte[] exportTasksCsv(Long projectId, Long cycleId, List<TaskStatus> statuses,
-      List<TaskPriority> priorities, List<Long> assigneeIds, TaskCategory category) {
+      List<TaskPriority> priorities, List<Long> assigneeIds, List<Long> creatorIds, TaskCategory category) {
 
     List<TaskStatus> statusList = (statuses != null && !statuses.isEmpty()) ? statuses : null;
     List<TaskPriority> priorityList = (priorities != null && !priorities.isEmpty()) ? priorities : null;
     List<Long> assigneeList = (assigneeIds != null && !assigneeIds.isEmpty()) ? assigneeIds : null;
+    List<Long> creatorList = (creatorIds != null && !creatorIds.isEmpty()) ? creatorIds : null;
 
     List<Task> tasks;
     if (cycleId != null) {
       tasks = taskRepository
-          .findByCycleIdWithFilters(cycleId, statusList, priorityList, assigneeList, category,
+          .findByCycleIdWithFilters(cycleId, statusList, priorityList, assigneeList, creatorList, category,
               Pageable.unpaged())
           .getContent()
           .stream()
@@ -1189,7 +1194,7 @@ public class TaskService {
           .collect(Collectors.toList());
     } else {
       tasks = taskRepository
-          .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, category,
+          .findByProjectIdWithFilters(projectId, statusList, priorityList, assigneeList, creatorList, category,
               Pageable.unpaged())
           .getContent();
     }
@@ -1198,17 +1203,19 @@ public class TaskService {
         PrintWriter writer =
             new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
 
-      writer.println("ID,Title,Status,Priority,Assignee,Pitch,Cycle,Estimate(h),Actual(h),Tags,Created,Updated");
+      writer.println(
+          "ID,Title,Status,Priority,Assignee,Creator,Pitch,Cycle,Estimate(h),Actual(h),Tags,Created,Updated");
 
       DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
       for (Task t : tasks) {
         String tags = t.getTags() != null ? t.getTags() : "";
-        writer.printf("%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s%n",
+        writer.printf("%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s%n",
             t.getId(),
             csvEscape(t.getTitle()),
             t.getStatus() != null ? t.getStatus().name() : "",
             t.getPriority() != null ? t.getPriority().name() : "",
             t.getAssignee() != null ? csvEscape(t.getAssignee().getName()) : "",
+            t.getCreatedBy() != null ? csvEscape(t.getCreatedBy().getName()) : "",
             t.getPitch() != null ? csvEscape(t.getPitch().getTitle()) : "",
             t.getCycle() != null ? csvEscape(t.getCycle().getName()) : "",
             t.getEstimateHours() != null ? t.getEstimateHours() : "",

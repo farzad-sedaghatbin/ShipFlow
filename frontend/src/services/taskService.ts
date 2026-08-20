@@ -108,6 +108,7 @@ export const taskService = {
     statuses?: TaskStatus[],
     priorities?: TaskPriority[],
     assigneeIds?: number[],
+    creatorIds?: number[],
     category?: TaskCategory,
     exclude?: boolean,
     page?: number,
@@ -120,6 +121,7 @@ export const taskService = {
         statuses: statuses?.join(','),
         priorities: priorities?.join(','),
         assigneeIds: assigneeIds?.join(','),
+        creatorIds: creatorIds?.join(','),
         category: category,
         exclude: exclude ?? false,
         page: page ?? 0,
@@ -148,6 +150,7 @@ export const taskService = {
     statuses?: TaskStatus[],
     priorities?: TaskPriority[],
     assigneeIds?: number[],
+    creatorIds?: number[],
     category?: TaskCategory,
     exclude?: boolean,
     page?: number,
@@ -160,6 +163,7 @@ export const taskService = {
         statuses: statuses?.join(','),
         priorities: priorities?.join(','),
         assigneeIds: assigneeIds?.join(','),
+        creatorIds: creatorIds?.join(','),
         category: category,
         exclude: exclude ?? false,
         page: page ?? 0,
@@ -239,6 +243,7 @@ export const taskService = {
     statuses?: TaskStatus[];
     priorities?: TaskPriority[];
     assigneeIds?: number[];
+    creatorIds?: number[];
     category?: TaskCategory;
   }) =>
     api.get<Blob>('/tasks/export', {
@@ -248,6 +253,7 @@ export const taskService = {
         statuses: params.statuses?.join(','),
         priorities: params.priorities?.join(','),
         assigneeIds: params.assigneeIds?.join(','),
+        creatorIds: params.creatorIds?.join(','),
         category: params.category,
       },
       responseType: 'blob',

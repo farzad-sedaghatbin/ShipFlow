@@ -71,6 +71,7 @@ export function useBacklogPage() {
   const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
+  const [creatorFilter, setCreatorFilter] = useState<number[]>([]);
   const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>('all');
@@ -125,7 +126,7 @@ export function useBacklogPage() {
   }, [
     selectedCycle, currentProject?.id, isKanbanProject, viewMode,
     categoryFilter, tabValue,
-    statusFilter, priorityFilter, assigneeFilter, releaseFilter, searchQuery,
+    statusFilter, priorityFilter, assigneeFilter, creatorFilter, releaseFilter, searchQuery,
     excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter,
   ]);
 
@@ -140,7 +141,7 @@ export function useBacklogPage() {
   // that used to live in individual filter setters (and missed selectedCycle/tabValue/
   // dependencyFilter entirely).
   useEffect(() => { setPage(0); }, [
-    selectedCycle, tabValue, categoryFilter, statusFilter, priorityFilter, assigneeFilter,
+    selectedCycle, tabValue, categoryFilter, statusFilter, priorityFilter, assigneeFilter, creatorFilter,
     releaseFilter, searchQuery, dependencyFilter,
   ]);
 
@@ -193,6 +194,7 @@ export function useBacklogPage() {
     if (statusFilter.length > 0) result = result.filter((t) => excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status));
     if (priorityFilter.length > 0) result = result.filter((t) => excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority));
     if (assigneeFilter.length > 0) result = result.filter((t) => excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0));
+    if (creatorFilter.length > 0) result = result.filter((t) => excludeMode ? !creatorFilter.includes(t.createdById || 0) : creatorFilter.includes(t.createdById || 0));
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
@@ -247,6 +249,7 @@ export function useBacklogPage() {
         if (statusFilter.length > 0) results = results.filter((t) => excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status));
         if (priorityFilter.length > 0) results = results.filter((t) => excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority));
         if (assigneeFilter.length > 0) results = results.filter((t) => excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0));
+        if (creatorFilter.length > 0) results = results.filter((t) => excludeMode ? !creatorFilter.includes(t.createdById || 0) : creatorFilter.includes(t.createdById || 0));
         if (tabValue === 'my' && user?.personId) results = results.filter((t) => t.assigneeId === user.personId);
         results = applyDependencyFilter(results);
         setTasks(results);
@@ -282,8 +285,8 @@ export function useBacklogPage() {
             ? filteredTasks.length
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
-      } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0) {
-        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, categoryParam, excludeMode, page, rowsPerPage, sortBy, sortOrder);
+      } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || creatorFilter.length > 0) {
+        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, creatorFilter.length > 0 ? creatorFilter : undefined, categoryParam, excludeMode, page, rowsPerPage, sortBy, sortOrder);
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         setTotalElements(
@@ -363,6 +366,13 @@ export function useBacklogPage() {
   // Page reset is handled by the centralized effect above (assigneeFilter is in its deps).
   const handleToggleAssigneeFilter = (personId: number) => {
     setAssigneeFilter(prev =>
+      prev.includes(personId) ? prev.filter(id => id !== personId) : [...prev, personId],
+    );
+  };
+
+  // Page reset is handled by the centralized effect above (creatorFilter is in its deps).
+  const handleToggleCreatorFilter = (personId: number) => {
+    setCreatorFilter(prev =>
       prev.includes(personId) ? prev.filter(id => id !== personId) : [...prev, personId],
     );
   };
@@ -557,7 +567,7 @@ export function useBacklogPage() {
 
   // Page reset is handled by the centralized effect above (all of these are in its deps).
   const handleClearFilters = () => {
-    setStatusFilter([]); setPriorityFilter([]); setAssigneeFilter([]);
+    setStatusFilter([]); setPriorityFilter([]); setAssigneeFilter([]); setCreatorFilter([]);
     setDependencyFilter('all'); setReleaseFilter(undefined); setSearchQuery('');
   };
 
@@ -572,6 +582,7 @@ export function useBacklogPage() {
         statuses: statusFilter.length > 0 ? statusFilter : undefined,
         priorities: priorityFilter.length > 0 ? priorityFilter : undefined,
         assigneeIds: assigneeFilter.length > 0 ? assigneeFilter : undefined,
+        creatorIds: creatorFilter.length > 0 ? creatorFilter : undefined,
         category: categoryFilter !== 'all' ? categoryFilter : undefined,
       });
       const blob = new Blob([response.data as unknown as BlobPart], { type: 'text/csv;charset=utf-8;' });
@@ -601,7 +612,8 @@ export function useBacklogPage() {
   const categoryDescription = t('backlogPage.categoryDescription.allTasks');
 
   const hasActiveFilters = statusFilter.length > 0 || priorityFilter.length > 0
-    || assigneeFilter.length > 0 || dependencyFilter !== 'all' || !!releaseFilter || !!searchQuery;
+    || assigneeFilter.length > 0 || creatorFilter.length > 0
+    || dependencyFilter !== 'all' || !!releaseFilter || !!searchQuery;
 
   return {
     // State
@@ -616,6 +628,7 @@ export function useBacklogPage() {
     statusFilter, setStatusFilter,
     priorityFilter, setPriorityFilter,
     assigneeFilter, setAssigneeFilter,
+    creatorFilter, setCreatorFilter,
     releaseFilter, setReleaseFilter,
     searchQuery, setSearchQuery,
     dependencyFilter, setDependencyFilter,
@@ -645,6 +658,7 @@ export function useBacklogPage() {
     handleToggleStatusFilter,
     handleTogglePriorityFilter,
     handleToggleAssigneeFilter,
+    handleToggleCreatorFilter,
     handlePitchChange,
     handleCategoryFilterChange,
     handleOpenDialog,

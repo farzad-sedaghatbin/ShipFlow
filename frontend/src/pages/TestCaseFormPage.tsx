@@ -94,6 +94,10 @@ const TestCaseFormPage: React.FC = () => {
         setFormData((prev) => ({ ...prev, taskId: prefillTaskId }));
         taskService.getById(prefillTaskId).then((res) => setTasks([res.data])).catch(() => {});
       }
+      const prefillPitchId = safeParseId(searchParams.get('pitchId'));
+      if (prefillPitchId) {
+        setFormData((prev) => ({ ...prev, pitchId: prefillPitchId }));
+      }
     }
   }, [id]);
 
