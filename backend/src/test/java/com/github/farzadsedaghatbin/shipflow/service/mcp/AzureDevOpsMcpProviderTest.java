@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -50,7 +52,16 @@ class AzureDevOpsMcpProviderTest {
     settingsService = mock(OrganizationSettingsService.class);
     when(settingsService.getAzureDevOpsAccessToken()).thenReturn("fake-pat");
 
-    provider = new AzureDevOpsMcpProvider(mcpConfig, new RestTemplate(), settingsService);
+    // Bounded timeouts (unlike a bare `new RestTemplate()`) so a request the test forgot to
+    // mock a response for fails fast instead of hanging the whole suite on MockWebServer's
+    // blocking response queue — mirrors the connect/read timeouts HttpClientConfig's real
+    // "mcpRestTemplate" bean sets in production.
+    RestTemplate restTemplate =
+        new RestTemplateBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .readTimeout(Duration.ofSeconds(5))
+            .build();
+    provider = new AzureDevOpsMcpProvider(mcpConfig, restTemplate, settingsService);
   }
 
   @AfterEach
@@ -73,6 +84,17 @@ class AzureDevOpsMcpProviderTest {
     Map<String, Object> result = Map.of("content", List.of(content));
     Map<String, Object> body = Map.of("jsonrpc", "2.0", "id", "1", "result", result);
     return JSON.writeValueAsString(body);
+  }
+
+  /**
+   * MockWebServer defaults an unset Content-Type to {@code application/octet-stream}, which
+   * Spring's RestTemplate can't deserialize into {@code Map<String, Object>} — every JSON
+   * response must declare {@code application/json} explicitly or the client throws
+   * RestClientException and the provider silently takes its error-fallback path instead of the
+   * happy path a test is trying to exercise.
+   */
+  private MockResponse jsonResponse(String body) {
+    return new MockResponse().setBody(body).addHeader("Content-Type", "application/json");
   }
 
   // -----------------------------------------------------------------------
@@ -121,8 +143,7 @@ class AzureDevOpsMcpProviderTest {
                 Map.of("path", "/src/Main.java", "isFolder", false),
                 Map.of("path", "/src", "isFolder", true),
                 Map.of("path", "/README.md", "isFolder", false))));
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse(itemsJson))
-        .addHeader("Content-Type", "application/json"));
+    server.enqueue(jsonResponse(jsonRpcResultResponse(itemsJson)));
 
     List<String> files = provider.listFiles(context());
 
@@ -150,14 +171,14 @@ class AzureDevOpsMcpProviderTest {
   @Test
   void listFiles_parsesBareArrayOfPathStrings() throws Exception {
     String itemsJson = JSON.writeValueAsString(List.of("/a.txt", "/b.txt"));
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse(itemsJson)));
+    server.enqueue(jsonResponse(jsonRpcResultResponse(itemsJson)));
 
     assertThat(provider.listFiles(context())).containsExactlyInAnyOrder("/a.txt", "/b.txt");
   }
 
   @Test
   void listFiles_fallsBackToLineDelimitedParsing_whenResponseIsNotJson() throws Exception {
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse("src/a.txt\nsrc/b.txt\n")));
+    server.enqueue(jsonResponse(jsonRpcResultResponse("src/a.txt\nsrc/b.txt\n")));
 
     assertThat(provider.listFiles(context())).containsExactly("src/a.txt", "src/b.txt");
   }
@@ -173,7 +194,7 @@ class AzureDevOpsMcpProviderTest {
   void listFiles_withBranch_includesBranchArgument() throws Exception {
     Map<String, String> ctx = context();
     ctx.put("branch", "release/1.0");
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse("[]")));
+    server.enqueue(jsonResponse(jsonRpcResultResponse("[]")));
 
     provider.listFiles(ctx);
 
@@ -199,7 +220,7 @@ class AzureDevOpsMcpProviderTest {
 
   @Test
   void readFile_returnsContent() throws Exception {
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse("public class Main {}")));
+    server.enqueue(jsonResponse(jsonRpcResultResponse("public class Main {}")));
 
     Optional<String> content = provider.readFile(context(), "src/Main.java");
 
@@ -218,7 +239,7 @@ class AzureDevOpsMcpProviderTest {
 
   @Test
   void readFile_noResultInBody_returnsEmpty() throws Exception {
-    server.enqueue(new MockResponse().setBody("{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"error\":{\"message\":\"not found\"}}"));
+    server.enqueue(jsonResponse("{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"error\":{\"message\":\"not found\"}}"));
 
     assertThat(provider.readFile(context(), "missing.txt")).isEmpty();
   }
@@ -244,7 +265,7 @@ class AzureDevOpsMcpProviderTest {
   void searchFiles_usesSearchTool_whenMatchesFound() throws Exception {
     String matchesJson = JSON.writeValueAsString(
         List.of(Map.of("path", "/src/Todo.java", "isFolder", false)));
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse(matchesJson)));
+    server.enqueue(jsonResponse(jsonRpcResultResponse(matchesJson)));
 
     List<String> matches = provider.searchFiles(context(), "TODO");
 
@@ -267,7 +288,7 @@ class AzureDevOpsMcpProviderTest {
         List.of(
             Map.of("path", "/src/Todo.java", "isFolder", false),
             Map.of("path", "/src/Other.java", "isFolder", false)));
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse(itemsJson)));
+    server.enqueue(jsonResponse(jsonRpcResultResponse(itemsJson)));
 
     List<String> matches = provider.searchFiles(context(), "Todo");
 
@@ -277,10 +298,10 @@ class AzureDevOpsMcpProviderTest {
 
   @Test
   void searchFiles_fallsBackToFilteredListing_whenSearchToolReturnsNoMatches() throws Exception {
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse("[]")));
+    server.enqueue(jsonResponse(jsonRpcResultResponse("[]")));
     String itemsJson = JSON.writeValueAsString(
         List.of(Map.of("path", "/src/Alpha.java", "isFolder", false)));
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse(itemsJson)));
+    server.enqueue(jsonResponse(jsonRpcResultResponse(itemsJson)));
 
     List<String> matches = provider.searchFiles(context(), "alpha");
 
@@ -301,7 +322,7 @@ class AzureDevOpsMcpProviderTest {
   void getResourceContext_returnsResultMap() throws Exception {
     Map<String, Object> result = Map.of("provider", "azure_devops", "defaultBranch", "main");
     Map<String, Object> body = Map.of("jsonrpc", "2.0", "id", "1", "result", result);
-    server.enqueue(new MockResponse().setBody(JSON.writeValueAsString(body)));
+    server.enqueue(jsonResponse(JSON.writeValueAsString(body)));
 
     Map<String, Object> resourceContext = provider.getResourceContext(context());
 
@@ -322,7 +343,7 @@ class AzureDevOpsMcpProviderTest {
   @Test
   void requestsProceedWithoutAuthHeader_whenNoTokenConfigured() throws Exception {
     when(settingsService.getAzureDevOpsAccessToken()).thenReturn(null);
-    server.enqueue(new MockResponse().setBody(jsonRpcResultResponse("[]")));
+    server.enqueue(jsonResponse(jsonRpcResultResponse("[]")));
 
     provider.listFiles(context());
 
