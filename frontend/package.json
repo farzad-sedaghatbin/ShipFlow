@@ -3,7 +3,7 @@
   "version": "1.12.0",
   "private": true,
   "dependencies": {
-    "@blocknote/core": "^0.29.1",
+    "@blocknote/core": "^0.54.0",
     "@blocknote/mantine": "^0.29.1",
     "@blocknote/react": "^0.29.1",
     "@dnd-kit/core": "^6.3.1",

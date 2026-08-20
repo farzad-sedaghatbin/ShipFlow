@@ -130,7 +130,14 @@ const WikiEditor = forwardRef<WikiEditorHandle, WikiEditorProps>(function WikiEd
     const blocks = parseBlockNoteContent(initialContent);
     if (!blocks || blocks.length === 0) return;
     try {
-      editor.replaceBlocks(editor.document, blocks);
+      // `parseBlockNoteContent` deliberately returns the bare (schema-less)
+      // `PartialBlock[]` type so it stays usable in unit tests that don't
+      // mount an editor. `editor.replaceBlocks` wants blocks typed against
+      // this editor's own (default) schema — structurally identical at
+      // runtime, but blocknote-core >=0.54 no longer infers that bare
+      // `PartialBlock` and the live editor's schema-bound type are
+      // assignable, so the shape is asserted at this call site only.
+      editor.replaceBlocks(editor.document, blocks as typeof editor.document);
     } catch (e) {
       // Malformed stored content — start from an empty document rather than crash.
       console.warn("WikiEditor: could not load stored content, starting empty", e);
