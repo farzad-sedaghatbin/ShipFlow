@@ -79,11 +79,17 @@ public class TaskController {
   public ResponseEntity<Page<TaskDTO>> getMyTasks(@RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder,
-      @RequestParam(required = false) TaskCategory category) {
+      @RequestParam(required = false) TaskCategory category,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.getMyTasks(category, pageable));
+    return ResponseEntity
+        .ok(taskService.getMyTasks(category, statuses, priorities, assigneeIds, creatorIds, exclude, pageable));
   }
 
   @GetMapping("/my/cycle/{cycleId}")
@@ -93,11 +99,17 @@ public class TaskController {
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder,
-      @RequestParam(required = false) TaskCategory category) {
+      @RequestParam(required = false) TaskCategory category,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.getMyTasksByCycle(cycleId, category, pageable));
+    return ResponseEntity.ok(taskService.getMyTasksByCycle(cycleId, category, statuses, priorities, assigneeIds,
+        creatorIds, exclude, pageable));
   }
 
   // ========== General Task Management ==========
@@ -108,11 +120,17 @@ public class TaskController {
   public ResponseEntity<Page<TaskDTO>> getAllTasks(@RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortOrder,
-      @RequestParam(required = false) TaskCategory category) {
+      @RequestParam(required = false) TaskCategory category,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.getAllTasks(category, pageable));
+    return ResponseEntity
+        .ok(taskService.getAllTasks(category, statuses, priorities, assigneeIds, creatorIds, exclude, pageable));
   }
 
   @GetMapping("/search")
@@ -120,14 +138,21 @@ public class TaskController {
   @Operation(summary = "Search tasks", description = "Search tasks by title or description. Minimum 3 characters required.")
   public ResponseEntity<?> searchTasks(@RequestParam String q, @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size, @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortOrder) {
+      @RequestParam(defaultValue = "desc") String sortOrder,
+      @RequestParam(required = false) TaskCategory category,
+      @RequestParam(required = false) List<TaskStatus> statuses,
+      @RequestParam(required = false) List<TaskPriority> priorities,
+      @RequestParam(required = false) List<Long> assigneeIds,
+      @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     if (q == null || q.trim().length() < 3) {
       return ResponseEntity.badRequest().body(Map.of("error", "Search query must be at least 3 characters"));
     }
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.searchTasks(q, pageable));
+    return ResponseEntity.ok(
+        taskService.searchTasks(q, category, statuses, priorities, assigneeIds, creatorIds, exclude, pageable));
   }
 
   @GetMapping("/{id}")

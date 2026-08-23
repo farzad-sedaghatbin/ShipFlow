@@ -215,9 +215,23 @@ export function useBacklogPage() {
         // category filter replaced them (see §C.1). Large unpaginated fetch so all Kanban
         // columns are populated, then the category filter (if any) is applied client-side
         // alongside the other common filters.
-        const response = await taskService.getByProjectIdPaged(
-          currentProject.id, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
-        );
+        // When status/priority/assignee/creator filters are active, route through the
+        // project-scoped filter endpoint so they're applied server-side (not just to the
+        // KANBAN_PAGE_SIZE-capped page) — see the analogous cycle-scoped branch below.
+        const hasServerFilters = statusFilter.length > 0 || priorityFilter.length > 0
+          || assigneeFilter.length > 0 || creatorFilter.length > 0;
+        const response = hasServerFilters
+          ? await taskService.getByProjectIdWithFilters(
+              currentProject.id,
+              statusFilter.length > 0 ? statusFilter : undefined,
+              priorityFilter.length > 0 ? priorityFilter : undefined,
+              assigneeFilter.length > 0 ? assigneeFilter : undefined,
+              creatorFilter.length > 0 ? creatorFilter : undefined,
+              undefined, excludeMode, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
+            )
+          : await taskService.getByProjectIdPaged(
+              currentProject.id, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
+            );
         let filtered = applyCommonFilters(response?.data?.content || []);
         if (categoryParam) filtered = filtered.filter((t) => (t.category || 'PITCH_SCOPE') === categoryParam);
         if (tabValue === 'my' && user?.personId) filtered = filtered.filter((t) => t.assigneeId === user.personId);
@@ -240,16 +254,20 @@ export function useBacklogPage() {
     try {
       let response: any;
 
-      // Server-side search: when query ≥ 3 chars, hit /tasks/search then filter locally
+      // Server-side search: when query ≥ 3 chars, hit /tasks/search (status/priority/assignee/
+      // creator are applied server-side so they aren't lost beyond the 500-row cap) then filter
+      // cycle/category/tab locally, since /tasks/search has no cycle scoping.
       if (searchQuery.trim().length >= 3) {
-        response = await taskService.search(searchQuery.trim(), 0, 500, sortBy, sortOrder);
+        response = await taskService.search(
+          searchQuery.trim(), 0, 500, sortBy, sortOrder, categoryParam,
+          statusFilter.length > 0 ? statusFilter : undefined,
+          priorityFilter.length > 0 ? priorityFilter : undefined,
+          assigneeFilter.length > 0 ? assigneeFilter : undefined,
+          creatorFilter.length > 0 ? creatorFilter : undefined,
+          excludeMode,
+        );
         let results: Task[] = response?.data?.content || [];
         if (selectedCycle !== 'all') results = results.filter((t) => t.cycleId === selectedCycle);
-        if (categoryParam) results = results.filter((t) => (t.category || 'PITCH_SCOPE') === categoryParam);
-        if (statusFilter.length > 0) results = results.filter((t) => excludeMode ? !statusFilter.includes(t.status) : statusFilter.includes(t.status));
-        if (priorityFilter.length > 0) results = results.filter((t) => excludeMode ? !priorityFilter.includes(t.priority) : priorityFilter.includes(t.priority));
-        if (assigneeFilter.length > 0) results = results.filter((t) => excludeMode ? !assigneeFilter.includes(t.assigneeId || 0) : assigneeFilter.includes(t.assigneeId || 0));
-        if (creatorFilter.length > 0) results = results.filter((t) => excludeMode ? !creatorFilter.includes(t.createdById || 0) : creatorFilter.includes(t.createdById || 0));
         if (tabValue === 'my' && user?.personId) results = results.filter((t) => t.assigneeId === user.personId);
         results = applyDependencyFilter(results);
         setTasks(results);
@@ -258,10 +276,16 @@ export function useBacklogPage() {
       }
 
       if (tabValue === 'my') {
+        const statuses = statusFilter.length > 0 ? statusFilter : undefined;
+        const priorities = priorityFilter.length > 0 ? priorityFilter : undefined;
+        const assignees = assigneeFilter.length > 0 ? assigneeFilter : undefined;
+        const creators = creatorFilter.length > 0 ? creatorFilter : undefined;
         if (selectedCycle === 'all') {
-          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder, categoryParam);
+          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder, categoryParam,
+            statuses, priorities, assignees, creators, excludeMode);
         } else {
-          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder, categoryParam);
+          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder, categoryParam,
+            statuses, priorities, assignees, creators, excludeMode);
         }
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
@@ -274,7 +298,12 @@ export function useBacklogPage() {
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
       } else if (selectedCycle === 'all') {
-        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder, categoryParam);
+        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder, categoryParam,
+          statusFilter.length > 0 ? statusFilter : undefined,
+          priorityFilter.length > 0 ? priorityFilter : undefined,
+          assigneeFilter.length > 0 ? assigneeFilter : undefined,
+          creatorFilter.length > 0 ? creatorFilter : undefined,
+          excludeMode);
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         // dependencyFilter is applied client-side only (never sent server-side), so the server's
