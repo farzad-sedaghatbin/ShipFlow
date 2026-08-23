@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff, LogIn, Info, KeyRound, Fingerprint, Loader2 } from 'lucide-react';
@@ -6,10 +6,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth, useToast } from '../contexts';
-import { authService } from '../services/authService';
+import { authService, type LoginResponse } from '../services/authService';
 import { getEnabledProviders, initiateSSO } from '../services/ssoService';
 import { passkeyService } from '../services/passkeyService';
-import { isWebAuthnSupported, loginWithPasskey, WebAuthnCeremonyError } from '../lib/webauthn';
+import {
+  isWebAuthnSupported,
+  isConditionalMediationAvailable,
+  loginWithPasskey,
+  WebAuthnCeremonyError,
+} from '../lib/webauthn';
 import { LoginIllustration } from '../components/illustrations';
 import { PostLoginPrompts } from '../components/PostLoginPrompts';
 import { Button } from '@/components/ui/button';
@@ -56,6 +61,9 @@ export default function Login() {
   const [passkeyMode, setPasskeyMode] = useState(false);
   const [passkeyUsername, setPasskeyUsername] = useState('');
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  // Tracks the passive conditional-UI request below so an explicit login (password or the manual
+  // passkey form) can abort it first — avoids two concurrent WebAuthn ceremonies.
+  const conditionalAbortRef = useRef<AbortController | null>(null);
 
   // Where to land after signing in: the route that bounced us here (router
   // state or `?redirect=`), a destination stashed before an SSO round trip, or
@@ -113,13 +121,22 @@ export default function Login() {
     }
   }, [setValue]);
 
+  // Shared by password login, the manual "Sign in with passkey" form, and the passive
+  // conditional-UI login below — all three end with the same JWT-issued shape.
+  const completeLogin = (response: LoginResponse) => {
+    const { token, userId, username: user, role, personId, personName } = response;
+    login(token, { userId, username: user, role, personId, personName });
+    showSuccess(t('login.loginSuccess'));
+    setShowPostLoginPrompts(true);
+  };
+
   const onSubmit = async (data: LoginFormData) => {
+    conditionalAbortRef.current?.abort();
     setServerError('');
     setLoading(true);
 
     try {
       const response = await authService.login({ username: data.username, password: data.password });
-      const { token, userId, username: user, role, personId, personName } = response.data;
 
       // Handle remember me
       if (rememberMe) {
@@ -128,9 +145,7 @@ export default function Login() {
         localStorage.removeItem('rememberedUsername');
       }
 
-      login(token, { userId, username: user, role, personId, personName });
-      showSuccess(t('login.loginSuccess'));
-      setShowPostLoginPrompts(true);
+      completeLogin(response.data);
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message
         || t('login.invalidCredentials');
@@ -144,6 +159,7 @@ export default function Login() {
     e.preventDefault();
     if (!passkeyUsername.trim()) return;
 
+    conditionalAbortRef.current?.abort();
     setServerError('');
     setPasskeyLoading(true);
 
@@ -151,11 +167,7 @@ export default function Login() {
       const options = await passkeyService.getLoginOptions(passkeyUsername.trim());
       const credential = await loginWithPasskey(options);
       const response = await passkeyService.verifyLogin({ username: passkeyUsername.trim(), ...credential });
-      const { token, userId, username: user, role, personId, personName } = response;
-
-      login(token, { userId, username: user, role, personId, personName });
-      showSuccess(t('login.loginSuccess'));
-      setShowPostLoginPrompts(true);
+      completeLogin(response);
     } catch (err: unknown) {
       if (err instanceof WebAuthnCeremonyError) {
         // Cancellation/timeout vs. an actual ceremony failure get distinct,
@@ -170,6 +182,50 @@ export default function Login() {
       setPasskeyLoading(false);
     }
   };
+
+  // Conditional UI (autofill-triggered passkey login): fires a passive `navigator.credentials.get`
+  // on mount so a supporting browser can surface a discoverable passkey suggestion in the username
+  // field's autofill dropdown (autoComplete="username webauthn" below) with no button click. It
+  // only resolves if/when the user actually picks a suggestion — until then it just sits pending,
+  // so there's nothing to show or gate the rest of the page on. Not all browsers support this
+  // (see isConditionalMediationAvailable), so this is additive to — never a replacement for — the
+  // explicit "Sign in with passkey" flow above.
+  useEffect(() => {
+    if (!webAuthnSupported) return;
+
+    const abortController = new AbortController();
+    conditionalAbortRef.current = abortController;
+    let active = true;
+
+    (async () => {
+      if (!(await isConditionalMediationAvailable())) return;
+      if (!active) return;
+
+      try {
+        const options = await passkeyService.getDiscoverableLoginOptions();
+        const credential = await loginWithPasskey(options, {
+          mediation: 'conditional',
+          signal: abortController.signal,
+        });
+        const response = await passkeyService.verifyLogin(credential);
+        if (!active) return;
+        completeLogin(response);
+      } catch (err: unknown) {
+        // Aborted (unmount, or an explicit login started instead) or the request otherwise never
+        // resolved with a credential — both silent, since this is a passive background request.
+        if (err instanceof WebAuthnCeremonyError && err.cancelled) return;
+        if (!active) return;
+        const errorMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        if (errorMessage) setServerError(errorMessage);
+      }
+    })();
+
+    return () => {
+      active = false;
+      abortController.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire-once on mount by design
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -214,7 +270,7 @@ export default function Login() {
                     id="username"
                     {...register('username')}
                     autoFocus
-                    autoComplete="username"
+                    autoComplete="username webauthn"
                     placeholder={t('login.username')}
                     aria-invalid={!!errors.username}
                     className={cn(errors.username && 'border-destructive focus-visible:ring-destructive')}

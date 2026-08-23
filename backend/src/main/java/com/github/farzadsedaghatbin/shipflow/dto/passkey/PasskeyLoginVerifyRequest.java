@@ -13,7 +13,11 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PasskeyLoginVerifyRequest {
 
-  @NotBlank
+  /**
+   * Blank/absent for a discoverable-credential (conditional UI / autofill)
+   * login — the account is resolved server-side from {@link #userHandle}
+   * instead. See {@code PasskeyService#finishLogin}.
+   */
   private String username;
 
   @NotBlank

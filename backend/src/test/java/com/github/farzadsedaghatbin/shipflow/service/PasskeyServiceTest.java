@@ -18,6 +18,8 @@ import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException
 import com.github.farzadsedaghatbin.shipflow.repository.PasskeyCredentialRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WebAuthnChallengeRepository;
+import com.webauthn4j.util.Base64UrlUtil;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -160,6 +162,26 @@ class PasskeyServiceTest {
   }
 
   // ----------------------------------------------------------------------
+  // beginDiscoverableLogin — conditional UI / autofill (usernameless)
+  // ----------------------------------------------------------------------
+
+  @Test
+  void beginDiscoverableLogin_returnsEmptyAllowCredentialsAndNoUserOrUsernameHintChallenge() {
+    PasskeyLoginOptionsResponse response = passkeyService.beginDiscoverableLogin();
+
+    assertThat(response.getAllowCredentials()).isEmpty();
+    assertThat(response.getChallenge()).isNotBlank();
+    assertThat(response.getRpId()).isEqualTo("localhost");
+
+    ArgumentCaptor<WebAuthnChallenge> captor = ArgumentCaptor.forClass(WebAuthnChallenge.class);
+    verify(webAuthnChallengeRepository).save(captor.capture());
+    assertThat(captor.getValue().getUser()).isNull();
+    assertThat(captor.getValue().getUsernameHint()).isNull();
+    assertThat(captor.getValue().getPurpose()).isEqualTo(ChallengePurpose.AUTHENTICATION);
+    assertThat(captor.getValue().getChallenge()).isEqualTo(response.getChallenge());
+  }
+
+  // ----------------------------------------------------------------------
   // finishLogin guard clauses
   // ----------------------------------------------------------------------
 
@@ -218,6 +240,103 @@ class PasskeyServiceTest {
 
     assertThatThrownBy(() -> passkeyService.finishLogin(request)).isInstanceOf(BadCredentialsException.class)
         .hasMessageContaining("does not belong");
+  }
+
+  // ----------------------------------------------------------------------
+  // finishLogin — discoverable-credential branch (conditional UI / autofill)
+  // ----------------------------------------------------------------------
+
+  @Test
+  void finishLogin_discoverable_throwsWhenNoValidChallenge() {
+    when(webAuthnChallengeRepository.findByChallenge(any())).thenReturn(Optional.empty());
+    PasskeyLoginVerifyRequest request = PasskeyLoginVerifyRequest.builder().credentialId("cred-1")
+        .authenticatorData("AA").clientDataJSON(clientDataJSON("some-challenge")).signature("CC")
+        .userHandle(userHandleFor(1L)).build();
+
+    assertThatThrownBy(() -> passkeyService.finishLogin(request)).isInstanceOf(BadCredentialsException.class)
+        .hasMessageContaining("Invalid or expired");
+  }
+
+  @Test
+  void finishLogin_discoverable_throwsWhenChallengeAlreadyUsed() {
+    WebAuthnChallenge challenge = WebAuthnChallenge.builder().id(1L).challenge("chal").user(null).usernameHint(null)
+        .purpose(ChallengePurpose.AUTHENTICATION).expiryDate(LocalDateTime.now().plusMinutes(5)).used(true).build();
+    when(webAuthnChallengeRepository.findByChallenge("chal")).thenReturn(Optional.of(challenge));
+    PasskeyLoginVerifyRequest request = PasskeyLoginVerifyRequest.builder().credentialId("cred-1")
+        .authenticatorData("AA").clientDataJSON(clientDataJSON("chal")).signature("CC").userHandle(userHandleFor(1L))
+        .build();
+
+    assertThatThrownBy(() -> passkeyService.finishLogin(request)).isInstanceOf(BadCredentialsException.class)
+        .hasMessageContaining("Invalid or expired");
+  }
+
+  @Test
+  void finishLogin_discoverable_throwsWhenNoUserHandle() {
+    WebAuthnChallenge challenge = WebAuthnChallenge.builder().id(1L).challenge("chal").user(null).usernameHint(null)
+        .purpose(ChallengePurpose.AUTHENTICATION).expiryDate(LocalDateTime.now().plusMinutes(5)).used(false).build();
+    when(webAuthnChallengeRepository.findByChallenge("chal")).thenReturn(Optional.of(challenge));
+    PasskeyLoginVerifyRequest request = PasskeyLoginVerifyRequest.builder().credentialId("cred-1")
+        .authenticatorData("AA").clientDataJSON(clientDataJSON("chal")).signature("CC").build();
+
+    assertThatThrownBy(() -> passkeyService.finishLogin(request)).isInstanceOf(BadCredentialsException.class)
+        .hasMessageContaining("No passkey is registered");
+  }
+
+  @Test
+  void finishLogin_discoverable_throwsWhenUserHandleUnparseable() {
+    WebAuthnChallenge challenge = WebAuthnChallenge.builder().id(1L).challenge("chal").user(null).usernameHint(null)
+        .purpose(ChallengePurpose.AUTHENTICATION).expiryDate(LocalDateTime.now().plusMinutes(5)).used(false).build();
+    when(webAuthnChallengeRepository.findByChallenge("chal")).thenReturn(Optional.of(challenge));
+    PasskeyLoginVerifyRequest request = PasskeyLoginVerifyRequest.builder().credentialId("cred-1")
+        .authenticatorData("AA").clientDataJSON(clientDataJSON("chal")).signature("CC")
+        .userHandle(Base64UrlUtil.encodeToString("not-a-number".getBytes(StandardCharsets.UTF_8))).build();
+
+    assertThatThrownBy(() -> passkeyService.finishLogin(request)).isInstanceOf(BadCredentialsException.class)
+        .hasMessageContaining("Unrecognized passkey user handle");
+  }
+
+  @Test
+  void finishLogin_discoverable_throwsWhenUserHandleDoesNotResolveToAnAccount() {
+    WebAuthnChallenge challenge = WebAuthnChallenge.builder().id(1L).challenge("chal").user(null).usernameHint(null)
+        .purpose(ChallengePurpose.AUTHENTICATION).expiryDate(LocalDateTime.now().plusMinutes(5)).used(false).build();
+    when(webAuthnChallengeRepository.findByChallenge("chal")).thenReturn(Optional.of(challenge));
+    when(userRepository.findById(99L)).thenReturn(Optional.empty());
+    PasskeyLoginVerifyRequest request = PasskeyLoginVerifyRequest.builder().credentialId("cred-1")
+        .authenticatorData("AA").clientDataJSON(clientDataJSON("chal")).signature("CC")
+        .userHandle(userHandleFor(99L)).build();
+
+    assertThatThrownBy(() -> passkeyService.finishLogin(request)).isInstanceOf(BadCredentialsException.class)
+        .hasMessageContaining("No account found for this passkey");
+  }
+
+  @Test
+  void finishLogin_discoverable_resolvesUserFromUserHandle_thenAppliesSameCredentialOwnershipGuard() {
+    User otherUser = User.builder().id(2L).username("bob").role(UserRole.MEMBER).isActive(true).build();
+    WebAuthnChallenge challenge = WebAuthnChallenge.builder().id(1L).challenge("chal").user(null).usernameHint(null)
+        .purpose(ChallengePurpose.AUTHENTICATION).expiryDate(LocalDateTime.now().plusMinutes(5)).used(false).build();
+    PasskeyCredential credentialOwnedByBob = PasskeyCredential.builder().id(5L).user(otherUser).credentialId("cred-1")
+        .publicKeyCose("cose").build();
+    when(webAuthnChallengeRepository.findByChallenge("chal")).thenReturn(Optional.of(challenge));
+    when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(passkeyCredentialRepository.findByCredentialId("cred-1")).thenReturn(Optional.of(credentialOwnedByBob));
+    PasskeyLoginVerifyRequest request = PasskeyLoginVerifyRequest.builder().credentialId("cred-1")
+        .authenticatorData("AA").clientDataJSON(clientDataJSON("chal")).signature("CC")
+        .userHandle(userHandleFor(1L)).build();
+
+    // user handle resolves to "alice" (id 1), but the credential belongs to "bob" — same guard
+    // clause the username-first flow uses, confirming the discoverable branch reaches it correctly.
+    assertThatThrownBy(() -> passkeyService.finishLogin(request)).isInstanceOf(BadCredentialsException.class)
+        .hasMessageContaining("does not belong");
+  }
+
+  private static String clientDataJSON(String challenge) {
+    String json = "{\"type\":\"webauthn.get\",\"challenge\":\"" + challenge
+        + "\",\"origin\":\"http://localhost:3000\",\"crossOrigin\":false}";
+    return Base64UrlUtil.encodeToString(json.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static String userHandleFor(long userId) {
+    return Base64UrlUtil.encodeToString(Long.toString(userId).getBytes(StandardCharsets.UTF_8));
   }
 
   // ----------------------------------------------------------------------
