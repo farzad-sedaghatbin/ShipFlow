@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Passkey sign-in required three separate steps (click "Sign in with a passkey", type a username, click again) before the biometric prompt appeared — no automatic prompt like modern passkey UX.** Added a second, additive login mode alongside the existing username-first flow: on a supporting browser, the login page now fires a passive WebAuthn "conditional UI" request on mount (`PublicKeyCredential.isConditionalMediationAvailable()`, `navigator.credentials.get({mediation: 'conditional'})`), so the browser can offer a passkey suggestion directly in the username field's autofill dropdown — no button click needed. New usernameless backend endpoint `POST /api/auth/passkeys/login/options/discoverable` (`PasskeyService.beginDiscoverableLogin`) issues a challenge with an empty `allowCredentials`; `finishLogin` resolves the account from the authenticator-returned `userHandle` and locates the pending challenge by its own value (via webauthn4j's `CollectedClientDataConverter`) instead of by username hint, for this case only — the existing username-first path is unchanged. Passkey registration's `residentKey` changed from `"discouraged"` to `"preferred"` so new passkeys are discoverable; **passkeys registered before this change need re-registering** (Profile page) to appear in autofill, though they keep working via the explicit "Sign in with a passkey" button regardless. See `PWA_GUIDE.md`.
+
 ## [1.12.0] - 2026-08-20
 
 ### Fixed

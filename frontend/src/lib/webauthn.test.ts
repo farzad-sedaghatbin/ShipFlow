@@ -1,5 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import { bufferToBase64url, base64urlToBuffer, isWebAuthnSupported } from './webauthn';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import {
+  bufferToBase64url,
+  base64urlToBuffer,
+  isWebAuthnSupported,
+  isConditionalMediationAvailable,
+  loginWithPasskey,
+  WebAuthnCeremonyError,
+  type PasskeyLoginOptionsResponse,
+} from './webauthn';
 
 function bytesOf(...values: number[]): ArrayBuffer {
   return new Uint8Array(values).buffer;
@@ -79,5 +87,91 @@ describe('isWebAuthnSupported', () => {
     } finally {
       (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential = original;
     }
+  });
+});
+
+describe('isConditionalMediationAvailable', () => {
+  const original = (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential;
+
+  afterEach(() => {
+    (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential = original;
+  });
+
+  it('returns true when the browser reports conditional mediation support', async () => {
+    (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential = {
+      isConditionalMediationAvailable: vi.fn().mockResolvedValue(true),
+    };
+    await expect(isConditionalMediationAvailable()).resolves.toBe(true);
+  });
+
+  it('returns false when the browser reports no conditional mediation support', async () => {
+    (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential = {
+      isConditionalMediationAvailable: vi.fn().mockResolvedValue(false),
+    };
+    await expect(isConditionalMediationAvailable()).resolves.toBe(false);
+  });
+
+  it('returns false when the browser has no isConditionalMediationAvailable at all (e.g. Firefox)', async () => {
+    (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential = class {};
+    await expect(isConditionalMediationAvailable()).resolves.toBe(false);
+  });
+
+  it('returns false when window.PublicKeyCredential itself is undefined', async () => {
+    (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential = undefined;
+    await expect(isConditionalMediationAvailable()).resolves.toBe(false);
+  });
+
+  it('returns false rather than throwing when the feature-detect call itself rejects', async () => {
+    (window as unknown as { PublicKeyCredential?: unknown }).PublicKeyCredential = {
+      isConditionalMediationAvailable: vi.fn().mockRejectedValue(new Error('boom')),
+    };
+    await expect(isConditionalMediationAvailable()).resolves.toBe(false);
+  });
+});
+
+describe('loginWithPasskey — ceremony error classification', () => {
+  const options: PasskeyLoginOptionsResponse = {
+    challenge: 'Y2hhbA', // "chal"
+    rpId: 'localhost',
+    timeout: 60000,
+    allowCredentials: [],
+    userVerification: 'preferred',
+  };
+
+  // jsdom doesn't implement the Credential Management API, so `navigator.credentials` isn't a
+  // real object to `vi.spyOn` — stub the whole property instead.
+  function mockCredentialsGet(rejection: unknown) {
+    Object.defineProperty(navigator, 'credentials', {
+      value: { get: vi.fn().mockRejectedValue(rejection) },
+      configurable: true,
+    });
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('surfaces a cancelled WebAuthnCeremonyError when the platform prompt is dismissed (NotAllowedError)', async () => {
+    mockCredentialsGet(Object.assign(new Error('dismissed'), { name: 'NotAllowedError' }));
+
+    await expect(loginWithPasskey(options)).rejects.toMatchObject({
+      name: 'WebAuthnCeremonyError',
+      cancelled: true,
+    });
+  });
+
+  it('surfaces a cancelled WebAuthnCeremonyError when a conditional request is aborted (AbortError)', async () => {
+    mockCredentialsGet(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+
+    await expect(
+      loginWithPasskey(options, { mediation: 'conditional', signal: new AbortController().signal }),
+    ).rejects.toMatchObject({ name: 'WebAuthnCeremonyError', cancelled: true });
+  });
+
+  it('surfaces a non-cancelled WebAuthnCeremonyError for any other ceremony failure', async () => {
+    mockCredentialsGet(Object.assign(new Error('security key unplugged'), { name: 'NotSupportedError' }));
+
+    await expect(loginWithPasskey(options)).rejects.toBeInstanceOf(WebAuthnCeremonyError);
+    await expect(loginWithPasskey(options)).rejects.toMatchObject({ cancelled: false });
   });
 });
