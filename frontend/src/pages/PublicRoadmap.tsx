@@ -27,10 +27,8 @@ import {
   FlaskConical,
   Layers,
   Brain,
-  Globe,
   Workflow,
   Sliders,
-  Smartphone,
   Rss,
   Network,
   Pencil,
@@ -350,22 +348,43 @@ export default function PublicRoadmap() {
   const upcomingPhases: RoadmapPhase[] = [
     {
       version: 'v1.13.0',
-      theme: t('publicRoadmap.phaseCollabTheme'),
+      theme: t('publicRoadmap.phase113Theme'),
+      status: 'in-progress',
+      items: [
+        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase113Item0Title'), description: t('publicRoadmap.phase113Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase113Item1Title'), description: t('publicRoadmap.phase113Item1Desc') },
+        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.phase113Item2Title'), description: t('publicRoadmap.phase113Item2Desc') },
+      ],
+    },
+    {
+      version: 'v1.14.0',
+      theme: t('publicRoadmap.phase114Theme'),
       status: 'planned',
       items: [
-        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phaseCollabItem0Title'), description: t('publicRoadmap.phaseCollabItem0Desc') },
-        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phaseCollabItem1Title'), description: t('publicRoadmap.phaseCollabItem1Desc') },
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase114Item0Title'), description: t('publicRoadmap.phase114Item0Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase114Item1Title'), description: t('publicRoadmap.phase114Item1Desc') },
+        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase114Item2Title'), description: t('publicRoadmap.phase114Item2Desc') },
+      ],
+    },
+    {
+      version: 'v1.15.0',
+      theme: t('publicRoadmap.phase115Theme'),
+      status: 'planned',
+      items: [
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase115Item0Title'), description: t('publicRoadmap.phase115Item0Desc') },
+        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.phase115Item1Title'), description: t('publicRoadmap.phase115Item1Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phase115Item2Title'), description: t('publicRoadmap.phase115Item2Desc') },
       ],
     },
   ];
 
   const futureVision = [
-    { icon: <Layers className="h-6 w-6" />, title: t('publicRoadmap.futureItem0Title'), description: t('publicRoadmap.futureItem0Desc') },
-    { icon: <Globe className="h-6 w-6" />, title: t('publicRoadmap.futureItem1Title'), description: t('publicRoadmap.futureItem1Desc') },
-    { icon: <Workflow className="h-6 w-6" />, title: t('publicRoadmap.futureItem2Title'), description: t('publicRoadmap.futureItem2Desc') },
-    { icon: <Sliders className="h-6 w-6" />, title: t('publicRoadmap.futureItem3Title'), description: t('publicRoadmap.futureItem3Desc') },
-    { icon: <Brain className="h-6 w-6" />, title: t('publicRoadmap.futureItem4Title'), description: t('publicRoadmap.futureItem4Desc') },
-    { icon: <Smartphone className="h-6 w-6" />, title: t('publicRoadmap.futureItem5Title'), description: t('publicRoadmap.futureItem5Desc') },
+    { icon: <Rocket className="h-6 w-6" />, title: t('publicRoadmap.future116Title'), description: t('publicRoadmap.future116Desc') },
+    { icon: <GitBranch className="h-6 w-6" />, title: t('publicRoadmap.future117Title'), description: t('publicRoadmap.future117Desc') },
+    { icon: <TrendingUp className="h-6 w-6" />, title: t('publicRoadmap.future118Title'), description: t('publicRoadmap.future118Desc') },
+    { icon: <Lock className="h-6 w-6" />, title: t('publicRoadmap.future119Title'), description: t('publicRoadmap.future119Desc') },
+    { icon: <BookOpen className="h-6 w-6" />, title: t('publicRoadmap.future120Title'), description: t('publicRoadmap.future120Desc') },
+    { icon: <Pencil className="h-6 w-6" />, title: t('publicRoadmap.futureWikiCoeditTitle'), description: t('publicRoadmap.futureWikiCoeditDesc') },
   ];
 
   return (

@@ -86,6 +86,32 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.13.0',
+    date: 'Coming soon',
+    title: 'Live Presence & Truth',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Live Presence Indicators',
+        description:
+          "See who else is viewing or editing a pitch, retrospective, or wiki page in real time, built on a reworked notification stream that fans out across every server instance instead of just one.",
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Conflict-Safe Editing',
+        description:
+          "Optimistic locking with a friendly conflict dialog on pitch, retrospective, and wiki saves — no more silently overwriting a teammate's changes.",
+      },
+      {
+        icon: <Zap className="h-5 w-5" />,
+        title: 'Real-Time Infrastructure Rework',
+        description:
+          "The notification stream now supports multiple tabs per user and broadcasts across replicas via Redis — fixing a scaling gap in the multi-instance Helm deployment.",
+      },
+    ],
+  },
+  {
     version: '1.12.0',
     date: 'August 20, 2026',
     title: 'Plugin Marketplace: SDK Tooling & Source Control Integrations',
