@@ -18,6 +18,7 @@ import com.webauthn4j.WebAuthnManager;
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.converter.AttestedCredentialDataConverter;
+import com.webauthn4j.converter.CollectedClientDataConverter;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticationData;
@@ -28,6 +29,7 @@ import com.webauthn4j.data.RegistrationData;
 import com.webauthn4j.data.RegistrationParameters;
 import com.webauthn4j.data.RegistrationRequest;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
+import com.webauthn4j.data.client.CollectedClientData;
 import com.webauthn4j.data.attestation.statement.COSEAlgorithmIdentifier;
 import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.data.client.challenge.DefaultChallenge;
@@ -64,20 +66,37 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <h2>Design choice — username enumeration in {@link #beginLogin}</h2>
  *
- * This is a username-first flow (the user types a username before the
- * platform authenticator prompt, rather than a fully "discoverable
- * credential" / usernameless flow). When the supplied username does not
- * resolve to any user, {@link #beginLogin} still returns HTTP 200 with the
- * same {@link PasskeyLoginOptionsResponse} shape — just with an empty
- * {@code allowCredentials} list — rather than a 404. This avoids a
+ * {@link #beginLogin} is a username-first flow (the user types a username
+ * before the platform authenticator prompt). When the supplied username does
+ * not resolve to any user, it still returns HTTP 200 with the same {@link
+ * PasskeyLoginOptionsResponse} shape — just with an empty {@code
+ * allowCredentials} list — rather than a 404. This avoids a
  * status-code/error-message oracle. It does not eliminate every side channel
  * (an empty {@code allowCredentials} list is itself observable, same as it
  * would be for a real user who simply has no passkeys registered), but that
  * is inherent to a username-first design and is the same trade-off most
- * production WebAuthn implementations accept. A fully discoverable-credential
- * (resident key / usernameless) flow would remove this, at the cost of
- * additional client and RP complexity — out of scope for this session per
- * the task's design directive.
+ * production WebAuthn implementations accept.
+ *
+ * <h2>Discoverable-credential (conditional UI / autofill) login</h2>
+ *
+ * {@link #beginDiscoverableLogin} is the usernameless counterpart, used for
+ * browser "conditional UI": the login page can fire {@code
+ * navigator.credentials.get({mediation: 'conditional'})} passively on load,
+ * and the browser surfaces a passkey suggestion in the username field's
+ * autofill dropdown with no button click. Because there is no username yet,
+ * the challenge carries no {@code usernameHint}/{@code user} and {@code
+ * allowCredentials} is empty — the browser resolves candidates from its own
+ * discoverable-credential store, keyed by RP ID alone. {@link #finishLogin}
+ * detects this case (blank {@code username}) and instead resolves the
+ * account from the authenticator-supplied {@code userHandle} (the same value
+ * embedded as {@code PublicKeyCredentialUserEntity.id} at registration), and
+ * locates the pending challenge by its own random value (extracted from the
+ * assertion's {@code clientDataJSON} via {@link CollectedClientDataConverter})
+ * rather than by username hint. Only credentials created with a discoverable
+ * {@code residentKey} (see {@link #beginRegistration}) are eligible — a
+ * passkey registered before this existed may need re-registering to appear in
+ * autofill, though it keeps working fine through the username-first flow
+ * regardless.
  */
 @Service
 @RequiredArgsConstructor
@@ -107,6 +126,8 @@ public class PasskeyService {
   private final ObjectConverter objectConverter = new ObjectConverter();
   private final AttestedCredentialDataConverter attestedCredentialDataConverter =
       new AttestedCredentialDataConverter(objectConverter);
+  private final CollectedClientDataConverter collectedClientDataConverter =
+      new CollectedClientDataConverter(objectConverter);
 
   // Non-strict: skips attestation trust-anchor verification against FIDO metadata,
   // which is the appropriate posture for "none"/self attestation from platform
@@ -157,7 +178,12 @@ public class PasskeyService {
         .timeout(CEREMONY_TIMEOUT_MILLIS)
         .excludeCredentials(excludeCredentials)
         .authenticatorSelection(PasskeyRegistrationOptionsResponse.AuthenticatorSelection.builder()
-            .residentKey("discouraged").userVerification("preferred").build())
+            // "preferred" (not "discouraged"): a discoverable/resident credential is what makes
+            // the passkey show up in conditional UI/autofill (see beginDiscoverableLogin). Kept
+            // as "preferred" rather than "required" so authenticators without resident-key
+            // storage (some older FIDO2 security keys) can still register — they simply won't be
+            // discoverable, and remain fully usable through the username-first login flow.
+            .residentKey("preferred").userVerification("preferred").build())
         .attestation("none")
         .build();
   }
@@ -249,20 +275,47 @@ public class PasskeyService {
         .timeout(CEREMONY_TIMEOUT_MILLIS).allowCredentials(allowCredentials).userVerification("preferred").build();
   }
 
+  /**
+   * Usernameless counterpart to {@link #beginLogin} for conditional UI/autofill — see the class
+   * Javadoc. No username is known yet, so the challenge is issued with no associated user and an
+   * empty {@code allowCredentials}; the browser resolves candidates from its own discoverable-
+   * credential store for this RP.
+   */
+  @Transactional
+  public PasskeyLoginOptionsResponse beginDiscoverableLogin() {
+    String challengeValue = newChallenge();
+
+    WebAuthnChallenge challenge = WebAuthnChallenge.builder().challenge(challengeValue).user(null).usernameHint(null)
+        .purpose(ChallengePurpose.AUTHENTICATION).expiryDate(LocalDateTime.now().plusSeconds(challengeTimeoutSeconds))
+        .used(false).build();
+    webAuthnChallengeRepository.save(challenge);
+
+    return PasskeyLoginOptionsResponse.builder().challenge(challengeValue).rpId(rpId)
+        .timeout(CEREMONY_TIMEOUT_MILLIS).allowCredentials(List.of()).userVerification("preferred").build();
+  }
+
   /** Returns the username to mint a JWT for, once the assertion has been cryptographically verified. */
   @Transactional
   public String finishLogin(PasskeyLoginVerifyRequest request) {
-    WebAuthnChallenge challenge = webAuthnChallengeRepository
-        .findValidChallengesByUsernameHintAndPurpose(request.getUsername(), ChallengePurpose.AUTHENTICATION,
-            LocalDateTime.now())
-        .stream()
-        .findFirst()
-        .orElseThrow(() -> new BadCredentialsException("Invalid or expired passkey login challenge."));
+    boolean discoverable = request.getUsername() == null || request.getUsername().isBlank();
 
-    User user = challenge.getUser();
-    if (user == null) {
-      // The username never resolved to an account when the challenge was issued.
-      throw new BadCredentialsException("No passkey is registered for this account.");
+    WebAuthnChallenge challenge;
+    User user;
+    if (discoverable) {
+      challenge = findValidDiscoverableChallenge(request.getClientDataJSON());
+      user = resolveUserFromUserHandle(request.getUserHandle());
+    } else {
+      challenge = webAuthnChallengeRepository
+          .findValidChallengesByUsernameHintAndPurpose(request.getUsername(), ChallengePurpose.AUTHENTICATION,
+              LocalDateTime.now())
+          .stream()
+          .findFirst()
+          .orElseThrow(() -> new BadCredentialsException("Invalid or expired passkey login challenge."));
+      user = challenge.getUser();
+      if (user == null) {
+        // The username never resolved to an account when the challenge was issued.
+        throw new BadCredentialsException("No passkey is registered for this account.");
+      }
     }
 
     PasskeyCredential credential = passkeyCredentialRepository.findByCredentialId(request.getCredentialId())
@@ -340,6 +393,44 @@ public class PasskeyService {
     byte[] bytes = new byte[(int) CHALLENGE_LENGTH_BYTES];
     secureRandom.nextBytes(bytes);
     return Base64UrlUtil.encodeToString(bytes);
+  }
+
+  /**
+   * Locates the pending discoverable-login challenge by its own random value — extracted from the
+   * assertion's {@code clientDataJSON}, since a discoverable challenge has no username to look it
+   * up by (there can be several valid, unused, unexpired discoverable challenges pending at once,
+   * one per concurrent visitor). {@code challenge} is unique per row (see {@code
+   * WebAuthnChallenge.challenge}'s column constraint), so this is an exact, unambiguous lookup.
+   */
+  private WebAuthnChallenge findValidDiscoverableChallenge(String clientDataJSON) {
+    CollectedClientData clientData = collectedClientDataConverter.convert(clientDataJSON);
+    if (clientData == null) {
+      throw new BadCredentialsException("Invalid or expired passkey login challenge.");
+    }
+    String challengeValue = Base64UrlUtil.encodeToString(clientData.getChallenge().getValue());
+    return webAuthnChallengeRepository.findByChallenge(challengeValue)
+        .filter(c -> c.getPurpose() == ChallengePurpose.AUTHENTICATION && !Boolean.TRUE.equals(c.getUsed())
+            && c.getExpiryDate().isAfter(LocalDateTime.now()))
+        .orElseThrow(() -> new BadCredentialsException("Invalid or expired passkey login challenge."));
+  }
+
+  /**
+   * Resolves the account for a discoverable-credential login from the authenticator-supplied user
+   * handle — the same opaque id embedded as {@code PublicKeyCredentialUserEntity.id} at
+   * registration (see {@link #beginRegistration}).
+   */
+  private User resolveUserFromUserHandle(String userHandle) {
+    if (userHandle == null) {
+      throw new BadCredentialsException("No passkey is registered for this account.");
+    }
+    long userId;
+    try {
+      userId = Long.parseLong(new String(Base64UrlUtil.decode(userHandle), StandardCharsets.UTF_8));
+    } catch (NumberFormatException e) {
+      throw new BadCredentialsException("Unrecognized passkey user handle.");
+    }
+    return userRepository.findById(userId)
+        .orElseThrow(() -> new BadCredentialsException("No account found for this passkey."));
   }
 
   private List<String> splitTransports(String transports) {

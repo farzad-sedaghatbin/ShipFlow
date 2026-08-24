@@ -57,6 +57,15 @@ public class PasskeyController {
     return ResponseEntity.ok(passkeyService.beginLogin(request.getUsername()));
   }
 
+  @PostMapping("/api/auth/passkeys/login/options/discoverable")
+  @PreAuthorize("permitAll()")
+  @Operation(summary = "Begin a usernameless passkey login ceremony",
+      description = "For conditional UI/autofill: no username is known yet, so allowCredentials is "
+          + "empty and the browser resolves candidates from its own discoverable-credential store.")
+  public ResponseEntity<PasskeyLoginOptionsResponse> discoverableLoginOptions() {
+    return ResponseEntity.ok(passkeyService.beginDiscoverableLogin());
+  }
+
   @PostMapping("/api/auth/passkeys/login/verify")
   @PreAuthorize("permitAll()")
   @Operation(summary = "Verify a passkey login assertion and issue a JWT")

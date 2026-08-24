@@ -108,6 +108,16 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.12.0',
+      date: 'August 20, 2026',
+      title: t('publicRoadmap.shipped1120Title'),
+      highlights: [
+        { icon: <Puzzle className="h-5 w-5" />, title: t('publicRoadmap.shipped1120Item0Title'), description: t('publicRoadmap.shipped1120Item0Desc') },
+        { icon: <GitBranch className="h-5 w-5" />, title: t('publicRoadmap.shipped1120Item1Title'), description: t('publicRoadmap.shipped1120Item1Desc') },
+        { icon: <Plug className="h-5 w-5" />, title: t('publicRoadmap.shipped1120Item2Title'), description: t('publicRoadmap.shipped1120Item2Desc') },
+      ],
+    },
+    {
       version: '1.11.2',
       date: 'August 5, 2026',
       title: t('publicRoadmap.shipped1112Title'),
@@ -339,13 +349,12 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.12.0',
-      theme: t('publicRoadmap.phasePluginTheme'),
+      version: 'v1.13.0',
+      theme: t('publicRoadmap.phaseCollabTheme'),
       status: 'planned',
       items: [
-        { icon: <Puzzle className="h-5 w-5" />, title: t('publicRoadmap.phasePluginItem0Title'), description: t('publicRoadmap.phasePluginItem0Desc') },
-        { icon: <Command className="h-5 w-5" />, title: t('publicRoadmap.phasePluginItem1Title'), description: t('publicRoadmap.phasePluginItem1Desc') },
-        { icon: <GitBranch className="h-5 w-5" />, title: t('publicRoadmap.phasePluginItem2Title'), description: t('publicRoadmap.phasePluginItem2Desc') },
+        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phaseCollabItem0Title'), description: t('publicRoadmap.phaseCollabItem0Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phaseCollabItem1Title'), description: t('publicRoadmap.phaseCollabItem1Desc') },
       ],
     },
   ];

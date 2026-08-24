@@ -81,13 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    clearAuth();
     setToken(null);
     setUser(null);
-    // An explicit logout is not an interrupted navigation — drop any stashed
-    // destination so it can't hijack the next sign-in.
-    clearPendingRedirect();
     navigate('/login');
   }, [navigate]);
 
@@ -116,4 +112,9 @@ export const getStoredToken = () => localStorage.getItem(TOKEN_KEY);
 export const clearAuth = () => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  // A cleared token can never be resumed, so any stashed post-login
+  // destination is meaningless to keep — drop it here so both an explicit
+  // logout and an auto-logout on a rejected token (api.ts's 401 handler)
+  // can't leave a stale destination to hijack an unrelated later sign-in.
+  clearPendingRedirect();
 };

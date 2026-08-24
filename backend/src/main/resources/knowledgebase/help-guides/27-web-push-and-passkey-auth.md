@@ -34,7 +34,9 @@ On your **Profile** page, find the **Passkeys** card and click **Add a Passkey**
 
 ### Signing In with a Passkey
 
-On the login page, click **Sign in with a passkey**, type your username, and click through — your device will prompt for the same biometric/security-key check used during registration. No password needed.
+On supported browsers, just click into the **Username** field on the login page — your browser offers your passkey right there in the autofill suggestions, and picking it triggers the same biometric/security-key check used during registration, with no other clicks and no typing needed. If your browser doesn't support this yet (or you'd rather do it explicitly), click **Sign in with a passkey**, type your username, and click through instead — both paths sign you in the same way.
+
+If the automatic prompt doesn't show up for a passkey you registered a while ago, remove it from your Profile page and add it again — a small server-side change made passkeys "discoverable" (so the browser can offer them in autofill), and it only applies going forward. The explicit "Sign in with a passkey" button keeps working for older passkeys either way.
 
 ### Managing Your Passkeys
 

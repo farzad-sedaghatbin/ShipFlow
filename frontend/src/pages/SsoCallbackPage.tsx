@@ -5,8 +5,9 @@ import { AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import {
-  consumeRedirect,
+  clearPendingRedirect,
   DEFAULT_POST_LOGIN_PATH,
+  peekRedirect,
   REDIRECT_PARAM,
   sanitizeRedirect,
 } from '../lib/redirect';
@@ -36,8 +37,13 @@ export default function SsoCallbackPage() {
     // sanitised — the query string reaches us straight from an external redirect.
     const redirect =
       sanitizeRedirect(searchParams.get(REDIRECT_PARAM))
-      ?? consumeRedirect()
+      ?? peekRedirect()
       ?? DEFAULT_POST_LOGIN_PATH;
+    // Clear the stash unconditionally, regardless of which channel above
+    // resolved the destination — otherwise a stale SSO stash that happened
+    // to lose to a `?redirect=` query param would survive this callback and
+    // could hijack a later, unrelated sign-in.
+    clearPendingRedirect();
 
     if (!token) {
       setError(t('ssoCallback.noToken'));

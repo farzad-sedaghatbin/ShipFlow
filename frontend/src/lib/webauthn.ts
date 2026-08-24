@@ -63,11 +63,35 @@ export class WebAuthnCeremonyError extends Error {
 
 function toCeremonyError(err: unknown): WebAuthnCeremonyError {
   const name = (err as { name?: string } | undefined)?.name;
-  const cancelled = name === 'NotAllowedError';
+  // AbortError covers both a conditional-mediation request being aborted (component unmount,
+  // or a manual login starting while one is pending — see Login.tsx) and an explicit
+  // AbortController.abort() call; neither is a real failure worth surfacing to the user.
+  const cancelled = name === 'NotAllowedError' || name === 'AbortError';
   const message = cancelled
     ? 'Passkey ceremony was cancelled or timed out.'
     : (err as Error | undefined)?.message || 'Passkey ceremony failed.';
   return new WebAuthnCeremonyError(message, cancelled);
+}
+
+/**
+ * Feature-detects WebAuthn conditional mediation (autofill-triggered passkey login): the browser
+ * can surface a discoverable-credential suggestion in an `autoComplete="webauthn"` input's
+ * autofill dropdown, with no button click, as long as a `navigator.credentials.get({mediation:
+ * 'conditional'})` request is already pending when the user picks it. Not all browsers implement
+ * this (notably Firefox as of this writing), hence the feature-detect rather than assuming it.
+ */
+export async function isConditionalMediationAvailable(): Promise<boolean> {
+  const getFn = (
+    window.PublicKeyCredential as unknown as {
+      isConditionalMediationAvailable?: () => Promise<boolean>;
+    } | undefined
+  )?.isConditionalMediationAvailable;
+  if (typeof getFn !== 'function') return false;
+  try {
+    return await getFn();
+  } catch {
+    return false;
+  }
 }
 
 // ─── Registration (POST /api/passkeys/register/options → verify) ──────────
@@ -164,10 +188,20 @@ export interface PasskeyLoginCredential {
  * Runs `navigator.credentials.get(...)` from a decoded login options response
  * and encodes the assertion back into the base64url shape the
  * `/api/auth/passkeys/login/verify` endpoint expects. Caller merges in
- * `username` before POSTing (see `passkeyService.verifyLogin`).
+ * `username` before POSTing (see `passkeyService.verifyLogin`) — omitted
+ * entirely for a discoverable-credential (conditional UI) login.
+ *
+ * `ceremonyOptions.mediation: 'conditional'` fires a passive request that
+ * only resolves if/when the user picks a passkey suggestion from the
+ * username field's autofill dropdown (see `isConditionalMediationAvailable`)
+ * — it must NOT be used for an explicit button-click login, which relies on
+ * the default mediation to show the platform's modal picker immediately.
+ * `ceremonyOptions.signal` lets the caller abort a pending conditional
+ * request (component unmount, or an explicit login starting instead).
  */
 export async function loginWithPasskey(
   options: PasskeyLoginOptionsResponse,
+  ceremonyOptions?: { mediation?: CredentialMediationRequirement; signal?: AbortSignal },
 ): Promise<PasskeyLoginCredential> {
   const publicKey: PublicKeyCredentialRequestOptions = {
     challenge: base64urlToBuffer(options.challenge),
@@ -183,7 +217,11 @@ export async function loginWithPasskey(
 
   let credential: PublicKeyCredential | null;
   try {
-    credential = (await navigator.credentials.get({ publicKey })) as PublicKeyCredential | null;
+    credential = (await navigator.credentials.get({
+      publicKey,
+      mediation: ceremonyOptions?.mediation,
+      signal: ceremonyOptions?.signal,
+    })) as PublicKeyCredential | null;
   } catch (err) {
     throw toCeremonyError(err);
   }

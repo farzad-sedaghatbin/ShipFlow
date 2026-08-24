@@ -15,9 +15,13 @@ export type {
   PasskeyLoginCredential,
 };
 
-/** The full login/verify request body — `PasskeyLoginCredential` plus the username. */
+/**
+ * The full login/verify request body — `PasskeyLoginCredential` plus the username. `username` is
+ * omitted for a discoverable-credential (conditional UI/autofill) login: the backend resolves the
+ * account from `userHandle` instead — see `getDiscoverableLoginOptions` below.
+ */
 export interface PasskeyLoginVerifyRequest extends PasskeyLoginCredential {
-  username: string;
+  username?: string;
 }
 
 /** A registered passkey's public view — never includes the credential id or public key bytes. */
@@ -33,6 +37,16 @@ export const passkeyService = {
   /** No auth required — first step of passwordless login. */
   getLoginOptions: async (username: string): Promise<PasskeyLoginOptionsResponse> => {
     const response = await api.post<PasskeyLoginOptionsResponse>('/auth/passkeys/login/options', { username });
+    return response.data;
+  },
+
+  /**
+   * No auth required — usernameless counterpart for conditional UI/autofill: no username is known
+   * yet, so `allowCredentials` comes back empty and the browser resolves candidates from its own
+   * discoverable-credential store.
+   */
+  getDiscoverableLoginOptions: async (): Promise<PasskeyLoginOptionsResponse> => {
+    const response = await api.post<PasskeyLoginOptionsResponse>('/auth/passkeys/login/options/discoverable');
     return response.data;
   },
 

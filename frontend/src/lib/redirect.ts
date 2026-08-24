@@ -26,10 +26,19 @@ export const REDIRECT_PARAM = 'redirect';
 const PENDING_REDIRECT_KEY = 'shipflow_post_login_redirect';
 
 /**
- * Routes that must never be a post-login destination — bouncing back to the
- * login page after logging in would loop.
+ * Frontend routes that must never be a post-login destination — bouncing back
+ * to the login page after logging in would loop.
  */
 const AUTH_PATHS = ['/login', '/sso-callback'];
+
+/**
+ * Backend sign-in endpoints: a 401 from one of these means "bad credentials",
+ * not "session expired", so `api.ts`'s response interceptor must not treat it
+ * as an auto-logout. Kept next to `AUTH_PATHS` (frontend routes, not backend
+ * endpoints, so not merged into one list) since both describe the same "auth
+ * flow in progress" surface and tend to need updating together.
+ */
+export const AUTH_ENDPOINTS = ['/auth/login', '/auth/passkeys/login'];
 
 interface PathLike {
   pathname: string;
@@ -79,6 +88,12 @@ export function sanitizeRedirect(raw: string | null | undefined): string | null 
     return null;
   }
 
+  // `new URL` collapses dot segments (e.g. `/.//evil.com` normalises to a
+  // pathname of `//evil.com`), which can reintroduce the exact scheme-relative
+  // form the checks above reject. Re-check the *normalised* pathname, not just
+  // the raw input, or a crafted dot-segment path slips past as "safe".
+  if (url.pathname.startsWith('//') || url.pathname.startsWith('/\\')) return null;
+
   if (url.pathname === '/' && !url.search && !url.hash) return null;
   if (isOnAuthPage(url.pathname)) return null;
 
@@ -115,13 +130,6 @@ export function peekRedirect(): string | null {
   } catch {
     return null;
   }
-}
-
-/** Reads and clears the stashed destination. */
-export function consumeRedirect(): string | null {
-  const value = peekRedirect();
-  clearPendingRedirect();
-  return value;
 }
 
 /** Drops any stashed destination (on logout, and once one has been used). */

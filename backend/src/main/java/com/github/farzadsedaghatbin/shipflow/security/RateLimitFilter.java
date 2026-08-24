@@ -183,21 +183,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   }
 
   private String resolveClientIp(HttpServletRequest request) {
-    String remoteAddr = request.getRemoteAddr();
-    // Only honour proxy-injected headers when the direct connection comes from a trusted proxy.
-    // Without this check, any external client could forge X-Forwarded-For to bypass rate limits.
-    if (trustedProxies != null && trustedProxies.contains(remoteAddr)) {
-      String xff = request.getHeader("X-Forwarded-For");
-      if (xff != null && !xff.isBlank()) {
-        int commaIdx = xff.indexOf(',');
-        return commaIdx >= 0 ? xff.substring(0, commaIdx).trim() : xff.trim();
-      }
-      String realIp = request.getHeader("X-Real-IP");
-      if (realIp != null && !realIp.isBlank()) {
-        return realIp.trim();
-      }
-    }
-    return remoteAddr;
+    return ClientIpResolver.resolve(request, trustedProxies);
   }
 
   private record RateLimit(String group, int capacity, Duration period) {}

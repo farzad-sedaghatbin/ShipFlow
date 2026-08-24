@@ -144,4 +144,33 @@ class PasskeyControllerTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().getChallenge()).isEqualTo("chal");
   }
+
+  @Test
+  void discoverableLoginOptions_delegatesToServiceWithNoUsername() {
+    PasskeyLoginOptionsResponse serviceResponse =
+        PasskeyLoginOptionsResponse.builder().challenge("chal").rpId("localhost").allowCredentials(List.of()).build();
+    when(passkeyService.beginDiscoverableLogin()).thenReturn(serviceResponse);
+
+    ResponseEntity<PasskeyLoginOptionsResponse> response = controller.discoverableLoginOptions();
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().getChallenge()).isEqualTo("chal");
+    assertThat(response.getBody().getAllowCredentials()).isEmpty();
+  }
+
+  @Test
+  void loginVerify_discoverableRequest_mintsJwtForUserResolvedServerSide() {
+    PasskeyLoginVerifyRequest request = PasskeyLoginVerifyRequest.builder().credentialId("cred-1")
+        .authenticatorData("AA").clientDataJSON("BB").signature("CC").userHandle("DD").build();
+    when(passkeyService.finishLogin(request)).thenReturn("alice");
+    when(jwtTokenProvider.generateTokenFromUsername("alice")).thenReturn("jwt-token");
+    User alice = User.builder().id(1L).username("alice").role(UserRole.MEMBER).isActive(true).build();
+    when(userService.findUserByUsername("alice")).thenReturn(alice);
+
+    ResponseEntity<AuthResponse> response = controller.loginVerify(request);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().getToken()).isEqualTo("jwt-token");
+    assertThat(response.getBody().getUsername()).isEqualTo("alice");
+  }
 }
