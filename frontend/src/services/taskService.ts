@@ -3,7 +3,11 @@ import { Task, CreateTaskRequest, TaskStatistics, TaskStatus, TaskPriority, Task
 
 export const taskService = {
   // Current user's tasks
-  getMy: (page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory) => {
+  getMy: (
+    page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
+    statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
+    exclude?: boolean
+  ) => {
     return api.get<Page<Task>>('/tasks/my', {
       params: {
         page: page ?? 0,
@@ -11,10 +15,19 @@ export const taskService = {
         sortBy: sortBy ?? 'createdAt',
         sortOrder: sortOrder ?? 'desc',
         category,
+        statuses: statuses?.join(','),
+        priorities: priorities?.join(','),
+        assigneeIds: assigneeIds?.join(','),
+        creatorIds: creatorIds?.join(','),
+        exclude: exclude ?? false,
       },
     });
   },
-  getMyByCycle: (cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory) => {
+  getMyByCycle: (
+    cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
+    statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
+    exclude?: boolean
+  ) => {
     if (page !== undefined) {
       return api.get<Page<Task>>(`/tasks/my/cycle/${cycleId}`, {
         params: {
@@ -23,6 +36,11 @@ export const taskService = {
           sortBy: sortBy ?? 'createdAt',
           sortOrder: sortOrder ?? 'desc',
           category,
+          statuses: statuses?.join(','),
+          priorities: priorities?.join(','),
+          assigneeIds: assigneeIds?.join(','),
+          creatorIds: creatorIds?.join(','),
+          exclude: exclude ?? false,
         },
       });
     }
@@ -30,7 +48,11 @@ export const taskService = {
   },
 
   // General task management
-  getAll: (page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory) => {
+  getAll: (
+    page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
+    statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
+    exclude?: boolean
+  ) => {
     return api.get<Page<Task>>('/tasks', {
       params: {
         page: page ?? 0,
@@ -38,6 +60,11 @@ export const taskService = {
         sortBy: sortBy ?? 'createdAt',
         sortOrder: sortOrder ?? 'desc',
         category,
+        statuses: statuses?.join(','),
+        priorities: priorities?.join(','),
+        assigneeIds: assigneeIds?.join(','),
+        creatorIds: creatorIds?.join(','),
+        exclude: exclude ?? false,
       },
     });
   },
@@ -132,7 +159,11 @@ export const taskService = {
     });
   },
   getStatisticsByProjectId: (projectId: number) => api.get<TaskStatistics>(`/tasks/project/${projectId}/statistics`),
-  search: (query: string, page?: number, size?: number, sortBy?: string, sortOrder?: string) => {
+  search: (
+    query: string, page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
+    statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
+    exclude?: boolean
+  ) => {
     return api.get<Page<Task>>('/tasks/search', {
       params: {
         q: query,
@@ -140,6 +171,12 @@ export const taskService = {
         size: size ?? 50,
         sortBy: sortBy ?? 'createdAt',
         sortOrder: sortOrder ?? 'desc',
+        category,
+        statuses: statuses?.join(','),
+        priorities: priorities?.join(','),
+        assigneeIds: assigneeIds?.join(','),
+        creatorIds: creatorIds?.join(','),
+        exclude: exclude ?? false,
       },
     });
   },
