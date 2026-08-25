@@ -69,8 +69,11 @@ function TaskRow({
 }: TaskRowProps) {
   const { t } = useTranslation();
   const hasSubtasks = subtasks.length > 0;
-  const isBlocked = task.blockedByCount && task.blockedByCount > 0;
-  const isBlocking = task.blockingTasks && task.blockingTasks.length > 0;
+  // Must be a real boolean, not `count && count > 0` — when count is exactly 0 that expression
+  // short-circuits to the number 0 (not false), and `{0 && <Badge/>}` renders a literal "0" text
+  // node in JSX (React only suppresses false/null/undefined children, not 0).
+  const isBlocked = (task.blockedByCount ?? 0) > 0;
+  const isBlocking = (task.blockingTasks?.length ?? 0) > 0;
 
   return (
     <div

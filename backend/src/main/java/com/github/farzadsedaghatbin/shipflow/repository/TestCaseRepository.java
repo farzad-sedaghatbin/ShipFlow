@@ -107,7 +107,8 @@ public interface TestCaseRepository extends JpaRepository<TestCase, Long> {
   // Scope and task queries for traceability
   List<TestCase> findByScopeId(Long scopeId);
 
-  List<TestCase> findByTaskId(Long taskId);
+  @Query("SELECT tc FROM TestCase tc WHERE tc.task.id = :taskId AND tc.deletedAt IS NULL")
+  List<TestCase> findByTaskId(@Param("taskId") Long taskId);
 
   @Query("SELECT tc FROM TestCase tc WHERE tc.scope.id = :scopeId AND tc.status = :status")
   List<TestCase> findByScopeIdAndStatus(@Param("scopeId") Long scopeId, @Param("status") TestCaseStatus status);
