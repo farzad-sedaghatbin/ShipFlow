@@ -7,6 +7,7 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 | Version | Theme | Date |
 |---------|-------|------|
+| v1.12.0 | Plugin SDK completion (`shipflow-plugin-api` + Maven archetype), GitLab + Azure DevOps MCP client integrations | August 20, 2026 |
 | v1.11.0 | Mobile PWA — offline support, responsive audit, Web Push notifications, passkey (WebAuthn) sign-in | July 28, 2026 |
 | v1.10.0 | Wiki References (Pitch/Task links), Drag-and-Drop Task Reordering, Target Release for Standalone Tasks | July 14, 2026 |
 | v1.9.0 | Production-Grade Self-Hosting — Helm chart, OpenTelemetry, Grafana, audit export, air-gapped AI | July 1, 2026 |
@@ -24,7 +25,17 @@ It is the canonical, always-current source — this file is a contributor-facing
 
 | Version | Theme |
 |---------|-------|
-| v1.12.0 | Plugin Marketplace — registry, CLI scaffolder, GitLab + Azure DevOps |
-| v1.13.0 | Collaborative Editing — real-time CRDT co-editing for pitches & retros |
+| v1.13.0 | Live Presence & Truth — presence indicators, conflict-safe editing, SSE foundation rework, public-page accuracy, public-API hardening |
+| v1.14.0 | AI You Can Trust — cycle-summary reliability, RAG hardening, unified AI prompt context |
+| v1.15.0 | ShipFlow Agent — a mentionable, assignable AI teammate with scheduled agent loops; runs fully self-hosted / air-gapped via Ollama |
+| v1.16.0 | Time to Value — project & pitch templates, public share links, guest access |
+| v1.17.0 | Dev Loop — GitHub Issues two-way sync, branch/PR status automation, GitLab repo parity |
+| v1.18.0 | Stakeholder View — portfolio rollup dashboards, capacity & timesheet reports, goals (OKR-lite) |
+| v1.19.0 | Platform Trust — OAuth 2.0 for MCP, credential encryption at rest, MCP prompt templates & resources |
+| v1.20.0 | Knowledge & Docs Graph — GitHub/Confluence/Notion/Drive knowledge ingestion; wiki co-editing (demand-gated) |
+
+> **Note**: v1.13.0 was previously announced as "Collaborative Editing — real-time CRDT co-editing".
+> It has been re-scoped: live presence and conflict-safe editing ship in v1.13.0 on the existing
+> SSE infrastructure; full CRDT co-editing is deferred to the demand-gated wiki slot in v1.20.0.
 
 For the full session-by-session plan see [CLAUDE.md](./CLAUDE.md).
