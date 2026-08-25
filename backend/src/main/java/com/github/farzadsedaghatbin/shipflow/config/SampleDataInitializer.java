@@ -487,7 +487,10 @@ public class SampleDataInitializer implements CommandLineRunner {
         TaskStatus.BACKLOG, TaskPriority.MEDIUM, new BigDecimal("6.0"), null,
         mbaActiveCycle, minaPerson, null, saraPerson, LocalDate.of(2026, 5, 5), "frontend,a11y,compliance");
 
-    createTask(
+    // Captured (not void, unlike the other createTask calls here) so it can be linked to
+    // tc2 below — demonstrates the Task Detail page's "related test cases" card, which had
+    // no seeded task-linked test case at all until now (only pitch-linked ones existed).
+    Task e2eTransferFlowTask = createTask(
         "E2E tests — transfer flow",
         "Playwright E2E: login → dashboard → initiate transfer → OTP confirmation "
             + "→ success screen → verify transaction in history.",
@@ -940,6 +943,7 @@ public class SampleDataInitializer implements CommandLineRunner {
         .pitch(instantTransfer)
         .cycle(mbaActiveCycle)
         .team(paymentsTeam)
+        .task(e2eTransferFlowTask)
         .status(TestCaseStatus.READY)
         .type(TestCaseType.FUNCTIONAL)
         .priority(TestCasePriority.CRITICAL)
@@ -1343,7 +1347,7 @@ public class SampleDataInitializer implements CommandLineRunner {
     workLogRepository.save(workLog);
   }
 
-  private void createTask(
+  private Task createTask(
       String title,
       String description,
       TaskStatus status,
@@ -1376,7 +1380,7 @@ public class SampleDataInitializer implements CommandLineRunner {
       task.setCompletedAt(LocalDateTime.now().minusDays(1));
     }
 
-    taskRepository.save(task);
+    return taskRepository.save(task);
   }
 
   private void createHillChartPoints(
