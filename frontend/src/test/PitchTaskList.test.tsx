@@ -82,6 +82,28 @@ describe('PitchTaskList', () => {
     expect(screen.getByText('Orphan subtask')).toBeInTheDocument();
   });
 
+  it('does not render a stray "0" next to a task with zero blocked/blocking counts', () => {
+    // Regression: `count && count > 0` short-circuits to the number 0 (not false) when count is
+    // exactly 0, and `{0 && <Badge/>}` renders a bare "0" text node in JSX — React only suppresses
+    // false/null/undefined children, not 0. Every task defaults to blockedByCount: 0 and an empty
+    // blockingTasks array, so this used to show a stray "0" next to every single task's title.
+    const tasks = [makeTask({ id: 1, title: 'Clean task', blockedByCount: 0, blockingTasks: [] })];
+
+    const { container } = render(
+      <PitchTaskList
+        tasks={tasks}
+        onStatusChange={noop}
+        onViewTask={vi.fn()}
+        onEditTask={vi.fn()}
+        onDeleteTask={vi.fn()}
+        onAddSubtask={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Clean task')).toBeInTheDocument();
+    expect(container.textContent).not.toContain('0');
+  });
+
   it('calls onViewTask when a task title is clicked', () => {
     const onViewTask = vi.fn();
     const tasks = [makeTask({ id: 1, title: 'Main task' })];
