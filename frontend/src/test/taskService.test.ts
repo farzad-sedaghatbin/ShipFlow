@@ -36,13 +36,15 @@ describe('taskService', () => {
 
       const result = await taskService.getAll(0, 10, 'createdAt', 'desc');
 
+      // getAll also forwards the Backlog filter params (statuses/priorities/
+      // assigneeIds/creatorIds/category/exclude); they are undefined when unused.
       expect(mockedApi.get).toHaveBeenCalledWith('/tasks', {
-        params: {
+        params: expect.objectContaining({
           page: 0,
           size: 10,
           sortBy: 'createdAt',
           sortOrder: 'desc',
-        },
+        }),
       });
       expect(result.data).toEqual(mockResponse);
     });
@@ -139,13 +141,14 @@ describe('taskService', () => {
 
       const result = await taskService.getMy(0, 10, 'createdAt', 'desc');
 
+      // As with getAll, the filter params ride along as undefined when unused.
       expect(mockedApi.get).toHaveBeenCalledWith('/tasks/my', {
-        params: {
+        params: expect.objectContaining({
           page: 0,
           size: 10,
           sortBy: 'createdAt',
           sortOrder: 'desc',
-        },
+        }),
       });
       expect(result.data).toEqual(mockResponse);
     });
