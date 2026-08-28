@@ -10,25 +10,36 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Seeds the "Mobile App — Scrum Demo" project (key: MAS) on every startup if it is absent.
+ * Seeds the "Mobile App — Scrum Demo" project (key: MAS) on startup if it is absent.
  *
- * <p>Unlike {@link SampleDataInitializer}, this initializer runs unconditionally — it is NOT
- * gated by {@code app.sample-data.enabled}. That allows production deployments that were
- * created before v1.1.0 (and therefore never had sample-data enabled) to still receive the
- * Scrum demo project automatically on the next restart.
+ * <p><b>Opt-in.</b> Gated by {@code app.scrum-demo.auto-create}, which defaults to false so a
+ * production install never receives demo data. It is enabled in the dev profile.
  *
- * <p>Guard: the project is only seeded when at least one user already exists. A completely
- * fresh database will be handled by SampleDataInitializer (Order=2) instead.
+ * <p>This used to run unconditionally so that pre-v1.1.0 deployments would be back-filled with
+ * the Scrum demo project, guarded by "only seed when a user already exists, because a fresh
+ * database is handled by SampleDataInitializer instead". That guard never worked:
+ * {@link DefaultAdminInitializer} (Order 1) always creates the {@code admin} user first, so on
+ * every clean production install the user check passed, SampleDataInitializer was correctly
+ * skipped by {@code app.sample-data.enabled=false}, and this initializer seeded MAS anyway.
+ *
+ * <p>The absence check must ignore {@code isActive}/soft-deletion. {@code projects.project_key}
+ * carries a plain unique index with no partial filter, so an archived MAS still owns the key.
+ * Checking {@code isActive = true} reported the project as missing while the key was taken, and
+ * the re-INSERT failed with a duplicate-key violation that aborted startup (a CommandLineRunner
+ * exception is fatal), leaving the container crash-looping. H2-based tests cannot reproduce
+ * that: the schema is generated from entities and these initializers do not run there.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 @Order(3)
+@ConditionalOnProperty(name = "app.scrum-demo.auto-create", havingValue = "true")
 public class ScrumDemoInitializer implements CommandLineRunner {
 
   private final ProjectRepository projectRepository;
@@ -40,7 +51,7 @@ public class ScrumDemoInitializer implements CommandLineRunner {
   @Override
   @Transactional
   public void run(String... args) {
-    if (projectRepository.existsByProjectKeyNotDeleted("MAS")) {
+    if (projectRepository.existsByProjectKey("MAS")) {
       // Project exists — verify tasks were also seeded. A prior run could have committed
       // the project + cycles but crashed before the task inserts (e.g. missing DB column).
       projectRepository.findByProjectKey("MAS").ifPresent(masProject -> {
