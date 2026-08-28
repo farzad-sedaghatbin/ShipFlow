@@ -52,6 +52,16 @@ public class AIConfig {
   @Value("${app.ai.temperature:0.3}")
   private double temperature;
 
+  /**
+   * Anthropic-only temperature override. Unset by default and deliberately nullable: newer Claude
+   * models (claude-sonnet-5 and later) reject the parameter outright with
+   * "`temperature` is deprecated for this model", which fails the whole request. Leaving this unset
+   * omits the parameter so those models work; set it only when running an older model that still
+   * accepts it.
+   */
+  @Value("${app.ai.anthropic.temperature:#{null}}")
+  private Double anthropicTemperature;
+
   @Value("${app.ai.max-tokens:2048}")
   private int maxTokens;
 
@@ -170,6 +180,10 @@ public class AIConfig {
       case ANTHROPIC :
         configBuilder.apiKey(anthropicApiKey).modelName(anthropicModel)
             .timeout(Duration.ofSeconds(anthropicTimeout));
+        // Override the shared default with the Anthropic-specific value, which is null unless the
+        // operator set one. AnthropicLLMProvider only sends the parameter when it is non-null, so
+        // this is what keeps claude-sonnet-5+ working.
+        configBuilder.temperature(anthropicTemperature);
         break;
 
       case GOOGLE :
