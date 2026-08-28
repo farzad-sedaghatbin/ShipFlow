@@ -112,6 +112,25 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.12.1',
+    date: 'August 28, 2026',
+    title: 'Self-Hosting Fixes: Clean Installs & Current Claude Models',
+    highlights: [
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Clean Production Installs Stay Clean',
+        description:
+          'A fresh production install no longer arrives with a "Mobile App — Scrum Demo" project you never asked for. The demo seeder is now opt-in, and it can no longer take the application down: archiving or deleting that project used to make the next restart fail to start.',
+      },
+      {
+        icon: <Sparkles className="h-5 w-5" />,
+        title: 'Support for the Latest Claude Models',
+        description:
+          'Selecting a current Claude model such as claude-sonnet-5 made every AI feature return a 500, because ShipFlow always sent a temperature parameter that the newest models reject. Anthropic now omits it by default, so the latest models work out of the box.',
+      },
+    ],
+  },
+  {
     version: '1.12.0',
     date: 'August 20, 2026',
     title: 'Plugin Marketplace: SDK Tooling & Source Control Integrations',

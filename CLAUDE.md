@@ -7,7 +7,7 @@ Read it before touching any code.
 
 ## Current Milestone: v1.13.0 — "Live Presence & Truth"
 
-**Current version**: v1.12.0 (released 2026-08-20)
+**Current version**: v1.12.1 (released 2026-08-28)
 **All PRs target**: `main` branch
 
 > **Note on versioning**: v1.10.0 (wiki-linking, drag-and-drop task reordering, target-release for standalone tasks) was fully built and merged on 2026-07-14 but never actually tagged/released — work continued straight into the "Mobile PWA" sessions without cutting a release in between. v1.11.0's release absorbed that gap: the git tag jumps directly from v1.9.1 to v1.11.0. See `CHANGELOG.md`'s `[1.11.0]` entry for the full note. All three Mobile PWA sessions (S57 PWA shell/offline, S58 responsive audit, S59 Web Push + passkey auth) shipped as independent PRs — see the v1.11.0 session map below.

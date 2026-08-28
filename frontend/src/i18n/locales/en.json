@@ -3426,7 +3426,7 @@
     "pitchTasks": "Pitch Tasks",
     "featureTasks": "Feature Tasks",
     "debtImprovements": "Debt & Improvements",
-    "allTasks": "Tasks",
+    "allTasks": "All Tasks",
     "taskOverview": "Task Overview",
     "total": "Total",
     "todo": "To Do",
@@ -3435,7 +3435,6 @@
     "inReview": "In Review",
     "done": "Done",
     "complete": "Complete",
-    "allTasks": "All Tasks",
     "myTasks": "My Tasks",
     "timerStarted": "Timer started",
     "titleRequired": "Title is required",
@@ -5680,7 +5679,12 @@
     "phase115Item1Title": "Agent Actions",
     "phase115Item1Desc": "Ask the agent to create tasks, update pitches, or move the hill chart — with a review step before anything changes.",
     "phase115Item2Title": "Scheduled Agent Loops",
-    "phase115Item2Desc": "Standup digests, cycle-health checks, and betting-table prep — running on a schedule, fully self-hosted and air-gapped capable."
+    "phase115Item2Desc": "Standup digests, cycle-health checks, and betting-table prep — running on a schedule, fully self-hosted and air-gapped capable.",
+    "shipped1121Title": "Self-Hosting Fixes: Clean Installs & Current Claude Models",
+    "shipped1121Item0Title": "Clean Production Installs Stay Clean",
+    "shipped1121Item0Desc": "A fresh production install no longer arrives with a “Mobile App — Scrum Demo” project you never asked for. The demo seeder is now opt-in, and archiving or deleting that project no longer stops the application from starting.",
+    "shipped1121Item1Title": "Support for the Latest Claude Models",
+    "shipped1121Item1Desc": "Choosing a current Claude model such as claude-sonnet-5 made every AI feature fail, because ShipFlow always sent a temperature setting the newest models reject. It is now omitted by default, so the latest models work out of the box."
   },
   "releaseNotes": {
     "title": "Release Notes",
