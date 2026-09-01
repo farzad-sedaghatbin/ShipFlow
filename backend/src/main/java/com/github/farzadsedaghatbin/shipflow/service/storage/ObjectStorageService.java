@@ -39,7 +39,10 @@ public class ObjectStorageService {
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           "application/msword",
           "text/plain",
-          "text/markdown");
+          "text/markdown",
+          "application/json",
+          "application/zip",
+          "application/x-zip-compressed");
 
   private final StorageConfigService configService;
   private final ObjectStorageRegistry registry;
@@ -188,7 +191,7 @@ public class ObjectStorageService {
       throw new IllegalArgumentException(
           "Unsupported file type '"
               + contentType
-              + "'. Allowed: images, PDF, DOCX, DOC, TXT, MD");
+              + "'. Allowed: images, PDF, DOCX, DOC, TXT, MD, JSON, ZIP");
     }
   }
 

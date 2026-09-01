@@ -87,7 +87,29 @@ class ObjectStorageServiceTest {
                     "hint", "video.mp4", "video/mp4", 100, InputStream.nullInputStream()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
-            "Unsupported file type 'video/mp4'. Allowed: images, PDF, DOCX, DOC, TXT, MD");
+            "Unsupported file type 'video/mp4'. Allowed: images, PDF, DOCX, DOC, TXT, MD, JSON, ZIP");
+  }
+
+  // ── validation — JSON and ZIP are allowed ─────────────────────────────────
+
+  @Test
+  void store_jsonContentType_succeeds() throws Exception {
+    byte[] content = "{\"a\":1}".getBytes(UTF_8);
+    StoredObjectRef ref =
+        service.store(
+            "hint", "data.json", "application/json", content.length, new ByteArrayInputStream(content));
+
+    assertThat(ref.getKey()).isNotNull();
+  }
+
+  @Test
+  void store_zipContentType_succeeds() throws Exception {
+    byte[] content = "pk-fake-zip-bytes".getBytes(UTF_8);
+    StoredObjectRef ref =
+        service.store(
+            "hint", "archive.zip", "application/zip", content.length, new ByteArrayInputStream(content));
+
+    assertThat(ref.getKey()).isNotNull();
   }
 
   // ── key generation ────────────────────────────────────────────────────────
