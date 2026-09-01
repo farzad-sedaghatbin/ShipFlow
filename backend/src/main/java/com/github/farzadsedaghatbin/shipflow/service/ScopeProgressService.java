@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,37 +37,86 @@ public class ScopeProgressService {
    */
   public Integer calculateSuggestedPosition(Long scopeId) {
     HillChartPoint scope = hillChartPointRepository.findById(scopeId).orElse(null);
-    if (scope == null || scope.getLinkedTask() == null) {
+    if (scope == null) {
       return null;
     }
+    return calculateSuggestedPosition(scope);
+  }
 
-    Task linkedTask = scope.getLinkedTask();
-    return calculatePositionFromTask(linkedTask);
+  /**
+   * Calculate the suggested hill chart position for a scope from every task associated with
+   * it — not just the legacy Scope-Task Bridge subtree.
+   *
+   * <p>A task reaches a scope through two independent, non-exclusive mechanisms: (1) being a
+   * subtask of the scope's auto-created {@code linkedTask} (the original Scope-Task Bridge), or
+   * (2) being directly linked via {@code Task.scope} (settable on any task, root or subtask,
+   * through the "Link to Scope" field — see {@code TaskService#createTask}/{@code #updateTask}).
+   * The frontend's "Scope Summary" panel ({@code PitchHillChart.tsx}) already shows tasks linked
+   * either way, so the position calculation must consider both or it silently diverges from what
+   * the user sees as "this scope's tasks" — previously, editing a task to link it to a scope (or
+   * completing it) never moved the hill chart unless it also happened to be a subtask of the
+   * scope's original linked task.
+   *
+   * @param scope the hill chart point (scope)
+   * @return position 0-100, or null if no tasks are associated with the scope at all
+   */
+  public Integer calculateSuggestedPosition(HillChartPoint scope) {
+    List<Task> tasks = collectScopeTasks(scope);
+    if (tasks.isEmpty()) {
+      return null;
+    }
+    return averagePosition(tasks);
   }
 
   /**
    * Calculate hill chart position from a task and its subtasks.
-   * 
+   *
+   * <p>Used at scope-creation time, before a {@link HillChartPoint} exists to look up
+   * {@code Task.scope}-linked tasks through — only the task's own subtree is known yet.
+   *
    * @param task the root task
    * @return position 0-100
    */
   public Integer calculatePositionFromTask(Task task) {
-    // Get all subtasks (children) of this task
     List<Task> subtasks = taskRepository.findByParentTaskIdNotDeleted(task.getId());
-
     if (subtasks.isEmpty()) {
       // No subtasks: base position on task's own status
       return getPositionFromTaskStatus(task.getStatus());
     }
+    return averagePosition(subtasks);
+  }
 
-    // Weighted average: each subtask contributes its own status-based position.
-    // Using binary DONE/CANCELLED counting caused IN_REVIEW subtasks (position=75)
-    // to contribute zero, making a scope with all-IN_REVIEW subtasks show 0%.
-    double averagePosition = subtasks.stream()
+  /**
+   * Union of a scope's linked-task subtasks and its directly {@code Task.scope}-linked tasks,
+   * deduplicated by task ID. Falls back to the linked task itself when neither mechanism yields
+   * any tasks, so a freshly created scope still reflects its own task's status.
+   */
+  private List<Task> collectScopeTasks(HillChartPoint scope) {
+    List<Task> tasks = new ArrayList<>();
+    if (scope.getLinkedTask() != null) {
+      tasks.addAll(taskRepository.findByParentTaskIdNotDeleted(scope.getLinkedTask().getId()));
+    }
+    for (Task scoped : taskRepository.findByScopeIdNotDeleted(scope.getId())) {
+      if (tasks.stream().noneMatch(t -> t.getId().equals(scoped.getId()))) {
+        tasks.add(scoped);
+      }
+    }
+    if (tasks.isEmpty() && scope.getLinkedTask() != null) {
+      tasks.add(scope.getLinkedTask());
+    }
+    return tasks;
+  }
+
+  /**
+   * Weighted average: each task contributes its own status-based position. Using binary
+   * DONE/CANCELLED counting caused IN_REVIEW tasks (position=75) to contribute zero, making a
+   * scope with all-IN_REVIEW tasks show 0%.
+   */
+  private Integer averagePosition(List<Task> tasks) {
+    double averagePosition = tasks.stream()
         .mapToInt(t -> getPositionFromTaskStatus(t.getStatus()))
         .average()
         .orElse(0);
-
     return (int) Math.round(averagePosition);
   }
 

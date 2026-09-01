@@ -289,6 +289,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByScopeId(Long scopeId);
 
+    @Query("SELECT t FROM Task t WHERE t.scope.id = :scopeId AND t.deletedAt IS NULL")
+    List<Task> findByScopeIdNotDeleted(@Param("scopeId") Long scopeId);
+
     @Query("SELECT t FROM Task t WHERE t.pitch.id = :pitchId AND t.status = :status")
     List<Task> findByPitchIdAndStatus(@Param("pitchId") Long pitchId, @Param("status") TaskStatus status);
 
