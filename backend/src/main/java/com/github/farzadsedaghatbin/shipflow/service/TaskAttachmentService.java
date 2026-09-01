@@ -204,6 +204,8 @@ public class TaskAttachmentService {
         case "gif" -> "image/gif";
         case "webp" -> "image/webp";
         case "svg" -> "image/svg+xml";
+        case "json" -> "application/json";
+        case "zip" -> "application/zip";
         default -> "application/octet-stream";
       };
     }

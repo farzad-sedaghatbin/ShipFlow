@@ -53,7 +53,7 @@ Attach files to a task to keep designs, logs, and documents alongside the work.
 
 ## What You Can Attach
 
-Images (JPEG, PNG, GIF, WebP, SVG) and documents (PDF, DOC, DOCX, TXT, MD), up to **10 MB per file**.
+Images (JPEG, PNG, GIF, WebP, SVG), documents (PDF, DOC, DOCX, TXT, MD), plus JSON and ZIP files, up to **10 MB per file**.
 
 ## How to Upload, View, and Delete
 

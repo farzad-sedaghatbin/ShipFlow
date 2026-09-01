@@ -8059,7 +8059,7 @@
   "attachments": {
     "title": "Attachments",
     "dropHint": "Drag & drop a file here, or click to browse",
-    "allowedTypes": "Images, PDF, DOCX, DOC, TXT, MD — max 10 MB",
+    "allowedTypes": "Images, PDF, DOCX, DOC, TXT, MD, JSON, ZIP — max 10 MB",
     "uploaded": "File uploaded successfully",
     "uploadError": "Failed to upload file",
     "deleted": "Attachment deleted",

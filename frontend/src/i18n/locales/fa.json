@@ -6921,7 +6921,7 @@
   "attachments": {
     "title": "پیوست‌ها",
     "dropHint": "فایل را اینجا بکشید یا کلیک کنید",
-    "allowedTypes": "تصاویر، PDF، DOCX، DOC، TXT، MD — حداکثر ۱۰ مگابایت",
+    "allowedTypes": "تصاویر، PDF، DOCX، DOC، TXT، MD، JSON، ZIP — حداکثر ۱۰ مگابایت",
     "uploaded": "فایل با موفقیت بارگذاری شد",
     "uploadError": "بارگذاری فایل ناموفق بود",
     "deleted": "پیوست حذف شد",
