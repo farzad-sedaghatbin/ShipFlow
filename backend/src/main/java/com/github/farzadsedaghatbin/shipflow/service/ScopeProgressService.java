@@ -55,7 +55,10 @@ public class ScopeProgressService {
    * either way, so the position calculation must consider both or it silently diverges from what
    * the user sees as "this scope's tasks" — previously, editing a task to link it to a scope (or
    * completing it) never moved the hill chart unless it also happened to be a subtask of the
-   * scope's original linked task.
+   * scope's original linked task. The linked task's own status is also always counted alongside
+   * whatever else is collected — previously it was dropped entirely once the task had subtasks,
+   * so a root task left in BACKLOG with a single completed subtask (e.g. only "Design" done, the
+   * rest of the work not even started) still averaged to 100%.
    *
    * @param scope the hill chart point (scope)
    * @return position 0-100, or null if no tasks are associated with the scope at all
@@ -69,40 +72,41 @@ public class ScopeProgressService {
   }
 
   /**
-   * Calculate hill chart position from a task and its subtasks.
+   * Calculate hill chart position from a task, counted alongside its subtasks.
    *
    * <p>Used at scope-creation time, before a {@link HillChartPoint} exists to look up
    * {@code Task.scope}-linked tasks through — only the task's own subtree is known yet.
+   *
+   * <p>The task's own status is always one of the averaged data points, not dropped the moment
+   * it gains a subtask — a root task left in BACKLOG/TODO while all the real granular work
+   * happens in its subtasks is a common pattern, and averaging only the subtasks let a single
+   * completed subtask push the whole thing to 100% even though the task representing the actual
+   * deliverable was untouched. See the {@code Fixed} entry in CHANGELOG.md for the reported case.
    *
    * @param task the root task
    * @return position 0-100
    */
   public Integer calculatePositionFromTask(Task task) {
-    List<Task> subtasks = taskRepository.findByParentTaskIdNotDeleted(task.getId());
-    if (subtasks.isEmpty()) {
-      // No subtasks: base position on task's own status
-      return getPositionFromTaskStatus(task.getStatus());
-    }
-    return averagePosition(subtasks);
+    List<Task> tasks = new ArrayList<>(taskRepository.findByParentTaskIdNotDeleted(task.getId()));
+    tasks.add(task);
+    return averagePosition(tasks);
   }
 
   /**
-   * Union of a scope's linked-task subtasks and its directly {@code Task.scope}-linked tasks,
-   * deduplicated by task ID. Falls back to the linked task itself when neither mechanism yields
-   * any tasks, so a freshly created scope still reflects its own task's status.
+   * Union of a scope's linked task, that task's subtasks, and any tasks directly linked via
+   * {@code Task.scope}, deduplicated by task ID. The linked task's own status always counts
+   * (see {@link #calculatePositionFromTask}) rather than being dropped once it has subtasks.
    */
   private List<Task> collectScopeTasks(HillChartPoint scope) {
     List<Task> tasks = new ArrayList<>();
     if (scope.getLinkedTask() != null) {
+      tasks.add(scope.getLinkedTask());
       tasks.addAll(taskRepository.findByParentTaskIdNotDeleted(scope.getLinkedTask().getId()));
     }
     for (Task scoped : taskRepository.findByScopeIdNotDeleted(scope.getId())) {
       if (tasks.stream().noneMatch(t -> t.getId().equals(scoped.getId()))) {
         tasks.add(scoped);
       }
-    }
-    if (tasks.isEmpty() && scope.getLinkedTask() != null) {
-      tasks.add(scope.getLinkedTask());
     }
     return tasks;
   }
