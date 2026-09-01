@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Task attachments now accept JSON and ZIP files**, in addition to the existing images (JPEG, PNG, GIF, WebP, SVG) and documents (PDF, DOC, DOCX, TXT, MD). Extended `ObjectStorageService.ALLOWED_CONTENT_TYPES` (`application/json`, `application/zip`, plus the `application/x-zip-compressed` alias some browsers send for ZIP) and the matching frontend `ALLOWED_TYPES`/`accept` list in `TaskAttachments.tsx`. Same 10 MB limit applies.
+
 ## [1.12.1] - 2026-08-28
 
 ### Changed

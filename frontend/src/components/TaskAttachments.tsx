@@ -28,11 +28,17 @@ const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword',
   'text/plain', 'text/markdown',
+  'application/json',
+  'application/zip', 'application/x-zip-compressed',
 ];
 
 function fileIcon(contentType: string) {
   if (contentType.startsWith('image/')) return <Image className="h-4 w-4 text-blue-500" />;
   if (contentType === 'application/pdf') return <FileText className="h-4 w-4 text-red-500" />;
+  if (contentType === 'application/json') return <FileText className="h-4 w-4 text-amber-500" />;
+  if (contentType === 'application/zip' || contentType === 'application/x-zip-compressed') {
+    return <FileText className="h-4 w-4 text-purple-500" />;
+  }
   return <File className="h-4 w-4 text-muted-foreground" />;
 }
 
@@ -172,7 +178,7 @@ export default function TaskAttachments({ taskId }: Props) {
               ref={fileInputRef}
               type="file"
               className="hidden"
-              accept={ALLOWED_TYPES.join(',')}
+              accept={[...ALLOWED_TYPES, '.json', '.zip'].join(',')}
               onChange={(e) => handleFiles(e.target.files)}
             />
           </div>
