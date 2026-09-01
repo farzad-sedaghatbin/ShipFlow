@@ -17,10 +17,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Unit tests for {@link ScopeProgressService}. Regression coverage for the bug where a scope's
- * hill-chart position only reflected the linked task's direct subtasks (the legacy Scope-Task
- * Bridge), silently ignoring tasks linked to the scope via {@code Task.scope} — e.g. a task
- * edited to point at an existing scope, or completed after the fact.
+ * Unit tests for {@link ScopeProgressService}. Regression coverage for two related bugs: (1) a
+ * scope's hill-chart position only reflected the linked task's direct subtasks (the legacy
+ * Scope-Task Bridge), silently ignoring tasks linked to the scope via {@code Task.scope}; and (2)
+ * the linked/root task's own status was dropped from the average entirely once it had subtasks,
+ * so a task left in BACKLOG with a single completed subtask still averaged to 100% — reproduced
+ * live on a production pitch (root task "3. Money Overview" BACKLOG, its only subtask "Design"
+ * DONE, scope showing 100%).
  */
 @ExtendWith(MockitoExtension.class)
 class ScopeProgressServiceTest {
@@ -51,7 +54,23 @@ class ScopeProgressServiceTest {
   }
 
   @Test
-  void calculateSuggestedPosition_onlySubtasksOfLinkedTask_averagesThem() {
+  void calculateSuggestedPosition_backlogRootWithOneDoneSubtask_doesNotJumpToDone() {
+    // Regression test for the live production bug: a root task left in BACKLOG (all the real
+    // work not started) with only its "Design" subtask marked DONE must NOT show the scope at
+    // 100% — the root task's own status has to pull the average down, not be ignored.
+    Task linkedTask = taskWithStatus(10L, TaskStatus.BACKLOG);
+    HillChartPoint scope = HillChartPoint.builder().id(1L).linkedTask(linkedTask).build();
+    when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
+    when(taskRepository.findByParentTaskIdNotDeleted(10L))
+        .thenReturn(List.of(taskWithStatus(11L, TaskStatus.DONE)));
+    when(taskRepository.findByScopeIdNotDeleted(1L)).thenReturn(List.of());
+
+    // average(BACKLOG=0, DONE=100) = 50, not 100
+    assertThat(service.calculateSuggestedPosition(1L)).isEqualTo(50);
+  }
+
+  @Test
+  void calculateSuggestedPosition_linkedTaskAndSubtasks_averagesAllOfThem() {
     Task linkedTask = taskWithStatus(10L, TaskStatus.IN_PROGRESS);
     HillChartPoint scope = HillChartPoint.builder().id(1L).linkedTask(linkedTask).build();
     when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
@@ -59,8 +78,8 @@ class ScopeProgressServiceTest {
         .thenReturn(List.of(taskWithStatus(11L, TaskStatus.DONE), taskWithStatus(12L, TaskStatus.TODO)));
     when(taskRepository.findByScopeIdNotDeleted(1L)).thenReturn(List.of());
 
-    // average(DONE=100, TODO=10) = 55
-    assertThat(service.calculateSuggestedPosition(1L)).isEqualTo(55);
+    // average(IN_PROGRESS=35, DONE=100, TODO=10) = 48.33 -> 48
+    assertThat(service.calculateSuggestedPosition(1L)).isEqualTo(48);
   }
 
   @Test
@@ -74,7 +93,8 @@ class ScopeProgressServiceTest {
     when(taskRepository.findByScopeIdNotDeleted(1L))
         .thenReturn(List.of(taskWithStatus(20L, TaskStatus.DONE)));
 
-    assertThat(service.calculateSuggestedPosition(1L)).isEqualTo(100);
+    // average(TODO=10, DONE=100) = 55
+    assertThat(service.calculateSuggestedPosition(1L)).isEqualTo(55);
   }
 
   @Test
@@ -88,12 +108,12 @@ class ScopeProgressServiceTest {
     when(taskRepository.findByScopeIdNotDeleted(1L))
         .thenReturn(List.of(subtask, taskWithStatus(21L, TaskStatus.TODO)));
 
-    // average(DONE=100, TODO=10) = 55, not the id-11-counted-twice average of 70
-    assertThat(service.calculateSuggestedPosition(1L)).isEqualTo(55);
+    // average(linkedTask TODO=10, 11 DONE=100, 21 TODO=10) = 40, not the id-11-counted-twice value
+    assertThat(service.calculateSuggestedPosition(1L)).isEqualTo(40);
   }
 
   @Test
-  void calculateSuggestedPosition_noSubtasksButLinkedTaskItself_fallsBackToLinkedTaskStatus() {
+  void calculateSuggestedPosition_noSubtasksOrScopeLinkedTasks_usesLinkedTaskOwnStatus() {
     Task linkedTask = taskWithStatus(10L, TaskStatus.IN_REVIEW);
     HillChartPoint scope = HillChartPoint.builder().id(1L).linkedTask(linkedTask).build();
     when(hillChartPointRepository.findById(1L)).thenReturn(Optional.of(scope));
@@ -112,11 +132,12 @@ class ScopeProgressServiceTest {
   }
 
   @Test
-  void calculatePositionFromTask_withSubtasks_averagesSubtaskStatuses() {
+  void calculatePositionFromTask_withSubtasks_averagesTaskAndSubtaskStatuses() {
     Task task = taskWithStatus(1L, TaskStatus.TODO);
     when(taskRepository.findByParentTaskIdNotDeleted(1L))
         .thenReturn(List.of(taskWithStatus(2L, TaskStatus.DONE), taskWithStatus(3L, TaskStatus.DONE)));
 
-    assertThat(service.calculatePositionFromTask(task)).isEqualTo(100);
+    // average(TODO=10, DONE=100, DONE=100) = 70, not 100 — the task's own status still counts
+    assertThat(service.calculatePositionFromTask(task)).isEqualTo(70);
   }
 }
