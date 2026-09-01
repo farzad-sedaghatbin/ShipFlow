@@ -112,6 +112,25 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.12.2',
+    date: 'September 2, 2026',
+    title: 'Accurate Hill Charts & Broader Attachment Support',
+    highlights: [
+      {
+        icon: <TrendingUp className="h-5 w-5" />,
+        title: 'Hill Chart Progress You Can Trust',
+        description:
+          "A scope's position on the hill chart could get stuck reflecting only the very first task ever created for it, and a single completed subtask could wrongly push the whole scope to \"Done.\" Progress is now computed from every task linked to a scope — not just one task's original subtree — and a task's own status always counts alongside its subtasks instead of being dropped.",
+      },
+      {
+        icon: <Paperclip className="h-5 w-5" />,
+        title: 'JSON and ZIP Attachments',
+        description:
+          'Task attachments now accept JSON and ZIP files, alongside the existing images and documents. Same 10 MB limit applies.',
+      },
+    ],
+  },
+  {
     version: '1.12.1',
     date: 'August 28, 2026',
     title: 'Self-Hosting Fixes: Clean Installs & Current Claude Models',
