@@ -7,7 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { dashboardWidgetApi } from '../services/dashboardApi';
 import { DashboardWidget } from '../types/dashboard';
-import { useToast } from '../contexts';
+import { useToast, useProject } from '../contexts';
+import { resolveOrgCapabilities } from '../config/projectTypeCapabilities';
 
 interface DashboardCustomizerProps {
   widgets: DashboardWidget[];
@@ -18,8 +19,16 @@ export function DashboardCustomizer({ widgets, onUpdate }: DashboardCustomizerPr
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const { showSuccess, showError } = useToast();
+  const { orgProjectTypes } = useProject();
 
-  const sortedWidgets = [...widgets].sort((a, b) => a.displayOrder - b.displayOrder);
+  // Widget prefs are per-user, not per-project, so filter by what's meaningful
+  // anywhere in the org (not just the currently selected project) — a user
+  // with both a Kanban and a Shape Up project shouldn't lose Hill Chart just
+  // because a Kanban project happens to be selected right now.
+  const { defaultWidgetTypes } = resolveOrgCapabilities(orgProjectTypes);
+  const sortedWidgets = [...widgets]
+    .filter((widget) => defaultWidgetTypes.includes(widget.widgetType))
+    .sort((a, b) => a.displayOrder - b.displayOrder);
 
   const toggleVisibility = async (widget: DashboardWidget) => {
     try {

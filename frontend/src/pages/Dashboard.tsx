@@ -34,7 +34,7 @@ import { STALE_TIMES, queryKeys } from '../lib/queryClient';
 export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { currentProject, isAllProjectsSelected, isKanbanProject } = useProject();
+  const { currentProject, isAllProjectsSelected, isKanbanProject, capabilities } = useProject();
   const [showCustomizer, setShowCustomizer] = useState(false);
 
   const cyclesQueryKey = isAllProjectsSelected
@@ -224,7 +224,7 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <p className="text-xs text-muted-foreground mb-2">{statScopeLabel}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4 items-stretch">
-        {!isKanbanProject && (
+        {capabilities.dashboard.showActiveCyclesStat && (
         <AnimatedCard
           delay={0.1}
           animation="fadeUp"
@@ -243,7 +243,7 @@ export default function Dashboard() {
         </AnimatedCard>
         )}
 
-        {!isKanbanProject && (
+        {capabilities.dashboard.showTotalPitchesStat && (
         <AnimatedCard
           delay={0.2}
           animation="fadeUp"
@@ -262,6 +262,7 @@ export default function Dashboard() {
         </AnimatedCard>
         )}
 
+        {capabilities.dashboard.showCompletedStat && (
         <AnimatedCard
           delay={0.3}
           animation="fadeUp"
@@ -278,7 +279,9 @@ export default function Dashboard() {
             <p className="text-3xl font-extrabold text-emerald-500">{completedPitches}</p>
           </CardContent>
         </AnimatedCard>
+        )}
 
+        {capabilities.dashboard.showInProgressStat && (
         <AnimatedCard
           delay={0.4}
           animation="fadeUp"
@@ -295,6 +298,7 @@ export default function Dashboard() {
             <p className="text-3xl font-extrabold text-amber-600">{inProgressPitches}</p>
           </CardContent>
         </AnimatedCard>
+        )}
       </div>
 
       {/* Widget Customizer - appears before widgets when toggled */}

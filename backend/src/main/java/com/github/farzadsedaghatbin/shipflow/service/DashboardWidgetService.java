@@ -5,11 +5,16 @@ import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardWidgetDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.UpdateDashboardWidgetRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.DashboardWidget;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.repository.DashboardWidgetRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +30,58 @@ public class DashboardWidgetService {
 
   private final DashboardWidgetRepository dashboardWidgetRepository;
   private final UserRepository userRepository;
+  private final ProjectRepository projectRepository;
   private final EntityManager entityManager;
 
-  // All default widgets combined
-  private static final List<String> DEFAULT_WIDGETS = Arrays.asList(
-      "OVERDUE_TASKS", "BLOCKED_TASKS", "UPCOMING_DEADLINES", "MY_TASKS", 
-      "TEAM_WORKLOAD", "CYCLE_PROGRESS", "RECENT_ACTIVITY",
-      "CYCLE_SUMMARY", "CYCLE_SIGNALS", "AI_RISK_ADVISORY",
-      "ACTIVE_CYCLES", "HILL_CHART", "RECENT_PITCHES");
+  // Task-based widgets meaningful for every project type.
+  private static final List<String> GENERIC_WIDGETS = Arrays.asList(
+      "OVERDUE_TASKS", "BLOCKED_TASKS", "UPCOMING_DEADLINES", "MY_TASKS",
+      "TEAM_WORKLOAD", "RECENT_ACTIVITY");
+
+  // Cycle-based widgets — apply to Shape Up and Scrum alike, not Kanban.
+  // CYCLE_PROGRESS is included here (not Shape-Up-only): the frontend
+  // widget computes it from Task data ("stories") for Scrum cycles and
+  // Pitch data for Shape Up, see CycleProgressWidget.tsx.
+  private static final List<String> CYCLE_WIDGETS = Arrays.asList(
+      "CYCLE_PROGRESS", "CYCLE_SUMMARY", "CYCLE_SIGNALS", "AI_RISK_ADVISORY", "ACTIVE_CYCLES");
+
+  // Pitch/hill-chart widgets — Shape Up only (Scrum has no pitches).
+  private static final List<String> SHAPE_UP_ONLY_WIDGETS = Arrays.asList("HILL_CHART", "RECENT_PITCHES");
+
+  // All default widgets combined — the full Shape Up set, mirrors
+  // frontend/src/config/projectTypeCapabilities.ts's SHAPE_UP.defaultWidgetTypes.
+  private static final List<String> DEFAULT_WIDGETS = concat(GENERIC_WIDGETS, CYCLE_WIDGETS, SHAPE_UP_ONLY_WIDGETS);
+
+  private static List<String> concat(List<String>... lists) {
+    List<String> result = new ArrayList<>();
+    for (List<String> list : lists) {
+      result.addAll(list);
+    }
+    return result;
+  }
+
+  /**
+   * Widget types meaningful for the project types currently active in this
+   * deployment — mirrors frontend/src/config/projectTypeCapabilities.ts's
+   * resolveOrgCapabilities so a Kanban-only or Scrum-only deployment doesn't
+   * seed new users with widgets (Hill Chart, AI Risk Advisory, etc.) that can
+   * never render anything for them. Falls back to the generic baseline when
+   * there are no active projects yet — never defaults to the full Shape Up
+   * set just because nothing exists.
+   */
+  private List<String> resolveDefaultWidgetTypesForDeployment() {
+    Set<ProjectType> activeTypes = EnumSet.noneOf(ProjectType.class);
+    activeTypes.addAll(projectRepository.findDistinctActiveProjectTypes());
+
+    if (activeTypes.isEmpty() || (activeTypes.size() == 1 && activeTypes.contains(ProjectType.KANBAN))) {
+      return GENERIC_WIDGETS;
+    }
+    if (activeTypes.contains(ProjectType.SHAPE_UP)) {
+      return DEFAULT_WIDGETS;
+    }
+    // Remaining case: SCRUM present, no SHAPE_UP — cycle widgets apply, hill chart/pitches don't.
+    return concat(GENERIC_WIDGETS, CYCLE_WIDGETS);
+  }
 
   /** Get all widgets for a user. Create defaults if none exist. */
   @Transactional
@@ -134,14 +183,17 @@ public class DashboardWidgetService {
     return createDefaultWidgets(userId);
   }
 
-  /** Create default widgets for a new user */
+  /** Create default widgets for a new user, scoped to what's meaningful for the
+   *  project types actually active in this deployment. Existing users' widget
+   *  rows are never touched by this — only invoked when a user has none yet. */
   private List<DashboardWidgetDTO> createDefaultWidgets(Long userId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 
-    List<DashboardWidget> defaultWidgets = new java.util.ArrayList<>();
-    for (int i = 0; i < DEFAULT_WIDGETS.size(); i++) {
-      String type = DEFAULT_WIDGETS.get(i);
+    List<String> widgetTypes = resolveDefaultWidgetTypesForDeployment();
+    List<DashboardWidget> defaultWidgets = new ArrayList<>();
+    for (int i = 0; i < widgetTypes.size(); i++) {
+      String type = widgetTypes.get(i);
       DashboardWidget widget = DashboardWidget.builder().user(user).widgetType(type).isVisible(true)
           .displayOrder(i).build();
       defaultWidgets.add(widget);

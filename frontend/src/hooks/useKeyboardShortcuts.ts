@@ -1,7 +1,10 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useProject } from '../contexts';
+import type { ShortcutId } from '../config/projectTypeCapabilities';
 
 export interface KeyboardShortcut {
+  id: ShortcutId;
   key: string;
   ctrl?: boolean;
   alt?: boolean;
@@ -27,47 +30,55 @@ const isTyping = () => {
 
 export function useKeyboardShortcuts(additionalShortcuts?: KeyboardShortcut[]) {
   const navigate = useNavigate();
+  const { capabilities } = useProject();
   const [showHelp, setShowHelp] = useState(false);
 
-  const defaultShortcuts: KeyboardShortcut[] = [
+  const allDefaultShortcuts: KeyboardShortcut[] = [
     // Navigation shortcuts
     {
+      id: 'goDashboard',
       key: 'g',
       description: 'Go to Dashboard',
       action: () => navigate('/'),
       category: 'navigation',
     },
     {
+      id: 'goCycles',
       key: 'c',
-      description: 'Go to Cycles',
+      description: capabilities.isScrum ? 'Go to Sprints' : 'Go to Cycles',
       action: () => navigate('/cycles'),
       category: 'navigation',
     },
     {
+      id: 'goPitches',
       key: 'p',
       description: 'Go to Pitches',
       action: () => navigate('/pitches'),
       category: 'navigation',
     },
     {
+      id: 'goTasks',
       key: 't',
       description: 'Go to Tasks',
       action: () => navigate('/tasks'),
       category: 'navigation',
     },
     {
+      id: 'goMeetings',
       key: 'm',
       description: 'Go to Meetings',
       action: () => navigate('/meetings'),
       category: 'navigation',
     },
     {
+      id: 'goReports',
       key: 'r',
       description: 'Go to Reports',
       action: () => navigate('/reports'),
       category: 'navigation',
     },
     {
+      id: 'goHealth',
       key: 'h',
       description: 'Go to Health Overview',
       action: () => navigate('/health'),
@@ -75,33 +86,41 @@ export function useKeyboardShortcuts(additionalShortcuts?: KeyboardShortcut[]) {
     },
     // Quick create shortcuts
     {
+      id: 'newCycle',
       key: 'n',
       shift: true,
-      description: 'Create New Cycle',
+      description: capabilities.isScrum ? 'Create New Sprint' : 'Create New Cycle',
       action: () => navigate('/cycles/new'),
       category: 'actions',
     },
     {
+      id: 'logWork',
       key: 'w',
       shift: true,
       description: 'Log Work',
       action: () => navigate('/worklogs'),
       category: 'actions',
     },
-    // General
+    // General — always available regardless of project type
     {
+      id: 'showHelp',
       key: '?',
       description: 'Show keyboard shortcuts',
       action: () => setShowHelp((prev) => !prev),
       category: 'general',
     },
     {
+      id: 'closeDialog',
       key: 'Escape',
       description: 'Close dialogs',
       action: () => setShowHelp(false),
       category: 'general',
     },
   ];
+
+  const defaultShortcuts = allDefaultShortcuts.filter((shortcut) =>
+    capabilities.shortcutIds.includes(shortcut.id)
+  );
 
   const allShortcuts = [...defaultShortcuts, ...(additionalShortcuts || [])];
 

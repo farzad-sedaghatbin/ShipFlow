@@ -4729,6 +4729,7 @@
     "backlog": "باکلاگ",
     "cannotDelete": "امکان حذف پروژه با چرخه‌های موجود وجود ندارد",
     "cannotDeleteWithCycles": "پروژه با سیکل‌های موجود قابل حذف نیست",
+    "deleteDisabledScrum": "امکان حذف پروژه اسکرام که اسپرینت دارد وجود ندارد",
     "completed": "تکمیل شده",
     "completedCycle": "چرخه تکمیل شده",
     "completedCycles": "چرخه‌های تکمیل شده",
@@ -4854,7 +4855,9 @@
       "saveFailed": "ذخیره پروژه ناموفق بود",
       "deleteFailed": "حذف پروژه ناموفق بود",
       "updateStatusFailed": "به‌روزرسانی وضعیت پروژه ناموفق بود"
-    }
+    },
+    "cannotDeleteWithCycles": "پروژه با سیکل‌های موجود قابل حذف نیست",
+    "deleteDisabledScrum": "امکان حذف پروژه اسکرام که اسپرینت دارد وجود ندارد"
   },
   "qa": {
     "bugReports": "گزارش باگ",
@@ -6311,6 +6314,7 @@
     "pitches": "پیچ",
     "recentActivity": "فعالیت‌های اخیر",
     "remaining": "باقیمانده",
+    "stories": "استوری‌ها",
     "teamWorkload": "بار کاری تیم",
     "timeProgress": "پیشرفت زمانی",
     "upcomingDeadlines": "ضرب‌الاجل‌های پیش‌رو",

@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  LayoutDashboard,
-  Repeat,
-  FileText,
   Clock,
   Users,
   Calendar,
@@ -15,13 +12,9 @@ import {
   Shield,
   ShieldCheck,
   Settings,
-  Folder,
-  Activity,
   HelpCircle,
-  Dices,
   Bug,
   FlaskConical,
-  Brain,
   Menu,
   ChevronDown,
   ChevronRight,
@@ -87,6 +80,7 @@ import MobileBottomNav from './MobileBottomNav';
 import GlobalSearchCommand from './GlobalSearchCommand';
 import { KeyboardShortcutSheet } from './KeyboardShortcutSheet';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import type { NavItemConfig } from '../config/projectTypeCapabilities';
 import packageJson from '../../package.json';
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -127,47 +121,9 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-interface NavItemConfig {
-  textKey: string;
-  icon: React.ElementType;
-  path: string;
-  tourId?: string;
-}
-
-// Main navigation items for Shape Up mode (with Cycles)
-const shapeUpMainNavItems: NavItemConfig[] = [
-  { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
-  { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
-  { textKey: 'nav.cycles', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
-];
-
-// Main navigation items for Scrum mode (Sprints — same /cycles path, different label)
-const scrumMainNavItems: NavItemConfig[] = [
-  { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
-  { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
-  { textKey: 'nav.sprints', icon: Repeat, path: '/cycles', tourId: 'cycles-menu' },
-];
-
-// Main navigation items for Kanban mode (no Cycles)
-const kanbanMainNavItems: NavItemConfig[] = [
-  { textKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard', tourId: 'dashboard-menu' },
-  { textKey: 'nav.projects', icon: Folder, path: '/projects', tourId: 'projects-menu' },
-];
-
-// Cycle Workspace - contextual items when viewing cycle content (Shape Up only)
-const cycleWorkspaceItems: NavItemConfig[] = [
-  { textKey: 'nav.pitchBoard', icon: FileText, path: '/pitches', tourId: 'pitches-menu' },
-  { textKey: 'nav.betting', icon: Dices, path: '/betting', tourId: 'betting-menu' },
-  { textKey: 'nav.health', icon: Activity, path: '/health', tourId: 'health-menu' },
-  { textKey: 'nav.retrospectives', icon: Brain, path: '/retros', tourId: 'retros-menu' },
-  { textKey: 'nav.dashboards', icon: LayoutDashboard, path: '/dashboards', tourId: 'dashboards-menu' },
-  { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' },
-];
-
-// Sprint Workspace - Cycle Workspace without Pitch Board and Betting Table (Scrum only)
-const scrumWorkspaceItems: NavItemConfig[] = cycleWorkspaceItems.filter(
-  (item) => item.path !== '/pitches' && item.path !== '/betting'
-);
+// Main nav items, cycle/sprint workspace items, and mobile tabs per project type
+// live in config/projectTypeCapabilities.ts — SidebarContent reads them via
+// useProject().capabilities so this file and MobileBottomNav.tsx can't drift.
 
 // People & Teams
 const peopleItems: NavItemConfig[] = [
@@ -314,7 +270,7 @@ function SectionHeader({ textKey }: { textKey: string }) {
 
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
-  const { isKanbanProject, isAllProjectsSelected, isScrumProject } = useProject();
+  const { capabilities } = useProject();
   const { hasPermissionSync, hasPermission } = usePermission();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
@@ -334,15 +290,11 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
     path => currentPath.startsWith(path)
   ) || /\/cycles\/\d+/.test(currentPath);
 
-  // Determine which nav items to show based on project type
-  // When "All Projects" is selected, show Shape Up navigation (full features)
-  const showKanbanFeatures = isKanbanProject && !isAllProjectsSelected;
-  const mainNavItems = showKanbanFeatures
-    ? kanbanMainNavItems
-    : isScrumProject
-    ? scrumMainNavItems
-    : shapeUpMainNavItems;
-  const showCycleWorkspace = !isKanbanProject || isAllProjectsSelected;
+  // Nav items resolve from capabilities: the selected project's type, or — in
+  // "All Projects" mode — the org's actual project-type mix (see ProjectContext).
+  const mainNavItems = capabilities.nav.mainItems;
+  const showCycleWorkspace = capabilities.nav.showWorkspace;
+  const promoteReportsTopLevel = capabilities.nav.promoteReportsTopLevel;
 
   return (
     <div className="flex h-full flex-col" data-tour="sidebar">
@@ -405,11 +357,11 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           {/* Cycle/Sprint Workspace Section - Only for Shape Up/Scrum projects or All Projects */}
           {showCycleWorkspace && (
             <>
-              <SectionHeader textKey={isScrumProject ? 'nav.sections.sprintWorkspace' : 'nav.sections.cycleWorkspace'} />
+              <SectionHeader textKey={capabilities.nav.workspaceSectionTitleKey} />
               <NavGroup
-                titleKey={isScrumProject ? 'nav.groups.sprintTools' : 'nav.groups.cycleTools'}
+                titleKey={capabilities.nav.workspaceGroupTitleKey}
                 icon={Target}
-                items={isScrumProject ? scrumWorkspaceItems : cycleWorkspaceItems}
+                items={capabilities.nav.workspaceItems}
                 currentPath={currentPath}
                 onItemClick={onItemClick}
                 defaultOpen={isCycleContext}
@@ -425,7 +377,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             onClick={onItemClick}
           />
           {/* Sprint Planning — visible only for Scrum projects */}
-          {isScrumProject && (
+          {capabilities.nav.showSprintPlanning && (
             <NavItem
               item={{ textKey: 'nav.sprintPlanning', icon: Workflow, path: '/sprint-planning' }}
               isActive={currentPath.startsWith('/sprint-planning')}
@@ -439,7 +391,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           />
           
           {/* Reports - For Kanban projects, show directly (not in Cycle Workspace) */}
-          {showKanbanFeatures && (
+          {promoteReportsTopLevel && (
             <NavItem
               item={{ textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' }}
               isActive={currentPath.startsWith('/reports')}

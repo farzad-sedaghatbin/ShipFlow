@@ -250,14 +250,18 @@ export default function ProjectDetail() {
                   variant="outline"
                   size="icon"
                   onClick={() => setDeleteDialog(true)}
-                  disabled={project.projectType === 'SHAPE_UP' && (project.cycleCount || 0) > 0}
+                  disabled={(project.projectType === 'SHAPE_UP' || project.projectType === 'SCRUM') && (project.cycleCount || 0) > 0}
                   className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {project.projectType === 'SHAPE_UP' && (project.cycleCount || 0) > 0 ? t('projectDetail.cannotDelete') : t('projectDetail.delete')}
+                {(project.projectType === 'SHAPE_UP' || project.projectType === 'SCRUM') && (project.cycleCount || 0) > 0
+                  ? project.projectType === 'SCRUM'
+                    ? t('projectDetail.deleteDisabledScrum')
+                    : t('projectDetail.cannotDeleteWithCycles')
+                  : t('projectDetail.delete')}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import Layout from '../Layout';
 import packageJson from '../../../package.json';
+import { PROJECT_TYPE_CAPABILITIES } from '../../config/projectTypeCapabilities';
 
 // Mock all context providers
 vi.mock('../../contexts', () => ({
@@ -22,6 +23,8 @@ vi.mock('../../contexts', () => ({
   useProject: () => ({
     isKanbanProject: false,
     isAllProjectsSelected: false,
+    isScrumProject: false,
+    capabilities: PROJECT_TYPE_CAPABILITIES.SHAPE_UP,
   }),
 }));
 
