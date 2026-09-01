@@ -353,8 +353,8 @@ public class HillChartService {
 
     // Calculate suggested position for UI if auto-progress is enabled
     Integer suggestedPosition = null;
-    if (Boolean.TRUE.equals(point.getAutoProgressEnabled()) && linkedTask != null) {
-      suggestedPosition = scopeProgressService.calculatePositionFromTask(linkedTask);
+    if (Boolean.TRUE.equals(point.getAutoProgressEnabled())) {
+      suggestedPosition = scopeProgressService.calculateSuggestedPosition(point);
     }
 
     return HillChartPointDTO.builder().id(point.getId()).pitchId(point.getPitch().getId())
