@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-08-20T14:03:11.433Z",
+  "timestamp": "2026-09-01T23:09:08.235Z",
   "stats": {
-    "totalEnKeys": 8106,
-    "totalFaKeys": 7216,
-    "totalUsedKeys": 5419,
-    "filesScanned": 525
+    "totalEnKeys": 8132,
+    "totalFaKeys": 7254,
+    "totalUsedKeys": 5445,
+    "filesScanned": 526
   },
   "issues": {
     "missingInFa": [
@@ -530,18 +530,6 @@
       "publicRoadmap.phase120Item2Desc",
       "publicRoadmap.phase120Item3Title",
       "publicRoadmap.phase120Item3Desc",
-      "publicRoadmap.futureItem0Title",
-      "publicRoadmap.futureItem0Desc",
-      "publicRoadmap.futureItem1Title",
-      "publicRoadmap.futureItem1Desc",
-      "publicRoadmap.futureItem2Title",
-      "publicRoadmap.futureItem2Desc",
-      "publicRoadmap.futureItem3Title",
-      "publicRoadmap.futureItem3Desc",
-      "publicRoadmap.futureItem4Title",
-      "publicRoadmap.futureItem4Desc",
-      "publicRoadmap.futureItem5Title",
-      "publicRoadmap.futureItem5Desc",
       "publicRoadmap.shipped080Title",
       "publicRoadmap.shipped080Item0Title",
       "publicRoadmap.shipped080Item0Desc",

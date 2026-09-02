@@ -1,6 +1,6 @@
 {
   "name": "shipflow-frontend",
-  "version": "1.12.1",
+  "version": "1.12.2",
   "private": true,
   "dependencies": {
     "@blocknote/core": "^0.54.0",
