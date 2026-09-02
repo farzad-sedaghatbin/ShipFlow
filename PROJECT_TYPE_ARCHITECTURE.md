@@ -1,332 +1,175 @@
-# Project Type Feature Architecture
+# Project Type Architecture
 
-## Stakeholder Analysis
+ShipFlow supports **three** project methodologies. This doc describes the current
+state of the art — how project type is modeled, and how the UI adapts to it.
 
-### Primary Stakeholders
-
-| Stakeholder | Role | Needs | Impact |
-|-------------|------|-------|--------|
-| Product Managers | Decision makers | Flexibility to manage projects with different methodologies | High |
-| Development Teams | Daily users | Clear UI based on project methodology | High |
-| Team Leads | Sprint/Cycle managers | Ability to choose appropriate workflow | Medium |
-| Admin Users | System configuration | Easy project setup and management | Medium |
-
-### Stakeholder Requirements
-
-1. **Product Managers**
-   - Need to manage both Kanban-style continuous flow and Shape Up cyclic delivery
-   - Want seamless switching between project views
-   - Need consistent tracking regardless of methodology
-
-2. **Development Teams**
-   - Kanban users: Want continuous backlog with board view
-   - Shape Up users: Want cycle-based work with betting and pitches
-   - Both: Want optional Kanban board visualization
-
-3. **Team Leads**
-   - Ability to set project type during creation
-   - Control over which features are available per project
+> **History note**: this doc originally covered only `SHAPE_UP`/`KANBAN` (the
+> v0.x design). `SCRUM` shipped in v1.1.0 and was never folded in here — this
+> version replaces that stale content. See the CHANGELOG's `[Unreleased]`
+> entry (context-aware dashboard/navigation work) for the session that fixed
+> the drift this staleness caused.
 
 ---
 
-## Feature Specification
+## The three project types
 
-### Project Types
+| Type | Concept | Primary cadence view | Shape-Up-only features |
+|------|---------|----------------------|-------------------------|
+| `SHAPE_UP` | 6-week cycles, betting table | Cycles | Pitches, Betting, Hill Charts, Cooldown |
+| `SCRUM` | Sprints (same underlying `Cycle` entity, relabeled), story points | Sprints | — (no Pitches/Betting; has Sprint Planning) |
+| `KANBAN` | Continuous flow board | Backlog board | — (no cycle concept exposed to users at all) |
 
-| Type | Description | Primary View | Key Features | Status |
-|------|-------------|--------------|--------------|--------|
-| `SHAPE_UP` | 6-week cycle methodology | Cycle-based workspace | Pitches, Betting, Hill Charts, Cooldown | ✅ Implemented |
-| `KANBAN` | Continuous flow | Backlog Kanban Board | Board view, Continuous backlog, Auto-created cycle | ✅ Implemented |
+Backend enum: `com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType`
+(`SHAPE_UP`, `KANBAN`, `SCRUM`). Frontend: `frontend/src/types/index.ts`'s
+`ProjectType` string union (same three values). `Project.projectType` defaults
+to `SHAPE_UP` for backward compatibility when not specified.
 
-### Implemented Features
-
-#### Backend (✅ Complete)
-- ✅ `ProjectType` enum (SHAPE_UP, KANBAN)
-- ✅ Database migration V55 (`project_type` column)
-- ✅ Automatic "Continuous Flow" cycle creation for Kanban projects
-- ✅ Project DTO includes `projectType` field
-- ✅ Comprehensive unit tests for project type logic
-
-#### Frontend (✅ Complete)
-- ✅ Project type selection in create/edit dialogs
-- ✅ `useProject` context with `isKanbanProject` helper
-- ✅ Conditional navigation (cycles hidden for Kanban)
-- ✅ Kanban board with drag-and-drop, subtask creation, timer
-- ✅ Pitch/scope fields hidden in Kanban task/bug/testcase forms
-- ✅ Cycle/pitch filters hidden in Kanban list views
-- ✅ Terminology changes: "Feature Tasks" vs "Pitch Tasks"
-- ✅ Project-based filtering across all pages
-
-### Menu/Navigation Behavior
-
-#### Shape Up Mode (✅ Implemented)
-- ✅ Dashboard
-- ✅ Projects
-- ✅ Cycles (primary navigation)
-- ✅ Cycle Workspace (Pitches, Betting, Health, Retrospectives, Reports)
-- ✅ Backlog (list view by default, Kanban toggle available)
-- ✅ Work Logs (with cycle selector)
-- ✅ Meetings
-- ✅ People & Teams
-- ✅ Quality (Test Cases, Bug Reports with pitch/cycle filters)
-
-#### Kanban Mode (✅ Implemented)
-- ✅ Dashboard
-- ✅ Projects
-- ❌ Cycles (hidden - no cycle concept for users)
-- ❌ Cycle Workspace (hidden)
-- ✅ Backlog (Kanban board by default, auto-switched)
-- ✅ Work Logs (cycle selector hidden)
-- ✅ Meetings
-- ✅ People & Teams
-- ✅ Quality (Test Cases, Bug Reports without pitch/cycle filters)
+A Kanban project gets an automatically-created, permanently-hidden "Continuous
+Flow" `Cycle` row (`ProjectService.create()`) so the rest of the data model
+(tasks belong to a cycle) doesn't need a special case — but no UI ever shows
+it. Scrum sprints and Shape Up cycles are the same `Cycle` entity; Scrum adds
+`sprintGoal` and reports progress via `taskCount` (stories = Tasks), while
+Shape Up reports via `pitchCount` (Pitches). This distinction matters: **a
+Scrum "story" is a `Task` entity, not a `Pitch` entity** — several bugs (see
+below) came from code that assumed "cycle progress" always means "pitch
+progress."
 
 ---
 
-## Technical Architecture
+## The capability-config pattern
 
-### Backend Changes
+Prior to the work described in this doc's history note, nav items, mobile
+tabs, quick links, and dashboard content were each hand-coded per surface,
+independently, with no shared source of truth. They drifted: the mobile
+bottom nav (`MobileBottomNav.tsx`) never checked project type at all and kept
+showing "Cycles"/"Pitches" tabs to Kanban-only orgs, long after the desktop
+sidebar (`Layout.tsx`) had grown real Kanban/Scrum gating.
 
-#### 1. New Enum: ProjectType
-```java
-public enum ProjectType {
-    SHAPE_UP,    // Default - 6-week cycles
-    KANBAN       // Continuous flow
+**The fix**: `frontend/src/config/projectTypeCapabilities.ts` is now the
+single source of truth for "what does this project type support":
+
+```ts
+export interface ProjectTypeCapabilities {
+  projectType: ProjectType | null;
+  hasCycles: boolean;   // Shape Up + Scrum
+  hasPitches: boolean;  // Shape Up only
+  isScrum: boolean;
+  nav: { mainItems, workspaceItems, showWorkspace, workspaceSectionTitleKey,
+         workspaceGroupTitleKey, showSprintPlanning, promoteReportsTopLevel };
+  mobile: { primaryTabs: NavItemConfig[] };
+  quickLinkIds: QuickLinkId[];
+  shortcutIds: ShortcutId[];
+  dashboard: { showActiveCyclesStat, showTotalPitchesStat, showCompletedStat,
+               showInProgressStat, overviewWidgetTypes };
+  defaultWidgetTypes: string[];
 }
+
+export const PROJECT_TYPE_CAPABILITIES: Record<ProjectType, ProjectTypeCapabilities>;
+export function resolveOrgCapabilities(orgProjectTypes: ProjectType[]): ProjectTypeCapabilities;
+export function resolveCapabilities(currentProjectType: ProjectType | null, orgProjectTypes: ProjectType[]): ProjectTypeCapabilities;
 ```
 
-#### 2. Updated Project Entity
-```java
-@Column(nullable = false)
-@Enumerated(EnumType.STRING)
-@Builder.Default
-private ProjectType projectType = ProjectType.SHAPE_UP;
+**Consumers** (all read `capabilities` from `useProject()` rather than
+re-deriving their own project-type checks):
+- `Layout.tsx` (desktop sidebar) — `capabilities.nav.*`
+- `MobileBottomNav.tsx` (bottom tabs + "More" drawer) — `capabilities.nav.*` and `capabilities.mobile.primaryTabs`
+- `QuickLinks.tsx` / `useKeyboardShortcuts.ts` — `capabilities.quickLinkIds` / `shortcutIds`
+- `Dashboard.tsx` (stat cards) / `DashboardTabs.tsx` (Overview tab) — `capabilities.dashboard.*`
+- `DashboardCustomizer.tsx` — `capabilities.defaultWidgetTypes` (via `resolveOrgCapabilities`, not the current-project capabilities — widget preferences are per-user, not per-project)
+
+**Backend mirror**: `DashboardWidgetService.java` has its own small,
+hand-mirrored version of the same widget-applicability logic (`GENERIC_WIDGETS`
+/ `CYCLE_WIDGETS` / `SHAPE_UP_ONLY_WIDGETS`, `resolveDefaultWidgetTypesForDeployment()`),
+used only when seeding a brand-new user's default widget rows. If you change
+one side, check the other — there's no shared package between frontend and
+backend, so this is a deliberate, documented duplication, not a service call.
+
+### The org-level aggregate — the actual root-cause fix
+
+`ProjectContext.tsx` exposes:
+
+```ts
+orgProjectTypes: ProjectType[];        // distinct projectType values across `projects`
+capabilities: ProjectTypeCapabilities; // resolveCapabilities(currentProjectType, orgProjectTypes)
 ```
 
-#### 3. Database Migration (V55)
-- Add `project_type` column to `projects` table
-- Default value: 'SHAPE_UP' for backward compatibility
+The previous design's `isShapeUpProject` returns `true` whenever
+`currentProject === null` ("All Projects" — the default landing state for any
+new user), "for legacy compatibility." Nothing checked what project types the
+org actually had, so **an org whose only projects were Kanban still got
+Shape-Up nav/dashboard/quick-links by default**, because every "All Projects"
+code path assumed Shape Up. `capabilities` fixes this: in "All Projects" mode
+it resolves via `resolveOrgCapabilities(orgProjectTypes)` — a Kanban-only org's
+`orgProjectTypes = ['KANBAN']` correctly resolves to Kanban capabilities. A
+mixed-type org resolves to the richest type present (Shape Up ⊃ Scrum ⊃
+Kanban in nav/feature surface) so no active project's features are hidden; a
+brand-new org with zero projects yet falls back to the minimal Kanban-shaped
+baseline, never to Shape Up.
 
-#### 4. Updated DTOs
-- `ProjectDTO`: Add `projectType` field
-- `CreateProjectRequest`: Add `projectType` field
-
-### Frontend Changes
-
-#### 1. Type Definitions
-```typescript
-export type ProjectType = 'SHAPE_UP' | 'KANBAN';
-
-export interface Project {
-  // ... existing fields
-  projectType: ProjectType;
-}
-```
-
-#### 2. ProjectContext Enhancement
-- Track current project type
-- Expose `isKanbanProject` computed property
-
-#### 3. Layout Navigation
-- Conditional rendering based on project type
-- Hide/show menu sections dynamically
-
-#### 4. BacklogPage Enhancement
-- Add view mode toggle: List | Kanban Board
-- Default view based on project type
-
-#### 5. New KanbanBoard Component
-- Drag-and-drop columns by status
-- Visual task cards
-- Swimlanes by assignee (optional)
+`isShapeUpProject`/`isStrictlyShapeUp`/`currentProjectType` still exist on
+`ProjectContext` (kept for now — they had zero consumers left after this work,
+so removing them was unnecessary risk) but new code should use `capabilities`
+instead.
 
 ---
 
-## Implementation Plan
+## Adding a new project-type-gated UI surface
 
-### Phase 1: Backend (Priority: High)
-1. Create `ProjectType` enum
-2. Update `Project` entity
-3. Create database migration V55
-4. Update `ProjectDTO` and `CreateProjectRequest`
-5. Update `ProjectService.create()` and `toDTO()`
+1. Check `frontend/src/config/projectTypeCapabilities.ts` first — if what
+   you need is "does this project type have X," it likely already exists or
+   is a one-line addition to the shared interface + all three per-type
+   objects (`shapeUp`, `scrum`, `kanban`).
+2. Only reach for a page-local `isKanbanProject`/`isScrumProject` check
+   (from `useProject()`) when the check is genuinely local to one file — the
+   value of the shared config is de-duplication across ≥2 files. The
+   codebase still has ~20 such ad hoc checks (`BacklogHeader.tsx`,
+   `Reports.tsx`, `WorkLogsPage.tsx`, `TestCasesPage.tsx`, `CycleDetail.tsx`,
+   `SprintPlanningPage.tsx`, etc.) that predate `projectTypeCapabilities.ts`
+   and haven't been migrated — migrate opportunistically when you're already
+   touching one of those files for unrelated work, not as a standalone sweep.
+3. **Before assuming "cycle progress" or "cycle content" applies uniformly**:
+   check whether the underlying data is Pitch-based (Shape-Up-only) or
+   Task-based (works for Scrum's "stories" too, and Kanban). `CycleProgressWidget.tsx`
+   had exactly this bug — it filtered to `SHAPE_UP` cycles only because its
+   progress numbers came from `pitchService`, not `taskService`. It now
+   branches per cycle: Pitch-based counts for Shape Up, Task-based ("stories",
+   `t.status === 'DONE'` via `taskService.getMy`) for Scrum — use this as the
+   reference pattern for any future cycle-scoped widget.
+4. Mirror any backend-relevant capability logic in
+   `DashboardWidgetService.java` if it affects what gets seeded/offered —
+   see "Backend mirror" above.
 
-### Phase 2: Frontend - Core (Priority: High)
-1. Update TypeScript types
-2. Update ProjectContext
-3. Add project type selection to Projects dialog
+## Reproducing an org-type-pure fixture locally
 
-### Phase 3: Frontend - Navigation (Priority: High)
-1. Update Layout.tsx for conditional menu
-2. Pass project type context to navigation
+The normal dev database is always mixed-type by design — `SampleDataInitializer`
+seeds one Shape Up project (MBA) and one Kanban project (DVP), and the dev
+profile also enables `ScrumDemoInitializer`'s Scrum project (MAS). A mixed org
+can **never** exercise the "All Projects mode defaults to Shape Up regardless
+of what the org actually has" bug class (see the CHANGELOG's `[Unreleased]`
+entry) — `resolveOrgCapabilities` correctly resolves to Shape Up whenever a
+Shape Up project exists anywhere, so that's not a bug in a mixed DB.
 
-### Phase 4: Frontend - Kanban View (Priority: Medium)
-1. Create KanbanBoard component
-2. Add view toggle to BacklogPage
-3. Implement drag-and-drop functionality
-
----
-
-## Data Flow
-
+To reproduce a genuinely Kanban-only org (the exact scenario that surfaced
+that bug — a white-label deployment with no Shape Up/Scrum projects at all),
+start against a **fresh** database with:
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Project        │     │  Project        │     │  Layout         │
-│  Creation       │────>│  Context        │────>│  Navigation     │
-│  (with type)    │     │  (stores type)  │     │  (conditional)  │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-                                │
-                                ▼
-                        ┌─────────────────┐
-                        │  Backlog Page   │
-                        │  (view toggle)  │
-                        └─────────────────┘
+app.sample-data.enabled=false
+app.scrum-demo.auto-create=false
+app.kanban-demo.auto-create=true
 ```
+`KanbanDemoInitializer` (new, `@Order(4)`, off everywhere by default including
+the dev profile — see its javadoc) then seeds a single Kanban project
+("Customer Support — Kanban Demo", key `SUP`) with a hidden Continuous Flow
+cycle and a handful of tasks. For the **Scrum-only** equivalent, no new code
+was needed: `app.sample-data.enabled=false` with the existing
+`app.scrum-demo.auto-create=true` already produces a Scrum-only org, since
+`ScrumDemoInitializer` falls back to whatever user exists (the
+always-present `admin`, created unconditionally by `DefaultAdminInitializer`)
+when its preferred demo user (`sara`) is absent.
 
----
+## Known gaps (tracked, not yet done)
 
-## API Changes
-
-### Create Project
-```http
-POST /api/projects
-{
-  "name": "My Project",
-  "projectKey": "MP",
-  "projectType": "KANBAN",  // NEW FIELD
-  ...
-}
-```
-
-### Get Project Response
-```json
-{
-  "id": 1,
-  "name": "My Project",
-  "projectType": "KANBAN",  // NEW FIELD
-  ...
-}
-```
-
----
-
-## Migration Strategy
-
-1. **Backward Compatibility**: All existing projects default to `SHAPE_UP`
-2. **No Data Loss**: Kanban projects can still create tasks (just no cycles)
-3. **Gradual Adoption**: Teams can switch project type if needed
-
----
-
-## Testing Considerations
-
-1. ✅ Unit tests for ProjectService with new projectType field - `ProjectTypeTest.java`
-2. ✅ Tests for automatic Continuous Flow cycle creation (Kanban)
-3. ✅ Tests for no auto-cycle creation (Shape Up)
-4. ✅ Tests for backward compatibility (default to SHAPE_UP)
-5. ⏳ Integration tests for API endpoints
-6. ⏳ Frontend component tests for conditional rendering
-7. ⏳ E2E tests for navigation behavior per project type
-
----
-
-## Implementation Summary (January 2026)
-
-### ✅ Completed Features
-
-#### Backend
-1. **Database Schema** (Migration V55)
-   - Added `project_type` VARCHAR(20) column to `projects` table
-   - Default value: 'SHAPE_UP' for backward compatibility
-   - NOT NULL constraint
-
-2. **Domain Model**
-   - Created `ProjectType` enum (SHAPE_UP, KANBAN)
-   - Updated `Project` entity with `@Builder.Default` for SHAPE_UP
-   - Updated DTOs: `ProjectDTO`, `CreateProjectRequest`
-
-3. **Business Logic**
-   - `ProjectService.create()`: Auto-creates "Continuous Flow" cycle for KANBAN projects
-   - Cycle configuration: name="Continuous Flow", startDate=now, endDate=2099-12-31, phase=BUILD
-   - `ProjectService.toDTO()`: Includes projectType in response
-   - Comprehensive unit tests in `ProjectTypeTest.java`
-
-#### Frontend
-1. **Type System**
-   ```typescript
-   export type ProjectType = 'SHAPE_UP' | 'KANBAN';
-   ```
-
-2. **Context Management**
-   - `ProjectContext`: Added `isKanbanProject` computed property
-   - Automatic derivation from `currentProject.projectType`
-
-3. **UI Adaptations**
-   - **Layout Navigation**: Cycles menu hidden for Kanban projects
-   - **BacklogPage**: 
-     - Auto-switches to Kanban view for Kanban projects
-     - Hides pitch/scope fields in task forms
-     - Hides cycle selector
-     - Changes labels: "Feature Tasks" vs "Pitch Tasks"
-   - **KanbanBoard Component**:
-     - Drag-and-drop status columns
-     - Add subtask functionality
-     - Start timer functionality
-     - Visual task cards with priority indicators
-   - **WorkLogsPage**: Cycle selector hidden for Kanban
-   - **TestCasesPage**: Pitch/cycle filters hidden for Kanban
-   - **BugReportsPage**: Pitch/cycle filters hidden for Kanban
-   - **BugReportModal**: Scope field hidden for Kanban
-   - **TestCaseFormPage**: Pitch/scope fields hidden for Kanban
-
-4. **Project Filtering**
-   - All pages now filter data by currently selected project
-   - "All Projects" selection shows data from all projects
-   - Consistent filtering across: BacklogPage, WorkLogsPage, TestCasesPage, BugReportsPage, MeetingList
-
-5. **Translations**
-   - Added `featureTasks` and `featureScope` keys
-   - English and Farsi translations
-
-### 🎯 Design Decisions
-
-1. **Hidden Cycle for Kanban**: The "Continuous Flow" cycle is created automatically but never shown to users. This maintains database consistency while providing a Kanban experience.
-
-2. **Shape Up Concepts Hidden**: Pitches, scopes, cycles, and betting are Shape Up-specific. These are completely hidden in Kanban project UI.
-
-3. **Backward Compatibility**: All existing projects default to SHAPE_UP, ensuring no breaking changes.
-
-4. **Consistent Filtering**: Project-based filtering ensures users only see data relevant to their currently selected project.
-
-### 📊 Test Coverage
-
-**Backend Tests** (`ProjectTypeTest.java`):
-- ✅ Default to SHAPE_UP when projectType not specified
-- ✅ SHAPE_UP projects do NOT auto-create cycles
-- ✅ KANBAN projects auto-create "Continuous Flow" cycle
-- ✅ Cycle properties validated (name, dates, phase, active status)
-- ✅ Project type preserved during updates
-- ✅ DTO correctly includes projectType field
-
-**Frontend Tests**: ⏳ To be added
-- Component tests for conditional rendering
-- Integration tests for project switching
-- E2E tests for Kanban workflow
-
----
-
-## Future Enhancements
-
-1. **Kanban-Specific Features**
-   - WIP (Work In Progress) limits per column
-   - Swimlane customization
-   - Cumulative flow diagram
-   - Cycle time analytics
-
-2. **Migration Tools**
-   - Convert Shape Up project to Kanban (and vice versa)
-   - Export/import project configurations
-   
-3. **Hybrid Mode**
-   - Allow some Shape Up features in Kanban (e.g., retrospectives)
-   - Configurable feature toggles per project
+- The ~20 ad hoc per-project-type checks listed in step 2 above are not
+  migrated to `capabilities` — this is deliberate (avoiding a large,
+  low-value mechanical sweep), not an oversight, but worth revisiting file by
+  file as each is next touched.

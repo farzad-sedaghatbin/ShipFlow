@@ -8,14 +8,17 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { cycleService } from '../../services/cycleService';
 import { pitchService } from '../../services/pitchService';
-import { Cycle, Pitch } from '../../types';
+import { taskService } from '../../services/taskService';
+import { Cycle, Pitch, Task } from '../../types';
 import { cn } from '@/lib/utils';
 import { STALE_TIMES } from '../../lib/queryClient';
 
 interface CycleProgress {
   cycle: Cycle;
-  totalPitches: number;
-  completedPitches: number;
+  /** Pitches for Shape Up cycles, Tasks ("stories") for Scrum sprints. */
+  totalItems: number;
+  completedItems: number;
+  isScrum: boolean;
   progressPercentage: number;
   daysRemaining: number;
   timeProgress: number;
@@ -24,7 +27,7 @@ interface CycleProgress {
 export function CycleProgressWidget() {
   const { i18n } = useTranslation();
 
-  const [cyclesQuery, pitchesQuery] = useQueries({
+  const [cyclesQuery, pitchesQuery, tasksQuery] = useQueries({
     queries: [
       {
         queryKey: ['widgets', 'cycle-progress', 'cycles'],
@@ -36,21 +39,34 @@ export function CycleProgressWidget() {
         queryFn: () => pitchService.getMyPitches().then((r) => r.data as Pitch[]),
         staleTime: STALE_TIMES.entities,
       },
+      {
+        // Scrum "stories" are Task entities, not Pitch entities (see
+        // cycle.taskCount vs cycle.pitchCount in CycleList.tsx) — Scrum
+        // sprints need their own completed-count source.
+        queryKey: ['widgets', 'cycle-progress', 'tasks'],
+        queryFn: () => taskService.getMy(0, 100).then((r) => r.data.content as Task[]),
+        staleTime: STALE_TIMES.entities,
+      },
     ],
   });
 
-  const loading = cyclesQuery.isLoading || pitchesQuery.isLoading;
+  const loading = cyclesQuery.isLoading || pitchesQuery.isLoading || tasksQuery.isLoading;
 
   const cycles: CycleProgress[] = (() => {
-    if (!cyclesQuery.data || !pitchesQuery.data) return [];
+    if (!cyclesQuery.data || !pitchesQuery.data || !tasksQuery.data) return [];
     const today = new Date();
-    const shapeUpCycles = cyclesQuery.data.filter(
-      (cycle) => !cycle.projectType || cycle.projectType === 'SHAPE_UP'
+    const relevantCycles = cyclesQuery.data.filter(
+      (cycle) => !cycle.projectType || cycle.projectType === 'SHAPE_UP' || cycle.projectType === 'SCRUM'
     );
-    return shapeUpCycles
+    return relevantCycles
       .map((cycle) => {
-        const cyclePitches = pitchesQuery.data.filter((p) => p.cycleId === cycle.id);
-        const completed = cyclePitches.filter((p) => p.status === 'DONE').length;
+        const isScrum = cycle.projectType === 'SCRUM';
+        const total = isScrum
+          ? tasksQuery.data.filter((t) => t.cycleId === cycle.id).length
+          : pitchesQuery.data.filter((p) => p.cycleId === cycle.id).length;
+        const completed = isScrum
+          ? tasksQuery.data.filter((t) => t.cycleId === cycle.id && t.status === 'DONE').length
+          : pitchesQuery.data.filter((p) => p.cycleId === cycle.id && p.status === 'DONE').length;
         const startDate = new Date(cycle.startDate);
         const endDate = new Date(cycle.endDate);
         const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -59,9 +75,10 @@ export function CycleProgressWidget() {
         const timeProgress = Math.min((elapsedDays / totalDays) * 100, 100);
         return {
           cycle,
-          totalPitches: cyclePitches.length,
-          completedPitches: completed,
-          progressPercentage: cyclePitches.length > 0 ? (completed / cyclePitches.length) * 100 : 0,
+          totalItems: total,
+          completedItems: completed,
+          isScrum,
+          progressPercentage: total > 0 ? (completed / total) * 100 : 0,
           daysRemaining: Math.max(daysRemaining, 0),
           timeProgress,
         };
@@ -98,7 +115,7 @@ export function CycleProgressWidget() {
           <p className="text-sm text-muted-foreground">{i18n.t('widgets.noActiveCycles')}</p>
         ) : (
           <div className="space-y-3">
-            {cycles.map(({ cycle, totalPitches, completedPitches, progressPercentage, daysRemaining, timeProgress }) => (
+            {cycles.map(({ cycle, totalItems, completedItems, isScrum, progressPercentage, daysRemaining, timeProgress }) => (
               <Link
                 key={cycle.id}
                 to={`/cycles/${cycle.id}`}
@@ -122,7 +139,7 @@ export function CycleProgressWidget() {
                   <div>
                     <div className="flex items-center justify-between text-xs mb-1">
                       <span className="text-muted-foreground">{i18n.t('widgets.workProgress')}</span>
-                      <span className="font-medium">{completedPitches}/{totalPitches} {i18n.t('widgets.pitches')}</span>
+                      <span className="font-medium">{completedItems}/{totalItems} {isScrum ? i18n.t('widgets.stories') : i18n.t('widgets.pitches')}</span>
                     </div>
                     <Progress 
                       value={progressPercentage} 

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo, useRef } from 'react';
 import { Project, ProjectType } from '../types';
 import projectService from '../services/projectService';
+import { ProjectTypeCapabilities, resolveCapabilities } from '../config/projectTypeCapabilities';
 
 // Special value to represent "All Projects" selection
 export const ALL_PROJECTS_ID = -1;
@@ -32,6 +33,16 @@ interface ProjectContextType {
   isScrumProject: boolean;
   /** Returns the project type of the current project, or null if all projects selected */
   currentProjectType: ProjectType | null;
+  /** Distinct project types across the org's active projects (empty if none yet). */
+  orgProjectTypes: ProjectType[];
+  /**
+   * Resolved capability set for the current view: the selected project's type,
+   * or — in "All Projects" mode — the org's actual project-type mix rather than
+   * a hardcoded Shape Up default. Nav, mobile tabs, quick links, keyboard
+   * shortcuts, and dashboard stat visibility should all read from this instead
+   * of re-deriving their own project-type checks.
+   */
+  capabilities: ProjectTypeCapabilities;
   selectProject: (project: Project | null) => void;
   selectAllProjects: () => void;
   refreshProjects: () => Promise<void>;
@@ -169,6 +180,19 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [currentProject]
   );
 
+  // Distinct project types across the org's active projects — the ground truth
+  // for what "All Projects" mode should actually show, instead of defaulting to
+  // Shape Up regardless of what the org has.
+  const orgProjectTypes = useMemo(() =>
+    Array.from(new Set(projects.map(p => p.projectType))),
+    [projects]
+  );
+
+  const capabilities = useMemo(() =>
+    resolveCapabilities(currentProjectType, orgProjectTypes),
+    [currentProjectType, orgProjectTypes]
+  );
+
   return (
     <ProjectContext.Provider
       value={{
@@ -183,6 +207,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         isStrictlyShapeUp,
         isScrumProject,
         currentProjectType,
+        orgProjectTypes,
+        capabilities,
         selectProject,
         selectAllProjects,
         refreshProjects,

@@ -11,10 +11,15 @@ import { motion } from 'motion/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useProject } from '../contexts';
+import type { QuickLinkId } from '../config/projectTypeCapabilities';
 
 interface QuickLink {
+  id: QuickLinkId;
   label: string;
+  scrumLabel?: string;
   description: string;
+  scrumDescription?: string;
   icon: React.ReactNode;
   to: string;
   color: string;
@@ -23,14 +28,18 @@ interface QuickLink {
 
 const quickLinks: QuickLink[] = [
   {
+    id: 'newCycle',
     label: 'New Cycle',
+    scrumLabel: 'New Sprint',
     description: 'Start a new development cycle',
+    scrumDescription: 'Start a new sprint',
     icon: <RefreshCw className="w-6 h-6" />,
     to: '/cycles/new',
     color: '#6366f1', // indigo
     shortcut: '⇧N',
   },
   {
+    id: 'logWork',
     label: 'Log Work',
     description: 'Record your work hours',
     icon: <Clock className="w-6 h-6" />,
@@ -39,6 +48,7 @@ const quickLinks: QuickLink[] = [
     shortcut: '⇧W',
   },
   {
+    id: 'viewPitches',
     label: 'View Pitches',
     description: 'See all project pitches',
     icon: <FileText className="w-6 h-6" />,
@@ -47,6 +57,7 @@ const quickLinks: QuickLink[] = [
     shortcut: 'P',
   },
   {
+    id: 'tasks',
     label: 'Tasks',
     description: 'Manage your tasks',
     icon: <CheckCircle2 className="w-6 h-6" />,
@@ -55,6 +66,7 @@ const quickLinks: QuickLink[] = [
     shortcut: 'T',
   },
   {
+    id: 'healthCheck',
     label: 'Health Check',
     description: 'View project health',
     icon: <Activity className="w-6 h-6" />,
@@ -63,6 +75,7 @@ const quickLinks: QuickLink[] = [
     shortcut: 'H',
   },
   {
+    id: 'reports',
     label: 'Reports',
     description: 'Analytics & reports',
     icon: <BarChart3 className="w-6 h-6" />,
@@ -77,6 +90,15 @@ interface QuickLinksProps {
 }
 
 export function QuickLinks({ compact = false }: QuickLinksProps) {
+  const { capabilities } = useProject();
+  const visibleLinks = quickLinks
+    .filter((link) => capabilities.quickLinkIds.includes(link.id))
+    .map((link) => (
+      capabilities.isScrum && link.scrumLabel
+        ? { ...link, label: link.scrumLabel, description: link.scrumDescription ?? link.description }
+        : link
+    ));
+
   return (
     <Card>
       <CardContent className={cn('p-4', compact && 'pb-2')}>
@@ -94,8 +116,8 @@ export function QuickLinks({ compact = false }: QuickLinksProps) {
           role="list" 
           aria-labelledby="quick-links-heading"
         >
-          {quickLinks.map((link, index) => (
-            <div key={link.label} role="listitem">
+          {visibleLinks.map((link, index) => (
+            <div key={link.id} role="listitem">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <motion.div

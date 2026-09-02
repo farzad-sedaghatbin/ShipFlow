@@ -2,14 +2,10 @@ import { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  LayoutDashboard,
-  Repeat,
-  FileText,
-  Bug,
   MoreHorizontal,
   X,
   ListTodo,
-  BarChart3,
+  Bug,
   Users2,
   Users,
   FlaskConical,
@@ -17,104 +13,100 @@ import {
   Target,
   Layers,
   PackageCheck,
-  Activity,
-  Brain,
-  Dices,
   Calendar,
   Clock,
   Beaker,
+  Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBreakpointHelpers } from '@/hooks/useBreakpoint';
-
-interface NavEntry {
-  labelKey: string;
-  icon: React.ElementType;
-  path: string;
-  matchPaths?: string[];
-}
+import { useProject } from '../contexts';
+import type { NavItemConfig } from '../config/projectTypeCapabilities';
 
 interface NavSection {
   titleKey: string;
-  items: NavEntry[];
+  items: NavItemConfig[];
 }
 
-// Primary bottom bar tabs — the 4 most-used + More
-const primaryTabs: NavEntry[] = [
-  { labelKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { labelKey: 'nav.cycles', icon: Repeat, path: '/cycles', matchPaths: ['/cycles', '/betting', '/health', '/retros'] },
-  { labelKey: 'nav.pitchBoard', icon: FileText, path: '/pitches', matchPaths: ['/pitches'] },
-  { labelKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', matchPaths: ['/qa/bug-reports'] },
-];
+// Primary tabs and the Cycle/Sprint Workspace section come from
+// projectTypeCapabilities.ts (same source Layout.tsx's desktop sidebar reads)
+// so mobile can't drift from desktop the way it previously had. The remaining
+// sections below aren't project-type-specific.
+function getMoreSections(capabilities: ReturnType<typeof useProject>['capabilities']): NavSection[] {
+  const sections: NavSection[] = [
+    {
+      titleKey: 'nav.sections.overview',
+      items: capabilities.nav.mainItems,
+    },
+  ];
 
-// Full navigation sections for the "More" drawer
-const moreSections: NavSection[] = [
-  {
-    titleKey: 'nav.sections.overview',
-    items: [
-      { labelKey: 'nav.dashboard', icon: LayoutDashboard, path: '/dashboard' },
-      { labelKey: 'nav.cycles', icon: Repeat, path: '/cycles' },
-    ],
-  },
-  {
-    titleKey: 'nav.sections.cycleWorkspace',
-    items: [
-      { labelKey: 'nav.pitchBoard', icon: FileText, path: '/pitches' },
-      { labelKey: 'nav.betting', icon: Dices, path: '/betting' },
-      { labelKey: 'nav.health', icon: Activity, path: '/health' },
-      { labelKey: 'nav.retrospectives', icon: Brain, path: '/retros' },
-      { labelKey: 'nav.dashboards', icon: LayoutDashboard, path: '/dashboards' },
-      { labelKey: 'nav.reports', icon: BarChart3, path: '/reports' },
-    ],
-  },
-  {
-    titleKey: 'nav.sections.workManagement',
-    items: [
-      { labelKey: 'nav.backlog', icon: ListTodo, path: '/backlog' },
-      { labelKey: 'nav.workLogs', icon: Clock, path: '/time/logs' },
-      { labelKey: 'nav.meetings', icon: Calendar, path: '/meetings' },
-    ],
-  },
-  {
-    titleKey: 'nav.sections.quality',
-    items: [
-      { labelKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases' },
-      { labelKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports' },
-    ],
-  },
-  {
-    titleKey: 'nav.sections.organization',
-    items: [
-      { labelKey: 'nav.people', icon: Users2, path: '/people' },
-      { labelKey: 'nav.teams', icon: Users, path: '/teams' },
-    ],
-  },
-  {
-    titleKey: 'nav.sections.rd',
-    items: [
-      { labelKey: 'nav.wiseArchitecture', icon: Beaker, path: '/rd/wise-architecture' },
-    ],
-  },
-  {
-    titleKey: 'nav.sections.roadmap',
-    items: [
-      { labelKey: 'nav.roadmap', icon: Map, path: '/roadmap' },
-      { labelKey: 'nav.initiatives', icon: Target, path: '/initiatives' },
-      { labelKey: 'nav.epics', icon: Layers, path: '/epics' },
-      { labelKey: 'nav.releases', icon: PackageCheck, path: '/releases-management' },
-    ],
-  },
-];
+  if (capabilities.nav.showWorkspace) {
+    sections.push({
+      titleKey: capabilities.nav.workspaceSectionTitleKey,
+      items: capabilities.nav.workspaceItems,
+    });
+  }
+
+  const workManagementItems: NavItemConfig[] = [
+    { textKey: 'nav.backlog', icon: ListTodo, path: '/backlog' },
+  ];
+  if (capabilities.nav.showSprintPlanning) {
+    workManagementItems.push({ textKey: 'nav.sprintPlanning', icon: Workflow, path: '/sprint-planning' });
+  }
+  workManagementItems.push(
+    { textKey: 'nav.workLogs', icon: Clock, path: '/time/logs' },
+    { textKey: 'nav.meetings', icon: Calendar, path: '/meetings' },
+  );
+  sections.push({ titleKey: 'nav.sections.workManagement', items: workManagementItems });
+
+  sections.push(
+    {
+      titleKey: 'nav.sections.quality',
+      items: [
+        { textKey: 'nav.testCases', icon: FlaskConical, path: '/qa/test-cases' },
+        { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports' },
+      ],
+    },
+    {
+      titleKey: 'nav.sections.organization',
+      items: [
+        { textKey: 'nav.people', icon: Users2, path: '/people' },
+        { textKey: 'nav.teams', icon: Users, path: '/teams' },
+      ],
+    },
+    {
+      titleKey: 'nav.sections.rd',
+      items: [
+        { textKey: 'nav.wiseArchitecture', icon: Beaker, path: '/rd/wise-architecture' },
+      ],
+    },
+    {
+      titleKey: 'nav.sections.roadmap',
+      items: [
+        { textKey: 'nav.roadmap', icon: Map, path: '/roadmap' },
+        { textKey: 'nav.initiatives', icon: Target, path: '/initiatives' },
+        { textKey: 'nav.epics', icon: Layers, path: '/epics' },
+        { textKey: 'nav.releases', icon: PackageCheck, path: '/releases-management' },
+      ],
+    },
+  );
+
+  return sections;
+}
 
 export default function MobileBottomNav() {
   const { t } = useTranslation();
   const location = useLocation();
   const { isMobile } = useBreakpointHelpers();
+  const { capabilities } = useProject();
   const [moreOpen, setMoreOpen] = useState(false);
 
   if (!isMobile) return null;
 
-  const isActive = (item: NavEntry) => {
+  const primaryTabs = capabilities.mobile.primaryTabs;
+  const moreSections = getMoreSections(capabilities);
+
+  const isActive = (item: NavItemConfig) => {
     const paths = item.matchPaths || [item.path];
     return paths.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
   };
@@ -165,7 +157,7 @@ export default function MobileBottomNav() {
                         )}
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="text-[11px] font-medium text-center leading-tight">{t(item.labelKey)}</span>
+                        <span className="text-[11px] font-medium text-center leading-tight">{t(item.textKey)}</span>
                       </Link>
                     );
                   })}
@@ -198,7 +190,7 @@ export default function MobileBottomNav() {
                 )}
               >
                 <Icon className={cn("h-5 w-5", active && "text-primary")} />
-                <span className="truncate max-w-[64px]">{t(item.labelKey)}</span>
+                <span className="truncate max-w-[64px]">{t(item.textKey)}</span>
               </Link>
             );
           })}

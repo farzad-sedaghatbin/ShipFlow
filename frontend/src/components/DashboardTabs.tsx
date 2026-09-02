@@ -22,6 +22,7 @@ import {
 } from './widgets';
 import MotionContainer from './MotionContainer';
 import { DashboardInsightsPanel } from './DashboardInsightsPanel';
+import { useProject } from '../contexts';
 
 // Activity tab widget types for filtering
 const ACTIVITY_WIDGETS = ['RECENT_ACTIVITY', 'OVERDUE_TASKS', 'BLOCKED_TASKS', 'UPCOMING_DEADLINES', 'MY_TASKS', 'TEAM_WORKLOAD'];
@@ -44,6 +45,7 @@ export function DashboardTabs({
   isKanbanProject = false,
 }: DashboardTabsProps) {
   const { t } = useTranslation();
+  const { capabilities } = useProject();
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem(TAB_STORAGE_KEY) || 'overview';
   });
@@ -59,8 +61,19 @@ export function DashboardTabs({
 
   const firstCycle = activeCycles[0];
 
+  const overviewWidgetTypes = capabilities.dashboard.overviewWidgetTypes;
+  const isOverviewWidgetEnabled = (widgetType: string) =>
+    overviewWidgetTypes.includes(widgetType) && isWidgetVisible(widgetType);
+
   const renderOverviewWidgets = () => {
-    if (isKanbanProject) return null;
+    if (overviewWidgetTypes.length === 0) return null;
+
+    if (isKanbanProject) {
+      // Kanban has no cycle/pitch concept — reuse the generic task-based
+      // widgets that already exist on the Activity tab instead of leaving
+      // Overview blank.
+      return renderActivityWidgets();
+    }
 
     return (
       <div className="space-y-3">
@@ -70,25 +83,25 @@ export function DashboardTabs({
           </MotionContainer>
         )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {isWidgetVisible('ACTIVE_CYCLES') && (
+        {isOverviewWidgetEnabled('ACTIVE_CYCLES') && (
           <MotionContainer delay={0.1}>
             <ActiveCyclesWidget cycles={activeCycles} />
           </MotionContainer>
         )}
-        
-        {isWidgetVisible('HILL_CHART') && (
+
+        {isOverviewWidgetEnabled('HILL_CHART') && (
           <MotionContainer delay={0.15}>
             <HillChartWidgetWrapper projectId={projectId} maxPoints={5} />
           </MotionContainer>
         )}
-        
-        {isWidgetVisible('CYCLE_PROGRESS') && (
+
+        {isOverviewWidgetEnabled('CYCLE_PROGRESS') && (
           <MotionContainer delay={0.2}>
             <CycleProgressWidget />
           </MotionContainer>
         )}
-        
-        {isWidgetVisible('RECENT_PITCHES') && (
+
+        {isOverviewWidgetEnabled('RECENT_PITCHES') && (
           <MotionContainer delay={0.25}>
             <RecentPitchesWidget pitches={recentPitches} />
           </MotionContainer>

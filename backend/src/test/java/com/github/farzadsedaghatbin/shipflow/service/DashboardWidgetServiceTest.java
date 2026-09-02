@@ -9,7 +9,9 @@ import com.github.farzadsedaghatbin.shipflow.dto.dashboard.DashboardWidgetDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.dashboard.UpdateDashboardWidgetRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.DashboardWidget;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import com.github.farzadsedaghatbin.shipflow.repository.DashboardWidgetRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.util.Arrays;
@@ -31,6 +33,9 @@ class DashboardWidgetServiceTest {
 
   @Mock
   private UserRepository userRepository;
+
+  @Mock
+  private ProjectRepository projectRepository;
 
   @Mock
   private EntityManager entityManager;
@@ -69,6 +74,7 @@ class DashboardWidgetServiceTest {
     // Arrange
     when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L)).thenReturn(Collections.emptyList());
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(projectRepository.findDistinctActiveProjectTypes()).thenReturn(Arrays.asList(ProjectType.SHAPE_UP));
     when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
       List<DashboardWidget> widgets = invocation.getArgument(0);
       for (int i = 0; i < widgets.size(); i++) {
@@ -84,6 +90,84 @@ class DashboardWidgetServiceTest {
     assertNotNull(result);
     assertTrue(result.size() > 0);
     verify(dashboardWidgetRepository, times(1)).saveAll(anyList());
+  }
+
+  @Test
+  void getUserWidgets_WhenNoWidgetsExistAndOnlyKanbanProjectsActive_ShouldOmitCycleAndPitchWidgets() {
+    // Arrange
+    when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L)).thenReturn(Collections.emptyList());
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(projectRepository.findDistinctActiveProjectTypes()).thenReturn(Arrays.asList(ProjectType.KANBAN));
+    when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
+      List<DashboardWidget> widgets = invocation.getArgument(0);
+      for (int i = 0; i < widgets.size(); i++) {
+        widgets.get(i).setId((long) (i + 1));
+      }
+      return widgets;
+    });
+
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.getUserWidgets(1L);
+
+    // Assert
+    List<String> widgetTypes = result.stream().map(DashboardWidgetDTO::getWidgetType).toList();
+    assertTrue(widgetTypes.contains("MY_TASKS"));
+    assertFalse(widgetTypes.contains("HILL_CHART"));
+    assertFalse(widgetTypes.contains("RECENT_PITCHES"));
+    assertFalse(widgetTypes.contains("CYCLE_PROGRESS"));
+    assertFalse(widgetTypes.contains("AI_RISK_ADVISORY"));
+  }
+
+  @Test
+  void getUserWidgets_WhenNoWidgetsExistAndOnlyScrumProjectsActive_ShouldIncludeCycleButNotPitchWidgets() {
+    // Arrange
+    when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L)).thenReturn(Collections.emptyList());
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(projectRepository.findDistinctActiveProjectTypes()).thenReturn(Arrays.asList(ProjectType.SCRUM));
+    when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
+      List<DashboardWidget> widgets = invocation.getArgument(0);
+      for (int i = 0; i < widgets.size(); i++) {
+        widgets.get(i).setId((long) (i + 1));
+      }
+      return widgets;
+    });
+
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.getUserWidgets(1L);
+
+    // Assert
+    List<String> widgetTypes = result.stream().map(DashboardWidgetDTO::getWidgetType).toList();
+    assertTrue(widgetTypes.contains("ACTIVE_CYCLES"));
+    assertTrue(widgetTypes.contains("CYCLE_SIGNALS"));
+    // CYCLE_PROGRESS is included for Scrum — CycleProgressWidget.tsx computes
+    // it from Task data ("stories") for Scrum cycles, Pitch data for Shape Up.
+    assertTrue(widgetTypes.contains("CYCLE_PROGRESS"));
+    assertFalse(widgetTypes.contains("HILL_CHART"));
+    assertFalse(widgetTypes.contains("RECENT_PITCHES"));
+  }
+
+  @Test
+  void getUserWidgets_WhenNoWidgetsExistAndNoProjectsYet_ShouldFallBackToGenericBaseline() {
+    // Arrange
+    when(dashboardWidgetRepository.findByUserIdOrderByDisplayOrderAsc(1L)).thenReturn(Collections.emptyList());
+    when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(projectRepository.findDistinctActiveProjectTypes()).thenReturn(Collections.emptyList());
+    when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
+      List<DashboardWidget> widgets = invocation.getArgument(0);
+      for (int i = 0; i < widgets.size(); i++) {
+        widgets.get(i).setId((long) (i + 1));
+      }
+      return widgets;
+    });
+
+    // Act
+    List<DashboardWidgetDTO> result = dashboardWidgetService.getUserWidgets(1L);
+
+    // Assert
+    List<String> widgetTypes = result.stream().map(DashboardWidgetDTO::getWidgetType).toList();
+    assertEquals(6, widgetTypes.size());
+    assertFalse(widgetTypes.contains("HILL_CHART"));
+    assertFalse(widgetTypes.contains("ACTIVE_CYCLES"));
   }
 
   @Test
@@ -190,6 +274,7 @@ class DashboardWidgetServiceTest {
   void resetToDefaults_ShouldDeleteExistingAndCreateDefaults() {
     // Arrange
     when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    when(projectRepository.findDistinctActiveProjectTypes()).thenReturn(Arrays.asList(ProjectType.SHAPE_UP));
     when(dashboardWidgetRepository.saveAll(anyList())).thenAnswer(invocation -> {
       List<DashboardWidget> widgets = invocation.getArgument(0);
       for (int i = 0; i < widgets.size(); i++) {

@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.repository;
 
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,4 +29,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
 
   @Query("SELECT p FROM Project p LEFT JOIN FETCH p.owner WHERE p.id = :id")
   Optional<Project> findByIdWithOwner(@Param("id") Long id);
+
+  @Query("SELECT DISTINCT p.projectType FROM Project p WHERE p.isActive = true")
+  List<ProjectType> findDistinctActiveProjectTypes();
 }
