@@ -8917,5 +8917,42 @@
     "loadProjectsFailed": "Could not load projects.",
     "taskNote": "All subtasks will be moved with this task. Cycle and pitch associations will be cleared.",
     "pitchNote": "The pitch will be moved to the backlog of the target project. Cycle assignment will be cleared."
+  },
+  "authAudit": {
+    "tabLabel": "Sign-in Activity",
+    "title": "Sign-in activity",
+    "description": "Every sign-in attempt, successful or not — with the originating IP address, country and device.",
+    "filterUsername": "Username",
+    "filterUsernamePlaceholder": "e.g. admin",
+    "filterIp": "IP address",
+    "filterOutcome": "Outcome",
+    "outcomeAll": "All",
+    "outcomeSuccess": "Successful",
+    "outcomeFailure": "Failed",
+    "refresh": "Refresh",
+    "clearFilters": "Clear",
+    "loadError": "Could not load sign-in activity",
+    "emptyTitle": "No sign-in activity",
+    "emptyFiltered": "No events match these filters.",
+    "emptyAll": "Events will appear here as people sign in.",
+    "colWhen": "When",
+    "colUser": "User",
+    "colEvent": "Event",
+    "colIp": "IP",
+    "colDevice": "Device",
+    "pageOf": "Page {{page}} of {{total}} · {{count}} events",
+    "event": {
+      "LOGIN_SUCCESS": "Signed in",
+      "LOGIN_FAILURE": "Sign-in failed",
+      "PASSKEY_LOGIN_SUCCESS": "Signed in with passkey",
+      "PASSKEY_LOGIN_FAILURE": "Passkey sign-in failed",
+      "PASSKEY_REGISTERED": "Passkey added",
+      "PASSKEY_REMOVED": "Passkey removed",
+      "PASSWORD_CHANGED": "Password changed",
+      "PASSWORD_RESET_REQUESTED": "Password reset requested",
+      "PASSWORD_RESET_COMPLETED": "Password reset completed",
+      "ACCOUNT_REGISTERED": "Account created",
+      "LOGOUT": "Signed out"
+    }
   }
 }

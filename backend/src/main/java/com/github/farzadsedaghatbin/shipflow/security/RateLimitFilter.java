@@ -25,6 +25,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
+  private final ClientIpService clientIpService;
+
+  public RateLimitFilter(ClientIpService clientIpService) {
+    this.clientIpService = clientIpService;
+  }
+
   @Value("${app.rate-limit.auth.capacity:10}")
   private int authCapacity;
 
@@ -49,10 +55,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
   @Value("${app.rate-limit.jira-import.capacity:3}")
   private int jiraImportCapacity;
 
-  @Value("${app.rate-limit.trusted-proxies:127.0.0.1,::1}")
-  private String trustedProxiesRaw;
-
-  private List<String> trustedProxies;
 
   private static final Duration AUTH_PERIOD = Duration.ofMinutes(1);
   private static final Duration SEARCH_PERIOD = Duration.ofMinutes(1);
@@ -65,15 +67,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
   private static final int MAX_BUCKETS = 10_000;
 
-  @PostConstruct
-  void initTrustedProxies() {
-    trustedProxies =
-        Arrays.stream(trustedProxiesRaw.split(","))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .toList();
-    log.info("RateLimitFilter trusted proxies: {}", trustedProxies);
-  }
 
   private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
@@ -183,7 +176,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   }
 
   private String resolveClientIp(HttpServletRequest request) {
-    return ClientIpResolver.resolve(request, trustedProxies);
+    return clientIpService.resolve(request);
   }
 
   private record RateLimit(String group, int capacity, Duration period) {}

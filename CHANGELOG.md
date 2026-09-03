@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Sign-in activity audit trail** (`Organization Settings → Sign-in Activity`, admin-only). Every authentication attempt is now recorded with the real client IP, country, a readable device summary, the username *as supplied*, the outcome, and a failure reason. Added after a password change on a live instance proved impossible to attribute to anyone: logins were recorded nowhere, and Envers does not audit the `users` table, so the only surviving evidence was an `updated_at` timestamp.
+  - Recording hooks Spring Security's own `AuthenticationSuccessEvent` / `AbstractAuthenticationFailureEvent` rather than instrumenting individual controllers, so every authentication path is covered by construction and a future endpoint cannot silently skip the audit.
+  - `username` is stored as supplied and deliberately **not** a foreign key — a failed attempt against a non-existent account is one of the more informative things the table can hold, and a FK would make it unstorable.
+  - `AuthAuditService` writes in `REQUIRES_NEW` and swallows its own exceptions: a failed login has no transaction to join, and an audit trail that can take the login endpoint down with it is worse than none.
+  - Failure reasons record the exception *type*, never its message, which can echo submitted input back into the log.
+  - `UserAgentSummary` renders "Chrome on macOS", "Safari on iPhone", "curl", "Bot" with no new dependency. Ordering is load-bearing — Edge and Opera both claim to be Chrome, Chrome claims to be Safari, and Android's identifier contains "Linux" — and each of those orderings is pinned by a test.
+  - New `GET /api/audit/auth` (ADMIN), filterable by username / IP / outcome / date range, paginated, newest first. Migration `V2026_09_03_0001__create_auth_audit_log.sql` with indexes for newest-first listing, per-account and per-IP lookup, and failure-over-a-window queries.
+  - Help guide `28-sign-in-activity-audit.md`; i18n keys in `en.json` and `fa.json`.
+
+### Changed
+- **Client-IP resolution is now owned by a single `ClientIpService` bean.** The trusted-proxy setting had been duplicated as a `@Value` field in `MaliciousHeaderFilter` and `RateLimitFilter`; adding a third copy for auth auditing would have made a silent disagreement between them inevitable, and two components disagreeing about who a request came from is the exact bug `ClientIpResolver` was extracted to fix. Both filters now delegate to the shared bean, and their tests construct a real (not mocked) instance so they still exercise the true resolution path.
+
 ## [1.12.2] - 2026-09-02
 
 ### Changed
