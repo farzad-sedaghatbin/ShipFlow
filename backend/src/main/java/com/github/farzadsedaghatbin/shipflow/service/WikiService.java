@@ -24,6 +24,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeProviderType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceScope;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeSourceStatus;
 import com.github.farzadsedaghatbin.shipflow.event.WikiPageChangedEvent;
+import com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.KnowledgeSourceRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -63,6 +64,7 @@ public class WikiService {
   private final KnowledgeSourceRepository knowledgeSourceRepository;
   private final UserRepository userRepository;
   private final DashboardNotificationService notificationService;
+  private final WikiSseService wikiSseService;
 
   // @mention pattern (shared shape with CommentService): @Name or @"Full Name".
   private static final Pattern MENTION_PATTERN =
@@ -80,7 +82,8 @@ public class WikiService {
       ObjectMapper objectMapper,
       KnowledgeSourceRepository knowledgeSourceRepository,
       UserRepository userRepository,
-      DashboardNotificationService notificationService) {
+      DashboardNotificationService notificationService,
+      WikiSseService wikiSseService) {
     this.spaceRepository = spaceRepository;
     this.pageRepository = pageRepository;
     this.permissionRepository = permissionRepository;
@@ -91,6 +94,7 @@ public class WikiService {
     this.knowledgeSourceRepository = knowledgeSourceRepository;
     this.userRepository = userRepository;
     this.notificationService = notificationService;
+    this.wikiSseService = wikiSseService;
   }
 
   // --- Space operations ---
@@ -208,6 +212,13 @@ public class WikiService {
     WikiSpace space = requireSpace(page.getSpaceId());
     permissionService.requireWrite(userId, space);
 
+    // Optimistic-lock conflict check (v1.13.0 S64) — before any field mutation. A null
+    // expectedVersion skips the check (backward-compatible for callers not yet updated to send it).
+    if (req.expectedVersion() != null && !req.expectedVersion().equals(page.getVersion())) {
+      throw new OptimisticLockConflictException(
+          "WIKI_PAGE", pageId, page.getVersion(), toPageDTO(page));
+    }
+
     // Capture mentions present before the edit so we only notify newly-added ones.
     Set<String> previousMentions = extractMentions(page.getContentText());
 
@@ -228,6 +239,11 @@ public class WikiService {
     eventPublisher.publishEvent(
         new WikiPageChangedEvent(
             page.getId(), page.getSpaceId(), WikiPageChangedEvent.ChangeType.UPDATED));
+
+    // Live-refresh broadcast (v1.13.0 S64) — current presence viewers only, after the save
+    // (and the version-conflict check) has actually succeeded.
+    wikiSseService.broadcastPageUpdate(page.getId());
+
     return toPageDTO(page);
   }
 
@@ -612,7 +628,8 @@ public class WikiService {
         page.getCreatedBy(),
         page.getCreatedAt(),
         page.getUpdatedAt(),
-        resolvePageLinks(page.getContentText()));
+        resolvePageLinks(page.getContentText()),
+        page.getVersion());
   }
 
   // --- Internal links & mentions (v1.8.1) ---

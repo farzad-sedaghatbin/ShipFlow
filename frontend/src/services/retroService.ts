@@ -47,7 +47,16 @@ export const retroService = {
   // Retro Items
   getItems: (retroId: number) => api.get<RetroItem[]>(`/retros/${retroId}/items`),
   createItem: (data: CreateRetroItemRequest) => api.post<RetroItem>('/retros/items', data),
-  updateItem: (itemId: number, content: string) => api.put<RetroItem>(`/retros/items/${itemId}`, { content }),
+  /**
+   * `expectedVersion` is optional so existing callers (and the exact-body unit
+   * tests) keep working unchanged; pass the last-known RetroItem.version to
+   * enable the optimistic-lock check (v1.13.0 S64) — a mismatch returns HTTP 409.
+   */
+  updateItem: (itemId: number, content: string, expectedVersion?: number) =>
+    api.put<RetroItem>(
+      `/retros/items/${itemId}`,
+      expectedVersion !== undefined ? { content, expectedVersion } : { content }
+    ),
   deleteItem: (itemId: number) => api.delete(`/retros/items/${itemId}`),
 
   // Voting / reactions

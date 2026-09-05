@@ -53,4 +53,12 @@ public class CreatePitchRequest {
   private String risks;
   private String noGos;
   private String wireframeLinks;
+
+  /**
+   * Optimistic-lock check (v1.13.0 S64). When present on an update, must match the pitch's
+   * current {@code version} or the update is rejected with a 409 conflict. {@code null} skips
+   * the check (backward-compatible for callers — e.g. MCP write tools — not yet updated to send
+   * it).
+   */
+  private Long expectedVersion;
 }

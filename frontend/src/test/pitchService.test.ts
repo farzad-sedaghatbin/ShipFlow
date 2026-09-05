@@ -83,6 +83,17 @@ describe('pitchService', () => {
       expect(mockedApi.put).toHaveBeenCalledWith('/pitches/1', updatedPitch);
       expect(result.data).toEqual(returnedPitch);
     });
+
+    it('threads expectedVersion through for the optimistic-lock check (v1.13.0 S64)', async () => {
+      const updatedPitch = { title: 'Updated Pitch', description: 'Updated', cycleId: 1, expectedVersion: 3 };
+      const returnedPitch = { id: 1, ...updatedPitch, version: 4 };
+      mockedApi.put.mockResolvedValueOnce({ data: returnedPitch });
+
+      const result = await pitchService.update(1, updatedPitch as any);
+
+      expect(mockedApi.put).toHaveBeenCalledWith('/pitches/1', expect.objectContaining({ expectedVersion: 3 }));
+      expect(result.data).toEqual(returnedPitch);
+    });
   });
 
   describe('delete', () => {
