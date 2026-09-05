@@ -5667,6 +5667,8 @@
     "phase113Item1Desc": "Optimistic locking with a friendly conflict dialog instead of silently overwriting a teammate's changes.",
     "phase113Item2Title": "Real-Time Infrastructure Rework",
     "phase113Item2Desc": "Multi-instance notification streaming and multi-tab support, so live features hold up under real deployments.",
+    "phase113Item3Title": "Steadier Live Notifications",
+    "phase113Item3Desc": "Notifications now stay live across multiple open tabs and devices, and reconnect more reliably after a network blip.",
     "phase114Theme": "AI You Can Trust",
     "phase114Item0Title": "Reliable Cycle Summaries",
     "phase114Item0Desc": "AI-generated cycle summaries are validated against real data before they're saved — no more invented content.",
