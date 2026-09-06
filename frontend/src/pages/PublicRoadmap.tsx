@@ -107,6 +107,19 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.13.0',
+      date: 'September 6, 2026',
+      title: t('publicRoadmap.shipped1130Title'),
+      highlights: [
+        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.shipped1130Item0Title'), description: t('publicRoadmap.shipped1130Item0Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped1130Item1Title'), description: t('publicRoadmap.shipped1130Item1Desc') },
+        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.shipped1130Item2Title'), description: t('publicRoadmap.shipped1130Item2Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.shipped1130Item3Title'), description: t('publicRoadmap.shipped1130Item3Desc') },
+        { icon: <Fingerprint className="h-5 w-5" />, title: t('publicRoadmap.shipped1130Item4Title'), description: t('publicRoadmap.shipped1130Item4Desc') },
+        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.shipped1130Item5Title'), description: t('publicRoadmap.shipped1130Item5Desc') },
+      ],
+    },
+    {
       version: '1.12.2',
       date: 'September 2, 2026',
       title: t('publicRoadmap.shipped1122Title'),
@@ -376,20 +389,9 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.13.0',
-      theme: t('publicRoadmap.phase113Theme'),
-      status: 'in-progress',
-      items: [
-        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase113Item0Title'), description: t('publicRoadmap.phase113Item0Desc') },
-        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase113Item1Title'), description: t('publicRoadmap.phase113Item1Desc') },
-        { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.phase113Item2Title'), description: t('publicRoadmap.phase113Item2Desc') },
-        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phase113Item3Title'), description: t('publicRoadmap.phase113Item3Desc') },
-      ],
-    },
-    {
       version: 'v1.14.0',
       theme: t('publicRoadmap.phase114Theme'),
-      status: 'planned',
+      status: 'in-progress',
       items: [
         { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase114Item0Title'), description: t('publicRoadmap.phase114Item0Desc') },
         { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase114Item1Title'), description: t('publicRoadmap.phase114Item1Desc') },

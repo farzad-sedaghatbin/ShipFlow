@@ -87,9 +87,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.13.0',
-    date: 'Coming soon',
+    date: 'September 6, 2026',
     title: 'Live Presence & Truth',
-    upcoming: true,
     highlights: [
       {
         icon: <Users className="h-5 w-5" />,
@@ -114,6 +113,18 @@ const releases: Release[] = [
         title: 'Steadier Live Notifications',
         description:
           'Notifications now stay live across multiple open tabs and devices, and reconnect more reliably after a network blip.',
+      },
+      {
+        icon: <Fingerprint className="h-5 w-5" />,
+        title: 'Sign-In Activity Audit Trail',
+        description:
+          'Admins can now see every sign-in attempt — successful or not — with the originating IP address, country, and device, under Organization Settings.',
+      },
+      {
+        icon: <Lock className="h-5 w-5" />,
+        title: 'Hardened Public API & Self-Hosting Security',
+        description:
+          "Integration API keys can now be restricted to a single project and are rate-limited; public self-registration can no longer mint admin accounts, the default admin account no longer resurrects after being removed, and self-hosted Postgres/Qdrant/Grafana/Ollama ports are no longer exposed by default.",
       },
     ],
   },
