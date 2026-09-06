@@ -24,6 +24,7 @@ import {
   HardDrive,
   Sliders,
   FileDown,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth, useToast } from '../contexts';
@@ -50,6 +51,7 @@ import {
   StorageSettingsTab,
   CustomFieldsSettingsTab,
   AuditExportSettingsTab,
+  AuthAuditSettingsTab,
 } from '../components/organizationSettings';
 
 const DEFAULT_RISK_THRESHOLDS: RiskThresholds = { lowMax: 30, mediumMax: 60, highMax: 85 };
@@ -63,6 +65,7 @@ const DEFAULT_COLORS: ColorSettings = {
 interface FormData extends Partial<OrganizationSettings> {}
 
 type SectionId =
+  | 'authAudit'
   | 'general'
   | 'cycles'
   | 'categories'
@@ -158,7 +161,10 @@ const buildSidebarGroups = (isAdmin: boolean): SidebarGroup[] => [
     items: [
       { id: 'import', labelKey: 'organizationSettings.importData', icon: Upload },
       ...(isAdmin
-        ? [{ id: 'auditExport' as SectionId, labelKey: 'auditExport.tabLabel', icon: FileDown }]
+        ? [
+            { id: 'auditExport' as SectionId, labelKey: 'auditExport.tabLabel', icon: FileDown },
+            { id: 'authAudit' as SectionId, labelKey: 'authAudit.tabLabel', icon: ShieldCheck },
+          ]
         : []),
     ],
   },
@@ -342,6 +348,8 @@ export default function OrganizationSettingsPage() {
         return <StorageSettingsTab />;
       case 'auditExport':
         return isAdmin ? <AuditExportSettingsTab /> : null;
+      case 'authAudit':
+        return isAdmin ? <AuthAuditSettingsTab /> : null;
       case 'import':
         return (
           <div className="space-y-4">

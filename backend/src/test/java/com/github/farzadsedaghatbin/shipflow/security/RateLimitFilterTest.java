@@ -31,7 +31,10 @@ class RateLimitFilterTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    filter = new RateLimitFilter();
+    ClientIpService clientIpService = new ClientIpService();
+    ReflectionTestUtils.setField(clientIpService, "trustedProxiesRaw", "127.0.0.1,::1");
+    ReflectionTestUtils.invokeMethod(clientIpService, "initTrustedProxies");
+    filter = new RateLimitFilter(clientIpService);
     ReflectionTestUtils.setField(filter, "authCapacity", 10);
     ReflectionTestUtils.setField(filter, "aiCapacity", 20);
     ReflectionTestUtils.setField(filter, "riskReadCapacity", 60);

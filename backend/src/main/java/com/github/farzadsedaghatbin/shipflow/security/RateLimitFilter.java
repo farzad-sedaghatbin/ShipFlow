@@ -25,6 +25,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
+  private final ClientIpService clientIpService;
+
+  public RateLimitFilter(ClientIpService clientIpService) {
+    this.clientIpService = clientIpService;
+  }
+
   @Value("${app.rate-limit.auth.capacity:10}")
   private int authCapacity;
 
@@ -69,15 +75,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
   private static final int MAX_BUCKETS = 10_000;
 
-  @PostConstruct
-  void initTrustedProxies() {
-    trustedProxies =
-        Arrays.stream(trustedProxiesRaw.split(","))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .toList();
-    log.info("RateLimitFilter trusted proxies: {}", trustedProxies);
-  }
 
   private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
@@ -213,7 +210,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   }
 
   private String resolveClientIp(HttpServletRequest request) {
-    return ClientIpResolver.resolve(request, trustedProxies);
+    return clientIpService.resolve(request);
   }
 
   private record RateLimit(String group, int capacity, Duration period) {}
