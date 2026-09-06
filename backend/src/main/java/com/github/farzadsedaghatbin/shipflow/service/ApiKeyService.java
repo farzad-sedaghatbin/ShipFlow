@@ -15,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -142,7 +143,12 @@ public class ApiKeyService {
         .distinct()
         .toList();
     if (projectIds.isEmpty()) {
-      return Map.of();
+      // Not Map.of(): its immutable-collection .get() eagerly requireNonNull()s the key and
+      // throws NPE for a null key, which every unrestricted ApiKey (the common case — most
+      // keys have no restrictedToProjectId) looks up via toDTO's projectNames.get(key.get
+      // RestrictedToProjectId()). Collections.emptyMap() tolerates a null-key .get() (returns
+      // null, same as HashMap), matching the non-empty branch below (Collectors.toMap's HashMap).
+      return Collections.emptyMap();
     }
     return projectRepository.findAllById(projectIds).stream()
         .collect(Collectors.toMap(Project::getId, Project::getName));
