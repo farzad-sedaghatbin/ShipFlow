@@ -21,7 +21,7 @@
     <!-- Matches the backend's pinned Lombok version (backend/pom.xml) — older Lombok releases
          don't support newer JDKs' internal javac APIs (annotation processing fails with a
          "TypeTag :: UNKNOWN" ExceptionInInitializerError). -->
-    <lombok.version>1.18.46</lombok.version>
+    <lombok.version>1.18.48</lombok.version>
   </properties>
 
   <dependencies>
