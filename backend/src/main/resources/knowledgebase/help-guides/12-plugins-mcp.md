@@ -113,6 +113,12 @@ claude.ai's connector settings don't let you set a custom `Authorization` header
 
 Because the key sits in the URL, it can be logged by proxies or browser history, and unlike the header-based method this connection carries the key's full scope — a leaked URL for a `WRITE`/`ADMIN` key means whoever has it can act as you. Use a dedicated, short-lived key just for this connector rather than reusing a broadly-scoped one, treat the URL itself like a secret, and revoke the key immediately if you suspect it leaked. When your client supports custom headers, prefer the standard `Authorization: Bearer <api-key>` method instead — this URL-based method exists specifically for hosted clients (like claude.ai) that can't.
 
+## Can I restrict an API key to a single project?
+
+Yes. When creating an API key under **MCP Integration → API Keys**, you can optionally pick a project to restrict it to. A restricted key can only list, read, and (with WRITE scope) update resources belonging to that one project — pitches, tasks, bugs, releases, cycles, and roadmap items from any other project are hidden from it, and full project export/import (`/api/v1/public/data/...`) works only for its own project. Leaving the project field on "No restriction" keeps the key's original org-wide behavior — every key created before this option existed keeps working exactly as it always has.
+
+Use a project-restricted key whenever an integration (a CI pipeline, a single team's automation) only needs one project's data — it limits the blast radius if that key is ever leaked, without needing a separate broader-scoped key. All calls to `/api/v1/public/**` are also rate-limited (100 requests/minute per caller by default, configurable via `app.rate-limit.public-api.capacity`), whether or not the key is project-restricted.
+
 ## Can an AI tool view image attachments on a bug?
 
 Yes. Call `get_bug_attachments` (by `bugKey` or `bugReportId`) to list a bug's files — each one has an `isImage` flag. For image attachments (PNG, JPEG, GIF, WebP) pass the attachment `id` to `download_bug_attachment`, which returns the image itself so the AI client (e.g. Claude Code) can view a design mockup or screenshot directly. PDFs and documents aren't returned as images — read their `extractedText` from `get_bug_attachments` instead. Images over 8 MB are not returned inline.

@@ -51,6 +51,8 @@ export interface WikiPageDTO {
    * Used by the view to render the "Linked pages" affordance.
    */
   pageLinks: WikiPageLinkDTO[];
+  /** Optimistic-lock version. Present on every fetch/save response as of v1.13.0 (S64); echo it back as `expectedVersion` on the next update. */
+  version?: number;
 }
 
 /**
@@ -99,6 +101,8 @@ export interface CreateWikiPageRequest {
 export interface UpdateWikiPageRequest {
   title?: string;
   content?: string | null;
+  /** Optimistic-lock check (v1.13.0 S64) — pass the last-known WikiPageDTO.version; a mismatch returns HTTP 409. */
+  expectedVersion?: number;
 }
 
 export interface MovePageRequest {

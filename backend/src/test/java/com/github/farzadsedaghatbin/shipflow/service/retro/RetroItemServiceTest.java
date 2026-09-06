@@ -201,6 +201,52 @@ class RetroItemServiceTest {
     }
 
     @Test
+    @DisplayName("updateRetroItem with matching expectedVersion succeeds")
+    void updateRetroItem_WithMatchingExpectedVersion_Succeeds() {
+      RetroItem item = aRetroItem().withRetrospective(testRetro).withAuthor(testUser).build();
+      item.setVersion(3L);
+      RetroItemDTO dto = RetroItemDTO.builder().id(1L).content("Updated").version(4L).build();
+
+      when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
+      doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
+      when(retroItemRepository.save(any())).thenReturn(item);
+      when(retroMapper.toItemDTOWithLookup(any(), any())).thenReturn(dto);
+
+      RetroItemDTO result = service.updateRetroItem(1L, "Updated", 3L);
+
+      assertThat(result.getContent()).isEqualTo("Updated");
+      verify(retroItemRepository).save(item);
+    }
+
+    @Test
+    @DisplayName("updateRetroItem with stale expectedVersion throws conflict and does not save")
+    void updateRetroItem_WithStaleExpectedVersion_ThrowsAndDoesNotSave() {
+      RetroItem item = aRetroItem().withId(1L).withRetrospective(testRetro).withAuthor(testUser).build();
+      item.setVersion(5L);
+      RetroItemDTO currentDto = RetroItemDTO.builder().id(1L).version(5L).build();
+
+      when(retroItemRepository.findById(1L)).thenReturn(Optional.of(item));
+      doNothing().when(retroCrudService).validateRetrospectivesEnabled(testProject.getId());
+      when(retroMapper.toItemDTOWithLookup(item, testUser)).thenReturn(currentDto);
+
+      assertThatThrownBy(() -> service.updateRetroItem(1L, "Stale write", 2L))
+          .isInstanceOf(
+              com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException.class)
+          .satisfies(ex -> {
+            var conflict =
+                (com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException)
+                    ex;
+            assertThat(conflict.getEntityType()).isEqualTo("RETRO_ITEM");
+            assertThat(conflict.getEntityId()).isEqualTo(1L);
+            assertThat(conflict.getCurrentVersion()).isEqualTo(5L);
+            assertThat(conflict.getCurrentState()).isEqualTo(currentDto);
+          });
+
+      verify(retroItemRepository, never()).save(any());
+      assertThat(item.getContent()).isNotEqualTo("Stale write");
+    }
+
+    @Test
     @DisplayName("updateRetroItem throws when non-owner non-admin tries to edit")
     void updateRetroItem_WhenNonOwner_Throws() {
       User otherUser = aUser().withId(99L).withUsername("other").build();

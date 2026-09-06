@@ -14,6 +14,13 @@ import { Label } from '../../components/ui/label';
 import { Badge } from '../../components/ui/badge';
 import { Checkbox } from '../../components/ui/checkbox';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -22,6 +29,7 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog';
 import { Alert, AlertDescription } from '../../components/ui/alert';
+import { useProject } from '../../contexts';
 import {
   listApiKeys,
   createApiKey,
@@ -31,6 +39,9 @@ import {
 } from '../../services/apiKeyService';
 
 const ALL_SCOPES = ['READ', 'WRITE', 'ADMIN'] as const;
+
+/** Sentinel Select value meaning "no project restriction" (backend expects null/omitted). */
+const NO_PROJECT_RESTRICTION = 'none';
 
 /**
  * Standalone API Keys management page.
@@ -42,6 +53,7 @@ const ALL_SCOPES = ['READ', 'WRITE', 'ADMIN'] as const;
  */
 export default function ApiKeysPage() {
   const { t } = useTranslation();
+  const { projects } = useProject();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +63,7 @@ export default function ApiKeysPage() {
   const [keyName, setKeyName] = useState('');
   const [keyScopes, setKeyScopes] = useState<string[]>(['READ']);
   const [keyExpiresAt, setKeyExpiresAt] = useState('');
+  const [keyRestrictedToProjectId, setKeyRestrictedToProjectId] = useState(NO_PROJECT_RESTRICTION);
   const [creating, setCreating] = useState(false);
   const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
   const [copied, setCopied] = useState(false);
@@ -85,6 +98,7 @@ export default function ApiKeysPage() {
     setKeyName('');
     setKeyScopes(['READ']);
     setKeyExpiresAt('');
+    setKeyRestrictedToProjectId(NO_PROJECT_RESTRICTION);
   };
 
   const toggleScope = (scope: string) => {
@@ -104,6 +118,10 @@ export default function ApiKeysPage() {
         name: keyName.trim(),
         scopes: keyScopes,
         expiresAt: keyExpiresAt ? `${keyExpiresAt}T00:00:00` : undefined,
+        restrictedToProjectId:
+          keyRestrictedToProjectId === NO_PROJECT_RESTRICTION
+            ? undefined
+            : parseInt(keyRestrictedToProjectId, 10),
       });
       setShowCreateDialog(false);
       resetForm();
@@ -200,6 +218,7 @@ export default function ApiKeysPage() {
                     <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTableName')}</th>
                     <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTablePrefix')}</th>
                     <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTableScopes')}</th>
+                    <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTableProject')}</th>
                     <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTableLastUsed')}</th>
                     <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTableCreated')}</th>
                     <th className="py-2 pr-4 font-medium">{t('mcpIntegration.keyTableStatus')}</th>
@@ -223,6 +242,15 @@ export default function ApiKeysPage() {
                             </Badge>
                           ))}
                         </div>
+                      </td>
+                      <td className="py-2 pr-4">
+                        {key.restrictedToProjectName ? (
+                          <Badge variant="outline">{key.restrictedToProjectName}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {t('mcpIntegration.keyTableProjectAll')}
+                          </span>
+                        )}
                       </td>
                       <td className="py-2 pr-4">{formatDate(key.lastUsedAt)}</td>
                       <td className="py-2 pr-4">{formatDate(key.createdAt)}</td>
@@ -290,6 +318,29 @@ export default function ApiKeysPage() {
                 value={keyExpiresAt}
                 onChange={(e) => setKeyExpiresAt(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="keyRestrictedToProjectId">
+                {t('mcpIntegration.restrictToProject')}
+              </Label>
+              <Select
+                value={keyRestrictedToProjectId}
+                onValueChange={setKeyRestrictedToProjectId}
+              >
+                <SelectTrigger id="keyRestrictedToProjectId">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_PROJECT_RESTRICTION}>
+                    {t('mcpIntegration.restrictToProjectAll')}
+                  </SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id.toString()}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>

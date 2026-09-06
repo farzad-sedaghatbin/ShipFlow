@@ -209,8 +209,17 @@ api.interceptors.response.use(
       // Validation errors - show specific message
       showGlobalToast(userMessage, 'error');
     } else if (status === 409) {
-      // Conflict - duplicate data
-      showGlobalToast(userMessage, 'warning');
+      // Conflict. Two distinct cases share this status code:
+      //  - plain duplicate-data conflicts -> show the generic warning toast.
+      //  - optimistic-lock version conflicts (v1.13.0 S64, Pitch/RetroItem/
+      //    WikiPage updates with a stale `expectedVersion`) -> the calling
+      //    page opens a ConflictDialog instead (see utils/conflictError.ts),
+      //    so suppress the generic toast to avoid double-messaging the user.
+      const data = error.response?.data as { currentVersion?: unknown } | undefined;
+      const isOptimisticLockConflict = typeof data?.currentVersion === 'number';
+      if (!isOptimisticLockConflict) {
+        showGlobalToast(userMessage, 'warning');
+      }
     } else if (status && status >= 500) {
       showGlobalToast(GLOBAL_ERROR_MESSAGES.serverError, 'error');
     } else if (!error.response) {

@@ -34,4 +34,7 @@ public class RetroItemDTO {
   private LocalDateTime actedOnAt;
   private Long actedOnById;
   private String actedOnByName;
+
+  /** Optimistic-lock version (v1.13.0 S64) — echo back as {@code expectedVersion} on the next update. */
+  private Long version;
 }

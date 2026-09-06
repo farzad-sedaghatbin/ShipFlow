@@ -16,4 +16,6 @@ public record WikiPageDTO(
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt,
     // Resolved internal [[pageId]] links found in the page body (empty when none).
-    List<WikiPageLinkDTO> pageLinks) {}
+    List<WikiPageLinkDTO> pageLinks,
+    // Optimistic-lock version (v1.13.0 S64) — echo back as expectedVersion on the next update.
+    Long version) {}

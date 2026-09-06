@@ -67,6 +67,18 @@ public class ApiKey {
   @Column
   private LocalDateTime revokedAt;
 
+  /**
+   * When set, restricts this key to a single project: every {@code /api/v1/public/**} and
+   * {@code /api/v1/public/data/**} call authenticated with this key is limited to resources
+   * belonging to this project. A plain loose FK-id column (not a {@code @ManyToOne}) since
+   * callers only ever need the id to compare against a resource's own project id or to look the
+   * project's name up separately — never a loaded {@code Project} association.
+   * {@code NULL} means unrestricted (org-wide access), which is the behavior of every key that
+   * existed before this field was added.
+   */
+  @Column(name = "restricted_to_project_id")
+  private Long restrictedToProjectId;
+
   @PrePersist
   protected void onCreate() {
     createdAt = LocalDateTime.now();

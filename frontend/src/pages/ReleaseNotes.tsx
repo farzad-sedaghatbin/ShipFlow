@@ -109,6 +109,12 @@ const releases: Release[] = [
         description:
           "The notification stream now supports multiple tabs per user and broadcasts across replicas via Redis — fixing a scaling gap in the multi-instance Helm deployment.",
       },
+      {
+        icon: <RefreshCw className="h-5 w-5" />,
+        title: 'Steadier Live Notifications',
+        description:
+          'Notifications now stay live across multiple open tabs and devices, and reconnect more reliably after a network blip.',
+      },
     ],
   },
   {
@@ -321,6 +327,12 @@ const releases: Release[] = [
         description:
           'Admins can export the full Envers change history (tasks, pitches, bug reports, test cases) as CSV or JSON, filtered by entity type and date range, from Organization Settings — for compliance and offline review.',
       },
+      {
+        icon: <Lock className="h-5 w-5" />,
+        title: 'Air-Gapped AI Mode',
+        description:
+          'A hard-guaranteed zero-egress mode for regulated, isolated deployments — a startup validator refuses to boot if any AI provider, MCP client, or model URL would call out beyond the cluster, with an in-app status badge.',
+      },
     ],
   },
   {
@@ -400,7 +412,7 @@ const releases: Release[] = [
   },
   {
     version: '1.7.0',
-    date: 'June 15, 2026',
+    date: 'June 16, 2026',
     title: 'Workflow Automations',
     highlights: [
       {
@@ -590,7 +602,7 @@ const releases: Release[] = [
   },
   {
     version: '1.2.0',
-    date: 'May 23, 2026',
+    date: 'May 24, 2026',
     title: 'Competitor Migration Tooling — Import from Jira, Linear & Asana',
     highlights: [
       {
@@ -633,7 +645,7 @@ const releases: Release[] = [
   },
   {
     version: '1.1.0',
-    date: 'May 19, 2026',
+    date: 'May 20, 2026',
     title: 'Scrum Mode — Sprints, Story Points & Velocity',
     highlights: [
       {

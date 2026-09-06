@@ -29,6 +29,18 @@ public class Pitch {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  /**
+   * Optimistic-locking version (JPA {@code @Version}). Boxed {@code Long} so a brand-new,
+   * unsaved entity's version is distinguishably {@code null} rather than {@code 0} colliding
+   * with a real first-save value. Hibernate auto-increments it on every successful save; the
+   * service layer compares it against a client-supplied {@code expectedVersion} to detect
+   * concurrent-edit conflicts (see {@code OptimisticLockConflictException}).
+   */
+  @NotAudited
+  @Version
+  @Column(nullable = false)
+  private Long version;
+
   @Column(nullable = false)
   private String title;
 
