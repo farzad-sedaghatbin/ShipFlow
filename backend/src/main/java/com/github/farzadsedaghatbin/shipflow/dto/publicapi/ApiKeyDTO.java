@@ -28,4 +28,13 @@ public class ApiKeyDTO {
    * Never stored in the database.
    */
   private String rawKey;
+
+  /** Null when this key is unrestricted (org-wide access). */
+  private Long restrictedToProjectId;
+
+  /**
+   * Resolved server-side from {@link #restrictedToProjectId} so the frontend doesn't need a
+   * second call to show the project's name. Null/omitted when the key is unrestricted.
+   */
+  private String restrictedToProjectName;
 }

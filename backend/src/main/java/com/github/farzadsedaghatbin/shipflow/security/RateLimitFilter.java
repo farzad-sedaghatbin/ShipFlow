@@ -49,6 +49,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
   @Value("${app.rate-limit.jira-import.capacity:3}")
   private int jiraImportCapacity;
 
+  @Value("${app.rate-limit.public-api.capacity:100}")
+  private int publicApiCapacity;
+
   @Value("${app.rate-limit.trusted-proxies:127.0.0.1,::1}")
   private String trustedProxiesRaw;
 
@@ -62,6 +65,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private static final Duration CSV_IMPORT_PERIOD = Duration.ofMinutes(1);
   private static final Duration LINEAR_IMPORT_PERIOD = Duration.ofMinutes(1);
   private static final Duration JIRA_IMPORT_PERIOD = Duration.ofMinutes(1);
+  private static final Duration PUBLIC_API_PERIOD = Duration.ofMinutes(1);
 
   private static final int MAX_BUCKETS = 10_000;
 
@@ -85,6 +89,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private static final String CSV_IMPORT_PREFIX = "/api/import/";
   private static final String LINEAR_IMPORT_PREFIX = "/api/linear-import/";
   private static final String JIRA_IMPORT_PREFIX = "/api/jira-import/";
+  // Every /api/v1/public/** call is auth'd by a custom X-API-Key filter, not by Spring
+  // Security's own permitAll gate (see SecurityConfig) — so, unlike /api/auth/ or /api/search,
+  // it previously had NO rate limit at all: unlimited full-project exports and unlimited
+  // X-API-Key brute-force attempts (401s aren't throttled either, since this filter runs before
+  // ApiKeyAuthenticationFilter can even reject an invalid key). Covers DataManagementController
+  // too (mounted under /api/v1/public/data/**).
+  private static final String PUBLIC_API_PREFIX = "/api/v1/public/";
 
   @Override
   protected void doFilterInternal(
@@ -138,6 +149,25 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return new RateLimit("ai", aiCapacity, AI_PERIOD);
       }
       return new RateLimit("risk-read", riskReadCapacity, RISK_READ_PERIOD);
+    }
+    if (path.startsWith(PUBLIC_API_PREFIX)) {
+      // A public integration API (CI pipelines, GitHub Actions, external tooling) needs a more
+      // generous budget than /api/auth/'s login-brute-force-sensitive limit, but must not be
+      // unlimited — hence its own bucket rather than reusing "search" or "poll". Applies to
+      // every method (GET list/export calls and the PATCH/POST write calls alike) since none of
+      // the resources under this prefix are more sensitive than the others from a rate-limiting
+      // standpoint; per-endpoint tiering can be added later if a specific one turns out to need
+      // stricter limits.
+      //
+      // Keying: like every other bucket in this filter, this keys purely on client IP
+      // (resolveClientIp/ClientIpResolver), not on the calling API key. Keying per-key would
+      // require this filter to parse and validate X-API-Key itself (it currently runs before
+      // ApiKeyAuthenticationFilter and knows nothing about API keys), which changes this
+      // filter's responsibility and ordering — out of scope for this contained hardening pass.
+      // IP-based limiting still bounds unlimited key brute-forcing and unauthenticated abuse
+      // from a single source; a shared-IP scenario (e.g. many integrations behind one NAT/proxy)
+      // sharing one bucket is an accepted tradeoff of that simplicity.
+      return new RateLimit("public-api", publicApiCapacity, PUBLIC_API_PERIOD);
     }
     return null;
   }

@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -101,7 +100,11 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
         userDetails, null, authorities);
-    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+    // Store the ApiKey entity in details (same mechanism McpAuthFilter already uses, read via
+    // `auth.getDetails() instanceof ApiKey` in McpToolDispatcher) so downstream code — here,
+    // PublicApiAuthorizationService — can see which key authenticated the request without a
+    // second look-up, and enforce a per-key project restriction.
+    auth.setDetails(apiKey);
     SecurityContextHolder.getContext().setAuthentication(auth);
 
     filterChain.doFilter(request, response);
