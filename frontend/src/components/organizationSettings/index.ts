@@ -14,3 +14,4 @@ export { PluginsSettingsTab } from './PluginsSettingsTab';
 export { StorageSettingsTab } from './StorageSettingsTab';
 export { CustomFieldsSettingsTab } from './CustomFieldsSettingsTab';
 export { AuditExportSettingsTab } from './AuditExportSettingsTab';
+export { AuthAuditSettingsTab } from './AuthAuditSettingsTab';

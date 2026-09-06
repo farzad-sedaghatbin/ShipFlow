@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserProject;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
+import com.github.farzadsedaghatbin.shipflow.exception.RegistrationDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PasswordResetTokenRepository;
@@ -28,6 +29,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
@@ -50,6 +52,22 @@ public class UserService {
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final MessageService messageService;
+
+  /**
+   * Whether POST /api/auth/register accepts anonymous/non-admin self-registration.
+   * An authenticated ADMIN caller (the "Add User" flow in User Management, which
+   * reuses this same endpoint) is never subject to this gate.
+   */
+  @Value("${app.auth.public-registration:false}")
+  private boolean publicRegistrationEnabled;
+
+  /**
+   * Role assigned to a self-registered (non-admin-caller) user; whatever role the
+   * client requested is ignored. Validated at startup (never ADMIN) by
+   * {@link com.github.farzadsedaghatbin.shipflow.config.AuthDefaultRoleValidator}.
+   */
+  @Value("${app.auth.default-role:READONLY}")
+  private UserRole defaultRegistrationRole;
 
   @Transactional(readOnly = true)
   public List<UserDTO> findAll() {
@@ -82,13 +100,25 @@ public class UserService {
 
   @Transactional
   public UserDTO createUser(RegisterRequest request) {
+    boolean adminCaller = isCallerAdmin();
+
+    // Only a genuine public/non-admin self-registration is subject to the
+    // registration-enabled gate and the forced default role. An authenticated
+    // ADMIN using this same endpoint (User Management's "Add User" flow) is
+    // unaffected either way — see the class-level @Value doc comments.
+    if (!adminCaller && !publicRegistrationEnabled) {
+      throw new RegistrationDisabledException(messageService.getMessage("auth.registration.disabled"));
+    }
+
     if (userRepository.existsByUsername(request.getUsername())) {
       throw new IllegalArgumentException(
           messageService.getMessage("error.user.username.exists", request.getUsername()));
     }
 
+    UserRole roleToAssign = adminCaller ? request.getRole() : defaultRegistrationRole;
+
     User user = User.builder().username(request.getUsername())
-        .password(passwordEncoder.encode(request.getPassword())).role(request.getRole()).isActive(true).build();
+        .password(passwordEncoder.encode(request.getPassword())).role(roleToAssign).isActive(true).build();
 
     if (request.getPersonId() != null) {
       Person person = personRepository.findById(request.getPersonId()).orElseThrow(
@@ -98,7 +128,7 @@ public class UserService {
 
     user = userRepository.save(user);
 
-    assignProjectsToNewUser(user, request);
+    assignProjectsToNewUser(user, request, adminCaller);
 
     return toDTO(user);
   }
@@ -106,10 +136,12 @@ public class UserService {
   /**
    * Automatically assigns projects to a newly created user. Only runs when the
    * caller is an authenticated ADMIN — public self-registration never triggers
-   * project assignment.
+   * project assignment. {@code adminCaller} is computed once by the caller
+   * ({@link #createUser}) and passed in to avoid a second {@link #isCallerAdmin()}
+   * lookup.
    */
-  private void assignProjectsToNewUser(User user, RegisterRequest request) {
-    if (!isCallerAdmin()) {
+  private void assignProjectsToNewUser(User user, RegisterRequest request, boolean adminCaller) {
+    if (!adminCaller) {
       return;
     }
 

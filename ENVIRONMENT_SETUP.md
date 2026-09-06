@@ -288,5 +288,31 @@ ShipFlow uses Spring Boot property-based feature flags. Set in `application-dev.
 | `mcp.figma.enabled` | `false` | Enable Figma MCP client for Wise Architecture |
 | `app.ai.cache.ttl-minutes` | `60` | AI cache TTL in minutes |
 | `app.rate-limit.trusted-proxies` | `127.0.0.1,::1` | Comma-separated trusted proxy IPs for `X-Forwarded-For` |
+| `app.demo-mode.enabled` (`APP_DEMO_MODE`) | `false` | Shows a "Use admin / admin123" hint on the login page. Leave off for real production instances — enable only on a deliberately public demo deployment (e.g. shipflow.dev) |
+| `app.auth.public-registration` | `false` (base/prod), `true` (dev/test) | Gate for `POST /api/auth/register` — see below |
+| `app.auth.default-role` | `READONLY` | Role forced on a publicly self-registered user — see below |
 
 To disable a flag at runtime, set it to `false` in your `application-dev.properties` or as a `SPRING_APPLICATION_JSON` environment variable in production.
+
+## Public Self-Registration (`APP_PUBLIC_REGISTRATION` / `APP_AUTH_DEFAULT_ROLE`)
+
+`POST /api/auth/register` is `permitAll` (no login required to call it), so two properties control what an anonymous caller can actually do with it. Neither affects an authenticated ADMIN calling the same endpoint — that's the existing "Add User" flow in Organization Settings → User Management, which keeps working exactly as before regardless of these settings.
+
+```bash
+# Whether anonymous visitors can create an account at all.
+# Default: false in the base config and application-prod.properties (a public
+# instance doesn't accept walk-up signups until an admin opts in). true in the
+# dev and test profiles so the local demo flow and existing tests keep working.
+APP_PUBLIC_REGISTRATION=true
+
+# Role assigned to a publicly self-registered user. Whatever role the client
+# requests in the register form/API call is ALWAYS ignored and overridden with
+# this value — this is what stops "role": "ADMIN" in a register request from
+# actually creating an admin. Must be an exact UserRole constant (case-sensitive):
+# MANAGER, MEMBER, or READONLY. ADMIN is never accepted here — the app refuses to
+# start if it's configured (AuthDefaultRoleValidator), rather than silently
+# letting a misconfiguration hand out admin accounts to the public.
+APP_AUTH_DEFAULT_ROLE=READONLY
+```
+
+If `APP_PUBLIC_REGISTRATION` is unset or `false` on a production deployment, an anonymous `POST /api/auth/register` returns `403` with `messageKey: "auth.registration.disabled"`. Use the admin "Add User" flow instead, or set `APP_PUBLIC_REGISTRATION=true` if you want an open-signup instance.

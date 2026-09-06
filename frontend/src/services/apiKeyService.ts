@@ -31,6 +31,10 @@ export interface ApiKey {
   createdAt?: string | null;
   revokedAt?: string | null;
   createdByUsername?: string | null;
+  /** Project ID this key is restricted to, or null when the key is unrestricted (default). */
+  restrictedToProjectId: number | null;
+  /** Resolved by the backend for display; null when the key is unrestricted. */
+  restrictedToProjectName: string | null;
 }
 
 /** The create response includes the raw key value exactly once. */
@@ -43,6 +47,8 @@ export interface CreateApiKeyRequest {
   scopes: string[];
   /** ISO-8601 date-time string. Omit for a key that never expires. */
   expiresAt?: string;
+  /** Omit or pass null for a key with access to all projects (default). */
+  restrictedToProjectId?: number | null;
 }
 
 // The backend uses Lombok @Data on a `Boolean isActive` field, so Jackson may
@@ -59,6 +65,8 @@ function normalize(raw: Record<string, unknown>): ApiKey {
     createdAt: (raw.createdAt as string) ?? null,
     revokedAt: (raw.revokedAt as string) ?? null,
     createdByUsername: (raw.createdByUsername as string) ?? null,
+    restrictedToProjectId: (raw.restrictedToProjectId as number) ?? null,
+    restrictedToProjectName: (raw.restrictedToProjectName as string) ?? null,
   };
 }
 

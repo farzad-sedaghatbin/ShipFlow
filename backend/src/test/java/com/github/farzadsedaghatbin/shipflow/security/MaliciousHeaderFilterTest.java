@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
@@ -40,7 +41,10 @@ class MaliciousHeaderFilterTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    filter = new MaliciousHeaderFilter();
+    ClientIpService clientIpService = new ClientIpService();
+    ReflectionTestUtils.setField(clientIpService, "trustedProxiesRaw", "127.0.0.1,::1");
+    ReflectionTestUtils.invokeMethod(clientIpService, "initTrustedProxies");
+    filter = new MaliciousHeaderFilter(clientIpService);
     responseWriter = new StringWriter();
     // lenient: not all tests call getWriter() (e.g. pass-through tests that don't write an error body)
     lenient().when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));

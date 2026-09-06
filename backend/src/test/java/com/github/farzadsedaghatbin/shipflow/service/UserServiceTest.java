@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.RegisterRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UpdateUserProjectsRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.UserDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.UserProjectAssignmentDTO;
+import com.github.farzadsedaghatbin.shipflow.exception.RegistrationDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
@@ -36,6 +37,7 @@ import org.mockito.quality.Strictness;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -86,6 +88,12 @@ class UserServiceTest {
       return u;
     });
     lenient().when(userProjectRepository.save(any(UserProject.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    // Matches the real test-profile default (public-registration=true) and the
+    // base application.properties default-role (READONLY) — @Value fields aren't
+    // populated by @InjectMocks, so they must be set explicitly here.
+    ReflectionTestUtils.setField(userService, "publicRegistrationEnabled", true);
+    ReflectionTestUtils.setField(userService, "defaultRegistrationRole", UserRole.READONLY);
   }
 
   @AfterEach
@@ -252,6 +260,22 @@ class UserServiceTest {
   }
 
   @Test
+  void createUser_UnauthenticatedCaller_IgnoresRequestedRole_UsesDefaultRole() {
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("wannabe-admin");
+    request.setPassword("password123");
+    request.setRole(UserRole.ADMIN); // requested — must be ignored
+
+    UserDTO result = userService.createUser(request);
+
+    assertThat(result.getRole()).isEqualTo(UserRole.READONLY);
+
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    verify(userRepository).save(captor.capture());
+    assertThat(captor.getValue().getRole()).isEqualTo(UserRole.READONLY);
+  }
+
+  @Test
   void createUser_NonAdminCaller_SkipsProjectAssignment() {
     User member = User.builder().id(2L).username("member").role(UserRole.MEMBER).build();
     when(userRepository.findByUsername("member")).thenReturn(Optional.of(member));
@@ -268,6 +292,75 @@ class UserServiceTest {
     assertThat(result).isNotNull();
     verify(userProjectRepository, never()).save(any());
     verify(projectRepository, never()).findByIsActiveTrue();
+  }
+
+  @Test
+  void createUser_NonAdminCaller_CannotSelfElevate_IgnoresRequestedAdminRole() {
+    User member = User.builder().id(2L).username("member").role(UserRole.MEMBER).build();
+    when(userRepository.findByUsername("member")).thenReturn(Optional.of(member));
+    SecurityContextHolder.getContext()
+        .setAuthentication(new UsernamePasswordAuthenticationToken("member", null, List.of()));
+
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("newuser");
+    request.setPassword("password123");
+    request.setRole(UserRole.ADMIN); // an already-authenticated non-admin tries to self-elevate
+
+    UserDTO result = userService.createUser(request);
+
+    assertThat(result.getRole()).isEqualTo(UserRole.READONLY);
+  }
+
+  @Test
+  void createUser_AdminCaller_KeepsRequestedRole_EvenWhenPublicRegistrationDisabled() {
+    ReflectionTestUtils.setField(userService, "publicRegistrationEnabled", false);
+    authenticateAsAdmin();
+    when(projectRepository.findByIsActiveTrue()).thenReturn(List.of(projectA));
+
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("addedbyadmin");
+    request.setPassword("password123");
+    request.setRole(UserRole.MANAGER);
+
+    UserDTO result = userService.createUser(request);
+
+    assertThat(result.getRole()).isEqualTo(UserRole.MANAGER);
+    verify(userRepository).save(any(User.class));
+  }
+
+  @Test
+  void createUser_UnauthenticatedCaller_WhenPublicRegistrationDisabled_ThrowsRegistrationDisabledException() {
+    ReflectionTestUtils.setField(userService, "publicRegistrationEnabled", false);
+    when(messageService.getMessage("auth.registration.disabled")).thenReturn("Registration is disabled");
+
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("blockedregister");
+    request.setPassword("password123");
+    request.setRole(UserRole.MEMBER);
+
+    assertThatThrownBy(() -> userService.createUser(request)).isInstanceOf(RegistrationDisabledException.class)
+        .hasMessage("Registration is disabled");
+
+    verify(userRepository, never()).save(any());
+  }
+
+  @Test
+  void createUser_NonAdminCaller_WhenPublicRegistrationDisabled_ThrowsRegistrationDisabledException() {
+    ReflectionTestUtils.setField(userService, "publicRegistrationEnabled", false);
+    User member = User.builder().id(2L).username("member").role(UserRole.MEMBER).build();
+    when(userRepository.findByUsername("member")).thenReturn(Optional.of(member));
+    SecurityContextHolder.getContext()
+        .setAuthentication(new UsernamePasswordAuthenticationToken("member", null, List.of()));
+    when(messageService.getMessage("auth.registration.disabled")).thenReturn("Registration is disabled");
+
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("blockedregister2");
+    request.setPassword("password123");
+    request.setRole(UserRole.MEMBER);
+
+    assertThatThrownBy(() -> userService.createUser(request)).isInstanceOf(RegistrationDisabledException.class);
+
+    verify(userRepository, never()).save(any());
   }
 
   @Test

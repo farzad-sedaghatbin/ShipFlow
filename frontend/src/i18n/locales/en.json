@@ -1347,7 +1347,8 @@
         "accountLocked": "Account is locked. Contact your administrator.",
         "accountDisabled": "Account is disabled. Contact your administrator.",
         "tokenExpired": "Your session has expired. Please log in again.",
-        "tokenInvalid": "Invalid session. Please log in again."
+        "tokenInvalid": "Invalid session. Please log in again.",
+        "registrationDisabled": "Registration is disabled on this instance. Ask an administrator for an account."
       },
       "worklog": {
         "hours": {
@@ -4522,6 +4523,8 @@
   "pitchDetailPage": {
     "title": "Pitch Details",
     "error": "Error loading pitch details",
+    "staleWhileEditing": "Someone else updated this pitch while you were editing. Your changes are safe for now — you'll be asked to reconcile when you save.",
+    "reloadNow": "Reload now",
     "pitch": "Pitch",
     "overview": "Overview",
     "shapeUpDetails": "Shape Up Details",
@@ -5511,6 +5514,13 @@
     "shipped130Item2Desc": "Create, list, and revoke API keys with READ / WRITE / ADMIN scopes and optional expiry. The raw key is shown once with a copy button.",
     "shipped130Item3Title": "Admin API Key Oversight",
     "shipped130Item3Desc": "Admins see all API keys across the organization — who created each one and when — and can revoke any key from the MCP Integration page.",
+    "shipped121Title": "MCP Expansion, Bug Fixes & QA Improvements",
+    "shipped121Item0Title": "MCP Context Aggregator & 12 New Tools",
+    "shipped121Item0Desc": "A new get_task_context tool returns everything a coding agent needs in one call — task, pitch, cycle, siblings, and hints — plus 12 more tools including test runs, bug reports, and assignee updates.",
+    "shipped121Item1Title": "Pitch Notes & Wireframe Links Fixed",
+    "shipped121Item1Desc": "Fixed a 500 error when adding notes to an early-stage pitch, and a spurious validation error when saving wireframe links or Shape Up fields on an active pitch.",
+    "shipped121Item2Title": "MEMBER Access Fixed for Bug & Test-Case Writes",
+    "shipped121Item2Desc": "Corrected outdated role checks that were blocking MEMBER users from creating or updating bug reports and test cases.",
     "phase140Theme": "Enterprise Auth & UX Depth",
     "phase140Item0Title": "SSO / SAML 2.0 & OIDC",
     "phase140Item0Desc": "Enterprise sign-in via Okta, Keycloak, Auth0, or Azure AD with just-in-time provisioning and SSO enforcement mode.",
@@ -5671,6 +5681,8 @@
     "phase113Item1Desc": "Optimistic locking with a friendly conflict dialog instead of silently overwriting a teammate's changes.",
     "phase113Item2Title": "Real-Time Infrastructure Rework",
     "phase113Item2Desc": "Multi-instance notification streaming and multi-tab support, so live features hold up under real deployments.",
+    "phase113Item3Title": "Steadier Live Notifications",
+    "phase113Item3Desc": "Notifications now stay live across multiple open tabs and devices, and reconnect more reliably after a network blip.",
     "phase114Theme": "AI You Can Trust",
     "phase114Item0Title": "Reliable Cycle Summaries",
     "phase114Item0Desc": "AI-generated cycle summaries are validated against real data before they're saved — no more invented content.",
@@ -7901,12 +7913,16 @@
     "keyName": "Name",
     "keyScopes": "Scopes",
     "keyExpiresAt": "Expiry date (optional)",
+    "restrictToProject": "Restrict to project (optional)",
+    "restrictToProjectAll": "No restriction (all projects)",
     "scopeREAD": "Read — query data",
     "scopeWRITE": "Write — create and update data",
     "scopeADMIN": "Admin — full access",
     "keyTableName": "Name",
     "keyTablePrefix": "Key",
     "keyTableScopes": "Scopes",
+    "keyTableProject": "Project",
+    "keyTableProjectAll": "All projects",
     "keyTableLastUsed": "Last used",
     "keyTableCreated": "Created",
     "keyTableCreatedBy": "Created by",
@@ -8814,6 +8830,8 @@
   "wiki": {
     "title": "Wiki",
     "subtitle": "Team knowledge base and documentation",
+    "staleWhileEditing": "Someone else updated this page while you were editing. Your changes are safe for now — you'll be asked to reconcile when you save.",
+    "reloadNow": "Reload now",
     "pageTree": "Page tree",
     "spaces": "Spaces",
     "noSpaces": "No spaces yet. Create your first space.",
@@ -8921,5 +8939,58 @@
     "loadProjectsFailed": "Could not load projects.",
     "taskNote": "All subtasks will be moved with this task. Cycle and pitch associations will be cleared.",
     "pitchNote": "The pitch will be moved to the backlog of the target project. Cycle assignment will be cleared."
+  },
+  "authAudit": {
+    "tabLabel": "Sign-in Activity",
+    "title": "Sign-in activity",
+    "description": "Every sign-in attempt, successful or not — with the originating IP address, country and device.",
+    "filterUsername": "Username",
+    "filterUsernamePlaceholder": "e.g. admin",
+    "filterIp": "IP address",
+    "filterOutcome": "Outcome",
+    "outcomeAll": "All",
+    "outcomeSuccess": "Successful",
+    "outcomeFailure": "Failed",
+    "refresh": "Refresh",
+    "clearFilters": "Clear",
+    "loadError": "Could not load sign-in activity",
+    "emptyTitle": "No sign-in activity",
+    "emptyFiltered": "No events match these filters.",
+    "emptyAll": "Events will appear here as people sign in.",
+    "colWhen": "When",
+    "colUser": "User",
+    "colEvent": "Event",
+    "colIp": "IP",
+    "colDevice": "Device",
+    "pageOf": "Page {{page}} of {{total}} · {{count}} events",
+    "event": {
+      "LOGIN_SUCCESS": "Signed in",
+      "LOGIN_FAILURE": "Sign-in failed",
+      "PASSKEY_LOGIN_SUCCESS": "Signed in with passkey",
+      "PASSKEY_LOGIN_FAILURE": "Passkey sign-in failed",
+      "PASSKEY_REGISTERED": "Passkey added",
+      "PASSKEY_REMOVED": "Passkey removed",
+      "PASSWORD_CHANGED": "Password changed",
+      "PASSWORD_RESET_REQUESTED": "Password reset requested",
+      "PASSWORD_RESET_COMPLETED": "Password reset completed",
+      "ACCOUNT_REGISTERED": "Account created",
+      "LOGOUT": "Signed out"
+    }
+  },
+  "presence": {
+    "viewingCount": "{{count}} other people viewing this",
+    "viewingCount_one": "{{count}} other person viewing this",
+    "viewingCount_other": "{{count}} other people viewing this"
+  },
+  "conflictDialog": {
+    "title": "Someone else made changes",
+    "description": "Someone else updated this {{entity}} while you were editing. You can keep your changes (and overwrite theirs), or discard your changes and load the latest version.",
+    "keepMine": "Keep my changes",
+    "discardMine": "Discard mine & reload",
+    "entityLabel": {
+      "pitch": "pitch",
+      "retroItem": "retro item",
+      "wikiPage": "wiki page"
+    }
   }
 }

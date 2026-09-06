@@ -26,6 +26,10 @@ import {
 import { retroService } from '../services/retroService';
 import { ActOnRetroItemsDialog } from '../components/ActOnRetroItemsDialog';
 import { RetroSummaryPanel } from '../components/RetroSummaryPanel';
+import { PresenceAvatarStack } from '../components/PresenceAvatarStack';
+import { ConflictDialog } from '../components/ConflictDialog';
+import { usePresence } from '../hooks/usePresence';
+import { getConflictBody, OptimisticLockConflictBody } from '../utils/conflictError';
 
 import { useAuth } from '../contexts/AuthContext';
 import { Retrospective, RetroItem, RetroColumnType, RetroStatus } from '../types';
@@ -134,7 +138,13 @@ export default function RetroBoard() {
     TRY_NEXT: false,
     ACTIONS: false,
   });
-  const [editingItem, setEditingItem] = useState<{ id: number; content: string } | null>(null);
+  const [editingItem, setEditingItem] = useState<{ id: number; content: string; version?: number } | null>(null);
+  // 409 optimistic-lock conflict on a retro item save.
+  const [itemConflict, setItemConflict] = useState<{
+    itemId: number;
+    content: string;
+    conflict: OptimisticLockConflictBody<RetroItem>;
+  } | null>(null);
   const [mergeDialog, setMergeDialog] = useState<{ open: boolean; sourceItem: RetroItem | null; columnType: RetroColumnType | null }>({
     open: false,
     sourceItem: null,
@@ -147,6 +157,8 @@ export default function RetroBoard() {
   const discussTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { user } = useAuth();
+  // Live presence — who else is viewing this retro (v1.13.0 S64)
+  const { viewers } = usePresence('RETROSPECTIVE', id);
   const canManageRetro = user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const isReadOnly = retro?.status === 'CLOSED';
   const canEditItem = (item: RetroItem) =>
@@ -235,12 +247,41 @@ export default function RetroBoard() {
     if (!editingItem) return;
 
     try {
-      await retroService.updateItem(editingItem.id, editingItem.content);
-      setItems(items.map((item) => (item.id === editingItem.id ? { ...item, content: editingItem.content } : item)));
+      const res = await retroService.updateItem(editingItem.id, editingItem.content, editingItem.version);
+      setItems(items.map((item) => (item.id === editingItem.id ? res.data : item)));
       setEditingItem(null);
+    } catch (error) {
+      const conflict = getConflictBody<RetroItem>(error);
+      if (conflict) {
+        setItemConflict({ itemId: editingItem.id, content: editingItem.content, conflict });
+      } else {
+        showError(t('retroBoardPage.saveFailed'));
+      }
+    }
+  };
+
+  // Conflict dialog resolution: overwrite the server with our local edit,
+  // retrying with the version the server told us is current.
+  const handleKeepMyItemEdit = async () => {
+    if (!itemConflict) return;
+    try {
+      const res = await retroService.updateItem(itemConflict.itemId, itemConflict.content, itemConflict.conflict.currentVersion);
+      setItems(items.map((item) => (item.id === itemConflict.itemId ? res.data : item)));
+      setEditingItem(null);
+      setItemConflict(null);
     } catch (error) {
       showError(t('retroBoardPage.saveFailed'));
     }
+  };
+
+  // Conflict dialog resolution: discard our local edit and adopt the server's
+  // current version — the 409 body's `current` payload is already the fresh
+  // RetroItem, so no extra fetch is needed.
+  const handleDiscardMyItemEdit = () => {
+    if (!itemConflict) return;
+    setItems(items.map((item) => (item.id === itemConflict.itemId ? itemConflict.conflict.current : item)));
+    setEditingItem(null);
+    setItemConflict(null);
   };
 
   const handleDeleteItem = async (itemId: number) => {
@@ -480,6 +521,7 @@ export default function RetroBoard() {
               <Badge variant={statusConfig[retro.status].variant}>
                 {getStatusLabel(retro.status)}
               </Badge>
+              <PresenceAvatarStack viewers={viewers} />
               {isReadOnly && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -804,7 +846,7 @@ export default function RetroBoard() {
                                         variant="ghost"
                                         size="icon"
                                         className="h-7 w-7"
-                                        onClick={() => setEditingItem({ id: item.id, content: item.content })}
+                                        onClick={() => setEditingItem({ id: item.id, content: item.content, version: item.version })}
                                       >
                                         <Pencil className="h-3.5 w-3.5" />
                                       </Button>
@@ -976,6 +1018,15 @@ export default function RetroBoard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Conflict Dialog — someone else updated this item first (409) */}
+        <ConflictDialog
+          open={!!itemConflict}
+          onOpenChange={(open) => { if (!open) setItemConflict(null); }}
+          entityLabel={t('conflictDialog.entityLabel.retroItem')}
+          onKeepMine={handleKeepMyItemEdit}
+          onDiscardMine={handleDiscardMyItemEdit}
+        />
       </div>
     </TooltipProvider>
   );

@@ -58,6 +58,17 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
   }
 
+  @ExceptionHandler(RegistrationDisabledException.class)
+  public ResponseEntity<Map<String, Object>> handleRegistrationDisabledException(
+      RegistrationDisabledException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("auth.registration.disabled"));
+    error.put("messageKey", "auth.registration.disabled");
+    error.put("status", HttpStatus.FORBIDDEN.value());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+  }
+
   @ExceptionHandler(AuthenticationException.class)
   public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
     Map<String, Object> error = new HashMap<>();
@@ -143,6 +154,27 @@ public class GlobalExceptionHandler {
     error.put("message", ex.getMessage());
     error.put("status", HttpStatus.BAD_REQUEST.value());
     return ResponseEntity.badRequest().body(error);
+  }
+
+  /**
+   * A client sent a stale {@code expectedVersion} on a Pitch/RetroItem/WikiPage update — someone
+   * else saved a change in between. Returns 409 with the entity's current version and current
+   * state (folded into the standard error envelope) so the client can reconcile without a second
+   * fetch.
+   */
+  @ExceptionHandler(OptimisticLockConflictException.class)
+  public ResponseEntity<Map<String, Object>> handleOptimisticLockConflictException(
+      OptimisticLockConflictException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.CONFLICT.value());
+    error.put("message", getMessage("error.optimistic.lock.conflict"));
+    error.put("messageKey", "error.optimistic.lock.conflict");
+    error.put("entityType", ex.getEntityType());
+    error.put("entityId", ex.getEntityId());
+    error.put("currentVersion", ex.getCurrentVersion());
+    error.put("current", ex.getCurrentState());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
   }
 
   /**

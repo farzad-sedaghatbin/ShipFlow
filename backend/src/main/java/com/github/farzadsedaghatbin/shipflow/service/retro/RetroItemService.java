@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Retrospective;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.RetroStatus;
+import com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemDislikeVoteRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.RetroItemRepository;
@@ -84,6 +85,10 @@ public class RetroItemService {
   }
 
   public RetroItemDTO updateRetroItem(Long itemId, String content) {
+    return updateRetroItem(itemId, content, null);
+  }
+
+  public RetroItemDTO updateRetroItem(Long itemId, String content, Long expectedVersion) {
     RetroItem item = retroItemRepository.findById(itemId)
         .orElseThrow(() -> new ResourceNotFoundException("Retro item not found with id: " + itemId));
 
@@ -98,6 +103,13 @@ public class RetroItemService {
 
     User currentUser = retroCrudService.getCurrentUser();
     checkItemOwnership(item, currentUser);
+
+    // Optimistic-lock conflict check (v1.13.0 S64) — before mutation, so a version conflict
+    // never fires a broadcast for a save that didn't actually happen.
+    if (expectedVersion != null && !expectedVersion.equals(item.getVersion())) {
+      throw new OptimisticLockConflictException(
+          "RETRO_ITEM", itemId, item.getVersion(), retroMapper.toItemDTOWithLookup(item, currentUser));
+    }
 
     item.setContent(content);
     RetroItem saved = retroItemRepository.save(item);
