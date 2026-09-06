@@ -19,7 +19,7 @@
     <spring.version>6.1.14</spring.version>
     <!-- Matches ShipFlow backend's pinned Lombok version — older releases don't support newer
          JDKs' internal javac APIs used by annotation processing. -->
-    <lombok.version>1.18.46</lombok.version>
+    <lombok.version>1.18.48</lombok.version>
   </properties>
 
   <dependencies>
