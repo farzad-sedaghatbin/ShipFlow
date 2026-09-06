@@ -109,6 +109,12 @@ const releases: Release[] = [
         description:
           "The notification stream now supports multiple tabs per user and broadcasts across replicas via Redis — fixing a scaling gap in the multi-instance Helm deployment.",
       },
+      {
+        icon: <RefreshCw className="h-5 w-5" />,
+        title: 'Steadier Live Notifications',
+        description:
+          'Notifications now stay live across multiple open tabs and devices, and reconnect more reliably after a network blip.',
+      },
     ],
   },
   {
