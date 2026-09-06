@@ -169,7 +169,7 @@ class WikiControllerTest {
         .andExpect(jsonPath("$.title", is("My Page")));
 
     // Update page
-    UpdateWikiPageRequest updateReq = new UpdateWikiPageRequest("Updated Title", null);
+    UpdateWikiPageRequest updateReq = new UpdateWikiPageRequest("Updated Title", null, null);
     mockMvc
         .perform(
             put("/api/wiki/pages/{id}", pageId)

@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-09-05T22:46:36.341Z",
+  "timestamp": "2026-09-05T23:15:17.484Z",
   "stats": {
-    "totalEnKeys": 8135,
-    "totalFaKeys": 7260,
-    "totalUsedKeys": 5448,
-    "filesScanned": 530
+    "totalEnKeys": 8149,
+    "totalFaKeys": 7274,
+    "totalUsedKeys": 5460,
+    "filesScanned": 535
   },
   "issues": {
     "missingInFa": [
@@ -3659,6 +3659,8 @@
     "wiki.share.role.ADMIN",
     "wiki.share.role.MANAGER",
     "wiki.share.role.MEMBER",
-    "wiki.share.role.READONLY"
+    "wiki.share.role.READONLY",
+    "presence.viewingCount_one",
+    "presence.viewingCount_other"
   ]
 }

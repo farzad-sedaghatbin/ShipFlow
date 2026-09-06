@@ -97,9 +97,21 @@ public class RetroController {
   @PutMapping("/items/{itemId}")
   @Operation(summary = "Update a retrospective item")
   public ResponseEntity<RetroItemDTO> updateRetroItem(@PathVariable Long itemId,
-      @RequestBody Map<String, String> body) {
-    String content = body.get("content");
-    return ResponseEntity.ok(retroService.updateRetroItem(itemId, content));
+      @RequestBody Map<String, Object> body) {
+    String content = (String) body.get("content");
+    Long expectedVersion = toLong(body.get("expectedVersion"));
+    return ResponseEntity.ok(retroService.updateRetroItem(itemId, content, expectedVersion));
+  }
+
+  /** Coerces a JSON-deserialized numeric value (Integer/Long/Double) into a Long, or null. */
+  private Long toLong(Object value) {
+    if (value == null) {
+      return null;
+    }
+    if (value instanceof Number number) {
+      return number.longValue();
+    }
+    return Long.valueOf(value.toString());
   }
 
   @DeleteMapping("/items/{itemId}")

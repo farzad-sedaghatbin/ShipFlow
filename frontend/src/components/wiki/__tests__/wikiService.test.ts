@@ -100,6 +100,13 @@ describe('wikiService', () => {
       await wikiService.updatePage(8, req);
       expect(mockedApi.put).toHaveBeenCalledWith('/wiki/pages/8', req);
     });
+
+    it('includes expectedVersion in the body for the optimistic-lock check (v1.13.0 S64)', async () => {
+      const req = { title: 'Updated', content: '[]', expectedVersion: 5 };
+      mockedApi.put.mockResolvedValueOnce({ data: { id: 8, ...req, version: 6 } });
+      await wikiService.updatePage(8, req);
+      expect(mockedApi.put).toHaveBeenCalledWith('/wiki/pages/8', expect.objectContaining({ expectedVersion: 5 }));
+    });
   });
 
   describe('deletePage', () => {

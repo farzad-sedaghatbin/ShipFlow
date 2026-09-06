@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.wiki.CreateWikiPageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.CreateWikiSpaceRequest;
 
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.MovePageRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.UpdateWikiPageRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiPageDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
@@ -44,6 +45,7 @@ class WikiServiceTest {
   private KnowledgeSourceRepository knowledgeSourceRepository;
   private UserRepository userRepository;
   private DashboardNotificationService notificationService;
+  private WikiSseService wikiSseService;
   private WikiService wikiService;
 
   @BeforeEach
@@ -57,6 +59,7 @@ class WikiServiceTest {
     knowledgeSourceRepository = mock(KnowledgeSourceRepository.class);
     userRepository = mock(UserRepository.class);
     notificationService = mock(DashboardNotificationService.class);
+    wikiSseService = mock(WikiSseService.class);
     wikiService =
         new WikiService(
             spaceRepository,
@@ -68,7 +71,8 @@ class WikiServiceTest {
             new ObjectMapper(),
             knowledgeSourceRepository,
             userRepository,
-            notificationService);
+            notificationService,
+            wikiSseService);
   }
 
   @Test
@@ -816,5 +820,109 @@ class WikiServiceTest {
     wikiService.createPage(new CreateWikiPageRequest(spaceId, null, "My Page", json), userId);
 
     verify(notificationService, never()).notifyWikiPageMention(any(), any(), anyLong(), anyLong(), any());
+  }
+
+  @Test
+  void updatePage_withMatchingExpectedVersion_succeedsAndBroadcasts() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    Long pageId = 100L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("space");
+    space.setCreatedBy(userId);
+
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+    page.setTitle("Old Title");
+    page.setSlug("old-title");
+    page.setVersion(3L);
+
+    when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+    when(pageRepository.save(any(WikiPage.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    UpdateWikiPageRequest req = new UpdateWikiPageRequest("New Title", null, 3L);
+
+    WikiPageDTO result = wikiService.updatePage(pageId, req, userId);
+
+    assertThat(result.title()).isEqualTo("New Title");
+    verify(pageRepository).save(any(WikiPage.class));
+    verify(wikiSseService).broadcastPageUpdate(pageId);
+  }
+
+  @Test
+  void updatePage_withStaleExpectedVersion_throwsConflictAndDoesNotSaveOrBroadcast() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    Long pageId = 100L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("space");
+    space.setCreatedBy(userId);
+
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+    page.setTitle("Old Title");
+    page.setSlug("old-title");
+    page.setVersion(5L);
+
+    when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+
+    UpdateWikiPageRequest req = new UpdateWikiPageRequest("Stale Title", null, 2L);
+
+    assertThatThrownBy(() -> wikiService.updatePage(pageId, req, userId))
+        .isInstanceOf(
+            com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException.class)
+        .satisfies(ex -> {
+          var conflict =
+              (com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException)
+                  ex;
+          assertThat(conflict.getEntityType()).isEqualTo("WIKI_PAGE");
+          assertThat(conflict.getEntityId()).isEqualTo(pageId);
+          assertThat(conflict.getCurrentVersion()).isEqualTo(5L);
+        });
+
+    verify(pageRepository, never()).save(any());
+    verify(wikiSseService, never()).broadcastPageUpdate(any());
+    assertThat(page.getTitle()).isEqualTo("Old Title");
+  }
+
+  @Test
+  void updatePage_withNullExpectedVersion_skipsCheck() {
+    Long userId = 1L;
+    Long spaceId = 10L;
+    Long pageId = 100L;
+
+    WikiSpace space = new WikiSpace();
+    space.setId(spaceId);
+    space.setSpaceKey("space");
+    space.setCreatedBy(userId);
+
+    WikiPage page = new WikiPage();
+    page.setId(pageId);
+    page.setSpaceId(spaceId);
+    page.setTitle("Old Title");
+    page.setSlug("old-title");
+    page.setVersion(9L);
+
+    when(pageRepository.findById(pageId)).thenReturn(Optional.of(page));
+    when(spaceRepository.findById(spaceId)).thenReturn(Optional.of(space));
+    doNothing().when(permissionService).requireWrite(eq(userId), any(WikiSpace.class));
+    when(pageRepository.save(any(WikiPage.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    UpdateWikiPageRequest req = new UpdateWikiPageRequest("New Title", null, null);
+
+    WikiPageDTO result = wikiService.updatePage(pageId, req, userId);
+
+    assertThat(result.title()).isEqualTo("New Title");
+    verify(pageRepository).save(any(WikiPage.class));
   }
 }
