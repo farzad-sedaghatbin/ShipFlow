@@ -38,6 +38,10 @@ const showSuccess = vi.fn();
 const showError = vi.fn();
 vi.mock('../../contexts', () => ({
   useToast: () => ({ showSuccess, showError }),
+  // usePresence() (wired into RetroBoard.tsx for the S64 presence-avatar feature) imports
+  // useAuth from this barrel, not from '../../contexts/AuthContext' directly — keep both
+  // mocks in sync via the same authState so a merged-in presence call doesn't need its own.
+  useAuth: () => ({ user: authState.user }),
 }));
 
 vi.mock('../../components/RetroSummaryPanel', () => ({
