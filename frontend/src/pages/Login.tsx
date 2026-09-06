@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth, useToast } from '../contexts';
 import { authService, type LoginResponse } from '../services/authService';
 import { getEnabledProviders, initiateSSO } from '../services/ssoService';
+import { getPublicConfig } from '../services/publicConfigService';
 import { passkeyService } from '../services/passkeyService';
 import {
   isWebAuthnSupported,
@@ -83,6 +84,16 @@ export default function Login() {
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Demo-login hint is opt-in per deployment (APP_DEMO_MODE) — off, and hidden, by default so a
+  // self-hoster's real production instance never surfaces demo credentials.
+  const { data: publicConfig } = useQuery({
+    queryKey: ['public-config'],
+    queryFn: getPublicConfig,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+  const demoModeEnabled = publicConfig?.demoModeEnabled ?? false;
 
   const handleSsoLogin = async (idpId: number) => {
     setSsoLoading(idpId);
@@ -435,16 +446,20 @@ export default function Login() {
               </>
             )}
 
-            <div className="relative my-6">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                Demo Access
-              </span>
-            </div>
+            {demoModeEnabled && (
+              <>
+                <div className="relative my-6">
+                  <Separator />
+                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                    Demo Access
+                  </span>
+                </div>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Use <strong className="font-semibold">admin</strong> / <strong className="font-semibold">admin123</strong> for demo
-            </p>
+                <p className="text-center text-sm text-muted-foreground">
+                  Use <strong className="font-semibold">admin</strong> / <strong className="font-semibold">admin123</strong> for demo
+                </p>
+              </>
+            )}
 
             <div className="text-center mt-6">
               <Button variant="ghost" size="sm" asChild>

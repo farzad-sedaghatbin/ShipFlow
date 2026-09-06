@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Opt-in demo-login hint on the login page**, gated by a new `app.demo-mode.enabled` flag (`APP_DEMO_MODE`, default `false`). The "Use admin / admin123 for demo" hint used to show unconditionally on every deployment, including a self-hoster's real production instance — it's now hidden unless explicitly enabled, intended for a deliberately public demo deployment like shipflow.dev. New anonymous `GET /api/public/config` endpoint (separate from the API-key-authenticated `/api/v1/public/**` integration API) exposes this and any future pre-login config flags.
+
 ## [1.12.2] - 2026-09-02
 
 ### Changed

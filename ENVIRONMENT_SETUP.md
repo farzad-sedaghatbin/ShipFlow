@@ -288,5 +288,6 @@ ShipFlow uses Spring Boot property-based feature flags. Set in `application-dev.
 | `mcp.figma.enabled` | `false` | Enable Figma MCP client for Wise Architecture |
 | `app.ai.cache.ttl-minutes` | `60` | AI cache TTL in minutes |
 | `app.rate-limit.trusted-proxies` | `127.0.0.1,::1` | Comma-separated trusted proxy IPs for `X-Forwarded-For` |
+| `app.demo-mode.enabled` (`APP_DEMO_MODE`) | `false` | Shows a "Use admin / admin123" hint on the login page. Leave off for real production instances — enable only on a deliberately public demo deployment (e.g. shipflow.dev) |
 
 To disable a flag at runtime, set it to `false` in your `application-dev.properties` or as a `SPRING_APPLICATION_JSON` environment variable in production.
