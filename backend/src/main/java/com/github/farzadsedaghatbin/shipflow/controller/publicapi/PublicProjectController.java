@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller.publicapi;
 import com.github.farzadsedaghatbin.shipflow.dto.publicapi.PublicProjectDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.security.PublicApiAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -17,32 +18,52 @@ import org.springframework.web.bind.annotation.*;
 public class PublicProjectController {
 
   private final ProjectRepository projectRepository;
+  private final PublicApiAuthorizationService publicApiAuthorizationService;
 
   @GetMapping
   @Operation(summary = "List all active projects")
   public ResponseEntity<List<PublicProjectDTO>> listProjects() {
-    List<PublicProjectDTO> projects = projectRepository.findByIsActiveTrue().stream()
-        .map(this::toDTO)
-        .toList();
-    return ResponseEntity.ok(projects);
+    Long restrictedProjectId = publicApiAuthorizationService.restrictedProjectIdOrNull();
+    List<Project> projects;
+    if (restrictedProjectId != null) {
+      // A project-restricted key sees only its one allowed project, not the whole org's list.
+      projects = projectRepository.findById(restrictedProjectId)
+          .filter(Project::getIsActive)
+          .map(List::of)
+          .orElse(List.of());
+    } else {
+      projects = projectRepository.findByIsActiveTrue();
+    }
+    return ResponseEntity.ok(projects.stream().map(this::toDTO).toList());
   }
 
   @GetMapping("/{id}")
   @Operation(summary = "Get a project by ID")
   public ResponseEntity<PublicProjectDTO> getProject(@PathVariable Long id) {
-    return projectRepository.findById(id)
-        .map(this::toDTO)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+    // Match listProjects()'s isActive filter — an archived project is excluded from the list
+    // but was previously still individually fetchable by ID.
+    Project project = projectRepository.findById(id).filter(Project::getIsActive).orElse(null);
+    if (project == null) {
+      return ResponseEntity.notFound().build();
+    }
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(), project.getId());
+    return ResponseEntity.ok(toDTO(project));
   }
 
   @GetMapping("/by-key/{projectKey}")
   @Operation(summary = "Get a project by its unique key")
   public ResponseEntity<PublicProjectDTO> getProjectByKey(@PathVariable String projectKey) {
-    return projectRepository.findByProjectKey(projectKey)
-        .map(this::toDTO)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+    // Same isActive consistency fix as getProject(id) above — same underlying gap.
+    Project project = projectRepository.findByProjectKey(projectKey)
+        .filter(Project::getIsActive)
+        .orElse(null);
+    if (project == null) {
+      return ResponseEntity.notFound().build();
+    }
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(), project.getId());
+    return ResponseEntity.ok(toDTO(project));
   }
 
   private PublicProjectDTO toDTO(Project p) {

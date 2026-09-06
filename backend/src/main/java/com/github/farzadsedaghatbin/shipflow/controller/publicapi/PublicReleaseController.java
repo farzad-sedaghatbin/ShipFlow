@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller.publicapi;
 import com.github.farzadsedaghatbin.shipflow.dto.publicapi.PublicReleaseDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Release;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
+import com.github.farzadsedaghatbin.shipflow.security.PublicApiAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -17,24 +18,37 @@ import org.springframework.web.bind.annotation.*;
 public class PublicReleaseController {
 
   private final ReleaseRepository releaseRepository;
+  private final PublicApiAuthorizationService publicApiAuthorizationService;
 
   @GetMapping
   @Operation(summary = "List all releases (not deleted)")
   public ResponseEntity<List<PublicReleaseDTO>> listReleases(
       @RequestParam(required = false) Long projectId) {
-    List<Release> releases = projectId != null
-        ? releaseRepository.findByProjectIdNotDeleted(projectId)
-        : releaseRepository.findAllNotDeleted();
+    Long restrictedProjectId = publicApiAuthorizationService.restrictedProjectIdOrNull();
+    List<Release> releases;
+    if (restrictedProjectId != null) {
+      // Project restriction supersedes any caller-supplied projectId, same precedent as
+      // PublicRoadmapController.listEpics.
+      releases = releaseRepository.findByProjectIdNotDeleted(restrictedProjectId);
+    } else if (projectId != null) {
+      releases = releaseRepository.findByProjectIdNotDeleted(projectId);
+    } else {
+      releases = releaseRepository.findAllNotDeleted();
+    }
     return ResponseEntity.ok(releases.stream().map(this::toDTO).toList());
   }
 
   @GetMapping("/{id}")
   @Operation(summary = "Get a release by ID")
   public ResponseEntity<PublicReleaseDTO> getRelease(@PathVariable Long id) {
-    return releaseRepository.findByIdNotDeleted(id)
-        .map(this::toDTO)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+    Release release = releaseRepository.findByIdNotDeleted(id).orElse(null);
+    if (release == null) {
+      return ResponseEntity.notFound().build();
+    }
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(),
+        release.getProject() != null ? release.getProject().getId() : null);
+    return ResponseEntity.ok(toDTO(release));
   }
 
   private PublicReleaseDTO toDTO(Release r) {

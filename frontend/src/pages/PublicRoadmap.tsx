@@ -50,6 +50,7 @@ import {
   Download,
   Kanban,
   Filter,
+  Bug,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -202,7 +203,7 @@ export default function PublicRoadmap() {
     },
     {
       version: '1.7.0',
-      date: 'June 15, 2026',
+      date: 'June 16, 2026',
       title: t('publicRoadmap.shipped170Title'),
       highlights: [
         { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.shipped170Item0Title'), description: t('publicRoadmap.shipped170Item0Desc') },
@@ -256,8 +257,18 @@ export default function PublicRoadmap() {
       ],
     },
     {
+      version: '1.2.1',
+      date: 'June 3, 2026',
+      title: t('publicRoadmap.shipped121Title'),
+      highlights: [
+        { icon: <Network className="h-5 w-5" />, title: t('publicRoadmap.shipped121Item0Title'), description: t('publicRoadmap.shipped121Item0Desc') },
+        { icon: <Bug className="h-5 w-5" />, title: t('publicRoadmap.shipped121Item1Title'), description: t('publicRoadmap.shipped121Item1Desc') },
+        { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.shipped121Item2Title'), description: t('publicRoadmap.shipped121Item2Desc') },
+      ],
+    },
+    {
       version: '1.2.0',
-      date: 'May 23, 2026',
+      date: 'May 24, 2026',
       title: t('publicRoadmap.shipped120Title'),
       highlights: [
         { icon: <Upload className="h-5 w-5" />, title: t('publicRoadmap.shipped120Item0Title'), description: t('publicRoadmap.shipped120Item0Desc') },
@@ -270,7 +281,7 @@ export default function PublicRoadmap() {
     },
     {
       version: '1.1.0',
-      date: 'May 19, 2026',
+      date: 'May 20, 2026',
       title: t('publicRoadmap.shipped110Title'),
       highlights: [
         { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.shipped110Item0Title'), description: t('publicRoadmap.shipped110Item0Desc') },
