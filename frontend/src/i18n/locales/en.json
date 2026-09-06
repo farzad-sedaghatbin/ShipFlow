@@ -1347,7 +1347,8 @@
         "accountLocked": "Account is locked. Contact your administrator.",
         "accountDisabled": "Account is disabled. Contact your administrator.",
         "tokenExpired": "Your session has expired. Please log in again.",
-        "tokenInvalid": "Invalid session. Please log in again."
+        "tokenInvalid": "Invalid session. Please log in again.",
+        "registrationDisabled": "Registration is disabled on this instance. Ask an administrator for an account."
       },
       "worklog": {
         "hours": {

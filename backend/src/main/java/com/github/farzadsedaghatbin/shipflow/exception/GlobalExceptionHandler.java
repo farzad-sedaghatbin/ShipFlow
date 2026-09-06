@@ -58,6 +58,17 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
   }
 
+  @ExceptionHandler(RegistrationDisabledException.class)
+  public ResponseEntity<Map<String, Object>> handleRegistrationDisabledException(
+      RegistrationDisabledException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("auth.registration.disabled"));
+    error.put("messageKey", "auth.registration.disabled");
+    error.put("status", HttpStatus.FORBIDDEN.value());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+  }
+
   @ExceptionHandler(AuthenticationException.class)
   public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
     Map<String, Object> error = new HashMap<>();
