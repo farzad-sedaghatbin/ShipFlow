@@ -76,6 +76,9 @@ public class PitchDTO {
   private List<PitchDependencyDTO> blockingPitches;
   private List<PitchDependencyDTO> blockedByPitches;
 
+  /** Optimistic-lock version (v1.13.0 S64) — echo back as {@code expectedVersion} on the next update. */
+  private Long version;
+
   /**
    * Summary of the busiest team member (closest to exhausting their budget).
    */

@@ -20,4 +20,11 @@ public class CreateApiKeyRequest {
 
   /** Optional expiration date. Null means never expires. */
   private LocalDateTime expiresAt;
+
+  /**
+   * Optional project restriction. When set, this key can only access resources belonging to
+   * this project via the public API and data export/import endpoints. Null (the default) means
+   * unrestricted — org-wide access, matching the pre-existing behavior of every key.
+   */
+  private Long restrictedToProjectId;
 }

@@ -121,6 +121,7 @@ public class RetroMapper {
         .discussedAt(item.getDiscussedAt())
         .createdAt(item.getCreatedAt())
         .updatedAt(item.getUpdatedAt())
+        .version(item.getVersion())
         .mergedItemIds(mergedItemIds != null ? mergedItemIds : Collections.emptyList());
 
     // Always include author fields (null for anonymous items)

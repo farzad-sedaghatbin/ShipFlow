@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 import lombok.*;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 @Entity
 @Table(name = "wiki_pages")
@@ -18,6 +19,16 @@ public class WikiPage {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
+  /**
+   * Optimistic-locking version (JPA {@code @Version}). Boxed {@code Long} so a brand-new,
+   * unsaved entity's version is distinguishably {@code null} rather than {@code 0} colliding
+   * with a real first-save value.
+   */
+  @NotAudited
+  @Version
+  @Column(nullable = false)
+  private Long version;
 
   @Column(name = "space_id", nullable = false)
   private Long spaceId;

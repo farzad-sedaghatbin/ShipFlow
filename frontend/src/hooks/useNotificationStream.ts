@@ -2,8 +2,10 @@ import { useEffect, useRef } from 'react';
 
 const TOKEN_KEY = 'shipflow_token';
 
-/** How long to wait before attempting a reconnect after a stream failure (ms). */
-const RECONNECT_DELAY_MS = 5_000;
+/** Base delay before the first reconnect attempt after a stream failure (ms). */
+const BASE_RECONNECT_DELAY_MS = 1_000;
+/** Upper bound on the (pre-jitter) reconnect delay (ms). */
+const MAX_RECONNECT_DELAY_MS = 30_000;
 
 /**
  * Hook that opens a Server-Sent Events connection to the notification stream
@@ -11,9 +13,12 @@ const RECONNECT_DELAY_MS = 5_000;
  * whenever a {@code notification} event arrives.
  *
  * The connection is torn down when the component unmounts or when the user logs
- * out (token disappears). If the stream fails, a single reconnect attempt is
- * scheduled after {@link RECONNECT_DELAY_MS} milliseconds — this provides
- * graceful degradation while avoiding infinite tight loops.
+ * out (token disappears). If the stream fails, reconnect attempts are scheduled
+ * with exponential backoff (base {@link BASE_RECONNECT_DELAY_MS}, doubling per
+ * attempt, capped at {@link MAX_RECONNECT_DELAY_MS}) plus equal-jitter, and retry
+ * indefinitely — this avoids a thundering herd against a restarting backend while
+ * still eventually recovering, without ever giving up. A successful handshake
+ * resets the backoff counter back to the base delay.
  *
  * @param onNewNotification called with the raw parsed payload (and the SSE
  *   event name, when supplied by the server) each time a non-{@code connected}
@@ -25,21 +30,23 @@ export function useNotificationStream(onNewNotification: (eventName: string, pay
   callbackRef.current = onNewNotification;
 
   useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (!token) return;
-
     let aborted = false;
     const controller = new AbortController();
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectAttempt = 0;
 
     // Fix 6: guard against stacking multiple timers
+    // Exponential backoff with equal-jitter, capped at MAX_RECONNECT_DELAY_MS, retries forever.
     function scheduleReconnect() {
       if (aborted) return;
       if (reconnectTimer !== null) return; // already scheduled
+      const capped = Math.min(MAX_RECONNECT_DELAY_MS, BASE_RECONNECT_DELAY_MS * 2 ** reconnectAttempt);
+      const delay = capped / 2 + Math.random() * (capped / 2); // equal-jitter: avoids thundering herd while staying bounded
+      reconnectAttempt += 1;
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         if (!aborted) connect();
-      }, RECONNECT_DELAY_MS);
+      }, delay);
     }
 
     async function connect() {
@@ -49,6 +56,11 @@ export function useNotificationStream(onNewNotification: (eventName: string, pay
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
       }
+      // Read the token fresh on every (re)connection attempt so a token that
+      // changes (rotation/re-login) or disappears (logout) mid-session is
+      // picked up without needing a full component unmount/remount.
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) return; // logged out (or never logged in) — stop here, don't schedule a reconnect
       try {
         const response = await fetch('/api/notifications/stream', {
           headers: {
@@ -59,10 +71,13 @@ export function useNotificationStream(onNewNotification: (eventName: string, pay
         });
 
         if (!response.ok || !response.body) {
-          // Non-2xx or no body — schedule one reconnect and bail
+          // Non-2xx or no body — schedule a reconnect (with backoff) and bail
           scheduleReconnect();
           return;
         }
+
+        // A successful handshake shows the backend is healthy again — reset backoff.
+        reconnectAttempt = 0;
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -124,5 +139,5 @@ export function useNotificationStream(onNewNotification: (eventName: string, pay
       controller.abort();
       if (reconnectTimer !== null) clearTimeout(reconnectTimer);
     };
-  }, []); // Only run once on mount — token is read inside the effect
+  }, []); // Only run once on mount — token is read fresh inside connect() on every (re)attempt
 }

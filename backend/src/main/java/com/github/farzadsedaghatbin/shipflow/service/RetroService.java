@@ -84,6 +84,10 @@ public class RetroService {
     return retroItemService.updateRetroItem(itemId, content);
   }
 
+  public RetroItemDTO updateRetroItem(Long itemId, String content, Long expectedVersion) {
+    return retroItemService.updateRetroItem(itemId, content, expectedVersion);
+  }
+
   public void deleteRetroItem(Long itemId) {
     retroItemService.deleteRetroItem(itemId);
   }

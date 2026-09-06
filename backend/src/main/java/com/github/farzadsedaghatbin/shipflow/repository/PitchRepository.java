@@ -41,6 +41,15 @@ public interface PitchRepository extends JpaRepository<Pitch, Long> {
   @Query("SELECT p FROM Pitch p WHERE p.team.id = :teamId AND p.deletedAt IS NULL")
   List<Pitch> findByTeamIdNotDeleted(@Param("teamId") Long teamId);
 
+  // A pitch's project can come from either its own direct project_id (e.g. a pre-cycle pitch,
+  // see V2026_06_19_0001) or its cycle's project — matches the resolution PublicPitchController
+  // uses for single-pitch access checks, so the list and single-item paths never disagree about
+  // which pitches belong to a project. Used to scope PublicPitchController#listPitches to a
+  // project-restricted API key's project at the query level.
+  @Query("SELECT DISTINCT p FROM Pitch p LEFT JOIN p.cycle c WHERE p.deletedAt IS NULL "
+      + "AND (p.project.id = :projectId OR c.project.id = :projectId)")
+  List<Pitch> findByProjectIdNotDeleted(@Param("projectId") Long projectId);
+
   @Query("SELECT p FROM Pitch p WHERE p.cycle.id = :cycleId AND p.status = :status AND p.deletedAt IS NULL")
   List<Pitch> findByCycleIdAndStatusNotDeleted(@Param("cycleId") Long cycleId, @Param("status") PitchStatus status);
 

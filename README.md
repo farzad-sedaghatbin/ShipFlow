@@ -746,6 +746,8 @@ AI_CACHE_REDIS_PASSWORD=secure-password
 
 **Development:** Uses in-memory ConcurrentHashMap by default (no Redis needed)
 
+**Multi-replica deployments:** this is a separate concern from the AI cache above — it's the `spring.cache.type=redis` flag (`RedisConfig`), not `app.ai.cache.provider`. When running more than one backend instance (e.g. the Helm chart's default `replicaCount: 2`), a reachable Redis is now required for real-time notifications to reach a user whose browser connection landed on a different pod than the one that triggered the notification — delivery fans out across pods via Redis pub/sub. A single-instance deployment works with no Redis configured either way.
+
 ## 📖 Documentation
 
 - [Contributing Guide](CONTRIBUTING.md)

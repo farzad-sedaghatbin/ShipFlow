@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -23,6 +23,10 @@ import type { WikiEditorHandle } from "../components/wiki/WikiEditor";
 import { extractPlainText } from "../components/wiki/wikiTokens";
 import Comments from "../components/Comments";
 import { useBreadcrumbLabel } from "../contexts";
+import { usePresence } from "../hooks/usePresence";
+import { PresenceAvatarStack } from "../components/PresenceAvatarStack";
+import { ConflictDialog } from "../components/ConflictDialog";
+import { getConflictBody, type OptimisticLockConflictBody } from "../utils/conflictError";
 import {
   wikiService,
   type WikiPageDTO,
@@ -55,6 +59,12 @@ export default function WikiPage() {
   // Below `lg` the page tree sidebar is hidden (it doesn't fit alongside
   // readable content on a phone/tablet); this drives a Sheet drawer instead.
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
+  // A newer version was saved by someone else while this user is mid-edit —
+  // shown as a non-blocking heads-up; the real reconciliation happens via the
+  // 409 conflict dialog when they actually try to save.
+  const [wikiStale, setWikiStale] = useState(false);
+  // 409 optimistic-lock conflict on the page save.
+  const [wikiConflict, setWikiConflict] = useState<OptimisticLockConflictBody<WikiPageDTO> | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<WikiEditorHandle>(null);
@@ -96,20 +106,73 @@ export default function WikiPage() {
     page?.title,
   );
 
+  // Live presence — who else is viewing this page (v1.13.0 S64)
+  const { viewers } = usePresence("WIKI_PAGE", page?.id);
+
+  // Live refresh — silently reload when not editing; just flag "stale" when
+  // editing so we don't clobber an in-progress edit (mirrors RetroBoard's
+  // 'retro-updated' pattern).
+  useEffect(() => {
+    if (!numPageId) return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ pageId: number }>).detail;
+      if (detail?.pageId !== numPageId) return;
+      if (editMode) {
+        setWikiStale(true);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["wiki-page", numPageId] });
+      }
+    };
+    window.addEventListener("wiki-updated", handler);
+    return () => window.removeEventListener("wiki-updated", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numPageId, editMode]);
+
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   const saveMutation = useMutation({
-    mutationFn: (content: string) =>
+    mutationFn: (vars: { content: string; expectedVersion?: number }) =>
       wikiService.updatePage(numPageId, {
         title: page?.title,
-        content,
+        content: vars.content,
+        expectedVersion: vars.expectedVersion,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wiki-page", numPageId] });
       setEditMode(false);
       setDraftContent(null);
+      setWikiStale(false);
+    },
+    onError: (error) => {
+      const conflict = getConflictBody<WikiPageDTO>(error);
+      if (conflict) {
+        setWikiConflict(conflict);
+      }
+      // Non-conflict errors fall through to the global axios interceptor's toast.
     },
   });
+
+  // Conflict dialog resolution: overwrite the server with our local edit,
+  // retrying with the version the server told us is current.
+  function handleKeepMyEdits() {
+    if (draftContent === null || !wikiConflict) return;
+    saveMutation.mutate(
+      { content: draftContent, expectedVersion: wikiConflict.currentVersion },
+      { onSuccess: () => setWikiConflict(null) }
+    );
+  }
+
+  // Conflict dialog resolution: discard our local edit and adopt the server's
+  // current version — the 409 body's `current` payload is already the fresh
+  // WikiPageDTO, so no extra fetch is needed.
+  function handleDiscardMyEdits() {
+    if (!wikiConflict) return;
+    queryClient.setQueryData(["wiki-page", numPageId], wikiConflict.current);
+    setEditMode(false);
+    setDraftContent(null);
+    setWikiStale(false);
+    setWikiConflict(null);
+  }
 
   const uploadMutation = useMutation({
     mutationFn: (file: File) => wikiService.uploadAttachment(numPageId, file),
@@ -144,7 +207,7 @@ export default function WikiPage() {
 
   function handleSave() {
     if (draftContent !== null) {
-      saveMutation.mutate(draftContent);
+      saveMutation.mutate({ content: draftContent, expectedVersion: page?.version });
     } else {
       setEditMode(false);
     }
@@ -354,7 +417,10 @@ export default function WikiPage() {
                 in edit mode, comfortably exceeds a ~310px content width once
                 the page-tree drawer trigger and padding are accounted for). */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <h1 className="text-3xl font-bold leading-tight">{page.title}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold leading-tight">{page.title}</h1>
+                <PresenceAvatarStack viewers={viewers} />
+              </div>
               <div className="flex flex-wrap items-center gap-2 sm:shrink-0 no-print">
                 {editMode ? (
                   <>
@@ -385,7 +451,10 @@ export default function WikiPage() {
                 ) : (
                   <>
                     <button
-                      onClick={() => setEditMode(true)}
+                      onClick={() => {
+                        setEditMode(true);
+                        setWikiStale(false);
+                      }}
                       className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-input hover:bg-muted transition-colors"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -407,6 +476,24 @@ export default function WikiPage() {
             <p className="text-xs text-muted-foreground">
               {t("wiki.lastEdited")}: {new Date(page.updatedAt).toLocaleString()}
             </p>
+
+            {editMode && wikiStale && (
+              <div className="no-print flex items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                <span>{t("wiki.staleWhileEditing")}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    queryClient.invalidateQueries({ queryKey: ["wiki-page", numPageId] });
+                    setEditMode(false);
+                    setDraftContent(null);
+                    setWikiStale(false);
+                  }}
+                  className="shrink-0 underline hover:no-underline"
+                >
+                  {t("wiki.reloadNow")}
+                </button>
+              </div>
+            )}
 
             {/* Editor / viewer */}
             <div className="wiki-content rounded-lg border border-border min-h-[300px] overflow-hidden">
@@ -534,6 +621,15 @@ export default function WikiPage() {
         open={insertLinkOpen}
         onClose={() => setInsertLinkOpen(false)}
         onInsert={handleInsertPageLink}
+      />
+
+      {/* Conflict Dialog — someone else updated this page first (409) */}
+      <ConflictDialog
+        open={!!wikiConflict}
+        onOpenChange={(open) => { if (!open) setWikiConflict(null); }}
+        entityLabel={t("conflictDialog.entityLabel.wikiPage")}
+        onKeepMine={handleKeepMyEdits}
+        onDiscardMine={handleDiscardMyEdits}
       />
 
       {/* Add Subpage dialog */}
