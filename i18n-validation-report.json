@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-09-05T23:52:59.820Z",
+  "timestamp": "2026-09-06T12:10:15.540Z",
   "stats": {
-    "totalEnKeys": 8144,
-    "totalFaKeys": 7269,
-    "totalUsedKeys": 5457,
+    "totalEnKeys": 8137,
+    "totalFaKeys": 7262,
+    "totalUsedKeys": 5451,
     "filesScanned": 529
   },
   "issues": {
@@ -1717,7 +1717,6 @@
     "retroBoard.vote",
     "retroBoard.mergeIntoAnother",
     "retroBoard.merged",
-    "retroBoard.mergedItems",
     "retroBoard.delete",
     "retroBoard.edit",
     "retroBoard.mergeItem",
