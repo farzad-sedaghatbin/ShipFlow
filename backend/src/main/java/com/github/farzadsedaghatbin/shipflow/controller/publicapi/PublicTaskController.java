@@ -6,6 +6,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.publicapi.UpdateTaskStatusReque
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.security.PublicApiAuthorizationService;
 import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +27,7 @@ public class PublicTaskController {
 
   private final TaskRepository taskRepository;
   private final TaskService taskService;
+  private final PublicApiAuthorizationService publicApiAuthorizationService;
 
   @GetMapping
   @Operation(summary = "List tasks with pagination")
@@ -34,8 +36,13 @@ public class PublicTaskController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size) {
     Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
+    Long restrictedProjectId = publicApiAuthorizationService.restrictedProjectIdOrNull();
     Page<Task> tasks;
-    if (cycleId != null) {
+    if (restrictedProjectId != null) {
+      // Project restriction supersedes any caller-supplied cycleId — a restricted key always
+      // sees only its own project's tasks (mirrors PublicRoadmapController's epics precedent).
+      tasks = taskRepository.findByProjectIdPaged(restrictedProjectId, pageable);
+    } else if (cycleId != null) {
       tasks = taskRepository.findByCycleIdNotDeleted(cycleId, pageable);
     } else {
       tasks = taskRepository.findAllNotDeleted(pageable);
@@ -46,10 +53,13 @@ public class PublicTaskController {
   @GetMapping("/{id}")
   @Operation(summary = "Get a task by ID")
   public ResponseEntity<PublicTaskDTO> getTask(@PathVariable Long id) {
-    return taskRepository.findByIdNotDeleted(id)
-        .map(this::toDTO)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+    Task task = taskRepository.findByIdNotDeleted(id).orElse(null);
+    if (task == null) {
+      return ResponseEntity.notFound().build();
+    }
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(), resolveProjectId(task));
+    return ResponseEntity.ok(toDTO(task));
   }
 
   @PatchMapping("/{id}/status")
@@ -57,6 +67,12 @@ public class PublicTaskController {
   public ResponseEntity<PublicTaskDTO> updateTaskStatus(
       @PathVariable Long id,
       @Valid @RequestBody UpdateTaskStatusRequest request) {
+    Task existing = taskRepository.findByIdNotDeleted(id).orElse(null);
+    if (existing == null) {
+      return ResponseEntity.notFound().build();
+    }
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(), resolveProjectId(existing));
     TaskStatus newStatus;
     try {
       newStatus = TaskStatus.valueOf(request.getStatus().toUpperCase());
@@ -68,6 +84,21 @@ public class PublicTaskController {
         .map(this::toDTO)
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
+  }
+
+  /**
+   * A task's project can come from either its own direct {@code project} field (e.g. a
+   * Debt/Improvement task, per the 2026-07-27 architectural decision allowing those without a
+   * cycle) or its cycle's project — mirrors {@code PublicPitchController}'s equivalent resolution.
+   */
+  private Long resolveProjectId(Task t) {
+    if (t.getProject() != null) {
+      return t.getProject().getId();
+    }
+    if (t.getCycle() != null && t.getCycle().getProject() != null) {
+      return t.getCycle().getProject().getId();
+    }
+    return null;
   }
 
   private PublicTaskDTO toDTO(Task t) {

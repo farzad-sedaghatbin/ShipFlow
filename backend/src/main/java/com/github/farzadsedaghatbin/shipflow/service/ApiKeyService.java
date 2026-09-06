@@ -3,9 +3,11 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.publicapi.ApiKeyDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.publicapi.CreateApiKeyRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.ApiKey;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ApiKeyScope;
 import com.github.farzadsedaghatbin.shipflow.repository.ApiKeyRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -15,7 +17,9 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +33,7 @@ public class ApiKeyService {
 
   private final ApiKeyRepository apiKeyRepository;
   private final UserRepository userRepository;
+  private final ProjectRepository projectRepository;
   private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
   /**
@@ -39,6 +44,13 @@ public class ApiKeyService {
   public ApiKeyDTO createApiKey(Long userId, CreateApiKeyRequest request) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+    Project restrictedToProject = null;
+    if (request.getRestrictedToProjectId() != null) {
+      restrictedToProject = projectRepository.findById(request.getRestrictedToProjectId())
+          .orElseThrow(() -> new IllegalArgumentException(
+              "Project not found: " + request.getRestrictedToProjectId()));
+    }
 
     String rawKey = generateRawKey();
     String keyHash = sha256(rawKey);
@@ -51,12 +63,15 @@ public class ApiKeyService {
         .user(user)
         .scopes(request.getScopes() != null ? request.getScopes() : java.util.Set.of(ApiKeyScope.READ))
         .expiresAt(request.getExpiresAt())
+        .restrictedToProjectId(request.getRestrictedToProjectId())
         .build();
 
     apiKeyRepository.save(apiKey);
-    log.info("Created API key '{}' (prefix={}) for user {}", request.getName(), keyPrefix, userId);
+    log.info("Created API key '{}' (prefix={}) for user {}, restrictedToProjectId={}",
+        request.getName(), keyPrefix, userId, request.getRestrictedToProjectId());
 
-    ApiKeyDTO dto = toDTO(apiKey);
+    // Reuse the just-validated Project instead of a second lookup for the DTO's resolved name.
+    ApiKeyDTO dto = toDTO(apiKey, restrictedToProject != null ? restrictedToProject.getName() : null);
     dto.setRawKey(rawKey); // returned only on creation
     return dto;
   }
@@ -99,16 +114,38 @@ public class ApiKeyService {
    */
   @Transactional(readOnly = true)
   public List<ApiKeyDTO> listKeys(Long userId) {
-    return apiKeyRepository.findByUserId(userId).stream()
-        .map(this::toDTO)
+    List<ApiKey> keys = apiKeyRepository.findByUserId(userId);
+    Map<Long, String> projectNames = resolveProjectNames(keys);
+    return keys.stream()
+        .map(key -> toDTO(key, projectNames.get(key.getRestrictedToProjectId())))
         .toList();
   }
 
   @Transactional(readOnly = true)
   public List<ApiKeyDTO> listAllKeys() {
-    return apiKeyRepository.findAllWithUsers().stream()
-        .map(this::toDTO)
+    List<ApiKey> keys = apiKeyRepository.findAllWithUsers();
+    Map<Long, String> projectNames = resolveProjectNames(keys);
+    return keys.stream()
+        .map(key -> toDTO(key, projectNames.get(key.getRestrictedToProjectId())))
         .toList();
+  }
+
+  /**
+   * Batch-resolves project names for every restricted key in the list, avoiding an N+1 lookup
+   * when listing many keys (mirrors the batch-fetch pattern used elsewhere in this codebase, e.g.
+   * {@code ProjectRepository.findAllById}).
+   */
+  private Map<Long, String> resolveProjectNames(List<ApiKey> keys) {
+    List<Long> projectIds = keys.stream()
+        .map(ApiKey::getRestrictedToProjectId)
+        .filter(java.util.Objects::nonNull)
+        .distinct()
+        .toList();
+    if (projectIds.isEmpty()) {
+      return Map.of();
+    }
+    return projectRepository.findAllById(projectIds).stream()
+        .collect(Collectors.toMap(Project::getId, Project::getName));
   }
 
   public void adminRevokeKey(Long keyId) {
@@ -138,7 +175,7 @@ public class ApiKeyService {
     }
   }
 
-  private ApiKeyDTO toDTO(ApiKey key) {
+  private ApiKeyDTO toDTO(ApiKey key, String restrictedToProjectName) {
     return ApiKeyDTO.builder()
         .id(key.getId())
         .name(key.getName())
@@ -150,6 +187,8 @@ public class ApiKeyService {
         .createdAt(key.getCreatedAt())
         .revokedAt(key.getRevokedAt())
         .createdByUsername(key.getUser() != null ? key.getUser().getUsername() : null)
+        .restrictedToProjectId(key.getRestrictedToProjectId())
+        .restrictedToProjectName(restrictedToProjectName)
         .build();
   }
 }

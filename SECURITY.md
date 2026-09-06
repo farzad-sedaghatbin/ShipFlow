@@ -248,6 +248,14 @@ RUN chmod -R 755 /app
 - [ ] Regular backup and disaster recovery testing
 - [ ] Penetration testing (quarterly)
 
+### 9. Public-Hosting Defaults (Self-Registration, Default Admin, Docker Ports)
+
+Three defaults that matter specifically for a self-hosted instance reachable from the internet:
+
+1. **Self-registration is closed by default.** `POST /api/auth/register` is `permitAll`, but as of this writing the client-supplied `role` in the request body is always ignored for a non-admin caller — a self-registered user always gets `app.auth.default-role` (env `APP_AUTH_DEFAULT_ROLE`, default `READONLY`; `ADMIN` is rejected at startup). The endpoint itself is also gated by `app.auth.public-registration` (env `APP_PUBLIC_REGISTRATION`), which defaults to `false` in the base and production configuration — an anonymous register call gets `403` (`auth.registration.disabled`) unless you explicitly opt in. See `ENVIRONMENT_SETUP.md` for both variables. An authenticated ADMIN can still add users with any role via Organization Settings → User Management regardless of this flag.
+2. **The default `admin` / `admin123` account is seeded only once, on a genuinely empty database**, and is never re-created or re-activated afterwards — renaming, disabling, or deleting it sticks across restarts. As long as an account named `admin` still has the default password, every startup logs a loud `WARN`; change the password (or the username) to make it stop. Set `APP_ADMIN_AUTO_CREATE=false` to disable this seeding entirely (e.g. if you provision the first admin some other way).
+3. **`docker-compose.yml` binds PostgreSQL, Qdrant, and Redis to `127.0.0.1`**, not `0.0.0.0` — none of them have any business being reachable from outside the host. Host tools (`psql`, a Qdrant/Redis GUI client) still work via `localhost`. The same applies to `docker-compose.monitoring.yml` (Prometheus, and Grafana — which ships a default `admin`/`admin` login) and `docker-compose.ollama.yml`. Only the application port (8080) is published broadly, and it should sit behind a reverse proxy per section 4 above.
+
 ## Incident Response
 
 If you detect a security incident:
@@ -270,4 +278,4 @@ This implementation helps meet:
 
 For security concerns, contact: farzad.sedaghatbin@gmail.com
 
-**Last Updated**: January 2026
+**Last Updated**: September 2026

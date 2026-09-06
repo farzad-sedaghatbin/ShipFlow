@@ -260,6 +260,8 @@ export interface Pitch {
   status: PitchStatus;
   createdAt: string;
   updatedAt: string;
+  /** Optimistic-lock version. Present on every fetch/save response as of v1.13.0 (S64); echo it back as `expectedVersion` on the next update. */
+  version?: number;
   totalHoursSpent?: number;
   appetiteHours?: number;
   progressPercentage?: number;
@@ -327,6 +329,8 @@ export interface CreatePitchRequest {
   // Prioritization
   priority?: BusinessValue;
   sortOrder?: number;
+  /** Optimistic-lock check (v1.13.0 S64) — pass the last-known Pitch.version; a mismatch returns HTTP 409. */
+  expectedVersion?: number;
 }
 
 /**
@@ -1460,7 +1464,9 @@ export interface RetroItem {
   mergedItemIds?: number[];
   createdAt: string;
   updatedAt?: string;
-  
+  /** Optimistic-lock version. Present on every fetch/save response as of v1.13.0 (S64); echo it back as `expectedVersion` on the next update. */
+  version?: number;
+
   // v0.5 - Action tracking fields
   actedOn?: boolean;
   actedOnNotes?: string;

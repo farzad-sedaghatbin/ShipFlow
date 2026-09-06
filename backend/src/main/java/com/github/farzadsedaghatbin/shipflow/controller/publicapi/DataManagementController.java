@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller.publicapi;
 
+import com.github.farzadsedaghatbin.shipflow.security.PublicApiAuthorizationService;
 import com.github.farzadsedaghatbin.shipflow.service.DataExportService;
 import com.github.farzadsedaghatbin.shipflow.service.DataImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -7,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,12 +23,15 @@ public class DataManagementController {
 
   private final DataExportService dataExportService;
   private final DataImportService dataImportService;
+  private final PublicApiAuthorizationService publicApiAuthorizationService;
 
   // ──────────────────────────── Export ────────────────────────────
 
   @GetMapping("/export/{projectId}/json")
   @Operation(summary = "Export a full project snapshot as JSON")
   public ResponseEntity<byte[]> exportProjectJson(@PathVariable Long projectId) {
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(), projectId);
     byte[] json = dataExportService.exportProjectAsJson(projectId);
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=shipflow-export-" + projectId + ".json")
@@ -37,6 +42,8 @@ public class DataManagementController {
   @GetMapping("/export/{projectId}/tasks.csv")
   @Operation(summary = "Export project tasks as CSV")
   public ResponseEntity<byte[]> exportTasksCsv(@PathVariable Long projectId) {
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(), projectId);
     byte[] csv = dataExportService.exportTasksAsCsv(projectId);
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=shipflow-tasks-" + projectId + ".csv")
@@ -47,6 +54,8 @@ public class DataManagementController {
   @GetMapping("/export/{projectId}/bugs.csv")
   @Operation(summary = "Export project bugs as CSV")
   public ResponseEntity<byte[]> exportBugsCsv(@PathVariable Long projectId) {
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(), projectId);
     byte[] csv = dataExportService.exportBugsAsCsv(projectId);
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=shipflow-bugs-" + projectId + ".csv")
@@ -55,11 +64,21 @@ public class DataManagementController {
   }
 
   // ──────────────────────────── Import ────────────────────────────
+  //
+  // A JSON/CSV import's target project is embedded in the file content itself (matched or
+  // created by projectKey deep inside DataImportService), not known from a path variable up
+  // front — so, unlike the export endpoints above, there's no single project id to check before
+  // the import runs. Rather than partially/unsafely enforcing the restriction after the fact,
+  // a project-restricted key is denied the bulk-import capability entirely: it's a narrow,
+  // admin-ish operation, and an org that needs it can mint an unrestricted key for that purpose.
 
   @PostMapping("/import/json")
   @Operation(summary = "Import a project snapshot from JSON")
   public ResponseEntity<DataImportService.ImportSummary> importProjectJson(
       @RequestParam("file") MultipartFile file) throws IOException {
+    if (publicApiAuthorizationService.restrictedProjectIdOrNull() != null) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
     DataImportService.ImportSummary summary = dataImportService.importProjectFromJson(file.getInputStream());
     return ResponseEntity.ok(summary);
   }
@@ -68,6 +87,9 @@ public class DataManagementController {
   @Operation(summary = "Import tasks from CSV")
   public ResponseEntity<DataImportService.ImportSummary> importTasksCsv(
       @RequestParam("file") MultipartFile file) throws IOException {
+    if (publicApiAuthorizationService.restrictedProjectIdOrNull() != null) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
     DataImportService.ImportSummary summary = dataImportService.importTasksFromCsv(file.getInputStream());
     return ResponseEntity.ok(summary);
   }

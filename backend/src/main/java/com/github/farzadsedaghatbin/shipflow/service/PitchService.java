@@ -15,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.event.PitchStatusChangedEvent;
 import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
+import com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
@@ -58,6 +59,7 @@ public class PitchService {
   private final ReleaseRepository releaseRepository;
   private final ProjectRepository projectRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final PitchSseService pitchSseService;
   private final AICacheService cacheService;
   private final CapacityConfigService capacityConfigService;
   private final PitchCycleAssignmentService pitchCycleAssignmentService;
@@ -529,6 +531,15 @@ public class PitchService {
     Pitch pitch = pitchRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Pitch not found with id: " + id));
 
+    // Optimistic-lock conflict check (v1.13.0 S64) — must happen before any field mutation.
+    // A null expectedVersion skips the check (backward-compatible for callers, e.g. MCP write
+    // tools, not yet updated to send it).
+    if (request.getExpectedVersion() != null
+        && !request.getExpectedVersion().equals(pitch.getVersion())) {
+      throw new OptimisticLockConflictException(
+          "PITCH", id, pitch.getVersion(), toDTO(pitch));
+    }
+
     // Validate status transitions: only enforce field requirements when the status is
     // actually changing. Editing Shape Up fields (wireframe links, solution, etc.) on a
     // PENDING/ACTIVE pitch must not be blocked by the appetite/cycleId gate, since those
@@ -595,6 +606,10 @@ public class PitchService {
 
     // Invalidate risk analysis cache since pitch data changed
     invalidateCacheForPitch(saved);
+
+    // Live-refresh broadcast (v1.13.0 S64) — current presence viewers only, after the save
+    // (and the version-conflict check) has actually succeeded.
+    pitchSseService.broadcastPitchUpdate(saved.getId());
 
     return toDTO(saved);
   }
@@ -902,6 +917,8 @@ public class PitchService {
         // Roadmap dependencies
         .blockingPitches(blockingPitches)
         .blockedByPitches(blockedByPitches)
+        // Optimistic-lock version (v1.13.0 S64)
+        .version(pitch.getVersion())
         .build();
   }
 

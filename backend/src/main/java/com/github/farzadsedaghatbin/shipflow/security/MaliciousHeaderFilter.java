@@ -1,12 +1,10 @@
 package com.github.farzadsedaghatbin.shipflow.security;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -15,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,24 +24,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class MaliciousHeaderFilter implements Filter {
 
-  /**
-   * Peers whose forwarding headers may be trusted. Defaults to loopback, which
-   * is where Caddy connects from; must match the rate limiter's list or the two
-   * filters would disagree about who a request is from.
-   */
-  @Value("${app.rate-limit.trusted-proxies:127.0.0.1,::1}")
-  private String trustedProxiesRaw;
+  private final ClientIpService clientIpService;
 
-  private List<String> trustedProxies;
-
-  @PostConstruct
-  void initTrustedProxies() {
-    trustedProxies =
-        Arrays.stream(trustedProxiesRaw.split(","))
-            .map(String::trim)
-            .filter(entry -> !entry.isEmpty())
-            .toList();
-    log.info("MaliciousHeaderFilter trusted proxies: {}", trustedProxies);
+  public MaliciousHeaderFilter(ClientIpService clientIpService) {
+    this.clientIpService = clientIpService;
   }
 
   // Patterns for detecting common exploit attempts
@@ -398,7 +381,7 @@ public class MaliciousHeaderFilter implements Filter {
   }
 
   private String getClientIp(HttpServletRequest request) {
-    return ClientIpResolver.resolve(request, trustedProxies);
+    return clientIpService.resolve(request);
   }
 
   private String sanitizeForLogging(String value) {

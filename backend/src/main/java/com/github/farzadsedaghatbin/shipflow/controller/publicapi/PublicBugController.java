@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller.publicapi;
 import com.github.farzadsedaghatbin.shipflow.dto.publicapi.PublicBugDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.BugReport;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
+import com.github.farzadsedaghatbin.shipflow.security.PublicApiAuthorizationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class PublicBugController {
 
   private final BugReportRepository bugReportRepository;
+  private final PublicApiAuthorizationService publicApiAuthorizationService;
 
   @GetMapping
   @Operation(summary = "List bug reports with pagination")
@@ -28,28 +30,44 @@ public class PublicBugController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size) {
     Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
-    Page<BugReport> bugs = cycleId != null
-        ? bugReportRepository.findByCycleId(cycleId, pageable)
-        : bugReportRepository.findAll(pageable);
+    Long restrictedProjectId = publicApiAuthorizationService.restrictedProjectIdOrNull();
+    Page<BugReport> bugs;
+    if (restrictedProjectId != null) {
+      // Project restriction supersedes any caller-supplied cycleId, same precedent as
+      // PublicTaskController.listTasks.
+      bugs = bugReportRepository.findByProjectId(restrictedProjectId, pageable);
+    } else if (cycleId != null) {
+      bugs = bugReportRepository.findByCycleId(cycleId, pageable);
+    } else {
+      bugs = bugReportRepository.findAll(pageable);
+    }
     return ResponseEntity.ok(bugs.map(this::toDTO));
   }
 
   @GetMapping("/{id}")
   @Operation(summary = "Get a bug report by ID")
   public ResponseEntity<PublicBugDTO> getBug(@PathVariable Long id) {
-    return bugReportRepository.findById(id)
-        .map(this::toDTO)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+    BugReport bug = bugReportRepository.findById(id).orElse(null);
+    if (bug == null) {
+      return ResponseEntity.notFound().build();
+    }
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(),
+        bug.getProject() != null ? bug.getProject().getId() : null);
+    return ResponseEntity.ok(toDTO(bug));
   }
 
   @GetMapping("/by-key/{bugKey}")
   @Operation(summary = "Get a bug report by its unique key")
   public ResponseEntity<PublicBugDTO> getBugByKey(@PathVariable String bugKey) {
-    return bugReportRepository.findByBugKey(bugKey)
-        .map(this::toDTO)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+    BugReport bug = bugReportRepository.findByBugKey(bugKey).orElse(null);
+    if (bug == null) {
+      return ResponseEntity.notFound().build();
+    }
+    publicApiAuthorizationService.requireProjectAccess(
+        publicApiAuthorizationService.currentApiKey(),
+        bug.getProject() != null ? bug.getProject().getId() : null);
+    return ResponseEntity.ok(toDTO(bug));
   }
 
   private PublicBugDTO toDTO(BugReport b) {

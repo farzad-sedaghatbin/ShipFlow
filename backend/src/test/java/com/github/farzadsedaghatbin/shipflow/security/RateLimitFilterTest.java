@@ -31,12 +31,16 @@ class RateLimitFilterTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    filter = new RateLimitFilter();
+    ClientIpService clientIpService = new ClientIpService();
+    ReflectionTestUtils.setField(clientIpService, "trustedProxiesRaw", "127.0.0.1,::1");
+    ReflectionTestUtils.invokeMethod(clientIpService, "initTrustedProxies");
+    filter = new RateLimitFilter(clientIpService);
     ReflectionTestUtils.setField(filter, "authCapacity", 10);
     ReflectionTestUtils.setField(filter, "aiCapacity", 20);
     ReflectionTestUtils.setField(filter, "riskReadCapacity", 60);
     ReflectionTestUtils.setField(filter, "searchCapacity", 30);
     ReflectionTestUtils.setField(filter, "pollCapacity", 120);
+    ReflectionTestUtils.setField(filter, "publicApiCapacity", 100);
     responseWriter = new StringWriter();
     when(response.getWriter()).thenReturn(new PrintWriter(responseWriter));
     when(request.getRemoteAddr()).thenReturn("10.0.0.1");
@@ -224,6 +228,52 @@ class RateLimitFilterTest {
 
     verify(filterChain, times(120)).doFilter(request, response);
     verify(response, never()).setStatus(429);
+  }
+
+  @Test
+  void publicApiPath_allowsUpToCapacity() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/v1/public/pitches");
+
+    for (int i = 0; i < 100; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    verify(filterChain, times(100)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
+  }
+
+  @Test
+  void publicApiPath_blocksAfterCapacityExceeded() throws Exception {
+    when(request.getRequestURI()).thenReturn("/api/v1/public/pitches");
+
+    for (int i = 0; i < 100; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    filter.doFilterInternal(request, response, filterChain);
+
+    verify(filterChain, times(100)).doFilter(request, response);
+    verify(response).setStatus(429);
+  }
+
+  @Test
+  void publicApiDataPath_usesSamePublicApiBucket() throws Exception {
+    // DataManagementController is mounted under /api/v1/public/data/** — same prefix, same bucket.
+    when(request.getRequestURI()).thenReturn("/api/v1/public/pitches");
+    for (int i = 0; i < 50; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    when(request.getRequestURI()).thenReturn("/api/v1/public/data/export/1/json");
+    for (int i = 0; i < 50; i++) {
+      filter.doFilterInternal(request, response, filterChain);
+    }
+
+    verify(filterChain, times(100)).doFilter(request, response);
+    verify(response, never()).setStatus(429);
+
+    filter.doFilterInternal(request, response, filterChain);
+    verify(response).setStatus(429);
   }
 
   @Test

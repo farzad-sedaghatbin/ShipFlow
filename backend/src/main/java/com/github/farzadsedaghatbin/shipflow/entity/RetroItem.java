@@ -22,6 +22,15 @@ public class RetroItem {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  /**
+   * Optimistic-locking version (JPA {@code @Version}). Boxed {@code Long} so a brand-new,
+   * unsaved entity's version is distinguishably {@code null} rather than {@code 0} colliding
+   * with a real first-save value.
+   */
+  @Version
+  @Column(nullable = false)
+  private Long version;
+
   @Column(nullable = false, columnDefinition = "TEXT")
   private String content;
 

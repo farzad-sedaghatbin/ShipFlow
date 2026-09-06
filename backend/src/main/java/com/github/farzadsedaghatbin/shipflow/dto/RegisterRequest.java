@@ -19,6 +19,11 @@ public class RegisterRequest {
   @NotBlank(message = "Password is required")
   private String password;
 
+  // NOTE: Only honoured when POST /api/auth/register is called by an authenticated
+  // ADMIN (the "Add User" flow in User Management). For any other caller — i.e. a
+  // genuine public self-registration — UserService#createUser ignores this value
+  // entirely and assigns app.auth.default-role instead. Still @NotNull so the
+  // request shape doesn't change for existing callers; the value just isn't used.
   @NotNull(message = "Role is required")
   private UserRole role;
 

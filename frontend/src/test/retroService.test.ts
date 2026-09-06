@@ -190,6 +190,16 @@ describe('retroService', () => {
         expect(mockedApi.put).toHaveBeenCalledWith('/retros/items/1', { content: 'Updated content' });
         expect(result.data.content).toBe('Updated content');
       });
+
+      it('includes expectedVersion in the body for the optimistic-lock check (v1.13.0 S64)', async () => {
+        const updatedItem = { id: 1, content: 'Updated content', columnType: 'ACTIONS', version: 3 };
+        mockedApi.put.mockResolvedValueOnce({ data: updatedItem });
+
+        const result = await retroService.updateItem(1, 'Updated content', 2);
+
+        expect(mockedApi.put).toHaveBeenCalledWith('/retros/items/1', { content: 'Updated content', expectedVersion: 2 });
+        expect(result.data.version).toBe(3);
+      });
     });
 
     describe('deleteItem', () => {
