@@ -91,11 +91,25 @@ class AuthControllerIntegrationTest {
 
   @Test
   void register_WithValidData_ShouldCreateUser() throws Exception {
+    // Requested role is MEMBER, but an unauthenticated caller is a genuine public
+    // self-registration: app.auth.default-role (READONLY, the test-profile/base
+    // default) always wins, regardless of what the client asked for.
     RegisterRequest request = new RegisterRequest("newuser", "newpassword", UserRole.MEMBER, null, null);
 
     mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
-        .andExpect(jsonPath("$.username", is("newuser"))).andExpect(jsonPath("$.role", is("MEMBER")));
+        .andExpect(jsonPath("$.username", is("newuser"))).andExpect(jsonPath("$.role", is("READONLY")));
+  }
+
+  @Test
+  void register_RequestingAdminRole_ShouldIgnoreItAndUseDefaultRole() throws Exception {
+    // The core security fix: an anonymous caller must never be able to
+    // self-register as ADMIN by simply setting role=ADMIN in the request body.
+    RegisterRequest request = new RegisterRequest("wannabe-admin", "newpassword", UserRole.ADMIN, null, null);
+
+    mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.username", is("wannabe-admin"))).andExpect(jsonPath("$.role", is("READONLY")));
   }
 
   @Test

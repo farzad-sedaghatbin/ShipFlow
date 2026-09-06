@@ -2,6 +2,18 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getStoredToken, clearAuth, showGlobalToast } from '../contexts';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { AUTH_ENDPOINTS, buildLoginPath, currentRelativePath, isOnAuthPage } from '../lib/redirect';
+// Import the raw i18next singleton, NOT the app's '../i18n' wrapper module.
+// That wrapper's top-level code unconditionally calls i18n.init(...) with the
+// full real translation bundles as a side effect of merely being imported —
+// fine in production (main.tsx imports it once at bootstrap, before this
+// interceptor could ever fire) but disastrous in tests: api.ts is imported by
+// nearly every test file, and forcing the real bundles into the *shared*
+// i18next singleton clobbers the intentionally-minimal resources
+// src/test/setup.ts configures for tests that assert on raw (untranslated)
+// keys — see LoginRedirect.test.tsx. Referencing the raw package here reuses
+// whatever instance is already configured (by main.tsx in the app, or by
+// setup.ts in tests) without re-initialising it.
+import i18n from 'i18next';
 
 // ─── ETag Cache ──────────────────────────────────────────────────────────────
 // Stores the last ETag and response body for each GET URL so we can replay
@@ -152,7 +164,7 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError<{ message?: string; error?: string; errorCode?: string; errors?: Record<string, string[]> }>) => {
+  (error: AxiosError<{ message?: string; error?: string; errorCode?: string; messageKey?: string; errors?: Record<string, string[]> }>) => {
     const status = error.response?.status;
 
     // Handle 304 Not Modified — return cached data as if it were 200
@@ -200,8 +212,19 @@ api.interceptors.response.use(
         }
       }
     } else if (status === 403) {
-      // Forbidden - no permission
-      showGlobalToast(GLOBAL_ERROR_MESSAGES.forbidden, 'error');
+      // Forbidden. Most 403s are a generic permission problem, but a disabled
+      // public-registration gate (see UserService#createUser /
+      // RegistrationDisabledException) has its own specific, actionable
+      // message — worth a special case the same way 401's AUTH_ENDPOINTS
+      // check is. i18n is imported directly (not via useTranslation) because
+      // this interceptor runs outside any component; i18next initialises
+      // synchronously (see i18n/index.ts) so it's always ready by the time a
+      // request can fail.
+      if (error.response?.data?.messageKey === 'auth.registration.disabled') {
+        showGlobalToast(i18n.t('errors.domain.auth.registrationDisabled'), 'error');
+      } else {
+        showGlobalToast(GLOBAL_ERROR_MESSAGES.forbidden, 'error');
+      }
     } else if (status === 404) {
       // Don't show toast for 404 - let the component handle it for better UX
       // Some 404s are expected (e.g., checking if something exists)
