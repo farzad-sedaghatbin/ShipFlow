@@ -51,6 +51,11 @@ import {
   TooltipTrigger,
 } from '../components/ui/tooltip';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../components/ui/popover';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -333,6 +338,29 @@ export default function RetroBoard() {
     setMergeDialog({ open: true, sourceItem, columnType: sourceItem.columnType });
   };
 
+  const handleUnmerge = async (mergedAwayItemId: number, targetItemId: number) => {
+    try {
+      const res = await retroService.unmergeItem(mergedAwayItemId);
+      // Update the unmerged item with the server response, and drop it from the
+      // target item's mergedItemIds locally (the API only returns the unmerged item).
+      setItems((prevItems) =>
+        prevItems.map((it) => {
+          if (it.id === mergedAwayItemId) return res.data;
+          if (it.id === targetItemId) {
+            return {
+              ...it,
+              mergedItemIds: (it.mergedItemIds || []).filter((mid) => mid !== mergedAwayItemId),
+            };
+          }
+          return it;
+        })
+      );
+      showSuccess(t('retroBoard.unmergeSuccess'));
+    } catch (error: any) {
+      showError(error.response?.data?.message || t('retroBoard.unmergeFailed'));
+    }
+  };
+
   const handleSelectTemplate = (template: RetroTemplate) => {
     if (items.length > 0) {
       setTemplateConfirmDialog(template);
@@ -605,25 +633,50 @@ export default function RetroBoard() {
                             </div>
 
                             {item.mergedItemIds && item.mergedItemIds.length > 0 && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge variant="info" className="text-xs cursor-help">
-                                    +{item.mergedItemIds.length} {t('retroBoardPage.merge').toLowerCase()}
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs">
-                                  <div className="space-y-1">
-                                    <p className="font-semibold text-xs">{t('retroBoardPage.merge')}:</p>
-                                    {items
-                                      .filter((i) => item.mergedItemIds?.includes(i.id))
-                                      .map((mergedItem) => (
-                                        <p key={mergedItem.id} className="text-xs">
-                                          • {mergedItem.content.substring(0, 50)}...
-                                        </p>
-                                      ))}
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="inline-flex rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                    aria-label={t('retroBoard.viewMergedItems')}
+                                  >
+                                    <Badge variant="info" className="text-xs cursor-pointer hover:opacity-80">
+                                      +{item.mergedItemIds.length} {t('retroBoardPage.merge').toLowerCase()}
+                                    </Badge>
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72" align="start">
+                                  <div className="space-y-2">
+                                    <p className="font-semibold text-xs">{t('retroBoard.mergedItems')}</p>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                      {items
+                                        .filter((i) => item.mergedItemIds?.includes(i.id))
+                                        .map((mergedItem) => (
+                                          <div key={mergedItem.id} className="rounded-md border p-2 space-y-1">
+                                            <p className="text-xs whitespace-pre-wrap break-words">
+                                              {mergedItem.content}
+                                            </p>
+                                            <div className="flex items-center justify-between gap-2">
+                                              <span className="text-[11px] text-muted-foreground">
+                                                {mergedItem.authorName || t('common.anonymous')}
+                                              </span>
+                                              {canManageRetro && retro?.status === 'OPEN' && (
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-6 px-2 text-[11px]"
+                                                  onClick={() => handleUnmerge(mergedItem.id, item.id)}
+                                                >
+                                                  {t('retroBoard.unmergeItem')}
+                                                </Button>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                    </div>
                                   </div>
-                                </TooltipContent>
-                              </Tooltip>
+                                </PopoverContent>
+                              </Popover>
                             )}
 
                             <div className="flex items-center justify-between">

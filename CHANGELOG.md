@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Retro Board's "merge items" indicator was invisible on touch devices, and there was no way to undo a merge from the UI.** Reported as "when items merge in retro no way to see what are merged." The `RetroItemDTO`/`RetroItem` already carried full non-destructive merge data (`mergedIntoId`, `mergedItemIds`) and `retroService.unmergeItem` already worked — the only gap was in `RetroBoard.tsx`. The `"+N merge"` indicator was a Radix `Tooltip` (hover-only, no click/tap affordance), so on tablet/phone there was no way to see it at all. It's now a click-to-expand `Popover` (reusing the existing `components/ui/popover.tsx` primitive, already used elsewhere e.g. `KanbanBoard.tsx`) listing each merged-away item's **full, untruncated** content and author — the previous tooltip truncated every item to 50 characters and appended `...` unconditionally, even when the content was shorter. Each listed item now also gets an "Unmerge" action (gated by the same `canManageRetro` permission check as the merge button, and only while the retro is `OPEN`) that calls the previously-unused `retroService.unmergeItem`, mirroring the existing merge handler's state-update pattern. New i18n keys `retroBoard.unmergeItem`, `retroBoard.unmergeSuccess`, `retroBoard.unmergeFailed`, `retroBoard.viewMergedItems` added to both `en.json`/`fa.json`, alongside the pre-existing but previously-orphaned `retroBoard.mergedItems` heading key (now reused).
+
 ## [1.12.2] - 2026-09-02
 
 ### Changed

@@ -1,11 +1,10 @@
 {
-
-  "timestamp": "2026-09-01T23:09:08.235Z",
+  "timestamp": "2026-09-06T12:10:15.540Z",
   "stats": {
-    "totalEnKeys": 8132,
-    "totalFaKeys": 7254,
-    "totalUsedKeys": 5445,
-    "filesScanned": 526
+    "totalEnKeys": 8137,
+    "totalFaKeys": 7262,
+    "totalUsedKeys": 5451,
+    "filesScanned": 529
   },
   "issues": {
     "missingInFa": [
@@ -1718,7 +1717,6 @@
     "retroBoard.vote",
     "retroBoard.mergeIntoAnother",
     "retroBoard.merged",
-    "retroBoard.mergedItems",
     "retroBoard.delete",
     "retroBoard.edit",
     "retroBoard.mergeItem",
