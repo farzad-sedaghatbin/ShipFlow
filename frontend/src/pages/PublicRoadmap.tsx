@@ -383,6 +383,7 @@ export default function PublicRoadmap() {
         { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase113Item0Title'), description: t('publicRoadmap.phase113Item0Desc') },
         { icon: <Shield className="h-5 w-5" />, title: t('publicRoadmap.phase113Item1Title'), description: t('publicRoadmap.phase113Item1Desc') },
         { icon: <Zap className="h-5 w-5" />, title: t('publicRoadmap.phase113Item2Title'), description: t('publicRoadmap.phase113Item2Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phase113Item3Title'), description: t('publicRoadmap.phase113Item3Desc') },
       ],
     },
     {

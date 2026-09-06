@@ -71,6 +71,9 @@ class PitchServiceTest {
   @Mock
   private PitchCycleAssignmentService pitchCycleAssignmentService;
 
+  @Mock
+  private PitchSseService pitchSseService;
+
   @InjectMocks
   private PitchService pitchService;
 
@@ -172,6 +175,62 @@ class PitchServiceTest {
     when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
 
     testRequest.setTitle("Updated Pitch");
+    PitchDTO result = pitchService.updatePitch(1L, testRequest);
+
+    assertThat(result).isNotNull();
+    verify(pitchRepository).save(any(Pitch.class));
+  }
+
+  @Test
+  void updatePitch_WithMatchingExpectedVersion_ShouldUpdateAndBroadcast() {
+    testPitch.setVersion(3L);
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
+
+    testRequest.setTitle("Updated Pitch");
+    testRequest.setExpectedVersion(3L);
+    PitchDTO result = pitchService.updatePitch(1L, testRequest);
+
+    assertThat(result).isNotNull();
+    verify(pitchRepository).save(any(Pitch.class));
+    verify(pitchSseService).broadcastPitchUpdate(1L);
+  }
+
+  @Test
+  void updatePitch_WithStaleExpectedVersion_ShouldThrowConflictAndNotSave() {
+    testPitch.setVersion(5L);
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+
+    testRequest.setTitle("Racing edit");
+    testRequest.setExpectedVersion(2L);
+
+    assertThatThrownBy(() -> pitchService.updatePitch(1L, testRequest))
+        .isInstanceOf(
+            com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException.class)
+        .satisfies(ex -> {
+          var conflict =
+              (com.github.farzadsedaghatbin.shipflow.exception.OptimisticLockConflictException)
+                  ex;
+          assertThat(conflict.getEntityType()).isEqualTo("PITCH");
+          assertThat(conflict.getEntityId()).isEqualTo(1L);
+          assertThat(conflict.getCurrentVersion()).isEqualTo(5L);
+        });
+
+    verify(pitchRepository, never()).save(any(Pitch.class));
+    verify(pitchSseService, never()).broadcastPitchUpdate(any());
+    assertThat(testPitch.getTitle()).isNotEqualTo("Racing edit");
+  }
+
+  @Test
+  void updatePitch_WithNullExpectedVersion_ShouldSkipCheck() {
+    testPitch.setVersion(7L);
+    when(pitchRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testPitch));
+    when(teamRepository.findById(1L)).thenReturn(Optional.of(testTeam));
+    when(pitchRepository.save(any(Pitch.class))).thenReturn(testPitch);
+
+    testRequest.setTitle("Updated Pitch");
+    testRequest.setExpectedVersion(null);
     PitchDTO result = pitchService.updatePitch(1L, testRequest);
 
     assertThat(result).isNotNull();

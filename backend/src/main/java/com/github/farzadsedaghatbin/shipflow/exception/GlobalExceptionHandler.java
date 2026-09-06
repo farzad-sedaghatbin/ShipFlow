@@ -146,6 +146,27 @@ public class GlobalExceptionHandler {
   }
 
   /**
+   * A client sent a stale {@code expectedVersion} on a Pitch/RetroItem/WikiPage update — someone
+   * else saved a change in between. Returns 409 with the entity's current version and current
+   * state (folded into the standard error envelope) so the client can reconcile without a second
+   * fetch.
+   */
+  @ExceptionHandler(OptimisticLockConflictException.class)
+  public ResponseEntity<Map<String, Object>> handleOptimisticLockConflictException(
+      OptimisticLockConflictException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", HttpStatus.CONFLICT.value());
+    error.put("message", getMessage("error.optimistic.lock.conflict"));
+    error.put("messageKey", "error.optimistic.lock.conflict");
+    error.put("entityType", ex.getEntityType());
+    error.put("entityId", ex.getEntityId());
+    error.put("currentVersion", ex.getCurrentVersion());
+    error.put("current", ex.getCurrentState());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
+  /**
    * SSE/async connections time out when the client idles or disconnects. This is
    * normal — swallow it silently so the generic RuntimeException handler doesn't
    * try to write a HashMap body onto an already-committed text/event-stream response.

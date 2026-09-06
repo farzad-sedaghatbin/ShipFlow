@@ -3,6 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { safeParseId } from '../utils/validation';
+import { usePresence } from '../hooks/usePresence';
+import { PresenceAvatarStack } from '../components/PresenceAvatarStack';
+import { ConflictDialog } from '../components/ConflictDialog';
+import { getConflictBody, OptimisticLockConflictBody } from '../utils/conflictError';
 import { pitchService } from '../services/pitchService';
 import { epicService } from '../services/epicService';
 import { workLogService } from '../services/workLogService';
@@ -74,6 +78,34 @@ export default function PitchDetail() {
     wireframeLinks: '',
     appetiteDays: undefined,
   });
+
+  // Live presence — who else is viewing this pitch (v1.13.0 S64)
+  const { viewers } = usePresence('PITCH', pitch?.id);
+
+  // A newer version was saved by someone else while this user is mid-edit —
+  // shown as a non-blocking heads-up; the real reconciliation happens via the
+  // 409 conflict dialog below when they actually try to save.
+  const [shapeUpStale, setShapeUpStale] = useState(false);
+  // 409 optimistic-lock conflict on the Shape Up section save.
+  const [shapeUpConflict, setShapeUpConflict] = useState<OptimisticLockConflictBody<Pitch> | null>(null);
+
+  // Live refresh — silently reload when not editing; just flag "stale" when editing
+  // so we don't clobber in-progress edits (mirrors RetroBoard's 'retro-updated' pattern).
+  useEffect(() => {
+    if (!pitch?.id) return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ pitchId: number }>).detail;
+      if (detail?.pitchId !== pitch.id) return;
+      if (editingShapeUp) {
+        setShapeUpStale(true);
+      } else {
+        loadData(pitch.id);
+      }
+    };
+    window.addEventListener('pitch-updated', handler);
+    return () => window.removeEventListener('pitch-updated', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pitch?.id, editingShapeUp]);
 
   const [workLogDialog, setWorkLogDialog] = useState(false);
   const [meetingDialog, setMeetingDialog] = useState(false);
@@ -229,8 +261,9 @@ export default function PitchDetail() {
     }
   };
 
-  // Save Shape Up fields
-  const handleSaveShapeUp = async () => {
+  // Save Shape Up fields. `overrideVersion` is used by the conflict dialog's
+  // "keep mine" path to retry with the server's now-current version.
+  const saveShapeUp = async (overrideVersion?: number) => {
     if (!pitch) return;
     try {
       setSavingShapeUp(true);
@@ -245,15 +278,53 @@ export default function PitchDetail() {
         priority: pitch.priority,
         ...shapeUpFields,
         // appetiteDays comes from shapeUpFields (overrides nothing above)
+        expectedVersion: overrideVersion ?? pitch.version,
       });
       showSuccess(t('pitchDetailPage.shapeUpSaved'));
       setEditingShapeUp(false);
+      setShapeUpStale(false);
+      setShapeUpConflict(null);
       loadData(pitch.id);
     } catch (error) {
-      showError(getUserFriendlyError(error, t('pitchDetailPage.saveFailed')));
+      const conflict = getConflictBody<Pitch>(error);
+      if (conflict) {
+        setShapeUpConflict(conflict);
+      } else {
+        showError(getUserFriendlyError(error, t('pitchDetailPage.saveFailed')));
+      }
     } finally {
       setSavingShapeUp(false);
     }
+  };
+
+  const handleSaveShapeUp = () => saveShapeUp();
+
+  // Conflict dialog resolution: overwrite the server with our local edits,
+  // retrying with the version the server told us is current.
+  const handleKeepMyShapeUpEdits = () => {
+    if (!shapeUpConflict) return;
+    saveShapeUp(shapeUpConflict.currentVersion);
+  };
+
+  // Conflict dialog resolution: discard our local edits and adopt the
+  // server's current version, using the 409 body's `current` payload directly
+  // (no extra fetch needed — it's already the fresh Pitch).
+  const handleDiscardMyShapeUpEdits = () => {
+    if (!shapeUpConflict) return;
+    const serverPitch = shapeUpConflict.current;
+    setPitch(serverPitch);
+    setShapeUpFields({
+      problemStatement: serverPitch.problemStatement || '',
+      solution: serverPitch.solution || '',
+      rabbitHoles: serverPitch.rabbitHoles || '',
+      risks: serverPitch.risks || '',
+      noGos: serverPitch.noGos || '',
+      wireframeLinks: serverPitch.wireframeLinks || '',
+      appetiteDays: serverPitch.appetiteDays ?? undefined,
+    });
+    setEditingShapeUp(false);
+    setShapeUpStale(false);
+    setShapeUpConflict(null);
   };
 
   // Cancel editing and reset fields
@@ -271,6 +342,7 @@ export default function PitchDetail() {
     }
     setExtractedDocumentName('');
     setEditingShapeUp(false);
+    setShapeUpStale(false);
   };
 
   // Extract Shape Up fields from uploaded document using AI
@@ -532,6 +604,10 @@ export default function PitchDetail() {
 
   return (
     <div>
+      <div className="flex justify-end mb-2">
+        <PresenceAvatarStack viewers={viewers} />
+      </div>
+
       <PitchHeader
         pitch={pitch}
         epics={epics}
@@ -567,6 +643,22 @@ export default function PitchDetail() {
         />
       </div>
 
+      {editingShapeUp && shapeUpStale && (
+        <div className="mb-4 flex items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+          <span>{t('pitchDetailPage.staleWhileEditing')}</span>
+          <button
+            type="button"
+            onClick={() => {
+              handleCancelShapeUpEdit();
+              loadData(pitch.id);
+            }}
+            className="shrink-0 underline hover:no-underline"
+          >
+            {t('pitchDetailPage.reloadNow')}
+          </button>
+        </div>
+      )}
+
       <PitchShapingSection
         pitch={pitch}
         editingShapeUp={editingShapeUp}
@@ -575,11 +667,22 @@ export default function PitchDetail() {
         extracting={extracting}
         extractedDocumentName={extractedDocumentName}
         hasShapeUpContent={hasShapeUpContent}
-        onSetEditingShapeUp={setEditingShapeUp}
+        onSetEditingShapeUp={(value) => {
+          setEditingShapeUp(value);
+          if (value) setShapeUpStale(false);
+        }}
         onSaveShapeUp={handleSaveShapeUp}
         onCancelShapeUpEdit={handleCancelShapeUpEdit}
         onExtractFromDocument={handleExtractFromDocument}
         onShapeUpFieldChange={setShapeUpFields}
+      />
+
+      <ConflictDialog
+        open={!!shapeUpConflict}
+        onOpenChange={(open) => { if (!open) setShapeUpConflict(null); }}
+        entityLabel={t('conflictDialog.entityLabel.pitch')}
+        onKeepMine={handleKeepMyShapeUpEdits}
+        onDiscardMine={handleDiscardMyShapeUpEdits}
       />
 
       <div className="grid grid-cols-1 gap-6">
