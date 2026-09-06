@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-09-06T12:10:15.540Z",
+  "timestamp": "2026-09-06T13:12:07.306Z",
   "stats": {
-    "totalEnKeys": 8137,
-    "totalFaKeys": 7262,
-    "totalUsedKeys": 5451,
-    "filesScanned": 529
+    "totalEnKeys": 8211,
+    "totalFaKeys": 7336,
+    "totalUsedKeys": 5505,
+    "filesScanned": 542
   },
   "issues": {
     "missingInFa": [
@@ -921,6 +921,8 @@
       "cycles.shaping"
     ],
     "missingInBoth": [
+      "auth.registration.disabled",
+      "auth.access.denied",
       "common.preview",
       "common.openFullPage",
       "common.unknownError",
@@ -943,6 +945,7 @@
       "userManagement.projectsSelected",
       "taskId",
       "mcpIntegration.scope",
+      "shows a clickable merge badge that expands to list the full content of each merged-away item",
       "renders the two-column planning board with backlog and sprint headers",
       "initiativeId"
     ],
@@ -3020,6 +3023,15 @@
     "publicRoadmap.phasePluginItem1Desc",
     "publicRoadmap.phasePluginItem2Title",
     "publicRoadmap.phasePluginItem2Desc",
+    "publicRoadmap.phase113Theme",
+    "publicRoadmap.phase113Item0Title",
+    "publicRoadmap.phase113Item0Desc",
+    "publicRoadmap.phase113Item1Title",
+    "publicRoadmap.phase113Item1Desc",
+    "publicRoadmap.phase113Item2Title",
+    "publicRoadmap.phase113Item2Desc",
+    "publicRoadmap.phase113Item3Title",
+    "publicRoadmap.phase113Item3Desc",
     "dashboardManager.setDefault",
     "dashboardManager.clone",
     "dashboardManager.created",
@@ -3658,6 +3670,20 @@
     "wiki.share.role.ADMIN",
     "wiki.share.role.MANAGER",
     "wiki.share.role.MEMBER",
-    "wiki.share.role.READONLY"
+    "wiki.share.role.READONLY",
+    "authAudit.description",
+    "authAudit.event.LOGIN_SUCCESS",
+    "authAudit.event.LOGIN_FAILURE",
+    "authAudit.event.PASSKEY_LOGIN_SUCCESS",
+    "authAudit.event.PASSKEY_LOGIN_FAILURE",
+    "authAudit.event.PASSKEY_REGISTERED",
+    "authAudit.event.PASSKEY_REMOVED",
+    "authAudit.event.PASSWORD_CHANGED",
+    "authAudit.event.PASSWORD_RESET_REQUESTED",
+    "authAudit.event.PASSWORD_RESET_COMPLETED",
+    "authAudit.event.ACCOUNT_REGISTERED",
+    "authAudit.event.LOGOUT",
+    "presence.viewingCount_one",
+    "presence.viewingCount_other"
   ]
 }
