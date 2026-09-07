@@ -55,10 +55,17 @@ public class PresenceService {
     String namesKey = namesKey(type, entityId);
     String member = userId.toString();
 
-    redisTemplate.opsForZSet().add(zsetKey, member, System.currentTimeMillis());
-    redisTemplate.opsForHash().put(namesKey, member, displayName != null ? displayName : "");
-    redisTemplate.expire(zsetKey, KEY_EXPIRY);
-    redisTemplate.expire(namesKey, KEY_EXPIRY);
+    try {
+      redisTemplate.opsForZSet().add(zsetKey, member, System.currentTimeMillis());
+      redisTemplate.opsForHash().put(namesKey, member, displayName != null ? displayName : "");
+      redisTemplate.expire(zsetKey, KEY_EXPIRY);
+      redisTemplate.expire(namesKey, KEY_EXPIRY);
+    } catch (Exception e) {
+      // Presence is ephemeral and best-effort — a Redis outage must not break whatever primary
+      // action (viewing/saving a pitch, retro item, or wiki page) triggered this heartbeat.
+      log.warn("Presence heartbeat failed for {}:{}: {}", type, entityId, e.getMessage());
+      return;
+    }
 
     broadcastPresence(type, entityId);
   }
@@ -68,8 +75,13 @@ public class PresenceService {
     String namesKey = namesKey(type, entityId);
     String member = userId.toString();
 
-    redisTemplate.opsForZSet().remove(zsetKey, member);
-    redisTemplate.opsForHash().delete(namesKey, member);
+    try {
+      redisTemplate.opsForZSet().remove(zsetKey, member);
+      redisTemplate.opsForHash().delete(namesKey, member);
+    } catch (Exception e) {
+      log.warn("Presence leave failed for {}:{}: {}", type, entityId, e.getMessage());
+      return;
+    }
 
     broadcastPresence(type, entityId);
   }
@@ -79,18 +91,31 @@ public class PresenceService {
     String namesKey = namesKey(type, entityId);
     long now = System.currentTimeMillis();
 
-    // Opportunistically drop anything long-abandoned so the set never grows unbounded.
-    redisTemplate.opsForZSet().removeRangeByScore(zsetKey, 0, now - PRESENCE_PRUNE_MS);
-
-    Set<String> activeMembers =
-        redisTemplate.opsForZSet().rangeByScore(zsetKey, now - PRESENCE_TTL_MS, now);
+    Set<String> activeMembers;
+    try {
+      // Opportunistically drop anything long-abandoned so the set never grows unbounded.
+      redisTemplate.opsForZSet().removeRangeByScore(zsetKey, 0, now - PRESENCE_PRUNE_MS);
+      activeMembers = redisTemplate.opsForZSet().rangeByScore(zsetKey, now - PRESENCE_TTL_MS, now);
+    } catch (Exception e) {
+      // Same rationale as heartbeat()/leave(): this is called synchronously from
+      // PitchSseService/WikiSseService's own save-triggered broadcast, so a Redis outage here
+      // must degrade to "no viewers shown" rather than fail the save that triggered it.
+      log.warn("Fetching presence viewers failed for {}:{}: {}", type, entityId, e.getMessage());
+      return List.of();
+    }
     if (activeMembers == null || activeMembers.isEmpty()) {
       return List.of();
     }
 
     List<PresenceViewerDTO> viewers = new ArrayList<>();
     for (String member : activeMembers) {
-      Object nameValue = redisTemplate.opsForHash().get(namesKey, member);
+      Object nameValue;
+      try {
+        nameValue = redisTemplate.opsForHash().get(namesKey, member);
+      } catch (Exception e) {
+        log.warn("Fetching presence name failed for {}:{}: {}", type, entityId, e.getMessage());
+        break;
+      }
       if (nameValue == null) {
         // Name entry missing/expired separately from the zset entry — skip rather than throw.
         continue;
