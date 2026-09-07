@@ -48,7 +48,7 @@ public class LicenseLimits {
    * (or past) {@link #activeUserCap()}. The single shared seat-cap assertion for every path that
    * creates a new active user or reactivates an inactive one — {@code UserService} (registration
    * / admin-created users, reactivation via {@code activate}), {@code SsoService} (first-login
-   * SAML2/OIDC provisioning), and {@code ScimService} (SCIM user creation and PATCH-driven
+   * SAML2/OIDC provisioning), and {@code ScimService} (SCIM user creation and PATCH/PUT-driven
    * reactivation). Callers must check this BEFORE flipping a user active, never react to it by
    * deactivating someone else.
    */

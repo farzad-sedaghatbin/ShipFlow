@@ -155,9 +155,19 @@ public class ScimService {
     String newUsername = resolveUsername(scimUser);
     String previousUsername = user.getUsername();
 
+    // Only a false->true transition reactivates a user and consumes a seat — enforce the same
+    // seat cap patchUser enforces on op=replace active=true. findActiveUserById only filters on
+    // deletedAt, so an inactive-but-not-soft-deleted user (e.g. after UserService#deactivate)
+    // can reach here and must not be silently reactivated past the cap via PUT.
+    boolean wasActive = Boolean.TRUE.equals(user.getIsActive());
+    boolean newActive = scimUser.isActive();
+    if (newActive && !wasActive) {
+      licenseLimits.assertSeatAvailable(userRepository.countByIsActiveTrueAndDeletedAtIsNull());
+    }
+
     user.setUsername(newUsername);
     user.setEmail(resolveEmail(scimUser));
-    user.setIsActive(scimUser.isActive());
+    user.setIsActive(newActive);
     if (scimUser.getExternalId() != null) {
       user.setExternalUserId(scimUser.getExternalId());
     }
