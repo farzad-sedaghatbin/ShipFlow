@@ -25,6 +25,7 @@ import {
   Sliders,
   FileDown,
   ShieldCheck,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth, useToast } from '../contexts';
@@ -47,6 +48,7 @@ import {
   EmailSettingsTab,
   SsoSettingsTab,
   ScimSettingsTab,
+  LicenseSettingsTab,
   PluginsSettingsTab,
   StorageSettingsTab,
   CustomFieldsSettingsTab,
@@ -79,6 +81,7 @@ type SectionId =
   | 'plugins'
   | 'sso'
   | 'scim'
+  | 'license'
   | 'storage'
   | 'import'
   | 'auditExport'
@@ -148,6 +151,12 @@ const buildSidebarGroups = (isAdmin: boolean): SidebarGroup[] => [
     items: [
       { id: 'sso', labelKey: 'sso.tabLabel', icon: Shield },
       { id: 'scim', labelKey: 'scim.title', icon: Users },
+    ],
+  },
+  {
+    headerKey: 'organizationSettings.sectionLicensing',
+    items: [
+      { id: 'license', labelKey: 'license.tabLabel', icon: KeyRound },
     ],
   },
   {
@@ -344,6 +353,8 @@ export default function OrganizationSettingsPage() {
         return <SsoSettingsTab />;
       case 'scim':
         return <ScimSettingsTab formData={formData} setFormData={setFormData} />;
+      case 'license':
+        return <LicenseSettingsTab />;
       case 'storage':
         return <StorageSettingsTab />;
       case 'auditExport':

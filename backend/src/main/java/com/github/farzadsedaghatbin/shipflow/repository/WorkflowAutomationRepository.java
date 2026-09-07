@@ -22,4 +22,8 @@ public interface WorkflowAutomationRepository extends JpaRepository<WorkflowAuto
 
   @Query("SELECT a FROM WorkflowAutomation a WHERE a.id = :id AND a.deletedAt IS NULL")
   Optional<WorkflowAutomation> findByIdNotDeleted(@Param("id") Long id);
+
+  /** Enabled, non-deleted automation count — the number that counts against the licence automation cap. */
+  @Query("SELECT COUNT(a) FROM WorkflowAutomation a WHERE a.enabled = true AND a.deletedAt IS NULL")
+  long countEnabledNotDeleted();
 }

@@ -16,6 +16,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserProject;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
+import com.github.farzadsedaghatbin.shipflow.license.SeatLimitExceededException;
 import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PasswordResetTokenRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
@@ -67,6 +69,9 @@ class UserServiceTest {
   @Mock
   private MessageService messageService;
 
+  @Mock
+  private LicenseLimits licenseLimits;
+
   @InjectMocks
   private UserService userService;
 
@@ -80,6 +85,9 @@ class UserServiceTest {
 
     lenient().when(passwordEncoder.encode(any())).thenReturn("encoded-password");
     lenient().when(userRepository.existsByUsername(any())).thenReturn(false);
+    // Default: plenty of seats, so existing tests unrelated to licensing are unaffected. Tests
+    // that exercise the seat cap itself stub this to throw SeatLimitExceededException instead.
+    lenient().doNothing().when(licenseLimits).assertSeatAvailable(anyLong());
     lenient().when(userRepository.save(any(User.class))).thenAnswer(inv -> {
       User u = inv.getArgument(0);
       if (u.getId() == null) {
@@ -378,6 +386,70 @@ class UserServiceTest {
 
     verify(userRepository, never()).save(any());
     verify(userProjectRepository, never()).save(any());
+  }
+
+  // --- Licence seat cap tests (v1.14.0) ---
+
+  @Test
+  void createUser_AtSeatCap_ThrowsSeatLimitExceededException() {
+    when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+    doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
+
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("overtheline");
+    request.setPassword("password123");
+    request.setRole(UserRole.MEMBER);
+
+    assertThatThrownBy(() -> userService.createUser(request))
+        .isInstanceOf(SeatLimitExceededException.class);
+
+    verify(userRepository, never()).save(any(User.class));
+  }
+
+  @Test
+  void createUser_BelowSeatCap_Succeeds() {
+    when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(9L);
+
+    RegisterRequest request = new RegisterRequest();
+    request.setUsername("undertheline");
+    request.setPassword("password123");
+    request.setRole(UserRole.MEMBER);
+
+    UserDTO result = userService.createUser(request);
+
+    assertThat(result).isNotNull();
+    verify(userRepository).save(any(User.class));
+  }
+
+  @Test
+  void activate_WhenTransitioningToActive_AtSeatCap_ThrowsSeatLimitExceededException() {
+    User inactiveUser = User.builder().id(5L).username("dormant").role(UserRole.MEMBER).isActive(false).build();
+    when(userRepository.findById(5L)).thenReturn(Optional.of(inactiveUser));
+    when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+    doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
+
+    assertThatThrownBy(() -> userService.activate(5L)).isInstanceOf(SeatLimitExceededException.class);
+
+    verify(userRepository, never()).save(any(User.class));
+  }
+
+  @Test
+  void activate_AlreadyActive_IsANoOp_DoesNotConsultSeatCap() {
+    User activeUser = User.builder().id(6L).username("already-on").role(UserRole.MEMBER).isActive(true).build();
+    when(userRepository.findById(6L)).thenReturn(Optional.of(activeUser));
+    when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    UserDTO result = userService.activate(6L);
+
+    assertThat(result.getIsActive()).isTrue();
+    verify(licenseLimits, never()).assertSeatAvailable(anyLong());
+  }
+
+  @Test
+  void countActiveUsers_DelegatesToRepository() {
+    when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(42L);
+
+    assertThat(userService.countActiveUsers()).isEqualTo(42L);
   }
 
   // --- getUserProjectAssignments tests ---

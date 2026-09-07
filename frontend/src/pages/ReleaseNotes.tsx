@@ -66,6 +66,7 @@ import {
   Kanban,
   Filter,
   Puzzle,
+  KeyRound,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -85,6 +86,38 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.14.0',
+    date: 'Coming soon',
+    title: 'AI You Can Trust',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Brain className="h-5 w-5" />,
+        title: 'Reliable Cycle Summaries',
+        description:
+          "AI-generated cycle summaries are validated against real data before they're saved — no more invented content.",
+      },
+      {
+        icon: <Search className="h-5 w-5" />,
+        title: 'Grounded Q&A',
+        description:
+          'The AI assistant answers from your actual pitches and cycles, with honest confidence instead of false certainty.',
+      },
+      {
+        icon: <Sliders className="h-5 w-5" />,
+        title: 'Unified AI Context',
+        description:
+          'Every AI feature — risk analysis, Q&A, test generation — shares the same rich project context.',
+      },
+      {
+        icon: <KeyRound className="h-5 w-5" />,
+        title: 'Licence Keys & Community Edition',
+        description:
+          "ShipFlow is now open-core: this build is the Community Edition (up to 10 active users, 5 enabled workflow automations), and an admin can upload a signed licence file to unlock commercial features and lift those limits.",
+      },
+    ],
+  },
   {
     version: '1.13.1',
     date: 'September 7, 2026',

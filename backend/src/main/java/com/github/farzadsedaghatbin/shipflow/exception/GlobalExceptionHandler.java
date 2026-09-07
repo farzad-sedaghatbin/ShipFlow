@@ -1,5 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.exception;
 
+import com.github.farzadsedaghatbin.shipflow.license.AutomationLimitExceededException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseFeatureException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseInvalidException;
+import com.github.farzadsedaghatbin.shipflow.license.SeatLimitExceededException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.io.IOException;
@@ -174,6 +178,66 @@ public class GlobalExceptionHandler {
     error.put("entityId", ex.getEntityId());
     error.put("currentVersion", ex.getCurrentVersion());
     error.put("current", ex.getCurrentState());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
+  /**
+   * The uploaded licence file (POST /api/license) is malformed or failed Ed25519 signature
+   * verification. See {@code LicenseService#uploadLicense}.
+   */
+  @ExceptionHandler(LicenseInvalidException.class)
+  public ResponseEntity<Map<String, Object>> handleLicenseInvalidException(LicenseInvalidException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("license.invalid"));
+    error.put("messageKey", "license.invalid");
+    error.put("status", HttpStatus.BAD_REQUEST.value());
+    return ResponseEntity.badRequest().body(error);
+  }
+
+  /**
+   * A method annotated {@code @RequiresLicensedFeature} was called without an active licence
+   * granting that feature. See {@code LicenseFeatureAspect}.
+   */
+  @ExceptionHandler(LicenseFeatureException.class)
+  public ResponseEntity<Map<String, Object>> handleLicenseFeatureException(LicenseFeatureException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("license.feature.required"));
+    error.put("messageKey", "license.feature.required");
+    error.put("feature", ex.getFeatureName());
+    error.put("status", HttpStatus.FORBIDDEN.value());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+  }
+
+  /**
+   * Creating or reactivating a user would exceed the current licence's active-user seat cap. See
+   * {@code LicenseLimits}/{@code UserService}.
+   */
+  @ExceptionHandler(SeatLimitExceededException.class)
+  public ResponseEntity<Map<String, Object>> handleSeatLimitExceededException(SeatLimitExceededException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("license.seats.exceeded"));
+    error.put("messageKey", "license.seats.exceeded");
+    error.put("limit", ex.getLimit());
+    error.put("status", HttpStatus.CONFLICT.value());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
+  /**
+   * Enabling a workflow automation rule would exceed the current licence's enabled-automation cap.
+   * See {@code LicenseLimits}/{@code WorkflowAutomationService}.
+   */
+  @ExceptionHandler(AutomationLimitExceededException.class)
+  public ResponseEntity<Map<String, Object>> handleAutomationLimitExceededException(
+      AutomationLimitExceededException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("license.automations.exceeded"));
+    error.put("messageKey", "license.automations.exceeded");
+    error.put("limit", ex.getLimit());
+    error.put("status", HttpStatus.CONFLICT.value());
     return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
   }
 

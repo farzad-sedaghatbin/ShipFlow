@@ -193,7 +193,7 @@ ShipFlow's Knowledge Center gives teams a single place to upload docs and paste 
 
 | Tool | Self-hosted | Source-avail.¹ | Free tier | Typical team cost |
 |------|:-----------:|:---:|:---------:|-------------------|
-| ShipFlow | ✅ | ✅ | ✅ (unlimited) | $0 (self-hosted) |
+| ShipFlow | ✅ | ✅ | ✅ (10 users, 5 active automations) | $0 (self-hosted) |
 | Linear | ❌ | ❌ | ✅ (limited) | ~$8/user/month |
 | Jira | ✅ (Data Center) | ❌ | ✅ (10 users) | ~$8–$16/user/month |
 | Asana | ❌ | ❌ | ✅ (limited) | ~$11–$25/user/month |
@@ -201,6 +201,7 @@ ShipFlow's Knowledge Center gives teams a single place to upload docs and paste 
 | Basecamp | ❌ | ❌ | ❌ | $15/user or $299/month flat |
 | Shortcut | ❌ | ❌ | ✅ (10 users) | ~$8.50/user/month |
 
+**Open-core, as of v1.14.0.** Every feature in this repository — every methodology, every AI capability, every integration — is free and self-hostable, capped at 10 active users and 5 enabled workflow-automation rules (the same free-tier user cap Jira Data Center and Shortcut already use, but here it applies to a fully-featured self-hosted instance you own, not a hosted plan). A signed licence file lifts both caps and will unlock future commercial-only features; there is no forced trial, no feature paywall on anything shipped today, and a missing or expired licence never breaks a running instance — it just reverts to the Community Edition caps. No competitor in this table offers a comparably-complete self-hostable free tier: Linear, Asana, and Monday have no self-hosted option at any price, and Jira Data Center's "free" tier is a 10-user cap on a hosted-adjacent enterprise product, not an open-source repository anyone can audit or modify.
 ¹ ShipFlow is licensed under the [Elastic License 2.0](LICENSE), not a traditional OSI "open source" license — free to use, modify, and self-host, but reselling it as a hosted/managed service requires a commercial license. See [Licensing](COMMERCIAL_LICENSE.md).
 
 ShipFlow's self-hosted model gives unlimited users at infrastructure cost only.

@@ -8,6 +8,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkflowAutomation;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkflowAutomationTemplate;
+import com.github.farzadsedaghatbin.shipflow.license.AutomationLimitExceededException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkflowAutomationExecutionRepository;
@@ -36,6 +38,7 @@ public class WorkflowAutomationService {
   private final WorkflowAutomationExecutionRepository executionRepository;
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
+  private final LicenseLimits licenseLimits;
 
   @Transactional(readOnly = true)
   public List<WorkflowAutomationDto> getByProject(Long projectId) {
@@ -52,6 +55,10 @@ public class WorkflowAutomationService {
   public WorkflowAutomationDto create(CreateWorkflowAutomationRequest request) {
     Project project = projectRepository.findById(request.getProjectId())
         .orElseThrow(() -> new EntityNotFoundException("Project not found: " + request.getProjectId()));
+
+    if (request.isEnabled()) {
+      assertAutomationCanBeEnabled();
+    }
 
     WorkflowAutomation.WorkflowAutomationBuilder builder = WorkflowAutomation.builder()
         .name(request.getName())
@@ -79,6 +86,9 @@ public class WorkflowAutomationService {
     Project project = projectRepository.findById(projectId)
         .orElseThrow(() -> new EntityNotFoundException("Project not found: " + projectId));
 
+    // Always created enabled (see .enabled(true) below).
+    assertAutomationCanBeEnabled();
+
     WorkflowAutomation automation = WorkflowAutomation.builder()
         .name(name != null ? name : template.getName())
         .description(template.getDescription())
@@ -98,6 +108,9 @@ public class WorkflowAutomationService {
 
   public WorkflowAutomationDto update(Long id, CreateWorkflowAutomationRequest request) {
     WorkflowAutomation automation = findOrThrow(id);
+    if (request.isEnabled() && !automation.isEnabled()) {
+      assertAutomationCanBeEnabled();
+    }
     automation.setName(request.getName());
     automation.setDescription(request.getDescription());
     automation.setTriggerType(request.getTriggerType());
@@ -110,8 +123,33 @@ public class WorkflowAutomationService {
 
   public WorkflowAutomationDto toggleEnabled(Long id) {
     WorkflowAutomation automation = findOrThrow(id);
+    if (!automation.isEnabled()) {
+      assertAutomationCanBeEnabled();
+    }
     automation.setEnabled(!automation.isEnabled());
     return toDto(automationRepository.save(automation));
+  }
+
+  /**
+   * Throws {@link AutomationLimitExceededException} when enabling one more automation would
+   * exceed {@link LicenseLimits#enabledAutomationCap()} under a Community Edition (MISSING/EXPIRED)
+   * licence. No-op (unlimited) under a VALID/GRACE licence. Never disables an already-enabled
+   * automation — callers must check this BEFORE flipping one to enabled.
+   */
+  private void assertAutomationCanBeEnabled() {
+    if (licenseLimits.automationsUnlimited()) {
+      return;
+    }
+    int cap = licenseLimits.enabledAutomationCap();
+    if (automationRepository.countEnabledNotDeleted() >= cap) {
+      throw new AutomationLimitExceededException(cap);
+    }
+  }
+
+  /** Current enabled, non-deleted automation count — used by the licence status endpoint. */
+  @Transactional(readOnly = true)
+  public long countEnabledAutomations() {
+    return automationRepository.countEnabledNotDeleted();
   }
 
   public void delete(Long id) {

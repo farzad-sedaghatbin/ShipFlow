@@ -12,6 +12,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.ScimAuditLog;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
+import com.github.farzadsedaghatbin.shipflow.license.SeatLimitExceededException;
 import com.github.farzadsedaghatbin.shipflow.repository.OrganizationSettingsRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ScimAuditLogRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -45,6 +47,7 @@ class ScimServiceTest {
   @Mock private ScimAuditLogRepository auditLogRepository;
   @Mock private OrganizationSettingsService orgSettingsService;
   @Mock private PasswordEncoder passwordEncoder;
+  @Mock private LicenseLimits licenseLimits;
 
   private ScimService scimService;
 
@@ -52,9 +55,12 @@ class ScimServiceTest {
   void setUp() {
     scimService = new ScimService(
         userRepository, settingsRepository, auditLogRepository,
-        orgSettingsService, passwordEncoder);
+        orgSettingsService, passwordEncoder, licenseLimits);
     when(passwordEncoder.encode(any())).thenReturn("hashed-password");
     when(auditLogRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+    // Default: plenty of seats, so existing tests unrelated to licensing are unaffected. Tests
+    // that exercise the seat cap itself stub this to throw SeatLimitExceededException instead.
+    lenient().doNothing().when(licenseLimits).assertSeatAvailable(anyLong());
   }
 
   // ── Helper to build a test user ──────────────────────────────────────────
@@ -200,6 +206,54 @@ class ScimServiceTest {
           .isInstanceOf(ResponseStatusException.class)
           .hasMessageContaining("409");
     }
+
+    @Test
+    @DisplayName("active=true at seat cap: refused with SeatLimitExceededException, nothing saved")
+    void activeAtSeatCap_ThrowsAndSavesNothing() {
+      when(userRepository.existsByUsername("dave")).thenReturn(false);
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+      doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
+
+      ScimUser input = ScimUser.builder().userName("dave").active(true).build();
+
+      assertThatThrownBy(() -> scimService.createUser(input))
+          .isInstanceOf(SeatLimitExceededException.class);
+
+      verify(userRepository, never()).save(any(User.class));
+      verify(auditLogRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("active=true with a seat available: created as before")
+    void activeBelowSeatCap_Succeeds() {
+      when(userRepository.existsByUsername("erin")).thenReturn(false);
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(9L);
+      User savedUser = buildUser(43L, "erin", true);
+      when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+      ScimUser input = ScimUser.builder().userName("erin").active(true).build();
+
+      ScimUser result = scimService.createUser(input);
+
+      assertThat(result.getUserName()).isEqualTo("erin");
+      verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("active=false at seat cap: not blocked — an inactive user consumes no seat")
+    void inactiveAtSeatCap_Succeeds() {
+      when(userRepository.existsByUsername("frank")).thenReturn(false);
+      User savedUser = buildUser(44L, "frank", false);
+      when(userRepository.save(any(User.class))).thenReturn(savedUser);
+
+      ScimUser input = ScimUser.builder().userName("frank").active(false).build();
+
+      ScimUser result = scimService.createUser(input);
+
+      assertThat(result.isActive()).isFalse();
+      verify(userRepository).save(any(User.class));
+      verify(licenseLimits, never()).assertSeatAvailable(anyLong());
+    }
   }
 
   // ── patchUser ────────────────────────────────────────────────────────────
@@ -256,6 +310,135 @@ class ScimServiceTest {
       Map<String, Object> patchBody = Map.of("Operations", List.of());
       assertThatThrownBy(() -> scimService.patchUser("99", patchBody))
           .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("reactivating (false->true) an inactive user at the seat cap is refused")
+    void reactivateAtSeatCap_Throws() {
+      User user = buildUser(5L, "bob", false);
+      user.setDeletedAt(LocalDateTime.now().minusDays(1));
+      when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+      doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
+
+      Map<String, Object> patchBody = Map.of(
+          "Operations", List.of(Map.of("op", "replace", "value", Map.of("active", true))));
+
+      assertThatThrownBy(() -> scimService.patchUser("5", patchBody))
+          .isInstanceOf(SeatLimitExceededException.class);
+
+      verify(userRepository, never()).save(any(User.class));
+      assertThat(user.getIsActive()).isFalse();
+    }
+
+    @Test
+    @DisplayName("patching an already-active user active=true at the seat cap is a no-op, not blocked")
+    void patchAlreadyActive_AtSeatCap_IsNotBlocked() {
+      User user = buildUser(5L, "bob", true);
+      when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+      when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      Map<String, Object> patchBody = Map.of(
+          "Operations", List.of(Map.of("op", "replace", "value", Map.of("active", true))));
+
+      ScimUser result = scimService.patchUser("5", patchBody);
+
+      assertThat(result.isActive()).isTrue();
+      verify(userRepository).save(any(User.class));
+      verify(licenseLimits, never()).assertSeatAvailable(anyLong());
+    }
+
+    @Test
+    @DisplayName("deactivating (true->false) at the seat cap is never blocked")
+    void deactivateAtSeatCap_IsNotBlocked() {
+      User user = buildUser(5L, "bob", true);
+      when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+      when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+      // Even if the org is at (or past) the cap, deactivation must always be allowed.
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+
+      Map<String, Object> patchBody = Map.of(
+          "Operations", List.of(Map.of("op", "replace", "value", Map.of("active", false))));
+
+      ScimUser result = scimService.patchUser("5", patchBody);
+
+      assertThat(result.isActive()).isFalse();
+      verify(userRepository).save(any(User.class));
+      verify(licenseLimits, never()).assertSeatAvailable(anyLong());
+    }
+  }
+
+  // ── replaceUser ──────────────────────────────────────────────────────────
+
+  @Nested
+  @DisplayName("replaceUser")
+  class ReplaceUser {
+
+    @Test
+    @DisplayName("reactivating (false->true) an inactive user at the seat cap is refused")
+    void reactivateAtSeatCap_Throws() {
+      User user = buildUser(5L, "bob", false);
+      when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+      doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
+
+      ScimUser input = ScimUser.builder().userName("bob").active(true).build();
+
+      assertThatThrownBy(() -> scimService.replaceUser("5", input))
+          .isInstanceOf(SeatLimitExceededException.class);
+
+      verify(userRepository, never()).save(any(User.class));
+      assertThat(user.getIsActive()).isFalse();
+    }
+
+    @Test
+    @DisplayName("replacing an already-active user active=true at the seat cap is not blocked")
+    void replaceAlreadyActive_AtSeatCap_IsNotBlocked() {
+      User user = buildUser(5L, "bob", true);
+      when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+      when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      ScimUser input = ScimUser.builder().userName("bob").active(true).build();
+
+      ScimUser result = scimService.replaceUser("5", input);
+
+      assertThat(result.isActive()).isTrue();
+      verify(userRepository).save(any(User.class));
+      verify(licenseLimits, never()).assertSeatAvailable(anyLong());
+    }
+
+    @Test
+    @DisplayName("deactivating (true->false) at the seat cap is never blocked")
+    void deactivateAtSeatCap_IsNotBlocked() {
+      User user = buildUser(5L, "bob", true);
+      when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+      when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+      // Even if the org is at (or past) the cap, deactivation must always be allowed.
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+
+      ScimUser input = ScimUser.builder().userName("bob").active(false).build();
+
+      ScimUser result = scimService.replaceUser("5", input);
+
+      assertThat(result.isActive()).isFalse();
+      verify(userRepository).save(any(User.class));
+      verify(licenseLimits, never()).assertSeatAvailable(anyLong());
+    }
+
+    @Test
+    @DisplayName("reactivating (false->true) below the seat cap is saved active")
+    void reactivateBelowSeatCap_SavesActive() {
+      User user = buildUser(5L, "bob", false);
+      when(userRepository.findById(5L)).thenReturn(Optional.of(user));
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(9L);
+      when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+
+      ScimUser input = ScimUser.builder().userName("bob").active(true).build();
+
+      ScimUser result = scimService.replaceUser("5", input);
+
+      assertThat(result.isActive()).isTrue();
+      verify(userRepository).save(any(User.class));
     }
   }
 

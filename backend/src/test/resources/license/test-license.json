@@ -1,0 +1,14 @@
+{
+  "payload" : {
+    "id" : "00000000-0000-4000-8000-000000000001",
+    "licensee" : "ShipFlow Test Suite",
+    "edition" : "COMMERCIAL",
+    "seats" : 100000,
+    "features" : [ "sso", "audit-export", "automations-unlimited", "custom-fields", "channels", "ldap", "jira-server-import", "ai-credits", "white-label" ],
+    "issuedAt" : "2026-01-01",
+    "expiresAt" : "2099-12-31",
+    "supportUntil" : "2099-12-31",
+    "instanceId" : null
+  },
+  "signature" : "eME+0jyIfPrsheXWZBz3lo1h7/NRs8wdl1JMAUT0zcQ0G70JkRDMDVAxieS8zv95lACvL8ygkcy2+qqxHdRTBQ=="
+}

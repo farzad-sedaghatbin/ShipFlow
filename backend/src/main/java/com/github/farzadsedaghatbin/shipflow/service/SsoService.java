@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.ProvisionedVia;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
 import com.github.farzadsedaghatbin.shipflow.repository.IdentityProviderRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.security.JwtTokenProvider;
@@ -73,6 +74,7 @@ public class SsoService {
   private final RestTemplate restTemplate;
   private final ObjectMapper objectMapper;
   private final PasswordEncoder passwordEncoder;
+  private final LicenseLimits licenseLimits;
 
   /**
    * Optional — only present in Redis-enabled profiles. When null, a simple
@@ -423,6 +425,12 @@ public class SsoService {
       String externalUserId, String email, IdentityProvider idp, ProvisionedVia via) {
     return userRepository.findByExternalUserIdAndIdentityProviderId(externalUserId, idp.getId())
         .orElseGet(() -> {
+          // A first-time SSO login always provisions a new, active user (see the
+          // User.builder() call below) — enforce the same seat cap UserService enforces on
+          // every other user-creation path before doing any work. On the cap being reached,
+          // this throws SeatLimitExceededException and the login fails — no user is created.
+          licenseLimits.assertSeatAvailable(userRepository.countByIsActiveTrueAndDeletedAtIsNull());
+
           log.info("SSO: provisioning new user externalId={} via={}", externalUserId, via);
           // Derive a username that is unique and safe
           String baseUsername = sanitizeUsername(externalUserId);

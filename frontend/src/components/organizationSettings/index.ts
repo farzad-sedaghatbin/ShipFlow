@@ -10,6 +10,7 @@ export { FeaturesSettingsTab } from './FeaturesSettingsTab';
 export { EmailSettingsTab } from './EmailSettingsTab';
 export { SsoSettingsTab } from './SsoSettingsTab';
 export { ScimSettingsTab } from './ScimSettingsTab';
+export { LicenseSettingsTab } from './LicenseSettingsTab';
 export { PluginsSettingsTab } from './PluginsSettingsTab';
 export { StorageSettingsTab } from './StorageSettingsTab';
 export { CustomFieldsSettingsTab } from './CustomFieldsSettingsTab';
