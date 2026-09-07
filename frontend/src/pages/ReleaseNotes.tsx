@@ -86,6 +86,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.13.1',
+    date: 'September 7, 2026',
+    title: 'AI Reliability & Security Hardening',
+    highlights: [
+      {
+        icon: <Search className="h-5 w-5" />,
+        title: 'AI Search Now Understands Persian & Arabic',
+        description:
+          "The Q&A assistant and AI test-case generation were silently dropping every non-Latin-script word during search-term extraction, so Persian and Arabic questions returned nothing useful. Fixed for real Farsi/RTL support.",
+      },
+      {
+        icon: <Bell className="h-5 w-5" />,
+        title: 'Workflow Automation Notifications Now Actually Fire',
+        description:
+          "\"Notify Assignee\" and \"Notify Project Members\" automation rules now deliver a real in-app notification instead of only logging that they would have.",
+      },
+      {
+        icon: <Lock className="h-5 w-5" />,
+        title: 'Hardened an Unauthenticated Admin Endpoint',
+        description:
+          "The Q&A knowledge-base reindex endpoints had no role check at all, despite being documented admin-only. Now require the ADMIN role.",
+      },
+    ],
+  },
+  {
     version: '1.13.0',
     date: 'September 6, 2026',
     title: 'Live Presence & Truth',

@@ -223,6 +223,23 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
   }
 
+  /**
+   * A controller/service threw {@code ResponseStatusException} to signal a specific,
+   * intentional HTTP status (e.g. SCIM, import, MCP endpoints). Without this handler,
+   * {@code ResponseStatusException} falls through to {@link #handleRuntimeException}
+   * below (it extends {@code RuntimeException}) and every such response gets flattened
+   * into a generic 500, discarding the status and reason the caller chose.
+   */
+  @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+  public ResponseEntity<Map<String, Object>> handleResponseStatusException(
+      org.springframework.web.server.ResponseStatusException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("status", ex.getStatusCode().value());
+    error.put("message", ex.getReason() != null ? ex.getReason() : getMessage("error.generic"));
+    return ResponseEntity.status(ex.getStatusCode()).body(error);
+  }
+
   @ExceptionHandler(RuntimeException.class)
   public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
     log.error("Unexpected runtime exception: {}", ex.getMessage(), ex);

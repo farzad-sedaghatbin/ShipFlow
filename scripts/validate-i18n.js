@@ -355,7 +355,11 @@ class I18nValidator {
         /\bt\("([^"]+)"/g,                   // t("key")
         /i18n\.t\(['"]([^'"]+)['"]/g,       // i18n.t('key')
         /i18n\.t\("([^"]+)"/g,               // i18n.t("key")
-        /useTranslation.*?t\(['"]([^'"]+)['"]/gs, // const { t } = useTranslation(); ... t('key')
+        /useTranslation.*?\bt\(['"]([^'"]+)['"]/gs, // const { t } = useTranslation(); ... t('key')
+        // NOTE: the \b before t( is load-bearing — without it, this dotall/lazy pattern happily
+        // matches the "t(" tail of an unrelated it('...', ...) call (e.g. a Vitest test
+        // description) anywhere later in the file, and reports that sentence as a missing
+        // translation key. Keep the boundary if this pattern is ever touched again.
       ];
       
       // Additional patterns to detect dynamic key usage (for reporting, not validation)

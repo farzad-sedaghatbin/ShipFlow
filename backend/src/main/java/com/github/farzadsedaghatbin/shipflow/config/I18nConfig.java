@@ -11,7 +11,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
+import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 /**
@@ -43,14 +43,23 @@ public class I18nConfig implements WebMvcConfigurer {
   }
 
   /**
-   * Configure the LocaleResolver to determine the user's locale from the
-   * Accept-Language header.
+   * Configure the LocaleResolver. Defaults to the Accept-Language header but
+   * remembers an explicit choice (set via the {@code lang} query param, see
+   * {@link #localeChangeInterceptor()}) in a cookie for subsequent requests.
+   *
+   * <p>Must be a resolver that implements {@code setLocale} —
+   * {@code AcceptHeaderLocaleResolver} throws {@code UnsupportedOperationException}
+   * from that method by design, which {@code LocaleChangeInterceptor} would
+   * otherwise let escape as an uncaught 500 on any request carrying {@code ?lang=}.
    */
   @Bean
   public LocaleResolver localeResolver() {
-    AcceptHeaderLocaleResolver resolver = new AcceptHeaderLocaleResolver();
+    CookieLocaleResolver resolver = new CookieLocaleResolver("shipflow.locale");
     resolver.setDefaultLocale(Locale.ENGLISH);
-    resolver.setSupportedLocales(SUPPORTED_LOCALES);
+    // Unlike AcceptHeaderLocaleResolver, CookieLocaleResolver has no setSupportedLocales — an
+    // unsupported ?lang= value just resolves to a Locale with no matching message bundle, and
+    // ReloadableResourceBundleMessageSource's existing fallback (useCodeAsDefaultMessage) handles
+    // that the same way it already handles any other missing translation key.
     return resolver;
   }
 
