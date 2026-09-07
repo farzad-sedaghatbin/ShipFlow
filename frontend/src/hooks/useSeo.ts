@@ -15,7 +15,7 @@ import { useEffect } from 'react';
  * Note on the product name: "ShipFlow" collides with several unrelated
  * products (ship-hull CFD software, freight/e-commerce shipping platforms).
  * Titles and descriptions should therefore always carry a disambiguating
- * qualifier — "Shape Up", "project management", "open source" — so the
+ * qualifier — "Shape Up", "project management", "self-hosted" — so the
  * search snippet tells the right reader they are in the right place and the
  * wrong reader that they are not.
  *
@@ -188,7 +188,7 @@ export const organizationSchema: Record<string, unknown> = {
   url: SITE_URL,
   logo: DEFAULT_OG_IMAGE,
   description:
-    'ShipFlow is an open-source, self-hostable, methodology-agnostic project management platform supporting Shape Up, Scrum, and Kanban in one workspace.',
+    'ShipFlow is a source-available (Elastic License 2.0), self-hostable, methodology-agnostic project management platform supporting Shape Up, Scrum, and Kanban in one workspace.',
   sameAs: ['https://github.com/farzad-sedaghatbin/shipflow'],
 };
 

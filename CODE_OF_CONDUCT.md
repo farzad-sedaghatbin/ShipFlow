@@ -1,6 +1,6 @@
 # Code of Conduct
 
-ShipFlow is an open-source project and we want everyone to feel safe contributing.
+ShipFlow is a public, source-available project and we want everyone to feel safe contributing.
 This document outlines our expectations and what happens when they are not met.
 
 ## Our Pledge

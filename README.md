@@ -1,6 +1,6 @@
 # <img src="frontend/public/icon.png" alt="ShipFlow Logo" width="32" height="32" style="vertical-align: middle;"> ShipFlow
 
-**Open-source project management built for the [Shape Up](https://basecamp.com/shapeup) methodology** — with full Kanban and Scrum support, pluggable AI, and an MCP server so your AI coding assistant can query your board directly.
+**Source-available project management built for the [Shape Up](https://basecamp.com/shapeup) methodology** — with full Kanban and Scrum support, pluggable AI, and an MCP server so your AI coding assistant can query your board directly. Free to use, modify, and self-host under the [Elastic License 2.0](LICENSE) — see [Licensing](COMMERCIAL_LICENSE.md).
 
 🌐 **Live Demo**: [shipflow.dev](https://shipflow.dev) &nbsp;|&nbsp; 📖 **Docs**: [farzad-sedaghatbin.github.io/ShipFlow](https://farzad-sedaghatbin.github.io/ShipFlow/) &nbsp;|&nbsp; ⭐ **Star us on GitHub**
 
@@ -58,7 +58,7 @@ docker compose up -d
 | **Web Push & Passkey sign-in** *(v1.11.0)* | Native push notifications for mentions, assignments, and cycle events — no email or open tab required. Sign in with Face ID, Touch ID, Windows Hello, or a security key (WebAuthn) instead of a password. Password-login users with no passkey get a one-time setup prompt *(v1.11.1)* |
 | **Flexible task cycles & Pitch Kanban** *(v1.11.2)* | Logging a task no longer requires picking a cycle up front — a pitch-linked task follows whatever cycle its pitch is currently bet on, automatically, with an audit trail for reporting. A pitch's tasks now render as a drag-and-drop Kanban board on its own detail page |
 | **Plugin SDK & GitLab/Azure DevOps AI context** *(v1.12.0)* | A real, distributable `shipflow-plugin-api` Maven module plus a `shipflow-plugin-archetype` for scaffolding a plugin project in one command. AI features like Wise Architecture can now pull repository code context from GitLab and Azure Repos, alongside the existing GitHub, Figma, Notion, and Confluence integrations |
-| **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
+| **Self-hosted & free** | Elastic License 2.0 (ELv2) — free to self-host, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
 
@@ -567,11 +567,13 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **RTL Language Support** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Multi-Layer Caching (ETag + Redis + React Query)** | ✅ | Partial | ❌ | ❌ | Partial | ❌ |
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Source-available (ELv2)** | ✅³ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-> ¹ **MCP & AI are no longer ShipFlow-only.** Linear (2025), Atlassian/Jira Rovo, and Asana (2026) all shipped MCP servers and embedded agentic AI — so on the AI rows above, treat ✅ as "**built-in, free, and able to run on a fully-private / local LLM**" rather than "competitors have nothing." Every competitor's MCP and AI is **cloud-only and paid** (per-seat or metered AI credits). ShipFlow's durable, structural edge is the *combination* the cloud majors can't match: **native Shape Up + self-hosted + open-source + private, air-gapped AI (Ollama) with zero data egress.** See [COMPETITOR_ANALYSIS.md](COMPETITOR_ANALYSIS.md) §4 for the full June-2026 re-benchmark.
+> ¹ **MCP & AI are no longer ShipFlow-only.** Linear (2025), Atlassian/Jira Rovo, and Asana (2026) all shipped MCP servers and embedded agentic AI — so on the AI rows above, treat ✅ as "**built-in, free, and able to run on a fully-private / local LLM**" rather than "competitors have nothing." Every competitor's MCP and AI is **cloud-only and paid** (per-seat or metered AI credits). ShipFlow's durable, structural edge is the *combination* the cloud majors can't match: **native Shape Up + self-hosted + source-available + private, air-gapped AI (Ollama) with zero data egress.** See [COMPETITOR_ANALYSIS.md](COMPETITOR_ANALYSIS.md) §4 for the full June-2026 re-benchmark.
 >
 > ² **Linear and Jira ship native/Electron desktop and mobile apps with some offline read caching**, but neither is an installable web PWA with background-sync-queued writes — ShipFlow's offline support works from any browser, no app-store install required.
+>
+> ³ **Licensed under the [Elastic License 2.0](LICENSE)**, not a traditional OSI "open source" license. Free to use, modify, and self-host — including for internal commercial use — but you may not resell ShipFlow as a hosted/managed service or circumvent license-key-protected functionality without a commercial license. See [Licensing](COMMERCIAL_LICENSE.md). Releases up to and including v1.13.1 remain MIT-licensed ([`LICENSE-MIT`](LICENSE-MIT)).
 
 **Why Choose ShipFlow?**
 - **Purpose-Built**: Designed from the ground up for Shape Up—no customization needed
@@ -763,4 +765,11 @@ Join our Discord community for support, discussions, and updates:
 
 ## �📄 License
 
-MIT License
+ShipFlow is licensed under the **[Elastic License 2.0](LICENSE)** (ELv2) as of the
+release after v1.13.1 — free to use, modify, and self-host, including internal
+commercial use, but you may not resell it as a hosted/managed service or
+circumvent license-key-protected functionality without a commercial license.
+See [Licensing](COMMERCIAL_LICENSE.md) for a plain-language summary and FAQ.
+
+Releases up to and including v1.13.1 remain under the MIT License — see
+[`LICENSE-MIT`](LICENSE-MIT).

@@ -308,7 +308,7 @@ export default function BlogPost() {
       <footer className="border-t border-border py-8 mt-8">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <span>© {new Date().getFullYear()} ShipFlow. Open source under MIT license.</span>
+            <span>© {new Date().getFullYear()} ShipFlow. Source-available under the Elastic License 2.0.</span>
             <Link to="/blog" className="hover:text-foreground transition-colors">
               ← {t('blog.backToBlog', 'Back to blog')}
             </Link>

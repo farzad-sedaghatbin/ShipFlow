@@ -10,7 +10,7 @@ Claude Code, Cursor, GitHub Copilot, and custom agents — can query and drive S
 
 ### Design principle: fully opt-in
 
-ShipFlow is open source and self-hostable. Not every instance needs an MCP server.
+ShipFlow is source-available and self-hostable. Not every instance needs an MCP server.
 A team using ShipFlow as a plain project management tool has zero reason to expose an MCP endpoint.
 
 **The MCP server must be:**

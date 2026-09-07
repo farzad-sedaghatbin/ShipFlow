@@ -496,7 +496,7 @@ the whole site. See `SEO_GUIDE.md` for the full contract. In short:
 
 1. Call `useSeo({ title, description, path, keywords, jsonLd })` at the top of the page component.
 2. Add the route to `STATIC_ROUTES` in `frontend/scripts/generate-sitemap.mjs`.
-3. **Blog posts live in the private `ShipFlow-blog` repo, NOT here** — so a merged PR against this open-source repo can't publish an article on shipflow.dev. The `.md` files in `frontend/public/blog/posts/` are build-time copies and get overwritten. Never hand-edit `index.json` (generated). For any local production build use `npm run build:deploy` (= `blog:sync` + `build`); a plain `docker build` skips the CI injection step and silently ships no new posts.
+3. **Blog posts live in the private `ShipFlow-blog` repo, NOT here** — so a merged PR against this public, source-available repo can't publish an article on shipflow.dev. The `.md` files in `frontend/public/blog/posts/` are build-time copies and get overwritten. Never hand-edit `index.json` (generated). For any local production build use `npm run build:deploy` (= `blog:sync` + `build`); a plain `docker build` skips the CI injection step and silently ships no new posts.
 4. Cross-link: a new post needs a "Further reading" section *and* a link to it from an existing post.
 5. Never hand-edit `sitemap.xml` (generated) and never reintroduce a blanket `Disallow: /` in `robots.txt` (it once silently blocked the homepage and the entire blog).
 6. SEO meta strings are a deliberate exception to the i18n rule — they stay in English at the call site, because public pages serve one URL per page regardless of language.
@@ -533,7 +533,7 @@ Object storage uses the same provider-SPI shape as the Knowledge Center. The `Ob
 
 ### On every feature release (checklist for Claude Code)
 
-This project is **open source** — every significant feature must be documented and visible to contributors and self-hosters. Run this checklist before merging any non-trivial feature PR:
+This project is **public and source-available** (Elastic License 2.0 — see `LICENSE` and `COMMERCIAL_LICENSE.md`) — every significant feature must be documented and visible to contributors and self-hosters. Run this checklist before merging any non-trivial feature PR:
 
 | # | Task | Where |
 |---|------|--------|
@@ -553,7 +553,7 @@ This project is **open source** — every significant feature must be documented
 | 13 | Run `./mvnw spotless:apply && ./mvnw verify` — must exit `BUILD SUCCESS, Failures: 0, Errors: 0` | CI must stay green |
 | 14 | Update PR title to reflect implementation scope (not just "docs:") | GitHub PR |
 
-> These steps keep the open-source community informed, help self-hosters evaluate upgrades, and ensure Claude Code has accurate context in future sessions.
+> These steps keep the community informed, help self-hosters evaluate upgrades, and ensure Claude Code has accurate context in future sessions.
 
 ---
 

@@ -1,6 +1,6 @@
 # Shape Up Workflow
 
-ShipFlow is the only faithful open-source implementation of the [Shape Up](https://basecamp.com/shapeup) methodology by Basecamp.
+ShipFlow is the only faithful source-available implementation of the [Shape Up](https://basecamp.com/shapeup) methodology by Basecamp.
 
 ## The Cycle
 

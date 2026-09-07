@@ -116,7 +116,7 @@ const comparisonFeatures: ComparisonFeature[] = [
 
   // Deployment & Pricing
   { category: 'Deployment', feature: 'Self-hosted option', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
-  { category: 'Deployment', feature: 'Open source', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
+  { category: 'Deployment', feature: 'Source-available (ELv2)', shipflow: true, linear: false, asana: false, monday: false, jira: false, basecamp: false, clickup: false },
   { category: 'Deployment', feature: 'Docker ready', shipflow: true, linear: false, asana: false, monday: false, jira: true, basecamp: false, clickup: false },
   { category: 'Deployment', feature: 'Free tier', shipflow: true, linear: true, asana: true, monday: true, jira: true, basecamp: false, clickup: true },
 
@@ -171,8 +171,8 @@ export default function CompetitorsComparison() {
       'linear alternative',
       'jira alternative',
       'asana alternative',
-      'open source project management',
-      'open source scrum tool',
+      'source available project management',
+      'source available scrum tool',
       'self-hosted kanban board',
       'shape up software',
     ],
@@ -293,10 +293,10 @@ export default function CompetitorsComparison() {
             <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
                 <Lock className="h-10 w-10 text-primary mb-4" />
-                <h3 className="font-semibold text-lg mb-2">Self-Hosted & Open Source</h3>
+                <h3 className="font-semibold text-lg mb-2">Self-Hosted & Source-Available</h3>
                 <p className="text-sm text-muted-foreground">
                   Full control over your data. Deploy on your infrastructure with Docker.
-                  MIT licensed - no vendor lock-in.
+                  Elastic License 2.0 - no vendor lock-in.
                 </p>
               </CardContent>
             </Card>
@@ -553,7 +553,7 @@ export default function CompetitorsComparison() {
                     <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Betting tables & appetite</li>
                     <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> Circuit breaker mechanism</li>
                     <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> AI-powered risk insights</li>
-                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> 100% free & open source</li>
+                    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-500" /> 100% free & source-available</li>
                   </ul>
                 </div>
               </CardContent>

@@ -19,7 +19,7 @@ Consequences that shape every decision in this guide:
   people searching it want one of the others. Ranking for it delivers visitors
   who bounce.
 - **Every title and description must carry a disambiguating qualifier** —
-  "Shape Up", "project management", "open source". A search snippet should tell
+  "Shape Up", "project management", "self-hosted". A search snippet should tell
   the right reader they're in the right place *and* the wrong reader that
   they're not. That filtering is a feature.
 - **The winnable ground is the Shape Up vocabulary**: shape up methodology,
@@ -47,13 +47,13 @@ depends on the difference:
 |---|---|---|
 | **Shape Up vocabulary** | `shape up methodology`, `hill chart`, `betting table`, `shape up software` | **Target directly.** Low competition, exact intent match, and ShipFlow is genuinely one of the few real answers. This is where pages get written. |
 | **Bridge terms** | `shape up vs scrum`, `shape up and kanban`, `switching from scrum to shape up` | **Target directly.** High intent, low competition, and they reach teams who have Scrum today — the realistic convert. |
-| **Open-source / self-hosted long tail** | `open source scrum tool`, `self-hosted kanban board`, `free jira alternative self hosted` | **Target selectively.** Winnable, and the open-source angle is a real differentiator. Best served by `/compare` and comparison posts. |
+| **Source-available / self-hosted long tail** | `source available scrum tool`, `self-hosted kanban board`, `free jira alternative self hosted` | **Target selectively.** Winnable, and the free-to-self-host angle is a real differentiator. Best served by `/compare` and comparison posts. |
 | **Head terms** | `scrum software`, `kanban board`, `project management tool` | **Do not target.** Jira, Trello, monday.com and Asana spend real money here. A new site cannot win them, and effort spent trying is effort not spent on the rows above. |
 
 The practical rule for any new page: **lead with Shape Up, but always name all
 three.** Titles and descriptions should make the breadth visible without
 burying the differentiator. The landing page title —
-`ShipFlow — Open-Source Project Management (Shape Up, Kanban, Scrum)` — is the
+`ShipFlow — Self-Hosted Project Management (Shape Up, Kanban, Scrum)` — is the
 model: the differentiator disambiguates the brand, the parenthetical reassures
 on coverage.
 
@@ -76,8 +76,8 @@ that gets cut. Put it before the 150-character mark or lose it.
 ### Why a custom hook instead of react-helmet-async
 
 `react-helmet-async` is in maintenance mode, and this need is about sixty lines
-of DOM manipulation. Adding a dependency to a public open-source project has a
-real supply-chain cost that this feature does not justify.
+of DOM manipulation. Adding a dependency to a public, source-available project
+has a real supply-chain cost that this feature does not justify.
 
 ---
 
@@ -108,7 +108,7 @@ real supply-chain cost that this feature does not justify.
 ## Adding a blog post
 
 > **Posts live in the private `ShipFlow-blog` repository, not here.** That is
-> deliberate: a merged pull request against this open-source repo must not be
+> deliberate: a merged pull request against this public repo must not be
 > able to publish an article on shipflow.dev. The `.md` files in
 > `frontend/public/blog/posts/` are build-time copies and get overwritten for
 > any filename that exists in both places — see the README in that directory.

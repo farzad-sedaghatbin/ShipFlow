@@ -45,7 +45,7 @@ When you install the GitHub App:
 
 ## 🏢 Creating Your Own GitHub App (Required for Self-Hosted)
 
-> **Important**: Since ShipFlow is open-source, each company/organization running their own instance must create their own GitHub App. This ensures your data stays private and you have full control over the integration.
+> **Important**: Since each ShipFlow instance is self-hosted, each company/organization running their own instance must create their own GitHub App. This ensures your data stays private and you have full control over the integration.
 
 ### Prerequisites
 

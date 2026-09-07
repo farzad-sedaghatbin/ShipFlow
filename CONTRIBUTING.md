@@ -329,7 +329,19 @@ Here are some examples of the types of contributions that make great first issue
 
 ## 📜 License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+ShipFlow is licensed under the **[Elastic License 2.0](LICENSE)** (ELv2) as of the
+release after v1.13.1 — see [Licensing](COMMERCIAL_LICENSE.md) for what that means
+in plain language. Releases up to and including v1.13.1 remain MIT-licensed
+([`LICENSE-MIT`](LICENSE-MIT)); contributions made under that era remain
+MIT-licensed as contributed.
+
+**By contributing, you agree that your contribution is licensed under the
+Elastic License 2.0**, and you must sign off each commit to certify you have
+the right to submit it under that license (the
+[Developer Certificate of Origin](https://developercertificate.org/), DCO
+1.1). Add `Signed-off-by: Your Name <you@example.com>` to every commit —
+`git commit -s` adds this automatically. A PR with unsigned commits will be
+asked to amend and re-sign before merge.
 
 ---
 

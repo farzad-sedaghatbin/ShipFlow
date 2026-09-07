@@ -1359,7 +1359,7 @@ export default function ReleaseNotes() {
   useSeo({
     title: 'Release Notes & Changelog',
     description:
-      'Every ShipFlow release, newest first — features, fixes and upgrade notes for the open-source Shape Up, Scrum and Kanban project management platform.',
+      'Every ShipFlow release, newest first — features, fixes and upgrade notes for the source-available Shape Up, Scrum and Kanban project management platform.',
     path: '/releases',
     keywords: ['shipflow changelog', 'shipflow release notes'],
     jsonLd: breadcrumbSchema([
@@ -1504,7 +1504,7 @@ export default function ReleaseNotes() {
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
+              © {new Date().getFullYear()} ShipFlow. Source-available under the Elastic License 2.0.
             </p>
             <Button variant="link" onClick={() => navigate('/')} className="text-sm">
               {t('releaseNotes.backToHome')}
