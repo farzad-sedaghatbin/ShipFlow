@@ -89,6 +89,14 @@ public class SampleDataInitializer implements CommandLineRunner {
     // Always ensure a default LOCAL_FS StorageConfig row exists (idempotent).
     seedStorageConfigIfAbsent();
 
+    // Deliberately NO seedLicenseFileIfAbsent() here, unlike the two singleton config
+    // rows above: an absent `license_file` row is already the correct, safe default —
+    // LicenseService treats "no row" as Community Edition (MISSING status), not an error
+    // state that needs a placeholder. Seeding a fake commercial licence into demo data
+    // (including the public shipflow.dev demo, which is not a real paying customer) would
+    // misrepresent what a fresh self-hosted install actually looks like. See CLAUDE.md's
+    // 2026-09-07 licensing Architectural Decisions Log entry.
+
     // Always seed the Scrum demo project independently so it appears even when
     // the rest of the sample data was already seeded by an older version.
     seedScrumDemoProjectIfAbsent();

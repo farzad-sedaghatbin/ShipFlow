@@ -58,6 +58,7 @@ docker compose up -d
 | **Web Push & Passkey sign-in** *(v1.11.0)* | Native push notifications for mentions, assignments, and cycle events — no email or open tab required. Sign in with Face ID, Touch ID, Windows Hello, or a security key (WebAuthn) instead of a password. Password-login users with no passkey get a one-time setup prompt *(v1.11.1)* |
 | **Flexible task cycles & Pitch Kanban** *(v1.11.2)* | Logging a task no longer requires picking a cycle up front — a pitch-linked task follows whatever cycle its pitch is currently bet on, automatically, with an audit trail for reporting. A pitch's tasks now render as a drag-and-drop Kanban board on its own detail page |
 | **Plugin SDK & GitLab/Azure DevOps AI context** *(v1.12.0)* | A real, distributable `shipflow-plugin-api` Maven module plus a `shipflow-plugin-archetype` for scaffolding a plugin project in one command. AI features like Wise Architecture can now pull repository code context from GitLab and Azure Repos, alongside the existing GitHub, Figma, Notion, and Confluence integrations |
+| **Open-core licensing & Community Edition** *(v1.14.0)* | This repository is the fully-functional Community Edition — up to 10 active users, 5 enabled workflow automations. An admin can upload a signed licence file (Org Settings → Licence) to lift those limits and unlock future commercial features; a bad, expired, or missing licence never blocks startup, it just runs as Community Edition |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
 
 ---
@@ -568,6 +569,7 @@ Spring's `@Cacheable` / `@CacheEvict` annotations wrap eight domain services wit
 | **Multi-Layer Caching (ETag + Redis + React Query)** | ✅ | Partial | ❌ | ❌ | Partial | ❌ |
 | **Self-Hosted** | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | **Open Source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Open-core: self-hostable Community Edition, no forced trial/paywall** *(v1.14.0)* | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
 > ¹ **MCP & AI are no longer ShipFlow-only.** Linear (2025), Atlassian/Jira Rovo, and Asana (2026) all shipped MCP servers and embedded agentic AI — so on the AI rows above, treat ✅ as "**built-in, free, and able to run on a fully-private / local LLM**" rather than "competitors have nothing." Every competitor's MCP and AI is **cloud-only and paid** (per-seat or metered AI credits). ShipFlow's durable, structural edge is the *combination* the cloud majors can't match: **native Shape Up + self-hosted + open-source + private, air-gapped AI (Ollama) with zero data egress.** See [COMPETITOR_ANALYSIS.md](COMPETITOR_ANALYSIS.md) §4 for the full June-2026 re-benchmark.
 >

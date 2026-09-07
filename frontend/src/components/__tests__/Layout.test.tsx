@@ -68,6 +68,10 @@ vi.mock('../AirGappedBadge', () => ({
   AirGappedBadge: () => null,
 }));
 
+vi.mock('../LicenseBanner', () => ({
+  LicenseBanner: () => null,
+}));
+
 vi.mock('../RouteProgressProvider', () => ({
   RouteProgressProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));

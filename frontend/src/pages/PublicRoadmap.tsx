@@ -51,6 +51,7 @@ import {
   Kanban,
   Filter,
   Bug,
+  KeyRound,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -406,6 +407,7 @@ export default function PublicRoadmap() {
         { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase114Item0Title'), description: t('publicRoadmap.phase114Item0Desc') },
         { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase114Item1Title'), description: t('publicRoadmap.phase114Item1Desc') },
         { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase114Item2Title'), description: t('publicRoadmap.phase114Item2Desc') },
+        { icon: <KeyRound className="h-5 w-5" />, title: t('publicRoadmap.phase114Item3Title'), description: t('publicRoadmap.phase114Item3Desc') },
       ],
     },
     {

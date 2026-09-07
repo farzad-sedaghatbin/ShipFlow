@@ -29,6 +29,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
   List<User> findByDeletedAtIsNull();
 
+  /** Active, non-deleted user count — the number that counts against the licence seat cap. */
+  long countByIsActiveTrueAndDeletedAtIsNull();
+
   @Query("SELECT u FROM User u WHERE u.role = :role AND u.isActive = true")
   List<User> findByRoleAndActive(@Param("role") com.github.farzadsedaghatbin.shipflow.entity.UserRole role);
 

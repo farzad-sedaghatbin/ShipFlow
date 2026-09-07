@@ -11,6 +11,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
 import com.github.farzadsedaghatbin.shipflow.exception.RegistrationDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
+import com.github.farzadsedaghatbin.shipflow.license.SeatLimitExceededException;
 import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PasswordResetTokenRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
@@ -52,6 +54,7 @@ public class UserService {
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final MessageService messageService;
+  private final LicenseLimits licenseLimits;
 
   /**
    * Whether POST /api/auth/register accepts anonymous/non-admin self-registration.
@@ -114,6 +117,10 @@ public class UserService {
       throw new IllegalArgumentException(
           messageService.getMessage("error.user.username.exists", request.getUsername()));
     }
+
+    // New users are always created active (see the User.builder() call below) — enforce the
+    // seat cap before doing any work. See LicenseLimits class Javadoc for Community vs licensed caps.
+    assertSeatAvailable();
 
     UserRole roleToAssign = adminCaller ? request.getRole() : defaultRegistrationRole;
 
@@ -349,9 +356,32 @@ public class UserService {
     if (user.getDeletedAt() != null) {
       throw new ResourceNotFoundException("User not found with id: " + id);
     }
+    // Only enforce the cap when actually transitioning inactive -> active; a redundant call on an
+    // already-active user must stay a no-op, not a spurious 409.
+    if (!Boolean.TRUE.equals(user.getIsActive())) {
+      assertSeatAvailable();
+    }
     user.setIsActive(true);
     user = userRepository.save(user);
     return toDTO(user);
+  }
+
+  /**
+   * Throws {@link SeatLimitExceededException} when the active-user count is already at (or past)
+   * {@link LicenseLimits#activeUserCap()}. Never deactivates anyone — callers must check this
+   * BEFORE flipping a user active, never react to it by deactivating someone else.
+   */
+  private void assertSeatAvailable() {
+    int cap = licenseLimits.activeUserCap();
+    if (userRepository.countByIsActiveTrueAndDeletedAtIsNull() >= cap) {
+      throw new SeatLimitExceededException(cap);
+    }
+  }
+
+  /** Current active, non-deleted user count — used by the licence status endpoint. */
+  @Transactional(readOnly = true)
+  public long countActiveUsers() {
+    return userRepository.countByIsActiveTrueAndDeletedAtIsNull();
   }
 
   @Transactional

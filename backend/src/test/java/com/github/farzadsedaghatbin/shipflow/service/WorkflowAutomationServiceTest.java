@@ -13,6 +13,8 @@ import com.github.farzadsedaghatbin.shipflow.entity.WorkflowAutomation;
 import com.github.farzadsedaghatbin.shipflow.entity.WorkflowAutomationTemplate;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TriggerType;
+import com.github.farzadsedaghatbin.shipflow.license.AutomationLimitExceededException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WorkflowAutomationExecutionRepository;
@@ -43,6 +45,7 @@ class WorkflowAutomationServiceTest {
   @Mock private WorkflowAutomationExecutionRepository executionRepository;
   @Mock private ProjectRepository projectRepository;
   @Mock private UserRepository userRepository;
+  @Mock private LicenseLimits licenseLimits;
 
   @InjectMocks
   private WorkflowAutomationService service;
@@ -55,6 +58,9 @@ class WorkflowAutomationServiceTest {
   void setUp() {
     SecurityContextHolder.getContext().setAuthentication(
         new UsernamePasswordAuthenticationToken("testuser", "password"));
+    // Default: unlimited, so existing tests unrelated to licensing are unaffected. Tests that
+    // exercise the automation cap itself override this and/or countEnabledNotDeleted.
+    lenient().when(licenseLimits.automationsUnlimited()).thenReturn(true);
     testProject = new Project();
     testProject.setId(1L);
 
@@ -185,6 +191,153 @@ class WorkflowAutomationServiceTest {
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getName()).isEqualTo("Notify on task completed");
     assertThat(result.get(0).getCategory()).isEqualTo("Tasks");
+  }
+
+  // --- Licence automation cap tests (v1.14.0) ---
+
+  @Test
+  void create_EnabledAtAutomationCap_ThrowsAutomationLimitExceededException() {
+    CreateWorkflowAutomationRequest request = new CreateWorkflowAutomationRequest();
+    request.setName("One too many");
+    request.setProjectId(1L);
+    request.setTriggerType(TriggerType.TASK_COMPLETED);
+    request.setActionType(ActionType.NOTIFY_PROJECT_MEMBERS);
+    request.setEnabled(true);
+
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(licenseLimits.automationsUnlimited()).thenReturn(false);
+    when(licenseLimits.enabledAutomationCap()).thenReturn(5);
+    when(automationRepository.countEnabledNotDeleted()).thenReturn(5L);
+
+    assertThatThrownBy(() -> service.create(request)).isInstanceOf(AutomationLimitExceededException.class);
+
+    verify(automationRepository, never()).save(any());
+  }
+
+  @Test
+  void create_DisabledAtAutomationCap_Succeeds() {
+    CreateWorkflowAutomationRequest request = new CreateWorkflowAutomationRequest();
+    request.setName("Created disabled");
+    request.setProjectId(1L);
+    request.setTriggerType(TriggerType.TASK_COMPLETED);
+    request.setActionType(ActionType.NOTIFY_PROJECT_MEMBERS);
+    request.setEnabled(false);
+
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(licenseLimits.automationsUnlimited()).thenReturn(false);
+    when(automationRepository.save(any())).thenReturn(testAutomation);
+
+    WorkflowAutomationDto result = service.create(request);
+
+    assertThat(result).isNotNull();
+    verify(licenseLimits, never()).enabledAutomationCap();
+  }
+
+  @Test
+  void create_EnabledUnderLicensedUnlimitedCap_Succeeds() {
+    CreateWorkflowAutomationRequest request = new CreateWorkflowAutomationRequest();
+    request.setName("Unlimited under licence");
+    request.setProjectId(1L);
+    request.setTriggerType(TriggerType.TASK_COMPLETED);
+    request.setActionType(ActionType.NOTIFY_PROJECT_MEMBERS);
+    request.setEnabled(true);
+
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(automationRepository.save(any())).thenReturn(testAutomation);
+    // licenseLimits.automationsUnlimited() stubbed true by default in setUp().
+
+    WorkflowAutomationDto result = service.create(request);
+
+    assertThat(result).isNotNull();
+    verify(automationRepository, never()).countEnabledNotDeleted();
+  }
+
+  @Test
+  void createFromTemplate_AtAutomationCap_ThrowsAutomationLimitExceededException() {
+    when(templateRepository.findById(1L)).thenReturn(Optional.of(testTemplate));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+    when(licenseLimits.automationsUnlimited()).thenReturn(false);
+    when(licenseLimits.enabledAutomationCap()).thenReturn(5);
+    when(automationRepository.countEnabledNotDeleted()).thenReturn(5L);
+
+    assertThatThrownBy(() -> service.createFromTemplate(1L, 1L, null))
+        .isInstanceOf(AutomationLimitExceededException.class);
+
+    verify(automationRepository, never()).save(any());
+  }
+
+  @Test
+  void toggleEnabled_EnablingAtAutomationCap_ThrowsAutomationLimitExceededException() {
+    WorkflowAutomation disabledAutomation = WorkflowAutomation.builder()
+        .id(2L).name("Disabled one").project(testProject)
+        .triggerType(TriggerType.TASK_COMPLETED).actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .enabled(false).executionCount(0L).build();
+    when(automationRepository.findByIdNotDeleted(2L)).thenReturn(Optional.of(disabledAutomation));
+    when(licenseLimits.automationsUnlimited()).thenReturn(false);
+    when(licenseLimits.enabledAutomationCap()).thenReturn(5);
+    when(automationRepository.countEnabledNotDeleted()).thenReturn(5L);
+
+    assertThatThrownBy(() -> service.toggleEnabled(2L)).isInstanceOf(AutomationLimitExceededException.class);
+
+    verify(automationRepository, never()).save(any());
+  }
+
+  @Test
+  void toggleEnabled_Disabling_NeverConsultsAutomationCap() {
+    // testAutomation starts enabled=true; flipping to disabled must never be capped.
+    when(automationRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testAutomation));
+    when(automationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    WorkflowAutomationDto result = service.toggleEnabled(1L);
+
+    assertThat(result.isEnabled()).isFalse();
+    verify(licenseLimits, never()).automationsUnlimited();
+  }
+
+  @Test
+  void update_EnablingAtAutomationCap_ThrowsAutomationLimitExceededException() {
+    WorkflowAutomation disabledAutomation = WorkflowAutomation.builder()
+        .id(3L).name("Was disabled").project(testProject)
+        .triggerType(TriggerType.TASK_COMPLETED).actionType(ActionType.NOTIFY_PROJECT_MEMBERS)
+        .enabled(false).executionCount(0L).build();
+    when(automationRepository.findByIdNotDeleted(3L)).thenReturn(Optional.of(disabledAutomation));
+    when(licenseLimits.automationsUnlimited()).thenReturn(false);
+    when(licenseLimits.enabledAutomationCap()).thenReturn(5);
+    when(automationRepository.countEnabledNotDeleted()).thenReturn(5L);
+
+    CreateWorkflowAutomationRequest request = new CreateWorkflowAutomationRequest();
+    request.setName("Was disabled");
+    request.setTriggerType(TriggerType.TASK_COMPLETED);
+    request.setActionType(ActionType.NOTIFY_PROJECT_MEMBERS);
+    request.setEnabled(true);
+
+    assertThatThrownBy(() -> service.update(3L, request)).isInstanceOf(AutomationLimitExceededException.class);
+
+    verify(automationRepository, never()).save(any());
+  }
+
+  @Test
+  void update_KeepingAlreadyEnabledAutomationEnabled_NeverConsultsAutomationCap() {
+    // testAutomation starts enabled=true; a no-op re-save with enabled=true must never be capped.
+    when(automationRepository.findByIdNotDeleted(1L)).thenReturn(Optional.of(testAutomation));
+    when(automationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    CreateWorkflowAutomationRequest request = new CreateWorkflowAutomationRequest();
+    request.setName("My Automation");
+    request.setTriggerType(TriggerType.TASK_COMPLETED);
+    request.setActionType(ActionType.NOTIFY_PROJECT_MEMBERS);
+    request.setEnabled(true);
+
+    service.update(1L, request);
+
+    verify(licenseLimits, never()).automationsUnlimited();
+  }
+
+  @Test
+  void countEnabledAutomations_DelegatesToRepository() {
+    when(automationRepository.countEnabledNotDeleted()).thenReturn(3L);
+
+    assertThat(service.countEnabledAutomations()).isEqualTo(3L);
   }
 
   @Test
