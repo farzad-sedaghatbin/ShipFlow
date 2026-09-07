@@ -28,7 +28,11 @@ class NotificationProviderContractTest {
 
   @Test
   void interfaceDeclares_expectedMethods() {
+    // Excludes synthetic/bridge methods — JaCoCo's coverage instrumentation injects a
+    // synthetic $jacocoInit() method into instrumented classes/interfaces, which would
+    // otherwise make this assertion depend on whether the build ran with coverage on.
     Set<String> methods = Arrays.stream(NotificationProvider.class.getDeclaredMethods())
+        .filter(m -> !m.isSynthetic())
         .map(Method::getName)
         .collect(Collectors.toSet());
 

@@ -44,8 +44,17 @@ public class CustomFieldValue {
   @Column(name = "entity_id", nullable = false)
   private Long entityId;
 
-  /** Encoded string value; encoding depends on field type (see CustomFieldService). */
-  @Column(columnDefinition = "TEXT")
+  /**
+   * Encoded string value; encoding depends on field type (see CustomFieldService).
+   *
+   * <p>Backtick-quoted so Hibernate emits a properly delimited identifier in every dialect —
+   * {@code VALUE} is a reserved keyword in H2, so the unquoted column name broke H2 schema
+   * generation (test profile's create-drop) with a syntax error on {@code create table}, which
+   * then cascaded into "table not found" errors on this table's indexes and FK. Kept as the
+   * physical column name "value" (not renamed) to match the existing Flyway migration and
+   * production's ddl-auto=validate.
+   */
+  @Column(name = "`value`", columnDefinition = "TEXT")
   private String value;
 
   @ManyToOne(fetch = FetchType.LAZY)

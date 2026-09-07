@@ -107,6 +107,16 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.13.1',
+      date: 'September 7, 2026',
+      title: t('publicRoadmap.shipped1131Title'),
+      highlights: [
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.shipped1131Item0Title'), description: t('publicRoadmap.shipped1131Item0Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.shipped1131Item1Title'), description: t('publicRoadmap.shipped1131Item1Desc') },
+        { icon: <Lock className="h-5 w-5" />, title: t('publicRoadmap.shipped1131Item2Title'), description: t('publicRoadmap.shipped1131Item2Desc') },
+      ],
+    },
+    {
       version: '1.13.0',
       date: 'September 6, 2026',
       title: t('publicRoadmap.shipped1130Title'),

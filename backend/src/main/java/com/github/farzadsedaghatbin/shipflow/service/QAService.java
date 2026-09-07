@@ -1253,7 +1253,9 @@ public class QAService {
     String[] words = cleaned.split("\\s+");
     for (String word : words) {
       // Strip surrounding punctuation so "intensive?" matches "intensive" (keeps internal hyphens).
-      word = word.replaceAll("^[^a-z0-9]+", "").replaceAll("[^a-z0-9]+$", "");
+      // \p{L}/\p{N} (Unicode letter/digit categories) rather than a-z0-9, so Persian/Arabic and
+      // other non-Latin-script words survive instead of being stripped down to an empty string.
+      word = word.replaceAll("^[^\\p{L}\\p{N}]+", "").replaceAll("[^\\p{L}\\p{N}]+$", "");
       if (word.length() >= 3 && !word.matches("\\d+")) {
         terms.add(word);
       }

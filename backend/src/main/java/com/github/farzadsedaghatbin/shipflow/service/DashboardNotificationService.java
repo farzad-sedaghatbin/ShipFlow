@@ -127,6 +127,22 @@ public class DashboardNotificationService {
     log.info("Created task assignment notification for user {} on task {}", assignee.getId(), task.getId());
   }
 
+  /**
+   * Create an in-app notification fired by a Workflow Automation rule
+   * (NOTIFY_ASSIGNEE / NOTIFY_PROJECT_MEMBERS action types).
+   */
+  public void notifyAutomationTriggered(User recipient, String automationName, String message, Task relatedTask) {
+    if (recipient == null) {
+      return;
+    }
+    String body = (message == null || message.isBlank())
+        ? String.format("Automation \"%s\" was triggered.", automationName)
+        : message;
+    createNotification(recipient, "AUTOMATION_TRIGGERED", automationName, body, "INFO",
+        relatedTask != null ? "/backlog/" + relatedTask.getId() : null,
+        relatedTask != null ? "TASK" : null, relatedTask != null ? relatedTask.getId() : null);
+  }
+
   /** Create notification when a user is mentioned in a comment */
   public void notifyCommentMention(User mentionedUser, User author, String entityType, Long entityId,
       String commentPreview) {

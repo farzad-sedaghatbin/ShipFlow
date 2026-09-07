@@ -136,8 +136,10 @@ public class TestCaseValidator {
 
     // Check if title and description are too similar
     if (testCase.getTitle() != null && testCase.getDescription() != null) {
-      String normalizedTitle = testCase.getTitle().toLowerCase().replaceAll("[^a-z0-9]", "");
-      String normalizedDesc = testCase.getDescription().toLowerCase().replaceAll("[^a-z0-9]", "");
+      // \p{L}/\p{N} (Unicode letter/digit) rather than a-z0-9, so non-Latin-script titles/
+      // descriptions (Persian, Arabic, etc.) don't both collapse to "" and false-positive as equal.
+      String normalizedTitle = testCase.getTitle().toLowerCase().replaceAll("[^\\p{L}\\p{N}]", "");
+      String normalizedDesc = testCase.getDescription().toLowerCase().replaceAll("[^\\p{L}\\p{N}]", "");
 
       if (normalizedTitle.equals(normalizedDesc)) {
         suggestions.add("Description should provide additional context beyond the title");
@@ -287,6 +289,6 @@ public class TestCaseValidator {
   private String normalizeScenario(String scenario) {
     if (scenario == null)
       return "";
-    return scenario.toLowerCase().replaceAll("[^a-z0-9]", "");
+    return scenario.toLowerCase().replaceAll("[^\\p{L}\\p{N}]", "");
   }
 }

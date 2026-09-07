@@ -191,6 +191,7 @@ public class QAController {
 
   /** Trigger a full knowledge reindex (admin only). */
   @PostMapping("/admin/reindex")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Reindex knowledge", description = "Trigger a full reindex of all knowledge items (admin only)")
   public ResponseEntity<Map<String, String>> reindexKnowledge(@AuthenticationPrincipal UserDetails userDetails) {
 
@@ -198,13 +199,13 @@ public class QAController {
       return ResponseEntity.badRequest().body(Map.of("error", "Q&A feature is not enabled"));
     }
 
-    // Note: In a real app, you'd check for admin role here
     knowledgeIngestionService.reindexAllKnowledge();
     return ResponseEntity.ok(Map.of("message", "Knowledge reindexing started"));
   }
 
   /** Process pending embeddings (admin only). */
   @PostMapping("/admin/process-pending")
+  @PreAuthorize("hasRole('ADMIN')")
   @Operation(summary = "Process pending embeddings", description = "Process any pending knowledge items that haven't been embedded yet (admin only)")
   public ResponseEntity<Map<String, Object>> processPending(@AuthenticationPrincipal UserDetails userDetails) {
 

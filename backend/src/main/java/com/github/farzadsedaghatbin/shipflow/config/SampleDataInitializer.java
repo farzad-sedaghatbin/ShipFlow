@@ -130,6 +130,11 @@ public class SampleDataInitializer implements CommandLineRunner {
     User aliUser = userRepository.findByUsername("ali").orElse(null);
     User minaUser = userRepository.findByUsername("mina").orElse(null);
 
+    // seedScrumDemoProjectIfAbsent() above deferred on a truly fresh DB (no users existed
+    // yet at that point) — now that the seed users exist, actually seed it. seedScrumDemoProject
+    // self-guards against a duplicate MAS project, so this is safe to call unconditionally.
+    seedScrumDemoProject(saraUser, aliPerson, minaPerson, saraPerson);
+
     // ── Projects ──────────────────────────────────────────────────────────────
     Project bankingProject =
         Project.builder()
