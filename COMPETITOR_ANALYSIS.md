@@ -56,7 +56,7 @@ ShipFlow targets teams that:
 | **Self-hosted** | ✅ | ❌ | ✅ (Data Center) | ❌ | ❌ | ❌ | ❌ |
 | **Helm chart + Prometheus/Grafana observability** | ✅ (v1.9.0) | ❌ | ✅ (Data Center) | ❌ | ❌ | ❌ | ❌ |
 | **Audit-trail export (CSV/JSON)** | ✅ (v1.9.0) | ❌ | ✅ (enterprise) | ❌ | ❌ | ❌ | Partial |
-| **Open source** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Source-available (ELv2)**⁷ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Free (self-hosted)** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **CSV import from Jira / Linear / Asana** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | **Direct Linear API import (OAuth2)** | ✅ (v1.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -75,8 +75,9 @@ ShipFlow targets teams that:
 ² Shortcut has cycles and stories but no pitch/betting/hill-chart workflow.
 ³ Linear has a "Triage" view for overdue issues but no proactive AI-computed insight panel with scope-creep detection or velocity trend analysis.
 ⁴ Jira and Confluence support S3 attachment storage in their Data Center editions but do not expose a UI-driven backend switcher or one-click migration.
-⁵ **MCP and embedded AI are no longer ShipFlow-only.** Linear (hosted MCP 2025 + MCP agents Apr 2026), Atlassian/Jira (Rovo MCP server + Agents in Jira, GA May 2026), and Asana (MCP + AI Teammates 2026) all shipped these. The ✅/❌ marks on the AI rows above reflect *specific* ShipFlow features (e.g. Shape Up–aware risk scoring, pitch writer); competitors now have their own AI suites (Rovo, Work Graph, AI Studio) — but **all are cloud-only and paid (per-seat or metered AI credits).** ShipFlow's structural, un-copyable edge is the combination: native Shape Up + self-hosted/open-source + **private, air-gapped AI (Ollama) with zero data egress.** See §4 for the full re-benchmark.
+⁵ **MCP and embedded AI are no longer ShipFlow-only.** Linear (hosted MCP 2025 + MCP agents Apr 2026), Atlassian/Jira (Rovo MCP server + Agents in Jira, GA May 2026), and Asana (MCP + AI Teammates 2026) all shipped these. The ✅/❌ marks on the AI rows above reflect *specific* ShipFlow features (e.g. Shape Up–aware risk scoring, pitch writer); competitors now have their own AI suites (Rovo, Work Graph, AI Studio) — but **all are cloud-only and paid (per-seat or metered AI credits).** ShipFlow's structural, un-copyable edge is the combination: native Shape Up + self-hosted/source-available + **private, air-gapped AI (Ollama) with zero data egress.** See §4 for the full re-benchmark.
 ⁶ Linear and Jira ship native/Electron desktop and mobile apps with some offline read caching, but neither is an installable browser-based PWA with Workbox-style background-sync for offline writes — ShipFlow's works from any browser with no app-store install.
+⁷ Licensed under the [Elastic License 2.0](LICENSE) (ELv2), not a traditional OSI "open source" license — free to use, modify, and self-host (including internal commercial use), but reselling ShipFlow as a hosted/managed service or circumventing license-key-protected functionality requires a commercial license. See [Licensing](COMMERCIAL_LICENSE.md). Releases up to and including v1.13.1 remain MIT-licensed.
 
 ---
 
@@ -90,7 +91,7 @@ ShipFlow targets teams that:
 - The only tool with a complete Shape Up workflow (pitches, betting, hill charts, circuit breaker)
 - **Workflow Automations with Shape Up–aware triggers** — Linear's automation triggers are generic; ShipFlow uniquely fires on hill chart movement, appetite exceeded, scope creep detected, and betting table locked
 - Self-hosted, open MCP server — Linear shipped a hosted MCP server (2025) and native MCP agent support (April 2026), but both are SaaS-only; ShipFlow's MCP server runs on your own infrastructure
-- Self-hosted / open source — Linear is SaaS-only
+- Self-hosted / source-available (ELv2) — Linear is SaaS-only
 - Pluggable AI stack — Ollama for local/private deployments, OpenAI for production
 - RTL support (Persian, Arabic)
 - No per-seat cost when self-hosted
@@ -110,7 +111,7 @@ ShipFlow targets teams that:
 - Self-hosted, open MCP server — Atlassian shipped the Rovo MCP server and Agents in Jira (GA at Team '26, May 2026), but they require the Jira + Confluence + Bitbucket cloud suite and metered AI credits; ShipFlow's MCP server is standalone, self-hostable, and free
 - AI features built-in (no plugins needed): RAG Q&A, technical solution generator, test generation, risk scoring
 - Multi-layer caching for snappy performance (Jira is notoriously slow at scale)
-- Open source (auditable, no license cost)
+- Source-available under the Elastic License 2.0 (auditable, free to self-host)
 - Significantly simpler to self-host
 
 **Who should use Jira**: Large enterprises with existing Jira ecosystems, compliance requirements, and dedicated Jira admins.
@@ -134,7 +135,7 @@ Both are general-purpose work management tools with strong project templates and
 
 Basecamp invented Shape Up but their own product does not implement the methodology's structured workflow (no formal hill charts, no betting table, no pitch lifecycle).
 
-**ShipFlow wins**: Full Shape Up implementation, AI features, MCP server, open source, free self-hosted.
+**ShipFlow wins**: Full Shape Up implementation, AI features, MCP server, source-available, free self-hosted.
 **Basecamp wins**: Simplicity, client communication features, non-technical user adoption, established brand.
 
 ---
@@ -165,7 +166,7 @@ ShipFlow implements the [Model Context Protocol](https://modelcontextprotocol.io
 
 ### Positioning takeaway
 
-Don't sell "we have MCP" — that race is over. Sell **"the only self-hostable, open-source, Shape Up–native PM tool with fully-private, air-gapped AI."** That is the corner of the market the cloud majors cannot enter, and it's where the roadmap (see [ROADMAP.md](./ROADMAP.md) — v1.15.0 "ShipFlow Agent" ships the air-gapped answer to Linear Agent/Rovo/AI Teammates, then v1.19.0 completes MCP-server hardening with OAuth 2.0) is deliberately deepening.
+Don't sell "we have MCP" — that race is over. Sell **"the only self-hostable, source-available, Shape Up–native PM tool with fully-private, air-gapped AI."** That is the corner of the market the cloud majors cannot enter, and it's where the roadmap (see [ROADMAP.md](./ROADMAP.md) — v1.15.0 "ShipFlow Agent" ships the air-gapped answer to Linear Agent/Rovo/AI Teammates, then v1.19.0 completes MCP-server hardening with OAuth 2.0) is deliberately deepening.
 
 ---
 
@@ -179,7 +180,7 @@ ShipFlow's Knowledge Center gives teams a single place to upload docs and paste 
 | Paste URLs as live AI knowledge sources | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Org / Team / Project scope for every source | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Single corpus reused across Q&A, test gen, Wise Architecture, risk | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Pluggable provider SPI (open source, extend in-tree) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Pluggable provider SPI (source-available, extend in-tree) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Citation chips link AI answers back to the source | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ¹ Confluence indexes pages for Atlassian Intelligence search, but the corpus is not exposed as a unified knowledge layer to other AI features (Jira AI, Compass, Rovo each maintain separate indexes).
@@ -190,7 +191,7 @@ ShipFlow's Knowledge Center gives teams a single place to upload docs and paste 
 
 ## 5. Pricing Comparison
 
-| Tool | Self-hosted | OSS | Free tier | Typical team cost |
+| Tool | Self-hosted | Source-avail.¹ | Free tier | Typical team cost |
 |------|:-----------:|:---:|:---------:|-------------------|
 | ShipFlow | ✅ | ✅ | ✅ (unlimited) | $0 (self-hosted) |
 | Linear | ❌ | ❌ | ✅ (limited) | ~$8/user/month |
@@ -199,6 +200,8 @@ ShipFlow's Knowledge Center gives teams a single place to upload docs and paste 
 | Monday.com | ❌ | ❌ | ❌ | ~$9–$19/user/month |
 | Basecamp | ❌ | ❌ | ❌ | $15/user or $299/month flat |
 | Shortcut | ❌ | ❌ | ✅ (10 users) | ~$8.50/user/month |
+
+¹ ShipFlow is licensed under the [Elastic License 2.0](LICENSE), not a traditional OSI "open source" license — free to use, modify, and self-host, but reselling it as a hosted/managed service requires a commercial license. See [Licensing](COMMERCIAL_LICENSE.md).
 
 ShipFlow's self-hosted model gives unlimited users at infrastructure cost only.
 
@@ -223,7 +226,7 @@ ShipFlow is the right choice when:
 
 1. Your team practices or wants to practice **Shape Up**
 2. You want **AI features that developers actually use** — in the editor, not buried in a settings page
-3. You need **self-hosted / open source** with full data ownership and no per-seat cost
+3. You need **self-hosted / source-available** with full data ownership and no per-seat cost
 4. You value **pluggability** — swap LLM providers, vector stores, VCS providers, and notification channels without code changes
 
 > See the full feature list in [README.md](README.md) and the release history in [CHANGELOG.md](CHANGELOG.md).

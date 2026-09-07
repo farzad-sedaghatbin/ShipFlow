@@ -47,27 +47,27 @@ export default function Landing() {
   const { isAuthenticated, isLoading } = useAuth();
 
   useSeo({
-    title: 'ShipFlow — Open-Source Project Management (Shape Up, Kanban, Scrum)',
+    title: 'ShipFlow — Self-Hosted Project Management (Shape Up, Kanban, Scrum)',
     exactTitle: true,
-    // 153 chars — Google truncates around 160, and the truncated tail is where
+    // 155 chars — Google truncates around 160, and the truncated tail is where
     // the "Scrum and Kanban too" reassurance lives, so it has to fit.
     description:
-      'Open-source project management for Shape Up, Scrum, and Kanban in one workspace. Hill charts, betting tables, six-week cycles. Free and self-hostable.',
+      'Source-available project management for Shape Up, Scrum, and Kanban in one workspace. Hill charts, betting tables, six-week cycles. Free and self-hostable.',
     path: '/',
     // Shape Up terms lead because they are the winnable ground — low
     // competition and exact intent match. The Scrum/Kanban entries are
-    // deliberately the open-source/self-hosted long tail, not the head terms
-    // ("scrum software", "kanban board"), which are unwinnable against Jira,
-    // Trello and monday.com. See SEO_GUIDE.md.
+    // deliberately the source-available/self-hosted long tail, not the head
+    // terms ("scrum software", "kanban board"), which are unwinnable against
+    // Jira, Trello and monday.com. See SEO_GUIDE.md.
     keywords: [
       'shape up software',
       'shape up methodology',
       'shape up project management',
       'hill chart',
       'betting table',
-      'open source project management',
+      'source available project management',
       'self-hosted project management',
-      'open source scrum tool',
+      'source available scrum tool',
       'self-hosted kanban board',
       'shape up scrum kanban',
     ],
@@ -82,14 +82,14 @@ export default function Landing() {
         url: SITE_URL,
         image: DEFAULT_OG_IMAGE,
         description:
-          'Open-source, methodology-agnostic project management. Runs Shape Up, Scrum, and Kanban projects side by side in one workspace, with hill charts, betting tables, sprints, and AI-assisted planning. Self-hostable.',
-        license: 'https://opensource.org/licenses/MIT',
+          'Source-available, methodology-agnostic project management. Runs Shape Up, Scrum, and Kanban projects side by side in one workspace, with hill charts, betting tables, sprints, and AI-assisted planning. Self-hostable.',
+        license: 'https://www.elastic.co/licensing/elastic-license',
         isAccessibleForFree: true,
         offers: {
           '@type': 'Offer',
           price: '0',
           priceCurrency: 'USD',
-          description: 'Free and open source. Self-host with Docker or Kubernetes.',
+          description: 'Free and source-available. Self-host with Docker or Kubernetes.',
         },
         featureList: [
           'Shape Up cycles, betting table, and appetite budgeting',
@@ -117,7 +117,7 @@ export default function Landing() {
         url: SITE_URL,
         inLanguage: 'en',
         description:
-          'Open-source project management for Shape Up, Scrum, and Kanban. Self-hostable and free.',
+          'Source-available project management for Shape Up, Scrum, and Kanban. Self-hostable and free.',
       },
     ],
   });
@@ -584,7 +584,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Open Source Section */}
+      {/* Source-Available Section */}
       <section className="py-16 md:py-24">
         <div className="container mx-auto px-4 max-w-6xl">
           <Card className="bg-gradient-to-br from-primary/5 to-secondary/10 border-primary/10">

@@ -15,6 +15,7 @@ public class OpenApiConfig {
     return new OpenAPI().info(new Info().title("ShipFlow API")
         .description("REST API for Shape Up methodology analytics and tracking").version("1.0.0")
         .contact(new Contact().name("Farzad Sedaghatbin").url("https://github.com/farzad-sedaghatbin/ShipFlow"))
-        .license(new License().name("MIT License").url("https://opensource.org/licenses/MIT")));
+        .license(new License().name("Elastic License 2.0")
+            .url("https://www.elastic.co/licensing/elastic-license")));
   }
 }

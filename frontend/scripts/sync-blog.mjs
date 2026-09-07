@@ -5,7 +5,7 @@
  *
  * WHY THIS EXISTS
  * ---------------
- * Published blog posts live in a private repo, not this open-source one, so a
+ * Published blog posts live in a private repo, not this public one, so a
  * merged pull request here cannot publish an article on shipflow.dev.
  *
  * The GitHub Actions image build (`.github/workflows/docker.yml`) already does

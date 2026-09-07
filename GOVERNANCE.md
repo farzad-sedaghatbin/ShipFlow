@@ -4,7 +4,7 @@
 
 ShipFlow is actively maintained by a **sole maintainer** ([@farzad-sedaghatbin](https://github.com/farzad-sedaghatbin)).
 
-The project is open source under the [MIT License](LICENSE). Contributions are welcome and encouraged.
+The project is public and source-available under the [Elastic License 2.0](LICENSE) (ELv2) — see [Licensing](COMMERCIAL_LICENSE.md). Releases up to and including v1.13.1 remain under the [MIT License](LICENSE-MIT). Contributions are welcome and encouraged.
 
 ## Decision Making
 
@@ -34,7 +34,7 @@ Consistent, high-quality contributors may be invited as maintainers over time.
 
 ## Response Time Expectations
 
-This is a best-effort open-source project maintained in personal time. There are **no SLA commitments**.
+This is a best-effort, source-available project maintained in personal time. There are **no SLA commitments**.
 
 | Activity | Typical response |
 |----------|-----------------|

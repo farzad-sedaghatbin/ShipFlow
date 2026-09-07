@@ -4,7 +4,7 @@ layout: home
 hero:
   name: ShipFlow
   text: Methodology-Agnostic Project Management
-  tagline: Shape Up, Kanban, and AI-native features — self-hosted and open source.
+  tagline: Shape Up, Kanban, and AI-native features — self-hosted and source-available.
   actions:
     - theme: brand
       text: Get Started
@@ -16,7 +16,7 @@ hero:
 features:
   - icon: 🏔️
     title: Shape Up Workflow
-    details: Full Shape Up lifecycle — pitch board, betting table, hill charts, circuit breaker, and cooldown. The only faithful open-source implementation.
+    details: Full Shape Up lifecycle — pitch board, betting table, hill charts, circuit breaker, and cooldown. The only faithful source-available implementation.
   - icon: 📋
     title: Kanban Mode
     details: Classic Kanban board with 7 columns, drag-and-drop, and column toggle. Switch modes per project.

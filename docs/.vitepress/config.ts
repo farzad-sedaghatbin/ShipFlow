@@ -74,7 +74,7 @@ export default defineConfig({
     ],
 
     footer: {
-      message: 'Released under the MIT License.',
+      message: 'Released under the Elastic License 2.0. Versions up to v1.13.1 remain MIT-licensed.',
       copyright: 'Copyright © 2026 ShipFlow Contributors',
     },
 

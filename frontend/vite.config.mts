@@ -21,7 +21,7 @@ export default defineConfig({
         name: 'ShipFlow — Project Management',
         short_name: 'ShipFlow',
         description:
-          'Open-source, AI-native project management platform supporting Shape Up, Kanban, and Scrum in one workspace.',
+          'Source-available, AI-native project management platform supporting Shape Up, Kanban, and Scrum in one workspace.',
         theme_color: '#1976d2',
         background_color: '#ffffff',
         display: 'standalone',

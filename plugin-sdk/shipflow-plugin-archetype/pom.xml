@@ -28,6 +28,20 @@
     regular Maven dependency; see the "Deployment" section of that README).
   </description>
 
+  <licenses>
+    <license>
+      <name>Elastic License 2.0</name>
+      <url>https://www.elastic.co/licensing/elastic-license</url>
+      <distribution>repo</distribution>
+      <comments>
+        This license covers the archetype module itself (this build), not the project it
+        generates — the generated pom.xml (archetype-resources/pom.xml) is a scaffold for your
+        own, separately-licensed plugin project. Releases up to and including v1.13.1 remain
+        available under the MIT License; see LICENSE-MIT in the repository root.
+      </comments>
+    </license>
+  </licenses>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

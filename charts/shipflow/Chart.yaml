@@ -11,6 +11,8 @@ sources:
   - https://github.com/farzad-sedaghatbin/shipflow
 maintainers:
   - name: Farzad Sedaghatbin
+annotations:
+  licenses: Elastic-2.0
 keywords:
   - shape-up
   - project-management

@@ -26,6 +26,17 @@
     dependency on the other two modules — build/verify it independently, see plugin-sdk/README.md.
   </description>
 
+  <licenses>
+    <license>
+      <name>Elastic License 2.0</name>
+      <url>https://www.elastic.co/licensing/elastic-license</url>
+      <distribution>repo</distribution>
+      <comments>
+        Releases up to and including v1.13.1 remain available under the MIT License; see LICENSE-MIT.
+      </comments>
+    </license>
+  </licenses>
+
   <modules>
     <module>plugin-sdk/shipflow-plugin-api</module>
     <module>backend</module>
