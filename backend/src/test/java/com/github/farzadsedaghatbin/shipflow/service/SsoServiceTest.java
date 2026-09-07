@@ -17,9 +17,13 @@ import com.github.farzadsedaghatbin.shipflow.entity.ProviderType;
 import com.github.farzadsedaghatbin.shipflow.entity.ProvisionedVia;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
+import com.github.farzadsedaghatbin.shipflow.license.SeatLimitExceededException;
 import com.github.farzadsedaghatbin.shipflow.repository.IdentityProviderRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.security.JwtTokenProvider;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +32,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -51,6 +56,7 @@ class SsoServiceTest {
   @Mock private JwtTokenProvider jwtTokenProvider;
   @Mock private RestTemplate restTemplate;
   @Mock private PasswordEncoder passwordEncoder;
+  @Mock private LicenseLimits licenseLimits;
   @Mock private StringRedisTemplate stringRedisTemplate;
   @Mock private ValueOperations<String, String> valueOperations;
 
@@ -59,6 +65,9 @@ class SsoServiceTest {
   @BeforeEach
   void setUp() {
     when(stringRedisTemplate.opsForValue()).thenReturn(valueOperations);
+    // Default: plenty of seats, so existing tests unrelated to licensing are unaffected. Tests
+    // that exercise the seat cap itself stub this to throw SeatLimitExceededException instead.
+    lenient().doNothing().when(licenseLimits).assertSeatAvailable(anyLong());
 
     service = new SsoService(
         identityProviderRepository,
@@ -67,6 +76,7 @@ class SsoServiceTest {
         restTemplate,
         new ObjectMapper(),
         passwordEncoder,
+        licenseLimits,
         Optional.of(stringRedisTemplate));
 
     ReflectionTestUtils.setField(service, "frontendUrl", "http://localhost:3000");
@@ -289,6 +299,60 @@ class SsoServiceTest {
   }
 
   // =========================================================================
+  // handleSamlCallback — first-login seat cap (v1.14.0)
+  // =========================================================================
+  //
+  // Driven through the public handleSamlCallback() entry point (not the private
+  // findOrCreateSsoUser() it delegates to) so these tests exercise the same "a real SSO
+  // login fails" behaviour a bypassed seat cap would previously have let through silently.
+
+  @Nested
+  @DisplayName("handleSamlCallback() — seat cap")
+  class HandleSamlCallbackSeatCap {
+
+    @Test
+    @DisplayName("cap reached: login fails with SeatLimitExceededException and no user is created")
+    void atSeatCap_ThrowsAndDoesNotCreateUser() {
+      IdentityProvider idp = buildIdp(7L, "ADFS", ProviderType.SAML2, true);
+      when(identityProviderRepository.findByIdAndIsEnabledTrue(7L)).thenReturn(Optional.of(idp));
+      String nameId = "newuser@example.com";
+      when(userRepository.findByExternalUserIdAndIdentityProviderId(nameId, 7L)).thenReturn(Optional.empty());
+      when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+      doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
+
+      String samlResponse = encodeSamlResponse(nameId);
+
+      assertThatThrownBy(() -> service.handleSamlCallback(samlResponse, "7"))
+          .isInstanceOf(SeatLimitExceededException.class);
+
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("seat available: provisions the user and returns a JWT, same as before")
+    void belowSeatCap_CreatesUserAsBefore() {
+      IdentityProvider idp = buildIdp(8L, "ADFS", ProviderType.SAML2, true);
+      when(identityProviderRepository.findByIdAndIsEnabledTrue(8L)).thenReturn(Optional.of(idp));
+      String nameId = "roomy@example.com";
+      when(userRepository.findByExternalUserIdAndIdentityProviderId(nameId, 8L)).thenReturn(Optional.empty());
+      when(userRepository.existsByUsername(any())).thenReturn(false);
+      when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+      when(jwtTokenProvider.generateTokenFromUsername(any())).thenReturn("jwt-token-xyz");
+      // licenseLimits default (setUp) already allows — seat is available.
+
+      String samlResponse = encodeSamlResponse(nameId);
+
+      String token = service.handleSamlCallback(samlResponse, "8");
+
+      assertThat(token).isEqualTo("jwt-token-xyz");
+      ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+      verify(userRepository).save(userCaptor.capture());
+      assertThat(userCaptor.getValue().getIsActive()).isTrue();
+      assertThat(userCaptor.getValue().getExternalUserId()).isEqualTo(nameId);
+    }
+  }
+
+  // =========================================================================
   // helpers
   // =========================================================================
 
@@ -300,5 +364,14 @@ class SsoServiceTest {
         .isEnabled(enabled)
         .enforceSso(false)
         .build();
+  }
+
+  /** Base64-encodes a minimal SAML2 Response XML carrying the given NameID — see extractSamlNameId(). */
+  private static String encodeSamlResponse(String nameId) {
+    String xml = "<samlp:Response xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" "
+        + "xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">"
+        + "<saml:Assertion><saml:Subject><saml:NameID>" + nameId + "</saml:NameID>"
+        + "</saml:Subject></saml:Assertion></samlp:Response>";
+    return Base64.getEncoder().encodeToString(xml.getBytes(StandardCharsets.UTF_8));
   }
 }

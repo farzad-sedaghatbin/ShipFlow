@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.ScimAuditLog;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.UserRole;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
+import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
 import com.github.farzadsedaghatbin.shipflow.repository.OrganizationSettingsRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ScimAuditLogRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
@@ -45,6 +46,7 @@ public class ScimService {
   private final ScimAuditLogRepository auditLogRepository;
   private final OrganizationSettingsService orgSettingsService;
   private final PasswordEncoder passwordEncoder;
+  private final LicenseLimits licenseLimits;
 
   // ── Token validation ───────────────────────────────────────────────────────
 
@@ -118,12 +120,20 @@ public class ScimService {
       throw conflict("A user with userName '" + username + "' already exists");
     }
 
+    // Only an active SCIM-provisioned user consumes a seat — enforce the same seat cap
+    // UserService enforces on every other user-creation path before doing any work. See
+    // LicenseLimits class Javadoc for Community vs licensed caps.
+    boolean active = scimUser.isActive();
+    if (active) {
+      licenseLimits.assertSeatAvailable(userRepository.countByIsActiveTrueAndDeletedAtIsNull());
+    }
+
     User user = User.builder()
         .username(username)
         .email(resolveEmail(scimUser))
         .password(passwordEncoder.encode(generateRandomPassword()))
         .role(UserRole.MEMBER)
-        .isActive(scimUser.isActive())
+        .isActive(active)
         .provisionedVia(ProvisionedVia.SCIM)
         .externalUserId(scimUser.getExternalId())
         .build();
@@ -189,6 +199,13 @@ public class ScimService {
         Object activeVal = valueMap.get("active");
         if (activeVal != null) {
           boolean newActive = parseBoolean(activeVal);
+          // Only a false->true transition reactivates a user and consumes a seat — an
+          // already-active user being (redundantly) patched active=true must stay a no-op,
+          // not a spurious 409, matching UserService#activate's same carve-out.
+          boolean wasActive = Boolean.TRUE.equals(user.getIsActive());
+          if (newActive && !wasActive) {
+            licenseLimits.assertSeatAvailable(userRepository.countByIsActiveTrueAndDeletedAtIsNull());
+          }
           user.setIsActive(newActive);
           if (!newActive) {
             user.setDeletedAt(LocalDateTime.now());

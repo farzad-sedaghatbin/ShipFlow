@@ -86,8 +86,8 @@ class UserServiceTest {
     lenient().when(passwordEncoder.encode(any())).thenReturn("encoded-password");
     lenient().when(userRepository.existsByUsername(any())).thenReturn(false);
     // Default: plenty of seats, so existing tests unrelated to licensing are unaffected. Tests
-    // that exercise the seat cap itself override this and/or countByIsActiveTrueAndDeletedAtIsNull.
-    lenient().when(licenseLimits.activeUserCap()).thenReturn(Integer.MAX_VALUE);
+    // that exercise the seat cap itself stub this to throw SeatLimitExceededException instead.
+    lenient().doNothing().when(licenseLimits).assertSeatAvailable(anyLong());
     lenient().when(userRepository.save(any(User.class))).thenAnswer(inv -> {
       User u = inv.getArgument(0);
       if (u.getId() == null) {
@@ -392,8 +392,8 @@ class UserServiceTest {
 
   @Test
   void createUser_AtSeatCap_ThrowsSeatLimitExceededException() {
-    when(licenseLimits.activeUserCap()).thenReturn(10);
     when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+    doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
 
     RegisterRequest request = new RegisterRequest();
     request.setUsername("overtheline");
@@ -408,7 +408,6 @@ class UserServiceTest {
 
   @Test
   void createUser_BelowSeatCap_Succeeds() {
-    when(licenseLimits.activeUserCap()).thenReturn(10);
     when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(9L);
 
     RegisterRequest request = new RegisterRequest();
@@ -426,8 +425,8 @@ class UserServiceTest {
   void activate_WhenTransitioningToActive_AtSeatCap_ThrowsSeatLimitExceededException() {
     User inactiveUser = User.builder().id(5L).username("dormant").role(UserRole.MEMBER).isActive(false).build();
     when(userRepository.findById(5L)).thenReturn(Optional.of(inactiveUser));
-    when(licenseLimits.activeUserCap()).thenReturn(10);
     when(userRepository.countByIsActiveTrueAndDeletedAtIsNull()).thenReturn(10L);
+    doThrow(new SeatLimitExceededException(10)).when(licenseLimits).assertSeatAvailable(10L);
 
     assertThatThrownBy(() -> userService.activate(5L)).isInstanceOf(SeatLimitExceededException.class);
 
@@ -443,7 +442,7 @@ class UserServiceTest {
     UserDTO result = userService.activate(6L);
 
     assertThat(result.getIsActive()).isTrue();
-    verify(licenseLimits, never()).activeUserCap();
+    verify(licenseLimits, never()).assertSeatAvailable(anyLong());
   }
 
   @Test

@@ -12,7 +12,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
 import com.github.farzadsedaghatbin.shipflow.exception.RegistrationDisabledException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.license.LicenseLimits;
-import com.github.farzadsedaghatbin.shipflow.license.SeatLimitExceededException;
 import com.github.farzadsedaghatbin.shipflow.repository.NotificationUserMappingRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PasswordResetTokenRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
@@ -367,15 +366,15 @@ public class UserService {
   }
 
   /**
-   * Throws {@link SeatLimitExceededException} when the active-user count is already at (or past)
-   * {@link LicenseLimits#activeUserCap()}. Never deactivates anyone — callers must check this
-   * BEFORE flipping a user active, never react to it by deactivating someone else.
+   * Throws {@code SeatLimitExceededException} when the active-user count is already at (or past)
+   * {@link LicenseLimits#activeUserCap()}. Delegates to {@link
+   * LicenseLimits#assertSeatAvailable(long)} — the single shared assertion also used by {@code
+   * SsoService} and {@code ScimService} — rather than re-implementing the comparison here. Never
+   * deactivates anyone — callers must check this BEFORE flipping a user active, never react to it
+   * by deactivating someone else.
    */
   private void assertSeatAvailable() {
-    int cap = licenseLimits.activeUserCap();
-    if (userRepository.countByIsActiveTrueAndDeletedAtIsNull() >= cap) {
-      throw new SeatLimitExceededException(cap);
-    }
+    licenseLimits.assertSeatAvailable(userRepository.countByIsActiveTrueAndDeletedAtIsNull());
   }
 
   /** Current active, non-deleted user count — used by the licence status endpoint. */

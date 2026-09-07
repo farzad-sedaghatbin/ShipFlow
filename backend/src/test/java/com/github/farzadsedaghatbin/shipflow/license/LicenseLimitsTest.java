@@ -1,6 +1,8 @@
 package com.github.farzadsedaghatbin.shipflow.license;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
@@ -68,5 +70,33 @@ class LicenseLimitsTest {
   @Test
   void enabledAutomationCap_ReturnsCommunityConstant() {
     assertThat(licenseLimits.enabledAutomationCap()).isEqualTo(LicenseLimits.COMMUNITY_AUTOMATION_CAP);
+  }
+
+  // ── assertSeatAvailable(long) — shared by UserService/SsoService/ScimService (v1.14.0) ──────
+
+  @Test
+  void assertSeatAvailable_BelowCap_DoesNotThrow() {
+    when(licenseService.getStatus()).thenReturn(LicenseStatus.MISSING);
+
+    assertThatCode(() -> licenseLimits.assertSeatAvailable(9L)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void assertSeatAvailable_AtCap_ThrowsWithTheCapAsLimit() {
+    when(licenseService.getStatus()).thenReturn(LicenseStatus.MISSING);
+
+    assertThatThrownBy(() -> licenseLimits.assertSeatAvailable(LicenseLimits.COMMUNITY_USER_SEAT_CAP))
+        .isInstanceOf(SeatLimitExceededException.class)
+        .extracting(ex -> ((SeatLimitExceededException) ex).getLimit())
+        .isEqualTo(LicenseLimits.COMMUNITY_USER_SEAT_CAP);
+  }
+
+  @Test
+  void assertSeatAvailable_PastCap_Throws() {
+    when(licenseService.getStatus()).thenReturn(LicenseStatus.VALID);
+    when(licenseService.seatLimit()).thenReturn(10); // cap = floor(10 * 1.1) = 11
+
+    assertThatThrownBy(() -> licenseLimits.assertSeatAvailable(11L))
+        .isInstanceOf(SeatLimitExceededException.class);
   }
 }

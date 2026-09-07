@@ -5,7 +5,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Translates the current licence status ({@link LicenseService}) into the limits {@code
- * UserService} and {@code WorkflowAutomationService} enforce.
+ * UserService}, {@code SsoService}, {@code ScimService}, and {@code WorkflowAutomationService}
+ * enforce.
  *
  * <ul>
  *   <li>MISSING/EXPIRED (Community Edition): {@value #COMMUNITY_USER_SEAT_CAP} active users,
@@ -40,6 +41,22 @@ public class LicenseLimits {
       return (int) Math.floor(licenseService.seatLimit() * LICENSED_SEAT_BUFFER);
     }
     return COMMUNITY_USER_SEAT_CAP;
+  }
+
+  /**
+   * Throws {@link SeatLimitExceededException} when {@code currentActiveUserCount} is already at
+   * (or past) {@link #activeUserCap()}. The single shared seat-cap assertion for every path that
+   * creates a new active user or reactivates an inactive one — {@code UserService} (registration
+   * / admin-created users, reactivation via {@code activate}), {@code SsoService} (first-login
+   * SAML2/OIDC provisioning), and {@code ScimService} (SCIM user creation and PATCH-driven
+   * reactivation). Callers must check this BEFORE flipping a user active, never react to it by
+   * deactivating someone else.
+   */
+  public void assertSeatAvailable(long currentActiveUserCount) {
+    int cap = activeUserCap();
+    if (currentActiveUserCount >= cap) {
+      throw new SeatLimitExceededException(cap);
+    }
   }
 
   /** Whether there is currently no cap on enabled workflow automation rules. */
