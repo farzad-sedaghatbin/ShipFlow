@@ -20,6 +20,19 @@
     and "what the backend actually loads".
   </description>
 
+  <licenses>
+    <license>
+      <name>Elastic License 2.0</name>
+      <url>https://www.elastic.co/licensing/elastic-license</url>
+      <distribution>repo</distribution>
+      <comments>
+        Releases up to and including v1.13.1 remain available under the MIT License; see LICENSE-MIT
+        in the repository root. See plugin-sdk/README.md — depending on this SPI to write your own
+        plugin does not require licensing your plugin's own code under ELv2.
+      </comments>
+    </license>
+  </licenses>
+
   <!-- Deliberately standalone (no parent) — this module must be buildable and distributable on
        its own, independent of ShipFlow's Spring Boot backend build. It has zero runtime
        dependencies: the SPI interfaces only reference java.util types. -->

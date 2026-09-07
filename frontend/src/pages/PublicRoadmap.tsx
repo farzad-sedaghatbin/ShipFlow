@@ -79,9 +79,9 @@ export default function PublicRoadmap() {
   useSeo({
     title: 'Public Roadmap',
     description:
-      'What ships next in ShipFlow — the open-source Shape Up, Scrum and Kanban platform. Current milestone, planned features, and recently shipped releases.',
+      'What ships next in ShipFlow — the source-available Shape Up, Scrum and Kanban platform. Current milestone, planned features, and recently shipped releases.',
     path: '/public-roadmap',
-    keywords: ['shipflow roadmap', 'open source project management roadmap'],
+    keywords: ['shipflow roadmap', 'source available project management roadmap'],
     jsonLd: breadcrumbSchema([
       { name: 'Home', path: '/' },
       { name: 'Roadmap', path: '/public-roadmap' },
@@ -673,7 +673,7 @@ export default function PublicRoadmap() {
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} ShipFlow. Open source under MIT License.
+              © {new Date().getFullYear()} ShipFlow. Source-available under the Elastic License 2.0.
             </p>
             <Button variant="link" onClick={() => navigate('/')} className="text-sm">
               {t('releaseNotes.backToHome')}

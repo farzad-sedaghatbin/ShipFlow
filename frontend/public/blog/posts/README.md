@@ -3,7 +3,7 @@
 **The canonical source for published blog posts is a private repository, not
 this one.**
 
-Posts are kept private so that a merged pull request against this open-source
+Posts are kept private so that a merged pull request against this public
 repo cannot publish an article on shipflow.dev. Editorial control over what
 appears on the live site stays with the maintainer.
 

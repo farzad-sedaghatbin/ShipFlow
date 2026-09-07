@@ -2,6 +2,16 @@
 
 Extend ShipFlow with custom risk calculators, report generators, and integration providers.
 
+> **Licensing**: `shipflow-plugin-api` and `shipflow-plugin-archetype` are
+> distributed under the same license as the rest of ShipFlow — see the root
+> [`LICENSE`](../LICENSE) (Elastic License 2.0) and [`COMMERCIAL_LICENSE.md`](../COMMERCIAL_LICENSE.md).
+> Writing and running your own plugin against these SPI interfaces is free,
+> including for internal commercial use; **your own plugin code is yours** —
+> nothing here requires you to license a plugin you write under ELv2. The
+> generated archetype output (`shipflow-plugin-archetype/src/main/resources/archetype-resources/`)
+> and `sample-plugin/` are scaffolding/reference code for **your own** plugin
+> project and carry no ShipFlow license header for that reason.
+
 > **How plugins actually run**: ShipFlow plugins are ordinary Spring beans **compiled into the
 > backend build** — there is no dynamic runtime JAR loading (no `plugins/` directory that gets
 > scanned, no classloader magic). Writing a plugin means: generate a project from the archetype

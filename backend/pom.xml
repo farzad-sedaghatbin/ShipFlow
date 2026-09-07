@@ -17,6 +17,17 @@
     <name>ShipFlow</name>
     <description>ShipFlow - Shape Up methodology analytics tool</description>
 
+    <licenses>
+        <license>
+            <name>Elastic License 2.0</name>
+            <url>https://www.elastic.co/licensing/elastic-license</url>
+            <distribution>repo</distribution>
+            <comments>
+                Releases up to and including v1.13.1 remain available under the MIT License; see LICENSE-MIT.
+            </comments>
+        </license>
+    </licenses>
+
     <properties>
         <java.version>21</java.version>
     </properties>

@@ -30,6 +30,7 @@ RUN mvn clean package -DskipTests -B
 
 # Runtime stage (glibc-based for onnxruntime)
 FROM eclipse-temurin:21.0.12_8-jre-jammy
+LABEL org.opencontainers.image.licenses="Elastic-2.0"
 WORKDIR /app
 
 # Install runtime deps needed by onnxruntime-java (and healthcheck tool)
