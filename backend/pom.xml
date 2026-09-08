@@ -383,7 +383,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
+            <version>1.23.2</version>
         </dependency>
 
         <!-- web-push — RFC 8291 payload encryption + RFC 8292 VAPID signing for Web Push
