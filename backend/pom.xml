@@ -418,7 +418,7 @@
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
-            <version>0.7.9</version>
+            <version>0.9.6</version>
         </dependency>
 
         <!-- webauthn4j — WebAuthn/FIDO2 passkey registration + authentication verification (S59, v1.11.0) -->
