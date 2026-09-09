@@ -20,6 +20,7 @@ import { releaseService } from '../services/releaseService';
 import { pitchService } from '../services/pitchService';
 import { Release, ReleaseStatus, Pitch, ReleaseProgress } from '../types';
 import { useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -71,6 +72,7 @@ export default function ReleaseDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/releases-management');
   const { showSuccess, showError } = useToast();
   const [release, setRelease] = useState<Release | null>(null);
   const [progress, setProgress] = useState<ReleaseProgress | null>(null);
@@ -171,7 +173,7 @@ export default function ReleaseDetailPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Back button */}
-      <Button variant="ghost" onClick={() => navigate('/releases-management')}>
+      <Button variant="ghost" onClick={() => goBack()}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         {t('releases.backToList')}
       </Button>

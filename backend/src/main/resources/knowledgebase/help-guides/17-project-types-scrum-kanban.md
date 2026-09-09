@@ -53,9 +53,10 @@ Open **Sprint Planning** from the sidebar (Scrum projects only). It's a two-colu
 2. The **Product Backlog** (left) lists unassigned tasks; the **Sprint Backlog** (right) lists tasks in the chosen sprint. Each column shows its total story points.
 3. Click the **→** arrow on a backlog task to move it into the sprint, or **←** to move it back.
 4. Watch the point totals update live so you don't overcommit relative to your velocity.
-5. Below the board, switch between the **Burndown Chart** and **Velocity Chart** tabs to check progress and historical capacity.
 
 To set a task's story points, open the task and fill in the **Estimate (story points)** field. Tasks without points count as zero in the totals.
+
+Burndown, burnup, sprint report, velocity, and release report all live on the **Reports** page (see the "Reports & Analytics" guide) rather than on Sprint Planning itself — Sprint Planning stays focused on backlog grooming and capacity planning.
 
 ### Sprint Board
 

@@ -53,6 +53,7 @@ import {
   AccordionTrigger,
 } from '../components/ui/accordion';
 import { useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { pitchService } from '../services/pitchService';
 import { githubService } from '../services/githubService';
 import { wiseArchitectureService } from '../services/wiseArchitectureService';
@@ -230,6 +231,7 @@ interface ChatMessage {
 const WiseArchitecturePage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/dashboard');
   const { showToast } = useToast();
   const chatEndRef = useRef<HTMLDivElement>(null);
   
@@ -569,7 +571,7 @@ const WiseArchitecturePage: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" onClick={() => goBack()}>
             <ArrowLeft className="h-4 w-4 mr-1" />
             {t('common.back')}
           </Button>
@@ -594,7 +596,7 @@ const WiseArchitecturePage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" onClick={() => goBack()}>
             <ArrowLeft className="h-4 w-4 mr-1" />
             {t('common.back')}
           </Button>

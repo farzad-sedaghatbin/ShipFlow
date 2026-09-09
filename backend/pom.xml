@@ -138,7 +138,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.17</version>
+            <version>2.9.1</version>
         </dependency>
 
         <!-- Spring Security -->
@@ -383,7 +383,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
+            <version>1.23.2</version>
         </dependency>
 
         <!-- web-push — RFC 8291 payload encryption + RFC 8292 VAPID signing for Web Push
@@ -418,10 +418,16 @@
         <dependency>
             <groupId>org.bitbucket.b_c</groupId>
             <artifactId>jose4j</artifactId>
-            <version>0.7.9</version>
+            <version>0.9.6</version>
         </dependency>
 
-        <!-- webauthn4j — WebAuthn/FIDO2 passkey registration + authentication verification (S59, v1.11.0) -->
+        <!-- webauthn4j — WebAuthn/FIDO2 passkey registration + authentication verification (S59, v1.11.0).
+             Pinned at 0.29.1.RELEASE: 0.31.10.RELEASE (merged via an automated dependency-update PR,
+             #591, whose own build-and-test CI check had actually failed — missed at merge time) pulls
+             in a Jackson 3.x-based transitive dependency, which crashes PasskeyService's constructor at
+             startup with NoClassDefFoundError: com/fasterxml/jackson/annotation/JsonSerializeAs (Spring
+             Boot 3.4 here is still on Jackson 2.x). Revisit the upgrade only after confirming whatever
+             newer webauthn4j-core version is chosen doesn't drag in Jackson 3.x. -->
         <dependency>
             <groupId>com.webauthn4j</groupId>
             <artifactId>webauthn4j-core</artifactId>
@@ -471,7 +477,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.15.0</version>
+                <version>3.16.0</version>
                 <configuration>
                     <source>21</source>
                     <target>21</target>
@@ -547,7 +553,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.5.6</version>
+                <version>3.6.0</version>
                 <configuration>
                     <!-- @{argLine} is injected by jacoco-maven-plugin's prepare-agent execution;
                          omitting it silently disables JaCoCo's coverage instrumentation. -->
