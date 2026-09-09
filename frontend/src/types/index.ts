@@ -1869,8 +1869,8 @@ export interface BulkUpdateResult {
   errors: string[];
 }
 
-// AI-recommended pitch deliverable tasks
-export type SuggestionSource = 'PITCH' | 'PITCH_DESIGN';
+// AI-recommended pitch/sprint deliverable tasks
+export type SuggestionSource = 'PITCH' | 'PITCH_DESIGN' | 'SPRINT';
 export type Discipline = 'DESIGN' | 'BACKEND' | 'MOBILE' | 'QA';
 
 export interface TaskSuggestion {
@@ -1887,7 +1887,8 @@ export interface TaskSuggestionResponse {
 }
 
 export interface BulkCreateTaskRequest {
-  pitchId: number;
+  /** Optional as of the sprint-task-suggestions flow — omit for a cycle-only bulk create (DEBT_IMPROVEMENT category). */
+  pitchId?: number;
   cycleId: number;
   tasks: TaskSuggestion[];
 }

@@ -5732,6 +5732,8 @@
     "phase114Item4Desc": "Scrum projects get their own Reports page — burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report.",
     "phase114Item5Title": "Active Sprint Board",
     "phase114Item5Desc": "Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board.",
+    "phase114Item6Title": "AI Task Suggestions & Q&A on Scrum",
+    "phase114Item6Desc": "Sprint Planning gets its own \"Suggest Tasks with AI\" and per-sprint Q&A button — the same AI features Shape Up pitches already had.",
     "phase115Theme": "ShipFlow Agent",
     "phase115Item0Title": "A Mentionable AI Teammate",
     "phase115Item0Desc": "@mention the ShipFlow Agent in any comment thread for context-aware help, scoped to your permissions.",
@@ -8607,6 +8609,11 @@
     "disciplineBackend": "Backend",
     "disciplineMobile": "Mobile",
     "disciplineQa": "QA"
+  },
+  "suggestedSprintTasksPanel": {
+    "dialogSubtitle": "Generated from this sprint's tasks and goal — sprint suggestions don't use Figma design context.",
+    "loading": "AI is analyzing this sprint...",
+    "sourceSprint": "Sprint"
   },
   "testCasesSection": {
     "title": "Test Cases",

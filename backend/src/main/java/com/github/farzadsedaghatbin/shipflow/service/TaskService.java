@@ -929,20 +929,27 @@ public class TaskService {
   }
 
   /**
-   * Create multiple tasks under a single pitch and cycle in one transaction, e.g. from a batch of
-   * accepted AI task suggestions.
+   * Create multiple tasks under a single cycle (and optionally a pitch) in one transaction, e.g.
+   * from a batch of accepted AI task suggestions.
    *
    * <p>Each suggestion is converted into a {@link CreateTaskRequest} (forcing {@code pitchId} and
-   * {@code cycleId} from the request, category {@code PITCH_SCOPE}) and delegated to {@link
-   * #createTask(CreateTaskRequest)} so it gets the same validation, auto-assigned-pitch-inherits,
-   * and hill-chart scope auto-creation as a single manual task creation. Per-task failures are
-   * collected so partial-success results are visible to the caller, mirroring {@link
-   * #bulkUpdate(BulkTaskUpdateRequest)}.
+   * {@code cycleId} from the request) and delegated to {@link #createTask(CreateTaskRequest)} so
+   * it gets the same validation, auto-assigned-pitch-inherits, and hill-chart scope auto-creation
+   * as a single manual task creation. Per-task failures are collected so partial-success results
+   * are visible to the caller, mirroring {@link #bulkUpdate(BulkTaskUpdateRequest)}.
+   *
+   * <p>Category follows {@code pitchId}: present means the tasks are shaped pitch work ({@code
+   * PITCH_SCOPE}); absent means opportunistic work not tied to a pitch (e.g. Scrum
+   * sprint-suggested tasks), reusing {@code DEBT_IMPROVEMENT} rather than a dedicated taxonomy
+   * value — see the 2026-07-27 Architectural Decisions Log entry in CLAUDE.md.
    */
   @Transactional
   public BulkCreateTaskResult bulkCreate(BulkCreateTaskRequest request) {
     List<String> errors = new ArrayList<>();
     List<TaskDTO> created = new ArrayList<>();
+
+    TaskCategory category =
+        request.getPitchId() != null ? TaskCategory.PITCH_SCOPE : TaskCategory.DEBT_IMPROVEMENT;
 
     for (TaskSuggestionDTO suggestion : request.getTasks()) {
       try {
@@ -951,7 +958,7 @@ public class TaskService {
             .description(suggestion.getDescription())
             .cycleId(request.getCycleId())
             .pitchId(request.getPitchId())
-            .category(TaskCategory.PITCH_SCOPE)
+            .category(category)
             .estimateHours(suggestion.getEstimateHours())
             .build();
         created.add(createTask(createRequest));

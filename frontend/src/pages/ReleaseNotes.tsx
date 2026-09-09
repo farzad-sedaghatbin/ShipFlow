@@ -128,6 +128,12 @@ const releases: Release[] = [
         description:
           'Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board, filling a gap where Scrum had no board at all.',
       },
+      {
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'AI Task Suggestions & Q&A on Scrum',
+        description:
+          'Sprint Planning now has its own "Suggest Tasks with AI" (grounded in the sprint goal, not pitch appetite) and a per-sprint Q&A button — the same AI features Shape Up pitches already had.',
+      },
     ],
   },
   {
