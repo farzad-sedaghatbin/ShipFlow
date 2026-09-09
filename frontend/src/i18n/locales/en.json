@@ -5717,6 +5717,8 @@
     "phase114Item2Desc": "Every AI feature — risk analysis, Q&A, test generation — shares the same rich project context.",
     "phase114Item3Title": "Licence Keys & Community Edition",
     "phase114Item3Desc": "ShipFlow is now open-core: this build is the Community Edition, and an uploadable signed licence file unlocks commercial features and lifts its user and automation limits.",
+    "phase114Item4Title": "Scrum-Native Reports",
+    "phase114Item4Desc": "Scrum projects get their own Reports page — burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report.",
     "phase115Theme": "ShipFlow Agent",
     "phase115Item0Title": "A Mentionable AI Teammate",
     "phase115Item0Desc": "@mention the ShipFlow Agent in any comment thread for context-aware help, scoped to your permissions.",
@@ -9050,6 +9052,42 @@
       "pitch": "pitch",
       "retroItem": "retro item",
       "wikiPage": "wiki page"
+    }
+  },
+  "scrumReports": {
+    "sprintTab": "Sprint",
+    "releaseTab": "Releases",
+    "selectSprint": "Select Sprint",
+    "noSprintsFound": "No sprints found for this project",
+    "noSprintSelected": "Select a sprint to view its report",
+    "burnup": {
+      "title": "Sprint Burnup",
+      "completed": "Completed",
+      "scope": "Scope",
+      "storyPoints": "Story Points",
+      "noData": "No story points assigned to sprint tasks"
+    },
+    "sprintReport": {
+      "title": "Sprint Report",
+      "completionRate": "Completion Rate",
+      "planned": "Planned",
+      "completed": "Completed",
+      "byStatus": "Tasks by Status",
+      "scopeAdded": "{{count}} task added ({{points}} pts) after this sprint started",
+      "scopeAdded_one": "{{count}} task added ({{points}} pts) after this sprint started",
+      "scopeAdded_other": "{{count}} tasks added ({{points}} pts) after this sprint started",
+      "noData": "No sprint report data available"
+    },
+    "releaseReport": {
+      "title": "Release Report",
+      "release": "Release",
+      "status": "Status",
+      "tasks": "Tasks",
+      "points": "Points",
+      "targetDate": "Target Date",
+      "releaseDate": "Release Date",
+      "noDate": "—",
+      "noData": "No release data available"
     }
   }
 }

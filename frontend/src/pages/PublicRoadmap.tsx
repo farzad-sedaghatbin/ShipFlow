@@ -52,6 +52,7 @@ import {
   Filter,
   Bug,
   KeyRound,
+  BarChart3,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -408,6 +409,7 @@ export default function PublicRoadmap() {
         { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase114Item1Title'), description: t('publicRoadmap.phase114Item1Desc') },
         { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase114Item2Title'), description: t('publicRoadmap.phase114Item2Desc') },
         { icon: <KeyRound className="h-5 w-5" />, title: t('publicRoadmap.phase114Item3Title'), description: t('publicRoadmap.phase114Item3Desc') },
+        { icon: <BarChart3 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item4Title'), description: t('publicRoadmap.phase114Item4Desc') },
       ],
     },
     {
