@@ -7,13 +7,17 @@ import java.util.List;
 import lombok.Data;
 
 /**
- * Request body for POST /api/tasks/bulk-create — creates multiple tasks under a single pitch and
- * cycle in one transaction, e.g. from a batch of accepted AI task suggestions.
+ * Request body for POST /api/tasks/bulk-create — creates multiple tasks under a single cycle (and
+ * optionally a pitch) in one transaction, e.g. from a batch of accepted AI task suggestions.
+ *
+ * <p>{@code pitchId} is optional: when present, the created tasks are pitch-scoped ({@code
+ * PITCH_SCOPE}); when absent (e.g. Scrum sprint-suggested tasks with no pitch), they're created as
+ * {@code DEBT_IMPROVEMENT} tasks scoped directly to the cycle. See {@link
+ * com.github.farzadsedaghatbin.shipflow.service.TaskService#bulkCreate}.
  */
 @Data
 public class BulkCreateTaskRequest {
 
-  @NotNull(message = "Pitch ID is required")
   private Long pitchId;
 
   @NotNull(message = "Cycle ID is required")

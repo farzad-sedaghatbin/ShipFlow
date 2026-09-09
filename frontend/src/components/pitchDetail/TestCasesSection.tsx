@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +18,11 @@ interface TestCasesSectionProps {
 export function TestCasesSection({ pitchId, taskId }: TestCasesSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // Tasks have no dedicated "view all" page (unlike pitches, which link out to
+  // /pitches/:pitchId/test) — the global /qa/test-cases page has no task filter
+  // at all, so linking there would show every test case in the project, not
+  // this task's. Instead, expand the already-fetched list in place.
+  const [showAllTaskCases, setShowAllTaskCases] = useState(false);
 
   const { data: testCases = [], isLoading } = useQuery<TestCase[]>({
     queryKey: taskId ? ['test-cases', 'task', taskId] : ['test-cases', 'pitch', pitchId],
@@ -28,6 +34,7 @@ export function TestCasesSection({ pitchId, taskId }: TestCasesSectionProps) {
   });
 
   const addOrViewHref = taskId ? `/qa/test-cases/new?taskId=${taskId}` : `/pitches/${pitchId}/test`;
+  const visibleTestCases = taskId && showAllTaskCases ? testCases : testCases.slice(0, 5);
 
   return (
     <Card data-tour={taskId ? undefined : 'pitch-test-cases'}>
@@ -60,7 +67,7 @@ export function TestCasesSection({ pitchId, taskId }: TestCasesSectionProps) {
           </div>
         ) : (
           <ul className="divide-y divide-border rounded-md border">
-            {testCases.slice(0, 5).map((tc) => (
+            {visibleTestCases.map((tc) => (
               <li
                 key={tc.id}
                 className="flex cursor-pointer items-center justify-between gap-3 px-3 py-2.5 hover:bg-muted/50"
@@ -96,11 +103,18 @@ export function TestCasesSection({ pitchId, taskId }: TestCasesSectionProps) {
             ))}
           </ul>
         )}
-        {testCases.length > 5 && (
+        {testCases.length > 5 && taskId && !showAllTaskCases && (
+          <button
+            type="button"
+            className="mt-2 w-full text-center text-xs text-primary hover:underline"
+            onClick={() => setShowAllTaskCases(true)}
+          >
+            {t('testCasesSection.andMoreTask', { count: testCases.length - 5 })}
+          </button>
+        )}
+        {testCases.length > 5 && !taskId && (
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            {taskId
-              ? t('testCasesSection.andMoreTask', { count: testCases.length - 5 })
-              : t('testCasesSection.andMore', { count: testCases.length - 5 })}
+            {t('testCasesSection.andMore', { count: testCases.length - 5 })}
           </p>
         )}
       </CardContent>

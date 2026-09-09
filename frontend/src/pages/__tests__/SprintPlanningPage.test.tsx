@@ -28,7 +28,25 @@ vi.mock('../../services/taskService', () => ({
     getProductBacklogTasks: vi.fn(),
     getByCycleId: vi.fn(),
     assignCycle: vi.fn(),
+    bulkCreate: vi.fn(),
   },
+}));
+
+// Sprint AI task suggestions default to unavailable — covered by its own
+// SuggestedSprintTasksPanel.test.tsx. Kept "unavailable" here so the panel
+// renders nothing and this file's existing assertions are unaffected.
+vi.mock('../../services/sprintTaskSuggestionService', () => ({
+  sprintTaskSuggestionService: {
+    getStatus: vi.fn().mockResolvedValue({ available: false }),
+    generate: vi.fn(),
+  },
+}));
+
+// QAFloatingButton renders a Radix Tooltip that needs a TooltipProvider ancestor;
+// stub it out here the same way Layout.test.tsx does, since this page's own tests
+// aren't about the Q&A button.
+vi.mock('../../components/QAFloatingButton', () => ({
+  QAFloatingButton: () => null,
 }));
 
 vi.mock('react-i18next', () => ({

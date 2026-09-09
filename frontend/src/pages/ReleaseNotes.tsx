@@ -116,6 +116,30 @@ const releases: Release[] = [
         description:
           "ShipFlow is now open-core: this build is the Community Edition (up to 10 active users, 5 enabled workflow automations), and an admin can upload a signed licence file to unlock commercial features and lift those limits.",
       },
+      {
+        icon: <BarChart3 className="h-5 w-5" />,
+        title: 'Scrum-Native Reports',
+        description:
+          'Scrum projects now get their own Reports page — burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report. Burndown and velocity moved here from Sprint Planning, which now stays focused on backlog grooming and capacity planning.',
+      },
+      {
+        icon: <Kanban className="h-5 w-5" />,
+        title: 'Active Sprint Board',
+        description:
+          'Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board, filling a gap where Scrum had no board at all.',
+      },
+      {
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'AI Task Suggestions & Q&A on Scrum',
+        description:
+          'Sprint Planning now has its own "Suggest Tasks with AI" (grounded in the sprint goal, not pitch appetite) and a per-sprint Q&A button — the same AI features Shape Up pitches already had.',
+      },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Project Agreements',
+        description:
+          'A dated log for "we agreed X" decisions that aren\'t work items — a review cadence, an on-call split — so they stop getting turned into backlog clutter or forgotten entirely.',
+      },
     ],
   },
   {

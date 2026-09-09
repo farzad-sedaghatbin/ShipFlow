@@ -98,4 +98,32 @@ describe('TestCasesSection', () => {
 
     expect(navigateMock).toHaveBeenCalledWith('/qa/test-cases/new?taskId=42');
   });
+
+  // Regression test: a task with more than 5 test cases used to show a dead
+  // "+N more" text with nowhere useful to go — the global test-case list has
+  // no task filter, so it would have shown every test case in the project.
+  it('expands to show every test case in place when a task has more than 5, without navigating anywhere', async () => {
+    const manyTestCases = Array.from({ length: 8 }, (_, i) => ({
+      id: i + 1,
+      testCaseKey: `TC-${i + 1}`,
+      title: `Test case ${i + 1}`,
+      type: 'FUNCTIONAL',
+      priority: 'MEDIUM',
+      status: 'READY',
+      totalRuns: 0,
+    }));
+    (qaTestManagementService.getTestCasesByTask as any).mockResolvedValue({ data: manyTestCases });
+    const user = userEvent.setup();
+    renderWithClient(<TestCasesSection taskId={42} />);
+
+    await waitFor(() => screen.getByText('TC-1'));
+    expect(screen.queryByText('TC-6')).not.toBeInTheDocument();
+
+    const showMoreButton = screen.getByText('testCasesSection.andMoreTask {"count":3}');
+    await user.click(showMoreButton);
+
+    expect(screen.getByText('TC-6')).toBeInTheDocument();
+    expect(screen.getByText('TC-8')).toBeInTheDocument();
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
 });

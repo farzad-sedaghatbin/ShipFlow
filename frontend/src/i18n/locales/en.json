@@ -152,6 +152,7 @@
     "epics": "Epics",
     "releases": "Releases",
     "sprintPlanning": "Sprint Planning",
+    "sprintBoard": "Sprint Board",
     "sprints": "Sprints",
     "importData": "Import Data",
     "knowledge": "Knowledge",
@@ -181,6 +182,16 @@
       "userAccess": "User & Access",
       "peopleAccess": "People & Access",
       "integrations": "Integrations"
+    }
+  },
+  "sprintBoard": {
+    "title": "Active Sprint Board",
+    "description": "Track and update tasks in the current sprint on a Kanban-style board.",
+    "activeSprint": "Active sprint: {{name}}",
+    "noActiveSprint": {
+      "title": "No active sprint",
+      "description": "There's no active sprint right now. Start one in Sprint Planning to see it here.",
+      "action": "Go to Sprint Planning"
     }
   },
   "breadcrumbs": {
@@ -5717,6 +5728,14 @@
     "phase114Item2Desc": "Every AI feature — risk analysis, Q&A, test generation — shares the same rich project context.",
     "phase114Item3Title": "Licence Keys & Community Edition",
     "phase114Item3Desc": "ShipFlow is now open-core: this build is the Community Edition, and an uploadable signed licence file unlocks commercial features and lifts its user and automation limits.",
+    "phase114Item4Title": "Scrum-Native Reports",
+    "phase114Item4Desc": "Scrum projects get their own Reports page — burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report.",
+    "phase114Item5Title": "Active Sprint Board",
+    "phase114Item5Desc": "Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board.",
+    "phase114Item6Title": "AI Task Suggestions & Q&A on Scrum",
+    "phase114Item6Desc": "Sprint Planning gets its own \"Suggest Tasks with AI\" and per-sprint Q&A button — the same AI features Shape Up pitches already had.",
+    "phase114Item7Title": "Project Agreements",
+    "phase114Item7Desc": "A dated log for \"we agreed X\" decisions that aren't work items, so they stop turning into backlog clutter or getting forgotten.",
     "phase115Theme": "ShipFlow Agent",
     "phase115Item0Title": "A Mentionable AI Teammate",
     "phase115Item0Desc": "@mention the ShipFlow Agent in any comment thread for context-aware help, scoped to your permissions.",
@@ -8140,6 +8159,46 @@
     "noResults": "No matching wiki pages found",
     "addLink": "Add"
   },
+  "projectAgreements": {
+    "title": "Agreements",
+    "addAgreement": "Add Agreement",
+    "agreedBy": "by {{name}}",
+    "fromMeeting": "From a meeting",
+    "fromMeetingType": "From {{type}} meeting",
+    "editTooltip": "Edit agreement",
+    "deleteTooltip": "Delete agreement",
+    "empty": {
+      "title": "No agreements yet",
+      "description": "Log discrete, dated agreements or contract terms here — things that were decided but aren't Tasks."
+    },
+    "dialog": {
+      "newTitle": "New Agreement",
+      "editTitle": "Edit Agreement",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. Payment terms",
+      "contentLabel": "Content",
+      "contentPlaceholder": "What was agreed?",
+      "agreedDate": "Agreed Date",
+      "meeting": "Meeting",
+      "selectMeeting": "Select a meeting",
+      "noMeeting": "None",
+      "cancel": "Cancel",
+      "create": "Create",
+      "update": "Update"
+    },
+    "deleteConfirm": {
+      "title": "Delete agreement?",
+      "description": "Delete \"{{title}}\"? This cannot be undone.",
+      "confirm": "Delete"
+    },
+    "toast": {
+      "createSuccess": "Agreement added",
+      "updateSuccess": "Agreement updated",
+      "saveFailed": "Failed to save agreement",
+      "deleteSuccess": "Agreement deleted",
+      "deleteFailed": "Failed to delete agreement"
+    }
+  },
   "bulkActions": {
     "toolbar": "Bulk actions toolbar",
     "selected": "{{count}} selected",
@@ -8593,6 +8652,11 @@
     "disciplineMobile": "Mobile",
     "disciplineQa": "QA"
   },
+  "suggestedSprintTasksPanel": {
+    "dialogSubtitle": "Generated from this sprint's tasks and goal — sprint suggestions don't use Figma design context.",
+    "loading": "AI is analyzing this sprint...",
+    "sourceSprint": "Sprint"
+  },
   "testCasesSection": {
     "title": "Test Cases",
     "viewAll": "View All",
@@ -8603,7 +8667,7 @@
     "notExecuted": "Not yet executed",
     "passRate": "{{rate}}% pass rate ({{passed}}/{{total}} runs)",
     "andMore": "+{{count}} more — view all to see the full list",
-    "andMoreTask": "+{{count}} more test case(s)"
+    "andMoreTask": "Show {{count}} more test case(s)"
   },
   "retroSummary": {
     "title": "AI Retrospective Summary",
@@ -9050,6 +9114,42 @@
       "pitch": "pitch",
       "retroItem": "retro item",
       "wikiPage": "wiki page"
+    }
+  },
+  "scrumReports": {
+    "sprintTab": "Sprint",
+    "releaseTab": "Releases",
+    "selectSprint": "Select Sprint",
+    "noSprintsFound": "No sprints found for this project",
+    "noSprintSelected": "Select a sprint to view its report",
+    "burnup": {
+      "title": "Sprint Burnup",
+      "completed": "Completed",
+      "scope": "Scope",
+      "storyPoints": "Story Points",
+      "noData": "No story points assigned to sprint tasks"
+    },
+    "sprintReport": {
+      "title": "Sprint Report",
+      "completionRate": "Completion Rate",
+      "planned": "Planned",
+      "completed": "Completed",
+      "byStatus": "Tasks by Status",
+      "scopeAdded": "{{count}} task added ({{points}} pts) after this sprint started",
+      "scopeAdded_one": "{{count}} task added ({{points}} pts) after this sprint started",
+      "scopeAdded_other": "{{count}} tasks added ({{points}} pts) after this sprint started",
+      "noData": "No sprint report data available"
+    },
+    "releaseReport": {
+      "title": "Release Report",
+      "release": "Release",
+      "status": "Status",
+      "tasks": "Tasks",
+      "points": "Points",
+      "targetDate": "Target Date",
+      "releaseDate": "Release Date",
+      "noDate": "—",
+      "noData": "No release data available"
     }
   }
 }
