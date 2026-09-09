@@ -43,6 +43,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final PitchRepository pitchRepository;
   private final WorkLogRepository workLogRepository;
   private final MeetingRepository meetingRepository;
+  private final ProjectAgreementRepository projectAgreementRepository;
   private final EvidenceRepository evidenceRepository;
   private final UserRepository userRepository;
   private final PersonRepository personRepository;
@@ -816,6 +817,32 @@ public class SampleDataInitializer implements CommandLineRunner {
             + "Security team: approved for production rollout.")
         .build();
     meetingRepository.save(biometricDemo);
+
+    // ── Project Agreements ───────────────────────────────────────────────────
+    // Discrete, dated "we agreed X" entries — not everything from a meeting becomes
+    // a Task. Most agreements are logged directly; this one is linked back to the
+    // kickoff meeting it came out of.
+    ProjectAgreement cadenceAgreement = ProjectAgreement.builder()
+        .project(bankingProject)
+        .title("Sprint review cadence")
+        .content("Sprint review cadence agreed: every other Friday at 2pm, "
+            + "rotating between backend and frontend demo leads.")
+        .meeting(kickoff)
+        .agreedDate(LocalDate.of(2026, 4, 1))
+        .createdBy(saraUser)
+        .build();
+    projectAgreementRepository.save(cadenceAgreement);
+
+    ProjectAgreement onCallAgreement = ProjectAgreement.builder()
+        .project(bankingProject)
+        .title("On-call rotation ownership")
+        .content("On-call rotation for payments incidents stays with the Payments team "
+            + "(Ali) through the current cycle; DevOps Platform team backs up only for "
+            + "infrastructure-level pages.")
+        .agreedDate(LocalDate.of(2026, 4, 10))
+        .createdBy(aliUser)
+        .build();
+    projectAgreementRepository.save(onCallAgreement);
 
     // ── Evidence ──────────────────────────────────────────────────────────────
     Evidence ev1 = Evidence.builder()

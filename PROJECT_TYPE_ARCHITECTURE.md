@@ -173,3 +173,94 @@ when its preferred demo user (`sara`) is absent.
   migrated to `capabilities` — this is deliberate (avoiding a large,
   low-value mechanical sweep), not an oversight, but worth revisiting file by
   file as each is next touched.
+
+## Future direction: configurable methodology structure (design analysis, not a plan)
+
+A tester's feedback (2026-09) asked for something categorically different from
+the gap above: not de-duplicating "does this type have X" checks, but letting
+an org **customize** the structure/vocabulary at project-creation time instead
+of picking one of exactly three fixed presets. The concrete complaint was
+Scrum projects inheriting Shape Up vocabulary and structure in places that
+were never properly gated — the AI task-suggestion dialog's "Pitch" source
+badge and `taskCategory` values (`PITCH_SCOPE`/`DEBT_IMPROVEMENT` — there is
+no Scrum-native task category at all, so a Scrum project's own opportunistic
+work is filed under a Shape-Up-named bucket), the `cycles.searchCycles`
+placeholder leaking onto the Sprints page, `cycleDetailPage.cycleNotes`
+showing on Sprint Detail, etc. Several of these were fixed as straightforward
+gating bugs in the same session this section was written (see CHANGELOG's
+`[Unreleased]` entries around 2026-09-09) — those were real bugs (a capability
+check that should have existed and didn't), not evidence that the underlying
+three-preset model itself is wrong. This section is about the model question
+that's left over once the bugs are fixed: **should ShipFlow's three fixed
+methodology presets become configurable?**
+
+This is a real, larger product/architecture decision — evaluated here, not
+decided. No implementation should start from this section alone; treat it as
+the input to a dedicated Plan Mode session, per this repo's normal workflow
+for anything above trivial scope.
+
+### Option A — per-project capability toggles (data-driven `capabilities`)
+
+Instead of resolving `ProjectTypeCapabilities` from a fixed
+`Record<ProjectType, ...>` keyed by a 3-value enum, store the capability set
+(or a delta from a preset) per project and resolve it from data. An org could
+then compose something between the current three presets — e.g. Scrum
+structure with Shape Up's Pitch concept layered on top for teams that shape
+work before committing it to a sprint.
+
+**Cost**: large and cross-cutting. `ProjectType` is not just a UI-gating enum
+— it's read directly in backend authorization/query logic (`hasPitches`,
+category defaults in `TaskService.bulkCreate`, `AirGappedModeValidator`-style
+type checks, etc.) and in every frontend consumer listed above. Making
+capabilities *data* rather than a compile-time constant means every one of
+those call sites needs to load project-scoped configuration instead of
+switching on a fixed enum value, and the "three known-good combinations"
+guarantee disappears — testing now has to cover a combinatorial capability
+space instead of three fixed points. This is genuinely a multi-session,
+foundational change, not a feature addition.
+
+### Option B — terminology/label overrides only (no structural change)
+
+Keep the three fixed structural presets exactly as they are today — they
+encode real, different data-model shapes (Pitch vs. no-Pitch, cycle-as-sprint
+vs. cycle-as-shape-up-cycle) that aren't arbitrary. Add a much narrower
+per-org or per-project **label override** layer: an admin can rename what a
+Pitch/Cycle/Sprint/Task is called in the UI (e.g. "Pitch" → "Feature",
+"Sprint" → "Iteration") without touching which capabilities are structurally
+available. Implementation sketch: a small `labelOverrides: Record<string,
+string>` resolved alongside `capabilities` in `useProject()`, consulted by
+`t()` call sites for the handful of methodology-noun keys, falling back to
+the existing i18n string when no override is set. This directly answers the
+"wrong vocabulary" half of the original complaint without touching structure,
+authorization, or the data model at all.
+
+**Cost**: small and additive. New per-org/per-project settings storage (a
+JSON column is enough — no new entity), a resolution layer parallel to the
+existing `capabilities` one, and updating call sites for the ~10-15 literal
+methodology-noun strings to go through it. No backend authorization logic
+changes, no new combinatorial testing surface.
+
+### Option C — do nothing further; keep closing gaps opportunistically
+
+Treat the concrete complaints as already substantially addressed (this
+session's gating fixes, the new Scrum-native reports/board/AI-parity work)
+and the remaining ~20-item ad hoc-check list as already tracked above. Defer
+"real" customizability indefinitely, revisited only if it's independently
+requested by more than one org — the same demand-gating discipline this
+repo's roadmap already applies to full CRDT wiki co-editing (see `CLAUDE.md`'s
+future-milestones table: "demand-gated, skip if still no multi-user usage").
+
+### Recommendation
+
+**Option C for now, Option B if and when this is requested again.** A single
+tester's suggestion, on a repo whose own roadmap explicitly demand-gates
+comparable speculative asks elsewhere, doesn't justify Option A's blast
+radius, and most of the concrete pain reported so far turned out to be
+ordinary missing-gate bugs rather than a structural limitation — the presets
+being fixed wasn't actually what was making Scrum feel like Shape Up in a
+trenchcoat, missing/wrong gating was. If this comes up again independently,
+Option B is the right-sized answer: it fixes the vocabulary complaint
+directly, stays additive, and doesn't put the "three known-good
+combinations" property at risk. Option A stays on the table only if multiple
+orgs need genuinely different *structure* (not just different words) inside
+one project — nothing gathered so far indicates that's the actual need.

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, Sheet, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { FileText, Sheet, Loader2, TrendingDown, Rocket } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -32,6 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Skeleton } from '../components/ui/skeleton';
 import { reportService } from '../services/reportService';
 import { cycleService } from '../services/cycleService';
 import { EnhancedCycleReport, Cycle } from '../types';
@@ -42,8 +45,113 @@ import { cn } from '../lib/utils';
 import { useProject } from '../contexts';
 import { CycleSignalsPanel } from '../components/CycleSignalsPanel';
 import { CycleSummaryPanel } from '../components/CycleSummaryPanel';
+import { BurndownChart } from '../components/BurndownChart';
+import { BurnupChart } from '../components/BurnupChart';
+import { SprintReportCard } from '../components/SprintReportCard';
+import { VelocityChart } from '../components/VelocityChart';
+import { ReleaseReportTable } from '../components/ReleaseReportTable';
 
 const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'];
+
+/** Scrum-specific reports view: sprint burndown/burnup/report for a selected cycle,
+ * plus project-wide velocity and release reports. Mirrors the Shape Up branch's
+ * layout idioms (Card grid, EmptyState) but uses React Query throughout. */
+function ScrumReportsView({ projectId }: { projectId: number }) {
+  const { t } = useTranslation();
+  const [selectedCycleId, setSelectedCycleId] = useState<number | null>(null);
+
+  const { data: cycles, isLoading: cyclesLoading } = useQuery({
+    queryKey: ['cycles', 'project', projectId],
+    queryFn: () => cycleService.getByProject(projectId).then((r) => r.data),
+    enabled: projectId > 0,
+  });
+
+  useEffect(() => {
+    if (selectedCycleId == null && cycles && cycles.length > 0) {
+      setSelectedCycleId(cycles[0].id);
+    }
+  }, [cycles, selectedCycleId]);
+
+  const selectedCycle = cycles?.find((c) => c.id === selectedCycleId) ?? null;
+
+  return (
+    <div data-tour="reports-overview">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <h1 className="text-2xl font-bold">{t('reportsPage.title')}</h1>
+      </div>
+
+      {cyclesLoading ? (
+        <Skeleton className="h-9 w-56 mb-6" />
+      ) : !cycles || cycles.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <EmptyState
+              illustration={<EmptyReportsIllustration />}
+              title={t('reportsPage.noCyclesFound')}
+              description={t('scrumReports.noSprintsFound')}
+              size="medium"
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="sprint">
+          <TabsList className="mb-6">
+            <TabsTrigger value="sprint" className="gap-2">
+              <TrendingDown className="h-4 w-4" />
+              {t('scrumReports.sprintTab')}
+            </TabsTrigger>
+            <TabsTrigger value="release" className="gap-2">
+              <Rocket className="h-4 w-4" />
+              {t('scrumReports.releaseTab')}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="sprint" className="space-y-6">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium">{t('scrumReports.selectSprint')}:</span>
+              <Select
+                value={selectedCycleId?.toString() ?? ''}
+                onValueChange={(v) => setSelectedCycleId(v ? Number(v) : null)}
+              >
+                <SelectTrigger className="w-56">
+                  <SelectValue placeholder={t('scrumReports.selectSprint')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cycles.map((cycle) => (
+                    <SelectItem key={cycle.id} value={cycle.id.toString()}>
+                      {cycle.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedCycleId && selectedCycle ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <BurndownChart cycleId={selectedCycleId} cycleName={selectedCycle.name} />
+                <BurnupChart cycleId={selectedCycleId} cycleName={selectedCycle.name} />
+                <div className="lg:col-span-2">
+                  <SprintReportCard cycleId={selectedCycleId} cycleName={selectedCycle.name} />
+                </div>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                  {t('scrumReports.noSprintSelected')}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="release" className="space-y-6">
+            <VelocityChart projectId={projectId} />
+            <ReleaseReportTable projectId={projectId} />
+          </TabsContent>
+        </Tabs>
+      )}
+    </div>
+  );
+}
 
 export default function Reports() {
   const { t } = useTranslation();
@@ -56,21 +164,23 @@ export default function Reports() {
 
   useEffect(() => {
     const abortController = new AbortController();
-    if (!isKanbanProject) {
+    // Scrum projects render ScrumReportsView instead, which does its own
+    // React-Query-based cycle fetching — skip the legacy Shape Up load here.
+    if (!isKanbanProject && !isScrumProject) {
       loadCycles();
     } else {
       setLoading(false);
     }
     return () => abortController.abort();
-  }, [isKanbanProject]);
+  }, [isKanbanProject, isScrumProject]);
 
   useEffect(() => {
     const abortController = new AbortController();
-    if (selectedCycle && !isKanbanProject) {
+    if (selectedCycle && !isKanbanProject && !isScrumProject) {
       loadReport(Number(selectedCycle));
     }
     return () => abortController.abort();
-  }, [selectedCycle, isKanbanProject]);
+  }, [selectedCycle, isKanbanProject, isScrumProject]);
 
   const loadCycles = async () => {
     try {
@@ -199,23 +309,9 @@ export default function Reports() {
     );
   }
 
-  // Show message for Scrum projects — sprint-native reports (burndown/velocity/burnup) live elsewhere for now
-  if (isScrumProject) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold mb-8">{t('reportsPage.title')}</h1>
-        <Card>
-          <CardContent className="py-12">
-            <EmptyState
-              illustration={<EmptyReportsIllustration />}
-              title={t('reportsPage.scrumTitle', 'Sprint Reports Not Available Here Yet')}
-              description={t('reportsPage.scrumDesc', "This report is built for Shape Up pitches and doesn't apply to Scrum. Sprint-native reports (burndown, velocity, burnup) are coming soon.")}
-              size="medium"
-            />
-          </CardContent>
-        </Card>
-      </div>
-    );
+  // Scrum projects get their own sprint/release reports view
+  if (isScrumProject && currentProject) {
+    return <ScrumReportsView projectId={currentProject.id} />;
   }
 
   // Show empty state if no cycles exist
