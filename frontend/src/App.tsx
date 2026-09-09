@@ -52,6 +52,7 @@ const TaskDetailPage = lazy(() => import('./pages/TaskDetailPage'));
 
 // Scrum
 const SprintPlanningPage = lazy(() => import('./pages/SprintPlanningPage'));
+const SprintBoardPage = lazy(() => import('./pages/SprintBoardPage'));
 
 // Retros & Health
 const RetroList = lazy(() => import('./pages/RetroList'));
@@ -263,6 +264,7 @@ function App() {
 
                       {/* Scrum */}
                       <Route path="sprint-planning" element={<SprintPlanningPage />} />
+                      <Route path="sprint-board" element={<SprintBoardPage />} />
 
                       {/* Backlog */}
                       <Route path="backlog" element={<BacklogPage />} />

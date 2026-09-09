@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bug,
   ListTodo,
+  Kanban,
 } from 'lucide-react';
 import { ProjectType } from '../types';
 
@@ -104,15 +105,20 @@ const dashboardsItem: NavItemConfig = { textKey: 'nav.dashboards', icon: LayoutD
 const reportsItem: NavItemConfig = { textKey: 'nav.reports', icon: BarChart3, path: '/reports', tourId: 'reports-menu' };
 const bugReportsItem: NavItemConfig = { textKey: 'nav.bugReports', icon: Bug, path: '/qa/bug-reports', matchPaths: ['/qa/bug-reports'] };
 const backlogItem: NavItemConfig = { textKey: 'nav.backlog', icon: ListTodo, path: '/backlog', matchPaths: ['/backlog'] };
+// Scrum-only board scoped to the active sprint's tasks (WP4) — fills the gap left by
+// filtering pitchBoardItem/bettingItem out of scrumWorkspaceItems below, which otherwise
+// left Scrum projects with no board at all.
+const sprintBoardItem: NavItemConfig = { textKey: 'nav.sprintBoard', icon: Kanban, path: '/sprint-board', tourId: 'sprint-board-menu', matchPaths: ['/sprint-board'] };
 
 export const shapeUpMainNavItems: NavItemConfig[] = [dashboardItem, projectsItem, cyclesItem];
 export const scrumMainNavItems: NavItemConfig[] = [dashboardItem, projectsItem, sprintsItem];
 export const kanbanMainNavItems: NavItemConfig[] = [dashboardItem, projectsItem];
 
 export const cycleWorkspaceItems: NavItemConfig[] = [pitchBoardItem, bettingItem, healthItem, retrosItem, dashboardsItem, reportsItem];
-export const scrumWorkspaceItems: NavItemConfig[] = cycleWorkspaceItems.filter(
-  (item) => item.path !== '/pitches' && item.path !== '/betting'
-);
+export const scrumWorkspaceItems: NavItemConfig[] = [
+  sprintBoardItem,
+  ...cycleWorkspaceItems.filter((item) => item.path !== '/pitches' && item.path !== '/betting'),
+];
 
 // --- Per-type capability definitions ---
 

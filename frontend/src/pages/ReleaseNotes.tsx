@@ -116,6 +116,12 @@ const releases: Release[] = [
         description:
           "ShipFlow is now open-core: this build is the Community Edition (up to 10 active users, 5 enabled workflow automations), and an admin can upload a signed licence file to unlock commercial features and lift those limits.",
       },
+      {
+        icon: <Kanban className="h-5 w-5" />,
+        title: 'Active Sprint Board',
+        description:
+          'Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board, filling a gap where Scrum had no board at all.',
+      },
     ],
   },
   {

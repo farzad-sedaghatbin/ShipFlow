@@ -152,6 +152,7 @@
     "epics": "Epics",
     "releases": "Releases",
     "sprintPlanning": "Sprint Planning",
+    "sprintBoard": "Sprint Board",
     "sprints": "Sprints",
     "importData": "Import Data",
     "knowledge": "Knowledge",
@@ -181,6 +182,16 @@
       "userAccess": "User & Access",
       "peopleAccess": "People & Access",
       "integrations": "Integrations"
+    }
+  },
+  "sprintBoard": {
+    "title": "Active Sprint Board",
+    "description": "Track and update tasks in the current sprint on a Kanban-style board.",
+    "activeSprint": "Active sprint: {{name}}",
+    "noActiveSprint": {
+      "title": "No active sprint",
+      "description": "There's no active sprint right now. Start one in Sprint Planning to see it here.",
+      "action": "Go to Sprint Planning"
     }
   },
   "breadcrumbs": {
@@ -5713,6 +5724,8 @@
     "phase114Item2Desc": "Every AI feature — risk analysis, Q&A, test generation — shares the same rich project context.",
     "phase114Item3Title": "Licence Keys & Community Edition",
     "phase114Item3Desc": "ShipFlow is now open-core: this build is the Community Edition, and an uploadable signed licence file unlocks commercial features and lifts its user and automation limits.",
+    "phase114Item5Title": "Active Sprint Board",
+    "phase114Item5Desc": "Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board.",
     "phase115Theme": "ShipFlow Agent",
     "phase115Item0Title": "A Mentionable AI Teammate",
     "phase115Item0Desc": "@mention the ShipFlow Agent in any comment thread for context-aware help, scoped to your permissions.",
