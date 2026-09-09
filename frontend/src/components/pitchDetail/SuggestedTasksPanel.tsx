@@ -212,6 +212,13 @@ export function SuggestedTasksPanel({ pitchId, cycleId, onTasksCreated }: Sugges
                 </div>
               )}
 
+              {!cycleId && suggestions.length > 0 && (
+                <Alert variant="warning">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{t('suggestedTasksPanel.noCycleNote')}</AlertDescription>
+                </Alert>
+              )}
+
               <DialogFooter>
                 <Button variant="outline" onClick={handleGenerate}>
                   <RotateCcw className="h-4 w-4 mr-2" />
