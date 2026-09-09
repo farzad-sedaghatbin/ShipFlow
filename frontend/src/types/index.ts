@@ -513,6 +513,24 @@ export interface CreateMeetingRequest {
   actions?: MeetingAction[];
 }
 
+export interface ProjectAgreement {
+  id: number;
+  projectId: number;
+  title: string;
+  content: string;
+  meetingId?: number;
+  agreedDate?: string;
+  createdByName?: string;
+  createdAt: string;
+}
+
+export interface ProjectAgreementRequest {
+  title: string;
+  content: string;
+  meetingId?: number;
+  agreedDate?: string;
+}
+
 export interface Evidence {
   id: number;
   pitchId: number;

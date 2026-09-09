@@ -116,6 +116,12 @@ const releases: Release[] = [
         description:
           "ShipFlow is now open-core: this build is the Community Edition (up to 10 active users, 5 enabled workflow automations), and an admin can upload a signed licence file to unlock commercial features and lift those limits.",
       },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Project Agreements',
+        description:
+          'A dated log for "we agreed X" decisions that aren\'t work items — a review cadence, an on-call split — so they stop getting turned into backlog clutter or forgotten entirely.',
+      },
     ],
   },
   {
