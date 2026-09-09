@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -95,6 +95,7 @@ function buildPageList(current: number, totalPages: number): (number | 'gap')[] 
 const TestCasesPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
   const { showToast } = useToast();
   const { loading, refreshing, startLoad, finishLoad, resetInitial } = useListLoader();
@@ -601,7 +602,11 @@ const TestCasesPage: React.FC = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => navigate(`/qa/test-cases/${tc.id}`)}
+                            onClick={() =>
+                              navigate(`/qa/test-cases/${tc.id}`, {
+                                state: { from: `${location.pathname}${location.search}` },
+                              })
+                            }
                           >
                             <Eye className="h-4 w-4" />
                           </Button>

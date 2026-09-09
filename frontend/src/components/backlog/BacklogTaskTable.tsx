@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useState, useRef, useMemo } from 'react';
 import dayjs from 'dayjs';
 import {
@@ -119,6 +119,7 @@ function SortableTaskRow({
   t,
 }: SortableTaskRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const location = useLocation();
   // Backend restricts BACKLOG DELETE to ADMIN/MANAGER (see PERMISSION_MATRIX.md) — hide the
   // action for other roles instead of letting them click it and hit a confusing 403.
   const { user } = useAuth();
@@ -178,6 +179,7 @@ function SortableTaskRow({
             )}
             <Link
               to={`/backlog/${task.id}`}
+              state={{ from: `${location.pathname}${location.search}` }}
               className="hover:underline cursor-pointer text-primary flex items-center gap-1.5"
             >
               <span className="text-muted-foreground font-mono text-xs font-normal shrink-0">

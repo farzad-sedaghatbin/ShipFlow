@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
@@ -43,6 +43,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../com
 
 export default function CycleList() {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const { currentProject, isAllProjectsSelected, isScrumProject } = useProject();
   const { showSuccess, showError } = useToast();
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -269,7 +270,12 @@ export default function CycleList() {
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <Button variant="link" asChild className="px-0 h-auto">
-                      <Link to={`/cycles/${cycle.id}`}>{t('cycles.viewDetails')}</Link>
+                      <Link
+                        to={`/cycles/${cycle.id}`}
+                        state={{ from: `${location.pathname}${location.search}` }}
+                      >
+                        {t('cycles.viewDetails')}
+                      </Link>
                     </Button>
                     <TooltipProvider>
                       <div className="flex gap-1">
@@ -374,7 +380,12 @@ export default function CycleList() {
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <Button variant="link" asChild className="px-0 h-auto">
-                      <Link to={`/cycles/${cycle.id}`}>{t('cycles.viewDetails')}</Link>
+                      <Link
+                        to={`/cycles/${cycle.id}`}
+                        state={{ from: `${location.pathname}${location.search}` }}
+                      >
+                        {t('cycles.viewDetails')}
+                      </Link>
                     </Button>
                     <TooltipProvider>
                       <div className="flex gap-1">

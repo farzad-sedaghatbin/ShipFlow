@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { computeQuarterLabel } from '../utils/dateUtils';
@@ -60,6 +60,7 @@ const getStatusBadgeVariant = (status: InitiativeStatus): 'default' | 'secondary
 export default function InitiativeListPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
   const [initiatives, setInitiatives] = useState<Initiative[]>([]);
@@ -218,6 +219,7 @@ export default function InitiativeListPage() {
                     <CardTitle className="text-lg">
                       <Link
                         to={`/initiatives/${initiative.id}`}
+                        state={{ from: `${location.pathname}${location.search}` }}
                         className="hover:underline"
                       >
                         {initiative.name}

@@ -23,6 +23,7 @@ import { pitchService } from '../services/pitchService';
 import { getEpicDependencies, addEpicDependency, removeEpicDependency } from '../services/epicDependencyService';
 import { Epic, EpicStatus, Pitch, BusinessValue, EpicDependency, DependencyType } from '../types';
 import { useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import SortablePitchList from '../components/SortablePitchList';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -59,6 +60,7 @@ export default function EpicDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/epics');
   const { showSuccess, showError } = useToast();
   const { currentProject } = useProject();
   const [epic, setEpic] = useState<Epic | null>(null);
@@ -348,7 +350,7 @@ export default function EpicDetailPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Back button */}
-      <Button variant="ghost" onClick={() => navigate('/epics')}>
+      <Button variant="ghost" onClick={() => goBack()}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         {t('epics.backToList')}
       </Button>
