@@ -14,6 +14,8 @@ import {
 import { Task } from '../../types';
 import { statusOptions, priorityOptions } from './backlogTypes';
 import TaskDependencies from '../TaskDependencies';
+import TaskAttachments from '../TaskAttachments';
+import Comments from '../Comments';
 import { taskService } from '../../services/taskService';
 
 interface BacklogViewDialogProps {
@@ -174,6 +176,16 @@ export function BacklogViewDialog({
                   });
                 }}
               />
+            </div>
+
+            {/* File Attachments */}
+            <div className="border-t pt-4">
+              <TaskAttachments taskId={task.id} />
+            </div>
+
+            {/* Comments */}
+            <div className="border-t pt-4">
+              <Comments entityType="task" entityId={task.id} />
             </div>
 
             {/* Subtasks */}

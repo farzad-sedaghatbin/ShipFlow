@@ -400,10 +400,10 @@ export default function CycleDetail() {
 
         {/* Notes Section - Full Width */}
         <div className="lg:col-span-3">
-          <NotesList 
-            contextType="cycle" 
-            contextId={cycle.id} 
-            title={t('cycleDetailPage.cycleNotes')}
+          <NotesList
+            contextType="cycle"
+            contextId={cycle.id}
+            title={isScrumProject ? t('cycleDetailPage.sprintNotes') : t('cycleDetailPage.cycleNotes')}
           />
         </div>
       </div>

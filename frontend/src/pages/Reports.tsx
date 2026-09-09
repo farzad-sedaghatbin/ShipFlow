@@ -47,7 +47,7 @@ const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444', '#6b7280'
 
 export default function Reports() {
   const { t } = useTranslation();
-  const { isKanbanProject, currentProject } = useProject();
+  const { isKanbanProject, isScrumProject, currentProject } = useProject();
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [report, setReport] = useState<EnhancedCycleReport | null>(null);
@@ -191,6 +191,25 @@ export default function Reports() {
               illustration={<EmptyReportsIllustration />}
               title={t('reportsPage.kanbanTitle', 'Cycle Reports Not Available')}
               description={t('reportsPage.kanbanDesc', 'Cycle-based reports are only available for Shape Up projects. Kanban projects use continuous flow without fixed cycles.')}
+              size="medium"
+            />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show message for Scrum projects — sprint-native reports (burndown/velocity/burnup) live elsewhere for now
+  if (isScrumProject) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold mb-8">{t('reportsPage.title')}</h1>
+        <Card>
+          <CardContent className="py-12">
+            <EmptyState
+              illustration={<EmptyReportsIllustration />}
+              title={t('reportsPage.scrumTitle', 'Sprint Reports Not Available Here Yet')}
+              description={t('reportsPage.scrumDesc', "This report is built for Shape Up pitches and doesn't apply to Scrum. Sprint-native reports (burndown, velocity, burnup) are coming soon.")}
               size="medium"
             />
           </CardContent>
