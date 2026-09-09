@@ -421,11 +421,17 @@
             <version>0.9.6</version>
         </dependency>
 
-        <!-- webauthn4j — WebAuthn/FIDO2 passkey registration + authentication verification (S59, v1.11.0) -->
+        <!-- webauthn4j — WebAuthn/FIDO2 passkey registration + authentication verification (S59, v1.11.0).
+             Pinned at 0.29.1.RELEASE: 0.31.10.RELEASE (merged via an automated dependency-update PR,
+             #591, whose own build-and-test CI check had actually failed — missed at merge time) pulls
+             in a Jackson 3.x-based transitive dependency, which crashes PasskeyService's constructor at
+             startup with NoClassDefFoundError: com/fasterxml/jackson/annotation/JsonSerializeAs (Spring
+             Boot 3.4 here is still on Jackson 2.x). Revisit the upgrade only after confirming whatever
+             newer webauthn4j-core version is chosen doesn't drag in Jackson 3.x. -->
         <dependency>
             <groupId>com.webauthn4j</groupId>
             <artifactId>webauthn4j-core</artifactId>
-            <version>0.31.10.RELEASE</version>
+            <version>0.29.1.RELEASE</version>
         </dependency>
     </dependencies>
 
