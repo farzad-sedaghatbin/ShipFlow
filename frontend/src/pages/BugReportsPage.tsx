@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useSearchParams, Link as RouterLink } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation, Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { detectTextDirection } from '../utils/rtlDetection';
@@ -175,6 +175,7 @@ function persistNamedFilters(userId: number | undefined, filters: SavedBugFilter
 const BugReportsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentProject, isAllProjectsSelected, isKanbanProject, isSwitchingProject, notifyProjectSwitchComplete, loading: projectsLoading } = useProject();
   const { user } = useAuth();
@@ -1629,7 +1630,9 @@ const BugReportsPage: React.FC = () => {
         }}
         onOpenFullPage={(bug) => {
           setDetailModalOpen(false);
-          navigate(`/qa/bug-reports/${bug.bugKey}`);
+          navigate(`/qa/bug-reports/${bug.bugKey}`, {
+            state: { from: `${location.pathname}${location.search}` },
+          });
         }}
         onUpdate={(updated) => setSelectedBug(updated)}
       />

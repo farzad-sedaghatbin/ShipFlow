@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { safeParseId } from '../utils/validation';
 import { usePresence } from '../hooks/usePresence';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { PresenceAvatarStack } from '../components/PresenceAvatarStack';
 import { ConflictDialog } from '../components/ConflictDialog';
 import { getConflictBody, OptimisticLockConflictBody } from '../utils/conflictError';
@@ -47,6 +48,7 @@ export default function PitchDetail() {
   const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
+  const goBack = useBackNavigation('/pitches');
   const { showSuccess, showError } = useToast();
   const { currentProject } = useProject();
   const { user } = useAuth();
@@ -592,8 +594,8 @@ export default function PitchDetail() {
     return (
       <div>
         <p className="text-muted-foreground">{t('pitchDetailPage.pitchNotFound')}</p>
-        <Button variant="link" asChild className="px-0">
-          <Link to="/pitches">{t('pitchDetailPage.backToPitches')}</Link>
+        <Button variant="link" className="px-0" onClick={() => goBack()}>
+          {t('pitchDetailPage.backToPitches')}
         </Button>
       </div>
     );

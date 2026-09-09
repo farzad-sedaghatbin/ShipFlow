@@ -644,6 +644,7 @@
     "noActiveSprintsDesc": "Create your first sprint to start planning your work.",
     "stories": "stories",
     "searchCycles": "Search cycles...",
+    "searchSprints": "Search sprints...",
     "allPhases": "All Phases",
     "shaping_building": "Shaping & Building",
     "betting_cooldown": "Betting & Cooldown",
@@ -3366,6 +3367,8 @@
     "noCyclesDesc": "Create a cycle first to generate reports",
     "kanbanTitle": "Cycle Reports Not Available",
     "kanbanDesc": "Cycle-based reports are only available for Shape Up projects. Kanban projects use continuous flow without fixed cycles.",
+    "scrumTitle": "Sprint Reports Not Available Here Yet",
+    "scrumDesc": "This report is built for Shape Up pitches and doesn't apply to Scrum. Sprint-native reports (burndown, velocity, burnup) are coming soon.",
     "selectCycle": "Select Cycle",
     "exportPDF": "Export PDF",
     "exportCSV": "Export CSV",
@@ -4709,6 +4712,7 @@
     "retroStatus": "Retrospective Status",
     "totalPitches": "Total Pitches",
     "cycleNotes": "Cycle Notes",
+    "sprintNotes": "Sprint Notes",
     "createRetroFirst": "Create Retro First"
   },
   "workLogsPage": {
@@ -8580,6 +8584,7 @@
     "emptyState": "No task suggestions generated — try again.",
     "errorGeneric": "Failed to generate task suggestions. Please try again.",
     "createSelected": "Create Selected ({{count}})",
+    "noCycleNote": "This pitch isn't assigned to a cycle yet — assign one before you can create tasks from these suggestions.",
     "sourcePitch": "Pitch",
     "sourcePitchDesign": "Pitch + Design",
     "figmaUnavailableNote": "Design context not available — suggestions are based on pitch details only.",

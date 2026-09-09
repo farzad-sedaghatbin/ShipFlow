@@ -23,6 +23,7 @@ import { pitchService } from '../services/pitchService';
 import { teamService } from '../services/teamService';
 import { retroService } from '../services/retroService';
 import { usePermission } from '../hooks/usePermission';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { Cycle, Pitch, Team, CycleRetroStatus } from '../types';
 import StatusChip from '../components/StatusChip';
 import ProgressBar from '../components/ProgressBar';
@@ -49,6 +50,7 @@ export default function CycleDetail() {
   const { t, i18n } = useTranslation();
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
+  const goBack = useBackNavigation('/cycles');
 
   const { showSuccess, showError } = useToast();
   const { isScrumProject } = useProject();
@@ -152,8 +154,8 @@ export default function CycleDetail() {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-muted-foreground">{t('cycleDetailPage.cycleNotFound')}</p>
-        <Button asChild variant="outline">
-          <Link to="/cycles">{t('cycleDetailPage.back')}</Link>
+        <Button variant="outline" onClick={() => goBack()}>
+          {t('cycleDetailPage.back')}
         </Button>
       </div>
     );
@@ -398,10 +400,10 @@ export default function CycleDetail() {
 
         {/* Notes Section - Full Width */}
         <div className="lg:col-span-3">
-          <NotesList 
-            contextType="cycle" 
-            contextId={cycle.id} 
-            title={t('cycleDetailPage.cycleNotes')}
+          <NotesList
+            contextType="cycle"
+            contextId={cycle.id}
+            title={isScrumProject ? t('cycleDetailPage.sprintNotes') : t('cycleDetailPage.cycleNotes')}
           />
         </div>
       </div>

@@ -10,7 +10,7 @@ import {
   DragStartEvent,
   DragEndEvent,
 } from '@dnd-kit/core';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Plus,
@@ -302,6 +302,7 @@ export default function PitchBoard() {
   };
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleCreatePitch = async () => {
     if (!validatePitchForm()) {
@@ -559,6 +560,7 @@ export default function PitchBoard() {
                 <div className="flex items-center gap-2 mb-1">
                   <Link
                     to={`/pitches/${pitch.id}`}
+                    state={{ from: `${location.pathname}${location.search}` }}
                     className="font-semibold text-foreground hover:text-primary transition-colors flex-1"
                   >
                     {pitch.title}
@@ -775,6 +777,7 @@ export default function PitchBoard() {
                       <div className="flex items-center gap-2 mb-1">
                         <Link
                           to={`/pitches/${pitch.id}`}
+                          state={{ from: `${location.pathname}${location.search}` }}
                           className="font-semibold text-foreground hover:text-primary transition-colors flex-1 min-w-0 truncate"
                           onClick={(e) => e.stopPropagation()}
                         >

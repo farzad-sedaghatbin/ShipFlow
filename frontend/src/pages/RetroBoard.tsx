@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { safeParseId } from '../utils/validation';
 import {
@@ -117,6 +120,29 @@ const statusConfig: Record<RetroStatus, { label: string; variant: 'default' | 's
   OPEN: { label: '', variant: 'default' },
   CLOSED: { label: '', variant: 'success' },
 };
+
+// Renders retro item text as markdown so pasted URLs (e.g. a Wiki share link) show up as clickable
+// links, matching the auto-linkify behavior already used for Comments — plain text otherwise.
+function RetroItemContent({ content, className }: { content: string; className?: string }) {
+  return (
+    <div className={className}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeSanitize]}
+        components={{
+          p: ({ children }) => <>{children}</>,
+          a: ({ children, href, ...props }) => (
+            <a className="text-primary underline hover:no-underline" href={href} target="_blank" rel="noopener noreferrer" {...props}>
+              {children}
+            </a>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 export default function RetroBoard() {
   const { t, i18n } = useTranslation();
@@ -665,7 +691,10 @@ export default function RetroBoard() {
                         ) : (
                           <div className="space-y-2">
                             <div className="flex items-start gap-2">
-                              <p className={cn('text-sm flex-1', isDiscussed && 'line-through text-muted-foreground')}>{item.content}</p>
+                              <RetroItemContent
+                                content={item.content}
+                                className={cn('text-sm flex-1', isDiscussed && 'line-through text-muted-foreground')}
+                              />
                               {isDiscussed && (
                                 <Badge variant="success" className="shrink-0 gap-1 text-xs px-1.5 py-0">
                                   <CheckCircle2 className="h-3 w-3" />
@@ -695,9 +724,10 @@ export default function RetroBoard() {
                                         .filter((i) => item.mergedItemIds?.includes(i.id))
                                         .map((mergedItem) => (
                                           <div key={mergedItem.id} className="rounded-md border p-2 space-y-1">
-                                            <p className="text-xs whitespace-pre-wrap break-words">
-                                              {mergedItem.content}
-                                            </p>
+                                            <RetroItemContent
+                                              content={mergedItem.content}
+                                              className="text-xs whitespace-pre-wrap break-words"
+                                            />
                                             <div className="flex items-center justify-between gap-2">
                                               <span className="text-[11px] text-muted-foreground">
                                                 {mergedItem.authorName || t('common.anonymous')}

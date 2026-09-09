@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
@@ -43,6 +43,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../com
 
 export default function CycleList() {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const { currentProject, isAllProjectsSelected, isScrumProject } = useProject();
   const { showSuccess, showError } = useToast();
   const [cycles, setCycles] = useState<Cycle[]>([]);
@@ -165,26 +166,28 @@ export default function CycleList() {
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className={isScrumProject ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4' : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4'}>
             <div className="relative md:col-span-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={t('cycles.searchCycles')}
+                placeholder={isScrumProject ? t('cycles.searchSprints') : t('cycles.searchCycles')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
               />
             </div>
-            <Select value={filterPhase} onValueChange={setFilterPhase}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('cycles.allPhases')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('cycles.allPhases')}</SelectItem>
-                <SelectItem value="SHAPING_BUILDING">{t('cycles.shaping_building')}</SelectItem>
-                <SelectItem value="BETTING_COOLDOWN">{t('cycles.betting_cooldown')}</SelectItem>
-              </SelectContent>
-            </Select>
+            {!isScrumProject && (
+              <Select value={filterPhase} onValueChange={setFilterPhase}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('cycles.allPhases')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('cycles.allPhases')}</SelectItem>
+                  <SelectItem value="SHAPING_BUILDING">{t('cycles.shaping_building')}</SelectItem>
+                  <SelectItem value="BETTING_COOLDOWN">{t('cycles.betting_cooldown')}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger>
                 <SelectValue placeholder={t('cycles.allStatus')} />
@@ -267,7 +270,12 @@ export default function CycleList() {
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <Button variant="link" asChild className="px-0 h-auto">
-                      <Link to={`/cycles/${cycle.id}`}>{t('cycles.viewDetails')}</Link>
+                      <Link
+                        to={`/cycles/${cycle.id}`}
+                        state={{ from: `${location.pathname}${location.search}` }}
+                      >
+                        {t('cycles.viewDetails')}
+                      </Link>
                     </Button>
                     <TooltipProvider>
                       <div className="flex gap-1">
@@ -372,7 +380,12 @@ export default function CycleList() {
                   {/* Actions */}
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <Button variant="link" asChild className="px-0 h-auto">
-                      <Link to={`/cycles/${cycle.id}`}>{t('cycles.viewDetails')}</Link>
+                      <Link
+                        to={`/cycles/${cycle.id}`}
+                        state={{ from: `${location.pathname}${location.search}` }}
+                      >
+                        {t('cycles.viewDetails')}
+                      </Link>
                     </Button>
                     <TooltipProvider>
                       <div className="flex gap-1">

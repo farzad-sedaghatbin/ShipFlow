@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { cn } from '../lib/utils';
 
 const getPriorityStyle = (priority: string): string => {
@@ -51,6 +52,7 @@ const getRunStatusStyle = (status: string): string => {
 const TestCaseDetailPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/qa/test-cases');
   const { id: idParam } = useParams<{ id: string }>();
   const id = safeParseId(idParam);
 
@@ -108,7 +110,7 @@ const TestCaseDetailPage: React.FC = () => {
   if (error || !testCase) {
     return (
       <div>
-        <Button variant="ghost" onClick={() => navigate('/qa/test-cases')} className="mb-4 gap-2">
+        <Button variant="ghost" onClick={() => goBack()} className="mb-4 gap-2">
           <ArrowLeft className="h-4 w-4" />
           {t('testCaseDetail.back')}
         </Button>
@@ -125,7 +127,7 @@ const TestCaseDetailPage: React.FC = () => {
   return (
     <div className="p-6">
       <div className="flex items-center gap-4 mb-6 flex-wrap">
-        <Button variant="ghost" onClick={() => navigate('/qa/test-cases')} className="gap-2">
+        <Button variant="ghost" onClick={() => goBack()} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           {t('testCaseDetail.back')}
         </Button>
