@@ -412,6 +412,7 @@ export default function PublicRoadmap() {
         { icon: <BarChart3 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item4Title'), description: t('publicRoadmap.phase114Item4Desc') },
         { icon: <Kanban className="h-5 w-5" />, title: t('publicRoadmap.phase114Item5Title'), description: t('publicRoadmap.phase114Item5Desc') },
         { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item6Title'), description: t('publicRoadmap.phase114Item6Desc') },
+        { icon: <ClipboardList className="h-5 w-5" />, title: t('publicRoadmap.phase114Item7Title'), description: t('publicRoadmap.phase114Item7Desc') },
       ],
     },
     {

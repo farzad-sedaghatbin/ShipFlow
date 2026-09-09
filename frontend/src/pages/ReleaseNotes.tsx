@@ -134,6 +134,12 @@ const releases: Release[] = [
         description:
           'Sprint Planning now has its own "Suggest Tasks with AI" (grounded in the sprint goal, not pitch appetite) and a per-sprint Q&A button — the same AI features Shape Up pitches already had.',
       },
+      {
+        icon: <ClipboardList className="h-5 w-5" />,
+        title: 'Project Agreements',
+        description:
+          'A dated log for "we agreed X" decisions that aren\'t work items — a review cadence, an on-call split — so they stop getting turned into backlog clutter or forgotten entirely.',
+      },
     ],
   },
   {

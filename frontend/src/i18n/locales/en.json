@@ -5734,6 +5734,8 @@
     "phase114Item5Desc": "Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board.",
     "phase114Item6Title": "AI Task Suggestions & Q&A on Scrum",
     "phase114Item6Desc": "Sprint Planning gets its own \"Suggest Tasks with AI\" and per-sprint Q&A button — the same AI features Shape Up pitches already had.",
+    "phase114Item7Title": "Project Agreements",
+    "phase114Item7Desc": "A dated log for \"we agreed X\" decisions that aren't work items, so they stop turning into backlog clutter or getting forgotten.",
     "phase115Theme": "ShipFlow Agent",
     "phase115Item0Title": "A Mentionable AI Teammate",
     "phase115Item0Desc": "@mention the ShipFlow Agent in any comment thread for context-aware help, scoped to your permissions.",
@@ -8156,6 +8158,46 @@
     "searchPlaceholder": "Search wiki pages to link…",
     "noResults": "No matching wiki pages found",
     "addLink": "Add"
+  },
+  "projectAgreements": {
+    "title": "Agreements",
+    "addAgreement": "Add Agreement",
+    "agreedBy": "by {{name}}",
+    "fromMeeting": "From a meeting",
+    "fromMeetingType": "From {{type}} meeting",
+    "editTooltip": "Edit agreement",
+    "deleteTooltip": "Delete agreement",
+    "empty": {
+      "title": "No agreements yet",
+      "description": "Log discrete, dated agreements or contract terms here — things that were decided but aren't Tasks."
+    },
+    "dialog": {
+      "newTitle": "New Agreement",
+      "editTitle": "Edit Agreement",
+      "titleLabel": "Title",
+      "titlePlaceholder": "e.g. Payment terms",
+      "contentLabel": "Content",
+      "contentPlaceholder": "What was agreed?",
+      "agreedDate": "Agreed Date",
+      "meeting": "Meeting",
+      "selectMeeting": "Select a meeting",
+      "noMeeting": "None",
+      "cancel": "Cancel",
+      "create": "Create",
+      "update": "Update"
+    },
+    "deleteConfirm": {
+      "title": "Delete agreement?",
+      "description": "Delete \"{{title}}\"? This cannot be undone.",
+      "confirm": "Delete"
+    },
+    "toast": {
+      "createSuccess": "Agreement added",
+      "updateSuccess": "Agreement updated",
+      "saveFailed": "Failed to save agreement",
+      "deleteSuccess": "Agreement deleted",
+      "deleteFailed": "Failed to delete agreement"
+    }
   },
   "bulkActions": {
     "toolbar": "Bulk actions toolbar",

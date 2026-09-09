@@ -318,6 +318,7 @@ docker compose up -d
   - **Action Items**: Track meeting decisions with assignees, due dates, and status tracking
   - **Meeting Documents**: Attach and manage meeting-related documents
   - **Meeting History**: Full audit trail of all meeting changes
+  - **Project Agreements**: a dated, append-over-time log for "we agreed X" decisions that aren't work items — a review cadence, an on-call split — optionally linked to the meeting they came from
 - **Entity Change History (Audit Trail)**: Complete change tracking with Hibernate Envers
   - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
   - **Selective Field Auditing**: Status, priority, severity, assignee, title, description, and more

@@ -23,6 +23,7 @@ import { QAFloatingButton } from '../components/QAFloatingButton';
 import { MeetingDocumentsDialog } from '../components/MeetingDocumentsDialog';
 import EmptyState from '../components/EmptyState';
 import { EmptyMeetingsIllustration } from '../components/illustrations';
+import ProjectAgreementsSection from '../components/meetings/ProjectAgreementsSection';
 import { useToast, useProject } from '../contexts';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
@@ -721,6 +722,11 @@ export default function MeetingList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Project Agreements */}
+      {currentProject && (
+        <ProjectAgreementsSection projectId={currentProject.id} />
+      )}
 
       {/* Meeting Documents Dialog */}
       {docsDialog.meeting && (
