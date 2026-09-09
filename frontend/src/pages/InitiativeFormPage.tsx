@@ -6,6 +6,7 @@ import { initiativeService } from '../services/initiativeService';
 import { personService } from '../services/personService';
 import { CreateInitiativeRequest, InitiativeStatus } from '../types';
 import { useProject, useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -48,6 +49,7 @@ export default function InitiativeFormPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/initiatives');
   const { currentProject } = useProject();
   const { showSuccess, showError } = useToast();
   
@@ -146,7 +148,7 @@ export default function InitiativeFormPage() {
   return (
     <div className="container mx-auto py-6 max-w-2xl space-y-6">
       {/* Back button */}
-      <Button variant="ghost" onClick={() => navigate(-1)}>
+      <Button variant="ghost" onClick={() => goBack()}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         {t('common.back')}
       </Button>
@@ -258,7 +260,7 @@ export default function InitiativeFormPage() {
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+              <Button type="button" variant="outline" onClick={() => goBack()}>
                 {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={saving}>

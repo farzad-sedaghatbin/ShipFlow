@@ -6,6 +6,7 @@ import { epicService } from '../services/epicService';
 import { initiativeService } from '../services/initiativeService';
 import { CreateEpicRequest, EpicStatus, Initiative } from '../types';
 import { useProject, useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -43,6 +44,7 @@ export default function EpicFormPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/epics');
   const { currentProject } = useProject();
   const { showSuccess, showError } = useToast();
   
@@ -145,7 +147,7 @@ export default function EpicFormPage() {
 
   return (
     <div className="container mx-auto py-6 max-w-2xl space-y-6">
-      <Button variant="ghost" onClick={() => navigate(-1)}>
+      <Button variant="ghost" onClick={() => goBack()}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         {t('common.back')}
       </Button>
@@ -256,7 +258,7 @@ export default function EpicFormPage() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+              <Button type="button" variant="outline" onClick={() => goBack()}>
                 {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={saving}>

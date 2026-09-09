@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, List, Kanban } from 'lucide-react';
 import { toast } from 'sonner';
@@ -42,6 +42,7 @@ export function PitchTasksSection({
 }: PitchTasksSectionProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   // Defaults to list: unlike the Kanban board (which scatters a task's sub-tasks across whatever
   // status column each one happens to be in), the list groups sub-tasks under their parent and
   // collapses them by default, which is what actually makes top-level tasks easy to find.
@@ -105,10 +106,16 @@ export function PitchTasksSection({
     }
   };
 
-  const handleViewTask = (task: Task) => navigate(`/backlog/${task.id}`);
+  const handleViewTask = (task: Task) =>
+    navigate(`/backlog/${task.id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   // This component doesn't own a task detail/edit dialog — route to the same place as "view"
   // (the full task detail page supports editing), matching the plan's sensible-default choice.
-  const handleEditTask = (task: Task) => navigate(`/backlog/${task.id}`);
+  const handleEditTask = (task: Task) =>
+    navigate(`/backlog/${task.id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
 
   const handleDeleteTask = async (taskId: number) => {
     if (!window.confirm(t('backlogPage.confirmDelete'))) return;

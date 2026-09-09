@@ -958,6 +958,38 @@ export interface VelocityPoint {
   completedPoints: number;
 }
 
+export interface BurnupPoint {
+  date: string;
+  completedPoints: number;
+  totalScopePoints: number;
+}
+
+export interface SprintReport {
+  cycleId: number;
+  cycleName: string;
+  startDate: string;
+  endDate: string;
+  plannedPoints: number;
+  completedPoints: number;
+  completionRate: number;
+  taskCountByStatus: Record<string, number>;
+  scopeAddedTaskCount: number;
+  scopeAddedPoints: number;
+}
+
+export interface ReleaseReport {
+  releaseId: number;
+  releaseName: string;
+  version: string | null;
+  status: string;
+  targetDate: string | null;
+  releaseDate: string | null;
+  taskCount: number;
+  completedTaskCount: number;
+  plannedPoints: number;
+  completedPoints: number;
+}
+
 // Task Dependency Types
 export interface TaskDependency {
   id: number;

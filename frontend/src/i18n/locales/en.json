@@ -152,6 +152,7 @@
     "epics": "Epics",
     "releases": "Releases",
     "sprintPlanning": "Sprint Planning",
+    "sprintBoard": "Sprint Board",
     "sprints": "Sprints",
     "importData": "Import Data",
     "knowledge": "Knowledge",
@@ -181,6 +182,16 @@
       "userAccess": "User & Access",
       "peopleAccess": "People & Access",
       "integrations": "Integrations"
+    }
+  },
+  "sprintBoard": {
+    "title": "Active Sprint Board",
+    "description": "Track and update tasks in the current sprint on a Kanban-style board.",
+    "activeSprint": "Active sprint: {{name}}",
+    "noActiveSprint": {
+      "title": "No active sprint",
+      "description": "There's no active sprint right now. Start one in Sprint Planning to see it here.",
+      "action": "Go to Sprint Planning"
     }
   },
   "breadcrumbs": {
@@ -644,6 +655,7 @@
     "noActiveSprintsDesc": "Create your first sprint to start planning your work.",
     "stories": "stories",
     "searchCycles": "Search cycles...",
+    "searchSprints": "Search sprints...",
     "allPhases": "All Phases",
     "shaping_building": "Shaping & Building",
     "betting_cooldown": "Betting & Cooldown",
@@ -3366,6 +3378,8 @@
     "noCyclesDesc": "Create a cycle first to generate reports",
     "kanbanTitle": "Cycle Reports Not Available",
     "kanbanDesc": "Cycle-based reports are only available for Shape Up projects. Kanban projects use continuous flow without fixed cycles.",
+    "scrumTitle": "Sprint Reports Not Available Here Yet",
+    "scrumDesc": "This report is built for Shape Up pitches and doesn't apply to Scrum. Sprint-native reports (burndown, velocity, burnup) are coming soon.",
     "selectCycle": "Select Cycle",
     "exportPDF": "Export PDF",
     "exportCSV": "Export CSV",
@@ -4709,6 +4723,7 @@
     "retroStatus": "Retrospective Status",
     "totalPitches": "Total Pitches",
     "cycleNotes": "Cycle Notes",
+    "sprintNotes": "Sprint Notes",
     "createRetroFirst": "Create Retro First"
   },
   "workLogsPage": {
@@ -5713,6 +5728,10 @@
     "phase114Item2Desc": "Every AI feature — risk analysis, Q&A, test generation — shares the same rich project context.",
     "phase114Item3Title": "Licence Keys & Community Edition",
     "phase114Item3Desc": "ShipFlow is now open-core: this build is the Community Edition, and an uploadable signed licence file unlocks commercial features and lifts its user and automation limits.",
+    "phase114Item4Title": "Scrum-Native Reports",
+    "phase114Item4Desc": "Scrum projects get their own Reports page — burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report.",
+    "phase114Item5Title": "Active Sprint Board",
+    "phase114Item5Desc": "Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board.",
     "phase114Item6Title": "AI Task Suggestions & Q&A on Scrum",
     "phase114Item6Desc": "Sprint Planning gets its own \"Suggest Tasks with AI\" and per-sprint Q&A button — the same AI features Shape Up pitches already had.",
     "phase115Theme": "ShipFlow Agent",
@@ -8580,6 +8599,7 @@
     "emptyState": "No task suggestions generated — try again.",
     "errorGeneric": "Failed to generate task suggestions. Please try again.",
     "createSelected": "Create Selected ({{count}})",
+    "noCycleNote": "This pitch isn't assigned to a cycle yet — assign one before you can create tasks from these suggestions.",
     "sourcePitch": "Pitch",
     "sourcePitchDesign": "Pitch + Design",
     "figmaUnavailableNote": "Design context not available — suggestions are based on pitch details only.",
@@ -9052,6 +9072,42 @@
       "pitch": "pitch",
       "retroItem": "retro item",
       "wikiPage": "wiki page"
+    }
+  },
+  "scrumReports": {
+    "sprintTab": "Sprint",
+    "releaseTab": "Releases",
+    "selectSprint": "Select Sprint",
+    "noSprintsFound": "No sprints found for this project",
+    "noSprintSelected": "Select a sprint to view its report",
+    "burnup": {
+      "title": "Sprint Burnup",
+      "completed": "Completed",
+      "scope": "Scope",
+      "storyPoints": "Story Points",
+      "noData": "No story points assigned to sprint tasks"
+    },
+    "sprintReport": {
+      "title": "Sprint Report",
+      "completionRate": "Completion Rate",
+      "planned": "Planned",
+      "completed": "Completed",
+      "byStatus": "Tasks by Status",
+      "scopeAdded": "{{count}} task added ({{points}} pts) after this sprint started",
+      "scopeAdded_one": "{{count}} task added ({{points}} pts) after this sprint started",
+      "scopeAdded_other": "{{count}} tasks added ({{points}} pts) after this sprint started",
+      "noData": "No sprint report data available"
+    },
+    "releaseReport": {
+      "title": "Release Report",
+      "release": "Release",
+      "status": "Status",
+      "tasks": "Tasks",
+      "points": "Points",
+      "targetDate": "Target Date",
+      "releaseDate": "Release Date",
+      "noDate": "—",
+      "noData": "No release data available"
     }
   }
 }

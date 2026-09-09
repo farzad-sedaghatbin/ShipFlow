@@ -133,4 +133,30 @@ describe('SuggestedTasksPanel', () => {
       expect(onTasksCreated).toHaveBeenCalledWith([{ id: 99, title: 'Write migration script' }]);
     });
   });
+
+  it('explains why Create Selected is disabled when the pitch has no cycle', async () => {
+    (pitchTaskSuggestionService.getStatus as any).mockResolvedValue({ available: true });
+    (pitchTaskSuggestionService.generate as any).mockResolvedValue({
+      suggestions: [
+        {
+          title: 'Design onboarding flow',
+          description: 'Needs a cycle before it can become a real task.',
+          sourceContext: 'PITCH',
+          disciplines: ['DESIGN'],
+        },
+      ],
+      figmaContextUsed: false,
+    });
+
+    const user = userEvent.setup();
+    renderWithClient(<SuggestedTasksPanel {...defaultProps} cycleId={null} />);
+
+    await waitFor(() => screen.getByText('suggestedTasksPanel.triggerButton'));
+    await user.click(screen.getByText('suggestedTasksPanel.triggerButton'));
+    await user.click(screen.getByText('suggestedTasksPanel.generateButton'));
+    await waitFor(() => screen.getByText('Design onboarding flow'));
+
+    expect(screen.getByText('suggestedTasksPanel.noCycleNote')).toBeInTheDocument();
+    expect(screen.getByText(/suggestedTasksPanel.createSelected/)).toBeDisabled();
+  });
 });

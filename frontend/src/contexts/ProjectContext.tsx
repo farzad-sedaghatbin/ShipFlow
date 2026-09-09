@@ -72,19 +72,31 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       setProjects(data);
 
       // Deep link: ?project=<id> (used by "open project in new tab") takes priority over the
-      // last-selected project persisted in localStorage so the new tab lands on the right project.
+      // last-selected project persisted in storage so the new tab lands on the right project.
       const urlProjectId = new URLSearchParams(window.location.search).get('project');
       if (urlProjectId) {
         const urlProject = data.find(p => p.id === parseInt(urlProjectId, 10));
         if (urlProject) {
           setCurrentProject(urlProject);
-          localStorage.setItem(SELECTED_PROJECT_KEY, urlProject.id.toString());
+          sessionStorage.setItem(SELECTED_PROJECT_KEY, urlProject.id.toString());
           return;
         }
       }
 
-      // Try to restore previously selected project
-      const savedProjectId = localStorage.getItem(SELECTED_PROJECT_KEY);
+      // Try to restore this tab's own previously selected project. sessionStorage is
+      // per-tab (never shared across tabs), so switching projects in one tab can't bleed
+      // into another. Only a brand-new tab (no sessionStorage entry yet) falls back to
+      // localStorage as a one-time seed of "whatever was last selected anywhere" — and
+      // immediately mirrors that seed into sessionStorage so this tab tracks independently
+      // from then on, instead of re-reading localStorage on every future mount.
+      let savedProjectId = sessionStorage.getItem(SELECTED_PROJECT_KEY);
+      if (savedProjectId === null) {
+        savedProjectId = localStorage.getItem(SELECTED_PROJECT_KEY);
+        if (savedProjectId !== null) {
+          sessionStorage.setItem(SELECTED_PROJECT_KEY, savedProjectId);
+        }
+      }
+
       if (savedProjectId === ALL_PROJECTS_VALUE) {
         // User previously selected "All Projects"
         setCurrentProject(null);
@@ -95,12 +107,12 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         } else {
           // Default to "All Projects" if saved project not found
           setCurrentProject(null);
-          localStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
+          sessionStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
         }
       } else {
         // Default to "All Projects" for new users
         setCurrentProject(null);
-        localStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
+        sessionStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
       }
     } catch (err: any) {
       if (err.name !== 'CanceledError') {
@@ -123,11 +135,13 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     switchIdRef.current += 1;
     setIsSwitchingProject(true);
     setCurrentProject(project);
-    if (project) {
-      localStorage.setItem(SELECTED_PROJECT_KEY, project.id.toString());
-    } else {
-      localStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
-    }
+    const value = project ? project.id.toString() : ALL_PROJECTS_VALUE;
+    // sessionStorage is the live, per-tab value — never shared with other tabs.
+    // localStorage is only ever read as a brand-new tab's one-time seed (see
+    // refreshProjects), so it's kept in sync here purely so a *future* new tab
+    // opens to this tab's latest choice rather than a stale one.
+    sessionStorage.setItem(SELECTED_PROJECT_KEY, value);
+    localStorage.setItem(SELECTED_PROJECT_KEY, value);
   }, []);
 
   const selectAllProjects = useCallback(() => {
@@ -135,6 +149,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     switchIdRef.current += 1;
     setIsSwitchingProject(true);
     setCurrentProject(null);
+    sessionStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
     localStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
   }, []);
 
