@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { wiseArchitectureService } from '../services/wiseArchitectureService';
 import {
   AdviceHistoryItem,
@@ -46,6 +47,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 const AdviceHistoryPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/rd/wise-architecture');
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -425,7 +427,7 @@ const AdviceHistoryPage: React.FC = () => {
     <div className="container mx-auto py-6 max-w-4xl">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" onClick={() => goBack()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>

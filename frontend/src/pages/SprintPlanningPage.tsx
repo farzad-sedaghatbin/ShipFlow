@@ -13,15 +13,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, ArrowLeft, BarChart2, TrendingDown } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProject } from '../contexts/ProjectContext';
 import { cycleService } from '../services/cycleService';
 import { taskService } from '../services/taskService';
 import { Task } from '../types';
-import { BurndownChart } from '../components/BurndownChart';
-import { VelocityChart } from '../components/VelocityChart';
+import { SuggestedSprintTasksPanel } from '../components/sprintPlanning/SuggestedSprintTasksPanel';
+import { QAFloatingButton } from '../components/QAFloatingButton';
 
 
 function StoryPointBadge({ points }: { points?: number | null }) {
@@ -137,6 +136,14 @@ export default function SprintPlanningPage() {
     onError: () => toast.error(t('common.error')),
   });
 
+  // Refresh sprint task list (and dependent charts) after AI-suggested tasks are bulk-created —
+  // reuses the same invalidation set as the move-to-sprint/move-to-backlog mutations above.
+  const handleSprintTasksCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['burndown', selectedCycleId] });
+    queryClient.invalidateQueries({ queryKey: ['velocity', projectId] });
+  };
+
   // All hooks are declared above this point — safe to return early without violating
   // the Rules of Hooks (hook count is always the same regardless of which branch renders).
   if (currentProject && !isScrumProject) {
@@ -192,6 +199,16 @@ export default function SprintPlanningPage() {
           </span>
         )}
       </div>
+
+      {/* AI task suggestions for the currently selected sprint */}
+      {selectedCycleId != null && (
+        <div className="flex justify-end">
+          <SuggestedSprintTasksPanel
+            cycleId={selectedCycleId}
+            onTasksCreated={handleSprintTasksCreated}
+          />
+        </div>
+      )}
 
       {/* Two-column planning board */}
       <div data-tour="sprint-planning-board" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -280,37 +297,14 @@ export default function SprintPlanningPage() {
         </Card>
       </div>
 
-      {/* Charts */}
-      {currentProject && (
-        <Tabs defaultValue="burndown">
-          <TabsList>
-            <TabsTrigger value="burndown" className="gap-2">
-              <TrendingDown className="h-4 w-4" />
-              {t('sprintPlanning.burndown')}
-            </TabsTrigger>
-            <TabsTrigger value="velocity" className="gap-2">
-              <BarChart2 className="h-4 w-4" />
-              {t('sprintPlanning.velocityChart')}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="burndown">
-            {selectedCycleId && selectedCycle ? (
-              <BurndownChart
-                cycleId={selectedCycleId}
-                cycleName={selectedCycle.name}
-              />
-            ) : (
-              <Card>
-                <CardContent className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-                  {t('sprintPlanning.noSprint')}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-          <TabsContent value="velocity">
-            <VelocityChart projectId={currentProject.id} />
-          </TabsContent>
-        </Tabs>
+      {/* Q&A Floating Button - scoped to the currently selected sprint */}
+      {selectedCycleId != null && (
+        <QAFloatingButton
+          contextType="cycle"
+          contextId={selectedCycleId}
+          contextName={selectedCycle?.name}
+          cycleId={selectedCycleId}
+        />
       )}
     </div>
   );

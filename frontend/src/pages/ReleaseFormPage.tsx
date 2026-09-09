@@ -6,6 +6,7 @@ import { releaseService } from '../services/releaseService';
 import { cycleService } from '../services/cycleService';
 import { CreateReleaseRequest, ReleaseStatus, ReleaseRiskLevel, Cycle } from '../types';
 import { useProject, useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -26,6 +27,7 @@ export default function ReleaseFormPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/releases-management');
   const { currentProject } = useProject();
   const { showSuccess, showError } = useToast();
   
@@ -140,7 +142,7 @@ export default function ReleaseFormPage() {
 
   return (
     <div className="container mx-auto py-6 max-w-2xl space-y-6">
-      <Button variant="ghost" onClick={() => navigate(-1)}>
+      <Button variant="ghost" onClick={() => goBack()}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         {t('common.back')}
       </Button>
@@ -283,7 +285,7 @@ export default function ReleaseFormPage() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+              <Button type="button" variant="outline" onClick={() => goBack()}>
                 {t('common.cancel')}
               </Button>
               <Button type="submit" disabled={saving}>

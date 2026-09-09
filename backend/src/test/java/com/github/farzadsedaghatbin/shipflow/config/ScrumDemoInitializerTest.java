@@ -14,6 +14,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.util.List;
@@ -36,10 +37,11 @@ class ScrumDemoInitializerTest {
   private final TaskRepository taskRepository = mock(TaskRepository.class);
   private final UserRepository userRepository = mock(UserRepository.class);
   private final PersonRepository personRepository = mock(PersonRepository.class);
+  private final ReleaseRepository releaseRepository = mock(ReleaseRepository.class);
 
   private ScrumDemoInitializer initializer() {
     return new ScrumDemoInitializer(projectRepository, cycleRepository, taskRepository, userRepository,
-        personRepository);
+        personRepository, releaseRepository);
   }
 
   /**
@@ -92,6 +94,7 @@ class ScrumDemoInitializerTest {
         .withBean(TaskRepository.class, () -> taskRepository)
         .withBean(UserRepository.class, () -> userRepository)
         .withBean(PersonRepository.class, () -> personRepository)
+        .withBean(ReleaseRepository.class, () -> releaseRepository)
         .withUserConfiguration(ScrumDemoInitializer.class);
 
     runner.run(ctx -> assertThat(ctx).doesNotHaveBean(ScrumDemoInitializer.class));

@@ -44,7 +44,8 @@ docker compose up -d
 | **AI Copilot v2** | **AI Pitch Writer** turns a one-sentence problem into a full Shape Up pitch draft. **Retrospective Summarizer** generates structured cycle retros (wins, blockers, team health). **Proactive Dashboard Insights** surfaces at-risk cycles, scope creep, and velocity trends automatically |
 | **Workflow Automations** *(v1.7.0)* | 14 trigger types (task status changes, pitch events, cycle start/end, scope creep, appetite exceeded) × 7 action types (notify, webhook, email, comment, change status). 20 built-in templates — deploy in one click or build custom rules. Async execution with per-run logs |
 | **Hill charts** | Drag scopes along a sigmoid curve to show progress from "figuring it out" to "making it happen" — linked to task completion in real time |
-| **Sprint planning** | Two-column drag-and-drop board, story-point totals, burndown vs ideal, and cross-sprint velocity chart |
+| **Sprint planning** | Two-column drag-and-drop board with story-point totals for backlog grooming and capacity planning |
+| **Active Sprint Board** | Scrum projects get their own Kanban-style board scoped to the currently active sprint |
 | **Competitor import** | Upload a Jira, Linear, or Asana CSV — format is auto-detected, tasks/epics/sprints mapped into a new Kanban project |
 | **Wiki / Docs Space** *(v1.8.0)* | Built-in hierarchical wiki with a Notion-style block editor (headings, tables, code blocks, callouts, slash menu). Every page is versioned, searchable, and auto-ingested into the AI Knowledge Center |
 | **Linked wiki references** *(v1.10.0)* | Link a Pitch or Task straight to a Wiki page for research/documentation, no file upload required. Drag-and-drop task reordering within a pitch, and standalone (debt/improvement) tasks can target a release directly |
@@ -190,6 +191,7 @@ docker compose up -d
   - Variance analysis and efficiency ratios
   - Out-of-scope work (tasks) tracking with traceability
   - PDF and CSV export functionality
+  - **Scrum projects get their own report set**: sprint burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report
 - **QA & Testing**: Bug tracking and test case management
   - **Bug Reports**: Comprehensive bug tracking with severity and status workflows
     - **Direct Project Association**: Bugs can be created at project level (ideal for Kanban)
@@ -316,6 +318,7 @@ docker compose up -d
   - **Action Items**: Track meeting decisions with assignees, due dates, and status tracking
   - **Meeting Documents**: Attach and manage meeting-related documents
   - **Meeting History**: Full audit trail of all meeting changes
+  - **Project Agreements**: a dated, append-over-time log for "we agreed X" decisions that aren't work items — a review cadence, an on-call split — optionally linked to the meeting they came from
 - **Entity Change History (Audit Trail)**: Complete change tracking with Hibernate Envers
   - **Full Audit Trail**: Track all changes to Tasks, Bug Reports, Pitches, and Test Cases
   - **Selective Field Auditing**: Status, priority, severity, assignee, title, description, and more

@@ -34,6 +34,7 @@ import timerService, { WorkLogTimer } from '../services/timerService';
 import { workLogService } from '../services/workLogService';
 import GitHubLinksCard from '../components/GitHubLinksCard';
 import { TestCasesSection } from '../components/pitchDetail/TestCasesSection';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import TaskAttachments from '../components/TaskAttachments';
 import LinkedWikiPages from '../components/LinkedWikiPages';
 import { CustomFieldsSection } from '../components/CustomFieldsSection';
@@ -69,6 +70,7 @@ export default function TaskDetailPage() {
   const { t } = useTranslation();
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/backlog');
   const [task, setTask] = useState<Task | null>(null);
   const [subtasks, setSubtasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -425,7 +427,7 @@ export default function TaskDetailPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/backlog')}
+          onClick={() => goBack()}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           {t('taskDetailPage.backToBacklog')}

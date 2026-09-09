@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import { computeQuarterLabel } from '../utils/dateUtils';
@@ -62,6 +62,7 @@ const getStatusBadgeVariant = (status: EpicStatus): 'default' | 'secondary' | 'd
 export default function EpicListPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
   const [epics, setEpics] = useState<Epic[]>([]);
@@ -236,7 +237,11 @@ export default function EpicListPage() {
                       style={{ backgroundColor: epic.color || '#6366f1' }}
                     />
                     <CardTitle className="text-lg">
-                      <Link to={`/epics/${epic.id}`} className="hover:underline">
+                      <Link
+                        to={`/epics/${epic.id}`}
+                        state={{ from: `${location.pathname}${location.search}` }}
+                        className="hover:underline"
+                      >
                         {epic.name}
                       </Link>
                     </CardTitle>

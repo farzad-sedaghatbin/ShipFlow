@@ -36,6 +36,7 @@ import { epicService } from '../services/epicService';
 import { Initiative, InitiativeStatus, Epic, ReorderRequest } from '../types';
 import { cn } from '../lib/utils';
 import { useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -124,6 +125,7 @@ export default function InitiativeDetailPage() {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/initiatives');
   const { showSuccess, showError } = useToast();
   const [initiative, setInitiative] = useState<Initiative | null>(null);
   const [epics, setEpics] = useState<Epic[]>([]);
@@ -237,7 +239,7 @@ export default function InitiativeDetailPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Back button */}
-      <Button variant="ghost" onClick={() => navigate('/initiatives')}>
+      <Button variant="ghost" onClick={() => goBack()}>
         <ArrowLeft className="h-4 w-4 mr-2" />
         {t('initiatives.backToList')}
       </Button>
