@@ -7750,7 +7750,7 @@
     "notExecuted": "هنوز اجرا نشده",
     "passRate": "{{rate}}% نرخ موفقیت ({{passed}}/{{total}} اجرا)",
     "andMore": "{{count}}+ مورد دیگر — برای مشاهده فهرست کامل روی «مشاهده همه» بزنید",
-    "andMoreTask": "{{count}}+ مورد آزمایشی دیگر"
+    "andMoreTask": "نمایش {{count}} مورد آزمایشی دیگر"
   },
   "retroSummary": {
     "title": "خلاصه بازنگری هوش مصنوعی",
