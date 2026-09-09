@@ -976,6 +976,38 @@ export interface VelocityPoint {
   completedPoints: number;
 }
 
+export interface BurnupPoint {
+  date: string;
+  completedPoints: number;
+  totalScopePoints: number;
+}
+
+export interface SprintReport {
+  cycleId: number;
+  cycleName: string;
+  startDate: string;
+  endDate: string;
+  plannedPoints: number;
+  completedPoints: number;
+  completionRate: number;
+  taskCountByStatus: Record<string, number>;
+  scopeAddedTaskCount: number;
+  scopeAddedPoints: number;
+}
+
+export interface ReleaseReport {
+  releaseId: number;
+  releaseName: string;
+  version: string | null;
+  status: string;
+  targetDate: string | null;
+  releaseDate: string | null;
+  taskCount: number;
+  completedTaskCount: number;
+  plannedPoints: number;
+  completedPoints: number;
+}
+
 // Task Dependency Types
 export interface TaskDependency {
   id: number;
@@ -1855,8 +1887,8 @@ export interface BulkUpdateResult {
   errors: string[];
 }
 
-// AI-recommended pitch deliverable tasks
-export type SuggestionSource = 'PITCH' | 'PITCH_DESIGN';
+// AI-recommended pitch/sprint deliverable tasks
+export type SuggestionSource = 'PITCH' | 'PITCH_DESIGN' | 'SPRINT';
 export type Discipline = 'DESIGN' | 'BACKEND' | 'MOBILE' | 'QA';
 
 export interface TaskSuggestion {
@@ -1873,7 +1905,8 @@ export interface TaskSuggestionResponse {
 }
 
 export interface BulkCreateTaskRequest {
-  pitchId: number;
+  /** Optional as of the sprint-task-suggestions flow — omit for a cycle-only bulk create (DEBT_IMPROVEMENT category). */
+  pitchId?: number;
   cycleId: number;
   tasks: TaskSuggestion[];
 }

@@ -1,10 +1,11 @@
 # AI-Recommended Deliverable Tasks
 
-Generate a batch of deliverable task suggestions for a pitch instead of writing each one by hand.
+Generate a batch of deliverable task suggestions for a pitch — or, on Scrum projects, for a sprint — instead of writing each one by hand.
 
 ## Where to Find It
 
-On a **Pitch Detail** page, above the Tasks card, click **Suggest Tasks with AI**.
+- **Shape Up**: on a **Pitch Detail** page, above the Tasks card, click **Suggest Tasks with AI**.
+- **Scrum**: on **Sprint Planning**, with a sprint selected, click **Suggest Tasks with AI**. This reads the sprint's goal and name — not appetite, rabbit holes, or Figma design context, which are Shape-Up-only concepts — plus the sprint's existing tasks (to avoid suggesting obvious duplicates). Every suggestion is tagged with a **Sprint** badge instead of Pitch/Pitch + Design, and accepted tasks are created directly under the sprint (no pitch), tracked as opportunistic backlog work.
 
 ## What Goes Into the Suggestions
 
@@ -27,5 +28,5 @@ Selected suggestions are created as real tasks under the pitch in one request �
 ## Requirements
 
 - An LLM provider must be configured (`app.ai.provider`) — the button doesn't appear otherwise.
-- The pitch needs an active cycle to create tasks into, same as the manual "Create Task" dialog.
+- On Shape Up, the pitch needs an active cycle to create tasks into, same as the manual "Create Task" dialog. On Scrum, a sprint must be selected on Sprint Planning — its own cycle is the task's cycle.
 - Generating suggestions requires **AI Features execute** permission (ADMIN, MANAGER, MEMBER); creating tasks requires backlog **create** permission.

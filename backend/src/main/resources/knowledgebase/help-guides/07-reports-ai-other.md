@@ -19,6 +19,13 @@ ShipFlow provides several built-in reports:
 - Average appetite vs. actual time spent
 - Most common reasons for pitch rejection
 
+### Scrum Sprint & Release Reports
+Scrum projects get their own Reports page (the pitch/appetite reports above are Shape Up-specific and don't apply here), with two tabs:
+- **Sprint tab** — pick any sprint to see its **Burndown** (remaining story points day by day, against an ideal line), **Burnup** (completed story points climbing toward the sprint's total scope), and a **Sprint Report** card: completion rate, planned vs. completed points, a task breakdown by status, and a callout for any tasks added to the sprint after it started (a simple scope-change signal).
+- **Releases tab** — **Velocity** across every sprint in the project (planned vs. completed points per sprint), and a **Release Report** table with one row per release showing task/point completion and target vs. actual release date.
+
+Burndown and Velocity used to live inside Sprint Planning; they now live here so Sprint Planning stays focused on backlog grooming and capacity planning rather than historical charts.
+
 ## How to Access Reports
 1. Navigate to **Reports** from the sidebar
 2. Select the report type
