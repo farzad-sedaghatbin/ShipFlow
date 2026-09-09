@@ -109,6 +109,21 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.14.0',
+      date: 'September 9, 2026',
+      title: t('publicRoadmap.shipped1140Title'),
+      highlights: [
+        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase114Item0Title'), description: t('publicRoadmap.phase114Item0Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase114Item1Title'), description: t('publicRoadmap.phase114Item1Desc') },
+        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase114Item2Title'), description: t('publicRoadmap.phase114Item2Desc') },
+        { icon: <KeyRound className="h-5 w-5" />, title: t('publicRoadmap.phase114Item3Title'), description: t('publicRoadmap.phase114Item3Desc') },
+        { icon: <BarChart3 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item4Title'), description: t('publicRoadmap.phase114Item4Desc') },
+        { icon: <Kanban className="h-5 w-5" />, title: t('publicRoadmap.phase114Item5Title'), description: t('publicRoadmap.phase114Item5Desc') },
+        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item6Title'), description: t('publicRoadmap.phase114Item6Desc') },
+        { icon: <ClipboardList className="h-5 w-5" />, title: t('publicRoadmap.phase114Item7Title'), description: t('publicRoadmap.phase114Item7Desc') },
+      ],
+    },
+    {
       version: '1.13.1',
       date: 'September 7, 2026',
       title: t('publicRoadmap.shipped1131Title'),
@@ -401,24 +416,13 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      version: 'v1.14.0',
-      theme: t('publicRoadmap.phase114Theme'),
-      status: 'in-progress',
-      items: [
-        { icon: <Brain className="h-5 w-5" />, title: t('publicRoadmap.phase114Item0Title'), description: t('publicRoadmap.phase114Item0Desc') },
-        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase114Item1Title'), description: t('publicRoadmap.phase114Item1Desc') },
-        { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase114Item2Title'), description: t('publicRoadmap.phase114Item2Desc') },
-        { icon: <KeyRound className="h-5 w-5" />, title: t('publicRoadmap.phase114Item3Title'), description: t('publicRoadmap.phase114Item3Desc') },
-        { icon: <BarChart3 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item4Title'), description: t('publicRoadmap.phase114Item4Desc') },
-        { icon: <Kanban className="h-5 w-5" />, title: t('publicRoadmap.phase114Item5Title'), description: t('publicRoadmap.phase114Item5Desc') },
-        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item6Title'), description: t('publicRoadmap.phase114Item6Desc') },
-        { icon: <ClipboardList className="h-5 w-5" />, title: t('publicRoadmap.phase114Item7Title'), description: t('publicRoadmap.phase114Item7Desc') },
-      ],
-    },
-    {
-      version: 'v1.15.0',
+      // Was v1.15.0 — shifted to v1.16.0 because v1.14.0 absorbed an extra
+      // Scrum-parity feedback batch beyond its original planned scope,
+      // consuming what would otherwise have been the next version number.
+      // See CLAUDE.md's versioning note for 2026-09-09.
+      version: 'v1.16.0',
       theme: t('publicRoadmap.phase115Theme'),
-      status: 'planned',
+      status: 'in-progress',
       items: [
         { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase115Item0Title'), description: t('publicRoadmap.phase115Item0Desc') },
         { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.phase115Item1Title'), description: t('publicRoadmap.phase115Item1Desc') },

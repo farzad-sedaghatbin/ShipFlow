@@ -88,9 +88,8 @@ interface Release {
 const releases: Release[] = [
   {
     version: '1.14.0',
-    date: 'Coming soon',
+    date: 'September 9, 2026',
     title: 'AI You Can Trust',
-    upcoming: true,
     highlights: [
       {
         icon: <Brain className="h-5 w-5" />,
