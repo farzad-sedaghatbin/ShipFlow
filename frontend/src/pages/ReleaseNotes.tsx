@@ -116,6 +116,12 @@ const releases: Release[] = [
         description:
           "ShipFlow is now open-core: this build is the Community Edition (up to 10 active users, 5 enabled workflow automations), and an admin can upload a signed licence file to unlock commercial features and lift those limits.",
       },
+      {
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'AI Task Suggestions & Q&A on Scrum',
+        description:
+          'Sprint Planning now has its own "Suggest Tasks with AI" (grounded in the sprint goal, not pitch appetite) and a per-sprint Q&A button — the same AI features Shape Up pitches already had.',
+      },
     ],
   },
   {

@@ -408,6 +408,7 @@ export default function PublicRoadmap() {
         { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.phase114Item1Title'), description: t('publicRoadmap.phase114Item1Desc') },
         { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase114Item2Title'), description: t('publicRoadmap.phase114Item2Desc') },
         { icon: <KeyRound className="h-5 w-5" />, title: t('publicRoadmap.phase114Item3Title'), description: t('publicRoadmap.phase114Item3Desc') },
+        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item6Title'), description: t('publicRoadmap.phase114Item6Desc') },
       ],
     },
     {

@@ -22,6 +22,8 @@ import { taskService } from '../services/taskService';
 import { Task } from '../types';
 import { BurndownChart } from '../components/BurndownChart';
 import { VelocityChart } from '../components/VelocityChart';
+import { SuggestedSprintTasksPanel } from '../components/sprintPlanning/SuggestedSprintTasksPanel';
+import { QAFloatingButton } from '../components/QAFloatingButton';
 
 
 function StoryPointBadge({ points }: { points?: number | null }) {
@@ -137,6 +139,14 @@ export default function SprintPlanningPage() {
     onError: () => toast.error(t('common.error')),
   });
 
+  // Refresh sprint task list (and dependent charts) after AI-suggested tasks are bulk-created —
+  // reuses the same invalidation set as the move-to-sprint/move-to-backlog mutations above.
+  const handleSprintTasksCreated = () => {
+    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['burndown', selectedCycleId] });
+    queryClient.invalidateQueries({ queryKey: ['velocity', projectId] });
+  };
+
   // All hooks are declared above this point — safe to return early without violating
   // the Rules of Hooks (hook count is always the same regardless of which branch renders).
   if (currentProject && !isScrumProject) {
@@ -192,6 +202,16 @@ export default function SprintPlanningPage() {
           </span>
         )}
       </div>
+
+      {/* AI task suggestions for the currently selected sprint */}
+      {selectedCycleId != null && (
+        <div className="flex justify-end">
+          <SuggestedSprintTasksPanel
+            cycleId={selectedCycleId}
+            onTasksCreated={handleSprintTasksCreated}
+          />
+        </div>
+      )}
 
       {/* Two-column planning board */}
       <div data-tour="sprint-planning-board" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -311,6 +331,16 @@ export default function SprintPlanningPage() {
             <VelocityChart projectId={currentProject.id} />
           </TabsContent>
         </Tabs>
+      )}
+
+      {/* Q&A Floating Button - scoped to the currently selected sprint */}
+      {selectedCycleId != null && (
+        <QAFloatingButton
+          contextType="cycle"
+          contextId={selectedCycleId}
+          contextName={selectedCycle?.name}
+          cycleId={selectedCycleId}
+        />
       )}
     </div>
   );

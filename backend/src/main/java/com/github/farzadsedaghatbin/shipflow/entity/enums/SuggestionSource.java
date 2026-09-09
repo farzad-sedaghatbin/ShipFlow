@@ -10,5 +10,8 @@ public enum SuggestionSource {
   PITCH,
 
   /** Also grounded in Figma design context fetched from the pitch's wireframe links. */
-  PITCH_DESIGN
+  PITCH_DESIGN,
+
+  /** Grounded in a Scrum sprint's goal and existing backlog, not a pitch. */
+  SPRINT
 }

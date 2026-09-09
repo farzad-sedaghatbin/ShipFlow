@@ -5713,6 +5713,8 @@
     "phase114Item2Desc": "Every AI feature — risk analysis, Q&A, test generation — shares the same rich project context.",
     "phase114Item3Title": "Licence Keys & Community Edition",
     "phase114Item3Desc": "ShipFlow is now open-core: this build is the Community Edition, and an uploadable signed licence file unlocks commercial features and lifts its user and automation limits.",
+    "phase114Item6Title": "AI Task Suggestions & Q&A on Scrum",
+    "phase114Item6Desc": "Sprint Planning gets its own \"Suggest Tasks with AI\" and per-sprint Q&A button — the same AI features Shape Up pitches already had.",
     "phase115Theme": "ShipFlow Agent",
     "phase115Item0Title": "A Mentionable AI Teammate",
     "phase115Item0Desc": "@mention the ShipFlow Agent in any comment thread for context-aware help, scoped to your permissions.",
@@ -8587,6 +8589,11 @@
     "disciplineBackend": "Backend",
     "disciplineMobile": "Mobile",
     "disciplineQa": "QA"
+  },
+  "suggestedSprintTasksPanel": {
+    "dialogSubtitle": "Generated from this sprint's tasks and goal — sprint suggestions don't use Figma design context.",
+    "loading": "AI is analyzing this sprint...",
+    "sourceSprint": "Sprint"
   },
   "testCasesSection": {
     "title": "Test Cases",
