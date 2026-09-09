@@ -190,6 +190,7 @@ docker compose up -d
   - Variance analysis and efficiency ratios
   - Out-of-scope work (tasks) tracking with traceability
   - PDF and CSV export functionality
+  - **Scrum projects get their own report set**: sprint burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report
 - **QA & Testing**: Bug tracking and test case management
   - **Bug Reports**: Comprehensive bug tracking with severity and status workflows
     - **Direct Project Association**: Bugs can be created at project level (ideal for Kanban)

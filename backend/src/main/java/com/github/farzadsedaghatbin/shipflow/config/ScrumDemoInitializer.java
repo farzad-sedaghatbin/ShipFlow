@@ -47,6 +47,7 @@ public class ScrumDemoInitializer implements CommandLineRunner {
   private final TaskRepository taskRepository;
   private final UserRepository userRepository;
   private final PersonRepository personRepository;
+  private final ReleaseRepository releaseRepository;
 
   @Override
   @Transactional
@@ -131,23 +132,38 @@ public class ScrumDemoInitializer implements CommandLineRunner {
         .sprintGoal("Polish UX, fix top customer-reported bugs, ship dark mode")
         .build());
 
+    // Two releases so the Release Report demo isn't empty: v1.0 (already shipped, covers
+    // Sprint 1+2) and v1.1 (in progress, covers Sprint 3).
+    Release release1 = releaseRepository.save(Release.builder()
+        .project(scrumProject).name("Mobile v1.0").version("v1.0.0")
+        .description("Onboarding + push notifications")
+        .status(ReleaseStatus.RELEASED)
+        .targetDate(s2End).releaseDate(s2End)
+        .build());
+    Release release2 = releaseRepository.save(Release.builder()
+        .project(scrumProject).name("Mobile v1.1").version("v1.1.0")
+        .description("Dark mode, accessibility, and performance polish")
+        .status(ReleaseStatus.IN_PROGRESS)
+        .targetDate(s3End)
+        .build());
+
     // Sprint 1 tasks — all DONE, staggered completedAt for burndown staircase
-    task("Email sign-up endpoint",       TaskStatus.DONE, TaskPriority.HIGH,   5, sprint1, aliPerson,  saraPerson, "backend,auth",          s1Start.plusDays(3).atTime(11, 0));
-    task("Google OAuth integration",     TaskStatus.DONE, TaskPriority.HIGH,   3, sprint1, aliPerson,  saraPerson, "backend,oauth",          s1Start.plusDays(7).atTime(15, 30));
-    task("Onboarding wizard screens",    TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint1, minaPerson, saraPerson, "frontend,ux",            s1Start.plusDays(12).atTime(9, 45));
+    task("Email sign-up endpoint",       TaskStatus.DONE, TaskPriority.HIGH,   5, sprint1, aliPerson,  saraPerson, "backend,auth",          s1Start.plusDays(3).atTime(11, 0), release1);
+    task("Google OAuth integration",     TaskStatus.DONE, TaskPriority.HIGH,   3, sprint1, aliPerson,  saraPerson, "backend,oauth",          s1Start.plusDays(7).atTime(15, 30), release1);
+    task("Onboarding wizard screens",    TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint1, minaPerson, saraPerson, "frontend,ux",            s1Start.plusDays(12).atTime(9, 45), release1);
 
     // Sprint 2 tasks — all DONE
-    task("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH,   8, sprint2, aliPerson,  saraPerson, "backend,notifications",  s2Start.plusDays(4).atTime(14, 0));
-    task("Notification preferences UI",   TaskStatus.DONE, TaskPriority.MEDIUM, 3, sprint2, minaPerson, saraPerson, "frontend",               s2Start.plusDays(8).atTime(10, 15));
-    task("In-app message center",         TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint2, minaPerson, saraPerson, "frontend,messaging",      s2Start.plusDays(11).atTime(16, 0));
+    task("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH,   8, sprint2, aliPerson,  saraPerson, "backend,notifications",  s2Start.plusDays(4).atTime(14, 0), release1);
+    task("Notification preferences UI",   TaskStatus.DONE, TaskPriority.MEDIUM, 3, sprint2, minaPerson, saraPerson, "frontend",               s2Start.plusDays(8).atTime(10, 15), release1);
+    task("In-app message center",         TaskStatus.DONE, TaskPriority.MEDIUM, 5, sprint2, minaPerson, saraPerson, "frontend,messaging",      s2Start.plusDays(11).atTime(16, 0), release1);
 
     // Sprint 3 tasks — mixed statuses for realistic active burndown
-    task("Dark-mode theme tokens",        TaskStatus.DONE,        TaskPriority.MEDIUM, 2, sprint3, minaPerson, saraPerson, "frontend,theme",      s3Start.plusDays(3).atTime(11, 0));
-    task("Fix top 5 crash reports",       TaskStatus.DONE,        TaskPriority.HIGH,   5, sprint3, aliPerson,  saraPerson, "bugfix",              s3Start.plusDays(8).atTime(17, 0));
-    task("Accessibility audit pass",      TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3, sprint3, minaPerson, saraPerson, "a11y,frontend",       null);
-    task("Performance: lazy-load images", TaskStatus.TODO,        TaskPriority.LOW,    2, sprint3, minaPerson, saraPerson, "performance,frontend", null);
+    task("Dark-mode theme tokens",        TaskStatus.DONE,        TaskPriority.MEDIUM, 2, sprint3, minaPerson, saraPerson, "frontend,theme",      s3Start.plusDays(3).atTime(11, 0), release2);
+    task("Fix top 5 crash reports",       TaskStatus.DONE,        TaskPriority.HIGH,   5, sprint3, aliPerson,  saraPerson, "bugfix",              s3Start.plusDays(8).atTime(17, 0), release2);
+    task("Accessibility audit pass",      TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3, sprint3, minaPerson, saraPerson, "a11y,frontend",       null, release2);
+    task("Performance: lazy-load images", TaskStatus.TODO,        TaskPriority.LOW,    2, sprint3, minaPerson, saraPerson, "performance,frontend", null, release2);
 
-    log.info("ScrumDemoInitializer: complete — 3 sprints + 10 tasks seeded for Mobile App — Scrum Demo");
+    log.info("ScrumDemoInitializer: complete — 3 sprints + 10 tasks + 2 releases seeded for Mobile App — Scrum Demo");
   }
 
   /**
@@ -164,39 +180,62 @@ public class ScrumDemoInitializer implements CommandLineRunner {
         .sorted(Comparator.comparing(Cycle::getStartDate))
         .toList();
 
+    Project project = ordered.get(0).getProject();
+    Release release1 = releaseRepository.findByProjectId(project.getId()).stream()
+        .filter(r -> "v1.0.0".equals(r.getVersion()))
+        .findFirst()
+        .orElseGet(() -> releaseRepository.save(Release.builder()
+            .project(project).name("Mobile v1.0").version("v1.0.0")
+            .description("Onboarding + push notifications")
+            .status(ReleaseStatus.RELEASED)
+            .targetDate(ordered.size() >= 2 ? ordered.get(1).getEndDate() : ordered.get(0).getEndDate())
+            .releaseDate(ordered.size() >= 2 ? ordered.get(1).getEndDate() : ordered.get(0).getEndDate())
+            .build()));
+    Release release2 = releaseRepository.findByProjectId(project.getId()).stream()
+        .filter(r -> "v1.1.0".equals(r.getVersion()))
+        .findFirst()
+        .orElseGet(() -> releaseRepository.save(Release.builder()
+            .project(project).name("Mobile v1.1").version("v1.1.0")
+            .description("Dark mode, accessibility, and performance polish")
+            .status(ReleaseStatus.IN_PROGRESS)
+            .targetDate(ordered.size() >= 3 ? ordered.get(2).getEndDate() : null)
+            .build()));
+
     if (ordered.size() >= 1) {
       Cycle s1 = ordered.get(0);
       LocalDate s1Start = s1.getStartDate();
-      task("Email sign-up endpoint",    TaskStatus.DONE, TaskPriority.HIGH,   5, s1, aliPerson,  saraPerson, "backend,auth",    s1Start.plusDays(3).atTime(11, 0));
-      task("Google OAuth integration",  TaskStatus.DONE, TaskPriority.HIGH,   3, s1, aliPerson,  saraPerson, "backend,oauth",   s1Start.plusDays(7).atTime(15, 30));
-      task("Onboarding wizard screens", TaskStatus.DONE, TaskPriority.MEDIUM, 5, s1, minaPerson, saraPerson, "frontend,ux",     s1Start.plusDays(12).atTime(9, 45));
+      task("Email sign-up endpoint",    TaskStatus.DONE, TaskPriority.HIGH,   5, s1, aliPerson,  saraPerson, "backend,auth",    s1Start.plusDays(3).atTime(11, 0), release1);
+      task("Google OAuth integration",  TaskStatus.DONE, TaskPriority.HIGH,   3, s1, aliPerson,  saraPerson, "backend,oauth",   s1Start.plusDays(7).atTime(15, 30), release1);
+      task("Onboarding wizard screens", TaskStatus.DONE, TaskPriority.MEDIUM, 5, s1, minaPerson, saraPerson, "frontend,ux",     s1Start.plusDays(12).atTime(9, 45), release1);
     }
     if (ordered.size() >= 2) {
       Cycle s2 = ordered.get(1);
       LocalDate s2Start = s2.getStartDate();
-      task("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH,   8, s2, aliPerson,  saraPerson, "backend,notifications", s2Start.plusDays(4).atTime(14, 0));
-      task("Notification preferences UI",   TaskStatus.DONE, TaskPriority.MEDIUM, 3, s2, minaPerson, saraPerson, "frontend",              s2Start.plusDays(8).atTime(10, 15));
-      task("In-app message center",         TaskStatus.DONE, TaskPriority.MEDIUM, 5, s2, minaPerson, saraPerson, "frontend,messaging",     s2Start.plusDays(11).atTime(16, 0));
+      task("APNs + FCM token registration", TaskStatus.DONE, TaskPriority.HIGH,   8, s2, aliPerson,  saraPerson, "backend,notifications", s2Start.plusDays(4).atTime(14, 0), release1);
+      task("Notification preferences UI",   TaskStatus.DONE, TaskPriority.MEDIUM, 3, s2, minaPerson, saraPerson, "frontend",              s2Start.plusDays(8).atTime(10, 15), release1);
+      task("In-app message center",         TaskStatus.DONE, TaskPriority.MEDIUM, 5, s2, minaPerson, saraPerson, "frontend,messaging",     s2Start.plusDays(11).atTime(16, 0), release1);
     }
     if (ordered.size() >= 3) {
       Cycle s3 = ordered.get(2);
       LocalDate s3Start = s3.getStartDate();
-      task("Dark-mode theme tokens",        TaskStatus.DONE,        TaskPriority.MEDIUM, 2, s3, minaPerson, saraPerson, "frontend,theme",       s3Start.plusDays(3).atTime(11, 0));
-      task("Fix top 5 crash reports",       TaskStatus.DONE,        TaskPriority.HIGH,   5, s3, aliPerson,  saraPerson, "bugfix",               s3Start.plusDays(8).atTime(17, 0));
-      task("Accessibility audit pass",      TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3, s3, minaPerson, saraPerson, "a11y,frontend",        null);
-      task("Performance: lazy-load images", TaskStatus.TODO,        TaskPriority.LOW,    2, s3, minaPerson, saraPerson, "performance,frontend",  null);
+      task("Dark-mode theme tokens",        TaskStatus.DONE,        TaskPriority.MEDIUM, 2, s3, minaPerson, saraPerson, "frontend,theme",       s3Start.plusDays(3).atTime(11, 0), release2);
+      task("Fix top 5 crash reports",       TaskStatus.DONE,        TaskPriority.HIGH,   5, s3, aliPerson,  saraPerson, "bugfix",               s3Start.plusDays(8).atTime(17, 0), release2);
+      task("Accessibility audit pass",      TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 3, s3, minaPerson, saraPerson, "a11y,frontend",        null, release2);
+      task("Performance: lazy-load images", TaskStatus.TODO,        TaskPriority.LOW,    2, s3, minaPerson, saraPerson, "performance,frontend",  null, release2);
     }
     log.info("ScrumDemoInitializer: task back-fill complete");
   }
 
   private void task(String title, TaskStatus status, TaskPriority priority, int points,
-      Cycle cycle, Person assignee, Person createdBy, String tags, LocalDateTime completedAt) {
+      Cycle cycle, Person assignee, Person createdBy, String tags, LocalDateTime completedAt,
+      Release targetRelease) {
     Task t = Task.builder()
         .title(title)
         .description(title + " — Scrum demo task")
         .status(status).priority(priority).storyPoints(points)
         .cycle(cycle).project(cycle.getProject())
         .assignee(assignee).createdBy(createdBy).tags(tags)
+        .targetRelease(targetRelease)
         .build();
     if (completedAt != null) t.setCompletedAt(completedAt);
     taskRepository.save(t);

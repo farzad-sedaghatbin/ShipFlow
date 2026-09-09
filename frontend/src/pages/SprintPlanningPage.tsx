@@ -13,15 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, ArrowLeft, BarChart2, TrendingDown } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProject } from '../contexts/ProjectContext';
 import { cycleService } from '../services/cycleService';
 import { taskService } from '../services/taskService';
 import { Task } from '../types';
-import { BurndownChart } from '../components/BurndownChart';
-import { VelocityChart } from '../components/VelocityChart';
 
 
 function StoryPointBadge({ points }: { points?: number | null }) {
@@ -279,39 +276,6 @@ export default function SprintPlanningPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Charts */}
-      {currentProject && (
-        <Tabs defaultValue="burndown">
-          <TabsList>
-            <TabsTrigger value="burndown" className="gap-2">
-              <TrendingDown className="h-4 w-4" />
-              {t('sprintPlanning.burndown')}
-            </TabsTrigger>
-            <TabsTrigger value="velocity" className="gap-2">
-              <BarChart2 className="h-4 w-4" />
-              {t('sprintPlanning.velocityChart')}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="burndown">
-            {selectedCycleId && selectedCycle ? (
-              <BurndownChart
-                cycleId={selectedCycleId}
-                cycleName={selectedCycle.name}
-              />
-            ) : (
-              <Card>
-                <CardContent className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-                  {t('sprintPlanning.noSprint')}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-          <TabsContent value="velocity">
-            <VelocityChart projectId={currentProject.id} />
-          </TabsContent>
-        </Tabs>
-      )}
     </div>
   );
 }
