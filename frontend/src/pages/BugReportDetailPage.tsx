@@ -7,10 +7,12 @@ import { BugViewDialog } from '../components/BugViewDialog';
 import BugReportModal from '../components/BugReportModal';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { BugReport, CreateBugReportRequest, UpdateBugReportRequest } from '../types';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 
 export default function BugReportDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const goBack = useBackNavigation('/qa/bug-reports');
   const { t } = useTranslation();
   const [bug, setBug] = useState<BugReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export default function BugReportDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-muted-foreground">{error || t('globalSearch.bugNotFound', 'Bug report not found')}</p>
-        <Button variant="outline" onClick={() => navigate('/qa/bug-reports')}>
+        <Button variant="outline" onClick={() => goBack()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           {t('globalSearch.backToBugs', 'Back to Bug Reports')}
         </Button>
@@ -82,7 +84,7 @@ export default function BugReportDetailPage() {
       <BugViewDialog
         bug={bug}
         open={true}
-        onOpenChange={(open) => { if (!open) navigate('/qa/bug-reports'); }}
+        onOpenChange={(open) => { if (!open) goBack(); }}
         onEdit={() => setEditOpen(true)}
       />
       <BugReportModal

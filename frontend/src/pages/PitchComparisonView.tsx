@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -29,6 +29,7 @@ import {
   CapacityWarningSeverity
 } from '../types';
 import { useToast } from '../contexts';
+import { useBackNavigation } from '../hooks/useBackNavigation';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { cn } from '../lib/utils';
 
@@ -36,7 +37,7 @@ const PitchComparisonView = () => {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const cycleId = searchParams.get('cycleId');
-  const navigate = useNavigate();
+  const goBack = useBackNavigation('/betting');
   const { showError } = useToast();
 
   const [cycle, setCycle] = useState<Cycle | null>(null);
@@ -172,7 +173,7 @@ const PitchComparisonView = () => {
             <AlertTitle>{t('pitchComparison.error')}</AlertTitle>
             <AlertDescription>{error || t('pitchComparison.failedToLoad')}</AlertDescription>
           </Alert>
-          <Button onClick={() => navigate(-1)} className="mt-4">
+          <Button onClick={() => goBack()} className="mt-4">
             <ArrowLeft className="mr-2 h-4 w-4" /> {t('pitchComparison.goBack')}
           </Button>
         </div>
@@ -186,7 +187,7 @@ const PitchComparisonView = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <Button variant="ghost" onClick={() => navigate(-1)} className="mb-2">
+            <Button variant="ghost" onClick={() => goBack()} className="mb-2">
               <ArrowLeft className="mr-2 h-4 w-4" /> {t('pitchComparison.backToBetting')}
             </Button>
             <h1 className="text-3xl font-bold tracking-tight">{t('pitchComparison.title')}</h1>
