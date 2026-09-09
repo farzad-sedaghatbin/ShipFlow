@@ -5699,6 +5699,7 @@
     "phase113Item2Desc": "Multi-instance notification streaming and multi-tab support, so live features hold up under real deployments.",
     "phase113Item3Title": "Steadier Live Notifications",
     "phase113Item3Desc": "Notifications now stay live across multiple open tabs and devices, and reconnect more reliably after a network blip.",
+    "shipped1140Title": "AI You Can Trust",
     "shipped1131Title": "AI Reliability & Security Hardening",
     "shipped1131Item0Title": "AI Search Now Understands Persian & Arabic",
     "shipped1131Item0Desc": "The Q&A assistant and AI test-case generation were silently dropping every non-Latin-script word during search, so Persian and Arabic questions returned nothing useful. Fixed for real Farsi/RTL support.",
