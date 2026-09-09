@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import {
   AreaChart,
   Area,
@@ -38,6 +37,7 @@ import {
   McpUsageTimelinePoint,
   McpUsageLogEntry,
 } from '../../services/mcpUsageService';
+import { useBackNavigation } from '../../hooks/useBackNavigation';
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
@@ -69,7 +69,7 @@ const PERIOD_OPTIONS = [
 
 export default function McpUsageReport() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const goBack = useBackNavigation('/integrations/mcp');
 
   const [days, setDays] = useState(30);
   const [customInput, setCustomInput] = useState('');
@@ -111,7 +111,7 @@ export default function McpUsageReport() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" onClick={() => goBack()}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>

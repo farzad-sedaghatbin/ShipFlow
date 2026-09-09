@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
 import {
@@ -81,6 +81,7 @@ const getStatusIcon = (status: ReleaseStatus) => {
 export default function ReleaseListPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentProject, isAllProjectsSelected } = useProject();
   const { showSuccess, showError } = useToast();
   const [releases, setReleases] = useState<Release[]>([]);
@@ -282,7 +283,13 @@ export default function ReleaseListPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/releases-management/${release.id}`)}>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  navigate(`/releases-management/${release.id}`, {
+                                    state: { from: `${location.pathname}${location.search}` },
+                                  })
+                                }
+                              >
                                 {t('common.view')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => navigate(`/releases-management/${release.id}/edit`)}>
@@ -342,7 +349,15 @@ export default function ReleaseListPage() {
                               {t('releases.releasedOn')} {formatLocalizedDate(release.releaseDate, i18n.language)}
                             </div>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/releases-management/${release.id}`)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              navigate(`/releases-management/${release.id}`, {
+                                state: { from: `${location.pathname}${location.search}` },
+                              })
+                            }
+                          >
                             {t('common.view')}
                           </Button>
                         </div>

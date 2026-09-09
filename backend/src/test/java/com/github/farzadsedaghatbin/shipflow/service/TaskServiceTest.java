@@ -867,6 +867,27 @@ class TaskServiceTest {
   }
 
   @Test
+  void bulkCreate_WithoutPitchId_ShouldCreateDebtImprovementTasksUnderCycleOnly() {
+    BulkCreateTaskRequest request = new BulkCreateTaskRequest();
+    request.setCycleId(testCycle.getId());
+    request.setTasks(List.of(
+        TaskSuggestionDTO.builder().title("Sprint-suggested task")
+            .description("No pitch backing this one").estimateHours(BigDecimal.valueOf(5))
+            .sourceContext(SuggestionSource.SPRINT)
+            .disciplines(List.of(Discipline.BACKEND)).build()));
+
+    BulkCreateTaskResult result = taskService.bulkCreate(request);
+
+    assertThat(result.getSuccessCount()).isEqualTo(1);
+    assertThat(result.getFailureCount()).isZero();
+    assertThat(result.getErrors()).isEmpty();
+    assertThat(result.getCreatedTasks()).hasSize(1);
+    assertThat(result.getCreatedTasks().get(0).getTitle()).isEqualTo("Sprint-suggested task");
+    assertThat(result.getCreatedTasks().get(0).getPitchId()).isNull();
+    assertThat(result.getCreatedTasks().get(0).getCategory()).isEqualTo(TaskCategory.DEBT_IMPROVEMENT);
+  }
+
+  @Test
   void bulkCreate_WithOneInvalidPitch_ShouldReportPartialFailure() {
     BulkCreateTaskRequest request = new BulkCreateTaskRequest();
     request.setPitchId(999L);
