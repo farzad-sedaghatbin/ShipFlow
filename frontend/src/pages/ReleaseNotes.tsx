@@ -122,6 +122,12 @@ const releases: Release[] = [
         description:
           'Scrum projects now get their own Reports page — burndown, burnup, and a per-sprint completion report, plus project-wide velocity and a release report. Burndown and velocity moved here from Sprint Planning, which now stays focused on backlog grooming and capacity planning.',
       },
+      {
+        icon: <Kanban className="h-5 w-5" />,
+        title: 'Active Sprint Board',
+        description:
+          'Scrum projects finally get a board — a new Sprint Board page shows the currently active sprint as a Kanban-style board, filling a gap where Scrum had no board at all.',
+      },
     ],
   },
   {

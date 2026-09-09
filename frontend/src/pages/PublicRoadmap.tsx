@@ -410,6 +410,7 @@ export default function PublicRoadmap() {
         { icon: <Sliders className="h-5 w-5" />, title: t('publicRoadmap.phase114Item2Title'), description: t('publicRoadmap.phase114Item2Desc') },
         { icon: <KeyRound className="h-5 w-5" />, title: t('publicRoadmap.phase114Item3Title'), description: t('publicRoadmap.phase114Item3Desc') },
         { icon: <BarChart3 className="h-5 w-5" />, title: t('publicRoadmap.phase114Item4Title'), description: t('publicRoadmap.phase114Item4Desc') },
+        { icon: <Kanban className="h-5 w-5" />, title: t('publicRoadmap.phase114Item5Title'), description: t('publicRoadmap.phase114Item5Desc') },
       ],
     },
     {

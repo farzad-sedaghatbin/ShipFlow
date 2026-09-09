@@ -28,7 +28,7 @@ ShipFlow is methodology-agnostic. Each project runs in one of three modes, and t
 The sidebar changes per mode:
 - **Shape Up** shows **Cycles**, the Pitch Board, Betting Table, Health, and Retrospectives.
 - **Kanban** hides cycles and betting; the Backlog opens as a **board** by default.
-- **Scrum** renames "Cycles" to **Sprints** and adds a dedicated **Sprint Planning** page.
+- **Scrum** renames "Cycles" to **Sprints** and adds dedicated **Sprint Planning** and **Sprint Board** pages.
 
 ## Kanban Mode
 
@@ -57,6 +57,10 @@ Open **Sprint Planning** from the sidebar (Scrum projects only). It's a two-colu
 To set a task's story points, open the task and fill in the **Estimate (story points)** field. Tasks without points count as zero in the totals.
 
 Burndown, burnup, sprint report, velocity, and release report all live on the **Reports** page (see the "Reports & Analytics" guide) rather than on Sprint Planning itself — Sprint Planning stays focused on backlog grooming and capacity planning.
+
+### Sprint Board
+
+Open **Sprint Board** from the sidebar (Scrum projects only) for a Kanban-style board scoped to whichever sprint is currently active — drag a card between status columns to update it, same interaction as the Kanban Backlog board. If no sprint is active, the page links you to Sprint Planning to start one. Viewing or editing a task's full details opens the regular Task Detail page.
 
 ## Tips
 
