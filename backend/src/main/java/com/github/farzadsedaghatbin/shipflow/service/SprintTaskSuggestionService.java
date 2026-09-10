@@ -73,7 +73,7 @@ public class SprintTaskSuggestionService {
               + " Please configure app.ai.provider and the corresponding credentials.");
     }
 
-    Cycle cycle = cycleRepository.findById(cycleId)
+    Cycle cycle = cycleRepository.findByIdWithProject(cycleId)
         .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + cycleId));
 
     List<String> existingTaskTitles = taskRepository.findByCycleIdNotDeleted(cycleId).stream()
