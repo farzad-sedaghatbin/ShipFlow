@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`POST /api/ai/sprint-task-suggestions/{cycleId}/generate` (Sprint Planning's "Suggest Tasks with AI", shipped in v1.14.0) returned HTTP 500 on every call in production.** Found by validating the live v1.14.0 release end-to-end rather than assuming a clean merge meant a working feature — the equivalent pitch-based suggestion endpoint worked fine on the same instance, isolating the bug to the new Sprint code path rather than the LLM provider config. Root cause: `SprintTaskSuggestionService.suggestTasks()` loaded the `Cycle` via a plain `cycleRepository.findById()`, then read the lazy `cycle.getProject()` association after that repository call's own transaction had already closed (`spring.jpa.open-in-view=false` in production, no ambient transaction on the service call) — throwing `LazyInitializationException`, caught only by the generic 500 handler. Every other caller of `cycle.getProject()` outside a guaranteed-open session already used `CycleRepository.findByIdWithProject` (an existing `LEFT JOIN FETCH` query); `SprintTaskSuggestionService` is now consistent with that pattern. The existing unit test suite couldn't catch this — it mocks the repository to return an already-fully-built POJO, which has no real Hibernate proxy to fail on — so a new `SprintTaskSuggestionServiceLazyLoadingIntegrationTest` exercises the real repository and service with no test-level `@Transactional`, matching production's session lifecycle; verified it reproduces the exact exception without the fix and passes with it.
+
 ## [1.14.0] - 2026-09-09
 
 ### Added
