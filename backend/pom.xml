@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.7</version>
+        <version>3.5.16</version>
         <relativePath/>
     </parent>
 
@@ -37,7 +37,7 @@
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
-                <version>2.31.78</version>
+                <version>2.54.15</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
