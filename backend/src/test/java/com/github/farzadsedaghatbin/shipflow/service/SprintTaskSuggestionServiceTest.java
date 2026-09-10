@@ -111,7 +111,7 @@ class SprintTaskSuggestionServiceTest {
     @DisplayName("returns parsed suggestions grounded in the sprint goal")
     void returnsParsedSuggestions() {
       Cycle cycle = sampleCycle("Ship the new onboarding wizard end to end.");
-      when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+      when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
       when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(Collections.emptyList());
       when(chatLanguageModel.generate(anyString())).thenReturn(VALID_JSON);
 
@@ -128,7 +128,7 @@ class SprintTaskSuggestionServiceTest {
     @DisplayName("prompt contains sprint goal, name, project, and existing task titles")
     void promptContainsSprintFields() {
       Cycle cycle = sampleCycle("Ship the new onboarding wizard end to end.");
-      when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+      when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
 
       Task existing = new Task();
       existing.setTitle("Existing onboarding task");
@@ -160,7 +160,7 @@ class SprintTaskSuggestionServiceTest {
     @DisplayName("degrades gracefully and instructs conservative inference from name/backlog")
     void noSprintGoal_promptInstructsConservativeInference() {
       Cycle cycle = sampleCycle(null);
-      when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+      when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
       when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(Collections.emptyList());
       when(chatLanguageModel.generate(anyString())).thenReturn(VALID_JSON);
 
@@ -178,7 +178,7 @@ class SprintTaskSuggestionServiceTest {
     @DisplayName("handles blank sprint goal the same as null")
     void blankSprintGoal_treatedAsUnset() {
       Cycle cycle = sampleCycle("   ");
-      when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+      when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
       when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(Collections.emptyList());
       when(chatLanguageModel.generate(anyString())).thenReturn(VALID_JSON);
 
@@ -198,7 +198,7 @@ class SprintTaskSuggestionServiceTest {
     @DisplayName("forces sourceContext to SPRINT even if the LLM claims otherwise")
     void forcesSourceContextToSprint() {
       Cycle cycle = sampleCycle("Sprint goal");
-      when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+      when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
       when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(Collections.emptyList());
       String jsonWithWrongSourceContext =
           """
@@ -245,7 +245,7 @@ class SprintTaskSuggestionServiceTest {
     @Test
     @DisplayName("throws ResourceNotFoundException when cycle doesn't exist")
     void throwsWhenCycleNotFound() {
-      when(cycleRepository.findById(99L)).thenReturn(Optional.empty());
+      when(cycleRepository.findByIdWithProject(99L)).thenReturn(Optional.empty());
 
       assertThatThrownBy(() -> service.suggestTasks(99L))
           .isInstanceOf(ResourceNotFoundException.class);
@@ -255,7 +255,7 @@ class SprintTaskSuggestionServiceTest {
     @DisplayName("throws IllegalStateException when LLM returns non-JSON text")
     void throwsWhenLlmReturnsNonJson() {
       Cycle cycle = sampleCycle("Sprint goal");
-      when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+      when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
       when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(Collections.emptyList());
       when(chatLanguageModel.generate(anyString())).thenReturn("Sorry, I cannot help with that.");
 
@@ -268,7 +268,7 @@ class SprintTaskSuggestionServiceTest {
     @DisplayName("drops malformed suggestions missing disciplines instead of surfacing them")
     void dropsMalformedSuggestions() {
       Cycle cycle = sampleCycle("Sprint goal");
-      when(cycleRepository.findById(10L)).thenReturn(Optional.of(cycle));
+      when(cycleRepository.findByIdWithProject(10L)).thenReturn(Optional.of(cycle));
       when(taskRepository.findByCycleIdNotDeleted(10L)).thenReturn(Collections.emptyList());
       String malformedJson =
           """
