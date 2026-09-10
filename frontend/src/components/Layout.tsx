@@ -118,6 +118,18 @@ function getPageTitle(pathname: string): string {
   return ROUTE_TITLES[segment] || 'ShipFlow';
 }
 
+// Routes that render their own entity-scoped QAFloatingButton — see the comment
+// at this file's global QAFloatingButton render site for why this matters.
+const ENTITY_SCOPED_QA_ROUTE_PATTERNS = [
+  /^\/cycles\/\d+$/,
+  /^\/pitches\/\d+$/,
+  /^\/sprint-planning$/,
+];
+
+function isEntityScopedQaRoute(pathname: string): boolean {
+  return ENTITY_SCOPED_QA_ROUTE_PATTERNS.some((pattern) => pattern.test(pathname));
+}
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -776,10 +788,16 @@ export default function Layout({ children }: LayoutProps) {
       {/* Global Search Command Palette */}
       <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
-      {/* Q&A Floating Button - Available on all pages. Scoped to the whole Knowledge
-          Center (wiki + pitches + docs…), not the active cycle, so general questions
-          retrieve across all ingested content without entity filtering. */}
-      <QAFloatingButton contextType="knowledge" />
+      {/* Q&A Floating Button - Scoped to the whole Knowledge Center (wiki + pitches +
+          docs…) on every page EXCEPT the ones below, which render their own
+          entity-scoped QAFloatingButton (contextType="cycle"/"pitch") at the exact
+          same fixed position — rendering both here would silently occlude the
+          page-specific one, making its structured context (cycle goal/dates/tasks,
+          pitch problem/solution) unreachable regardless of how well the backend
+          wires it up. See CycleDetail.tsx, PitchDetail.tsx, SprintPlanningPage.tsx. */}
+      {!isEntityScopedQaRoute(location.pathname) && (
+        <QAFloatingButton contextType="knowledge" />
+      )}
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
