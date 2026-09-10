@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Public Roadmap's "Long-Term Vision" section still showed pre-shift version numbers after the v1.14.0 roadmap renumbering.** When the Scrum-parity feedback batch absorbed the v1.14.0 slot and every later milestone shifted up by one (see the v1.14.0 versioning note in `CLAUDE.md`), the `upcomingPhases` entry was correctly renumbered, but five `futureVision` card titles ("Time to Value (v1.16)", "Dev Loop (v1.17)", "Stakeholder View (v1.18)", "Platform Trust (v1.19)", "Knowledge & Docs Graph (v1.20)") and the section subtitle ("...after v1.15's ShipFlow Agent...") were missed — they read from separate i18n string literals that embed the version number in the text rather than deriving it, so nothing caught the drift. Found by validating the live production site after release rather than assuming a successful merge/tag meant every claim was actually correct. Now read v1.17/v1.18/v1.19/v1.20/v1.21 and "v1.16's ShipFlow Agent", matching `CLAUDE.md`'s Future milestones table.
+
 ## [1.14.0] - 2026-09-09
 
 ### Added
