@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import Layout from '../Layout';
 import packageJson from '../../../package.json';
@@ -49,7 +49,9 @@ vi.mock('../WelcomeTourDialog', () => ({
 }));
 
 vi.mock('../QAFloatingButton', () => ({
-  QAFloatingButton: () => <div data-testid="qa-button">QA Button</div>,
+  QAFloatingButton: ({ contextType }: { contextType: string }) => (
+    <div data-testid="qa-button" data-context-type={contextType}>QA Button</div>
+  ),
 }));
 
 vi.mock('../NotificationCenter', () => ({
@@ -140,5 +142,52 @@ describe('Layout', () => {
 
     expect(screen.getByTestId('project-selector')).toBeInTheDocument();
     expect(screen.getByTestId('breadcrumbs')).toBeInTheDocument();
+  });
+
+  describe('global Q&A floating button visibility', () => {
+    // On these routes, the page itself renders an entity-scoped QAFloatingButton
+    // (contextType="cycle"/"pitch") at the same fixed position — the global
+    // "knowledge"-scoped one here must be suppressed or it silently occludes and
+    // intercepts every click meant for the page-specific one (see Layout.tsx's
+    // isEntityScopedQaRoute comment for the full story).
+    it.each([
+      ['/cycles/8', 'a Cycle/Sprint Detail page'],
+      ['/pitches/42', 'a Pitch Detail page'],
+      ['/sprint-planning', 'Sprint Planning'],
+    ])('hides the global knowledge Q&A button on %s (%s)', (path) => {
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <TooltipProvider>
+            <Layout>
+              <div>Test Content</div>
+            </Layout>
+          </TooltipProvider>
+        </MemoryRouter>
+      );
+
+      expect(screen.queryByTestId('qa-button')).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ['/dashboard', 'Dashboard'],
+      ['/cycles', 'the Sprints/Cycles list'],
+      ['/pitches', 'the Pitch Board'],
+      ['/backlog', 'Backlog'],
+      ['/cycles/8/edit', 'a Cycle edit form (not the detail page)'],
+    ])('shows the global knowledge Q&A button on %s (%s)', (path) => {
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <TooltipProvider>
+            <Layout>
+              <div>Test Content</div>
+            </Layout>
+          </TooltipProvider>
+        </MemoryRouter>
+      );
+
+      const button = screen.getByTestId('qa-button');
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveAttribute('data-context-type', 'knowledge');
+    });
   });
 });
