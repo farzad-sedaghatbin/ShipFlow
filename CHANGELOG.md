@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The global Q&A widget couldn't reliably answer even the most basic documentation questions** ("what is a hill chart", "what happens at the Community Edition user limit") **despite the content existing in the help guides** the widget's own suggested prompts explicitly invite ("Find docs about a feature", "What does a specific term mean?"). Root cause: for a generic, non-entity-scoped question, `QAService` ran one plain similarity search across the *entire* shared vector store — help-guide chunks competed unfiltered against every embedded business chunk (cycles, pitches, risk summaries, wiki pages...), and on a non-trivial org, business chunks statistically crowd the on-topic guide content out of the top-K. The dedicated Help & Guides feature (`HelpGuideAIService`) already solved this for its own search path with a `source=help-guide` metadata-filtered query; `QAService` never got the same treatment. Fixed by merging in a dedicated help-guide-filtered search (mirroring `HelpGuideAIService#searchHelpGuideChunks`'s exact two-tier approach — metadata filter first, over-retrieve-then-filter fallback if the store doesn't support it) whenever a question isn't already scoped to a specific cycle/pitch/team, so guide content always gets a fair chance to surface alongside business context.
+
+
 ## [1.14.0] - 2026-09-09
 
 ### Added

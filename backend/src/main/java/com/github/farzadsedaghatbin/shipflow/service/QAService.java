@@ -21,9 +21,11 @@ import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,6 +50,13 @@ public class QAService {
 
   @Value("${app.qa.retrieval.top-k:5}")
   private int topK;
+
+  /**
+   * Metadata tag {@link HelpGuideAIService} stamps on every help-guide chunk it embeds —
+   * must stay in sync with {@code HelpGuideAIService.HELP_GUIDE_SOURCE}. Used to guarantee
+   * help-guide content a fair chance in generic Q&A answers; see {@link #mergeHelpGuideMatches}.
+   */
+  private static final String HELP_GUIDE_SOURCE = "help-guide";
 
   /** Active vector store provider (in-memory, qdrant, chroma, ...). Determines the relevance-score scale. */
   @Value("${app.qa.vectorstore.provider:in-memory}")
@@ -326,6 +335,17 @@ public class QAService {
       if (request.getCycleId() != null || request.getTeamId() != null
           || request.getContextId() != null || request.getContextName() != null) {
         matches = filterMatchesByContext(matches, request);
+      } else {
+        // Generic, non-entity-scoped questions (e.g. the global "knowledge" floating widget,
+        // whose own suggested prompts explicitly invite "find docs about a feature"-style
+        // questions) run one plain similarity search across the ENTIRE shared store — help-guide
+        // chunks compete unfiltered against every embedded business chunk (cycles, pitches, risk
+        // summaries, wiki...), which on a non-trivial org statistically crowds out on-topic guide
+        // content from the top-K (e.g. "what is a hill chart" returning an unrelated risk summary
+        // instead of 03-hill-charts.md). Mirror HelpGuideAIService#searchHelpGuideChunks's
+        // dedicated help-guide-filtered search and merge in anything it finds that the general
+        // search missed, so guide content always gets a fair chance to surface here too.
+        matches = mergeHelpGuideMatches(matches, questionEmbedding, retrieveK, minScore);
       }
 
       // 5. Filter by minimum relevance
@@ -634,6 +654,55 @@ public class QAService {
 
   private boolean isQAEnabled() {
     return qaEnabled && embeddingModel != null && embeddingStore != null;
+  }
+
+  /**
+   * Runs a dedicated similarity search restricted to {@code source=help-guide} chunks and merges
+   * in any that the general search (passed in as {@code matches}) didn't already surface,
+   * deduplicated by segment text. Same two-tier approach as
+   * {@link HelpGuideAIService#searchHelpGuideChunks}: a metadata-filtered search first, and if
+   * the configured vector store doesn't support metadata filtering, an over-retrieve-then-filter
+   * fallback. Best-effort — on any failure this returns {@code matches} unchanged rather than
+   * failing the whole question.
+   */
+  private List<EmbeddingMatch<TextSegment>> mergeHelpGuideMatches(List<EmbeddingMatch<TextSegment>> matches,
+      Embedding questionEmbedding, int retrieveK, double minScore) {
+    List<EmbeddingMatch<TextSegment>> helpGuideMatches;
+    try {
+      EmbeddingSearchRequest filtered = EmbeddingSearchRequest.builder().queryEmbedding(questionEmbedding)
+          .maxResults(retrieveK).minScore(minScore).filter(metadataKey("source").isEqualTo(HELP_GUIDE_SOURCE))
+          .build();
+      helpGuideMatches = embeddingStore.search(filtered).matches();
+
+      if (helpGuideMatches.isEmpty()) {
+        EmbeddingSearchRequest broad = EmbeddingSearchRequest.builder().queryEmbedding(questionEmbedding)
+            .maxResults(retrieveK * 20).minScore(minScore).build();
+        helpGuideMatches = embeddingStore.search(broad).matches().stream()
+            .filter(match -> match.embedded() != null && match.embedded().metadata() != null
+                && HELP_GUIDE_SOURCE.equals(match.embedded().metadata().getString("source")))
+            .limit(retrieveK).toList();
+      }
+    } catch (Exception e) {
+      log.debug("Help-guide-filtered search unavailable, skipping merge: {}", e.getMessage());
+      return matches;
+    }
+
+    if (helpGuideMatches.isEmpty()) {
+      return matches;
+    }
+
+    Set<String> existingSegmentText = matches.stream()
+        .map(match -> match.embedded() != null ? match.embedded().text() : null)
+        .collect(Collectors.toCollection(HashSet::new));
+
+    List<EmbeddingMatch<TextSegment>> merged = new ArrayList<>(matches);
+    for (EmbeddingMatch<TextSegment> helpMatch : helpGuideMatches) {
+      String text = helpMatch.embedded() != null ? helpMatch.embedded().text() : null;
+      if (text != null && existingSegmentText.add(text)) {
+        merged.add(helpMatch);
+      }
+    }
+    return merged;
   }
 
   private List<EmbeddingMatch<TextSegment>> filterMatchesByContext(List<EmbeddingMatch<TextSegment>> matches,
