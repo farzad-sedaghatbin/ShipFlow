@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The context-aware Q&A button on Cycle Detail, Pitch Detail, and Sprint Planning was completely unreachable — every click actually opened the generic, project-wide Knowledge Center Q&A instead.** `Layout.tsx` renders a global `QAFloatingButton contextType="knowledge"` at a fixed position on every page with no route check, and it painted on top of (and silently intercepted every click meant for) the page-specific `contextType="cycle"`/`"pitch"` button each of those three pages renders at the identical position — so asking "what's the goal of this sprint" from a Cycle Detail page got a generic, ungrounded answer citing unrelated cycles instead of that sprint's actual data. Found by validating v1.14.0's "Grounded Q&A" claim live rather than assuming a passing merge meant it worked as described. Fixed by hiding the global button on the three routes that render their own (`/cycles/:id`, `/pitches/:id`, `/sprint-planning`); every other route is unaffected. New `Layout.test.tsx` coverage asserts the correct button is shown per route.
+
 ## [1.14.0] - 2026-09-09
 
 ### Added
