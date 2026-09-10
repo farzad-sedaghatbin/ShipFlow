@@ -1243,6 +1243,8 @@ export interface CreateBugReportRequest {
   assigneeId?: number;
   qaAssigneeId?: number;
   targetReleaseId?: number;
+  /** Client-generated key making this create request idempotent — see BugReportModal.tsx. */
+  idempotencyKey?: string;
 }
 
 export interface UpdateBugReportRequest {

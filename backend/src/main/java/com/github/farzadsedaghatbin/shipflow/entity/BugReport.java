@@ -38,6 +38,18 @@ public class BugReport {
   @Column(nullable = false, unique = true, length = 50)
   private String bugKey;
 
+  /**
+   * Client-generated key that makes create-bug-report requests idempotent. Nullable — old rows
+   * and any caller that doesn't send one (e.g. MCP write tools) have no key, and multiple {@code
+   * NULL}s never collide under a standard SQL unique constraint. Guards against the PWA service
+   * worker's background-sync queue replaying a POST that actually succeeded server-side but
+   * appeared to fail client-side (network drop, tab backgrounded mid-request) — see
+   * {@link com.github.farzadsedaghatbin.shipflow.service.BugReportService#createBugReport}.
+   */
+  @NotAudited
+  @Column(name = "idempotency_key", unique = true, length = 100)
+  private String idempotencyKey;
+
   /** Title/summary of the bug. */
   @Column(nullable = false, length = 255)
   private String title;

@@ -26,6 +26,8 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long>, Jpa
 
   Optional<BugReport> findByBugKey(String bugKey);
 
+  Optional<BugReport> findByIdempotencyKey(String idempotencyKey);
+
   List<BugReport> findByPitchId(Long pitchId);
 
   List<BugReport> findByCycleId(Long cycleId);

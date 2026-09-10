@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **A bug report could occasionally get created twice from a single submission.** Root cause: the PWA's service worker queues every non-GET `/api/**` request for background-sync retry (`sw.ts`), with no distinction between idempotent and non-idempotent calls — if a `POST /api/qa/bug-reports` request actually succeeded server-side but appeared to fail client-side (dropped connection, backgrounded tab), the service worker later replayed the exact same request once connectivity returned, creating a second row. Fixed with a client-generated idempotency key: `BugReportModal` mints one UUID per "open the modal to report a new bug" session and sends it with the create request; `BugReportService` now checks for an existing bug report with that key before creating a new one, and the `bug_reports.idempotency_key` column carries a DB-level unique constraint as a backstop against a genuinely concurrent replay. Also closed a smaller, secondary gap while investigating: the submit button's `disabled={loading}` state doesn't take effect until the next render, so two clicks landing before that render could both slip through — replaced the state-based check with a `useRef`-backed synchronous guard, which a state read can't provide (confirmed by a test that reproduces the race and would have failed against the old state-only guard).
+
 ## [1.14.0] - 2026-09-09
 
 ### Added

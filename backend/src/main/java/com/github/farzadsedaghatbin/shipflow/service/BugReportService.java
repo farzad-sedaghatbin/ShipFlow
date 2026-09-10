@@ -68,6 +68,26 @@ public class BugReportService {
   public BugReportDTO createBugReport(CreateBugReportRequest request, Long userId) {
     checkFeatureEnabled();
 
+    // Normalize blank to null so blank-string keys from different callers never collide under
+    // the column's unique constraint the way two genuinely distinct null values wouldn't either.
+    String idempotencyKey = request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank()
+        ? request.getIdempotencyKey()
+        : null;
+    // This lookup-then-create is what stops the realistic case: the service worker's
+    // background-sync queue replaying a POST minutes later, after the original request already
+    // committed — by then this SELECT reliably sees it. It is NOT race-safe against two
+    // requests hitting this method at the literal same instant (a rare edge case for a
+    // reconnect-triggered replay); the column's DB-level unique constraint is the backstop for
+    // that — it fails the second insert loudly rather than ever silently doubling the row.
+    if (idempotencyKey != null) {
+      var existing = bugReportRepository.findByIdempotencyKey(idempotencyKey);
+      if (existing.isPresent()) {
+        log.info("Duplicate create-bug-report request (idempotency key {}) — returning existing {}"
+            + " instead of creating another row", idempotencyKey, existing.get().getBugKey());
+        return toDTO(existing.get());
+      }
+    }
+
     User reporter = userRepository.findById(userId)
         .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
@@ -77,7 +97,7 @@ public class BugReportService {
         .environment(request.getEnvironment()).component(request.getComponent())
         .severity(request.getSeverity())
         .status(request.getStatus() != null ? request.getStatus() : BugStatus.OPEN)
-        .tags(joinTags(request.getTags()))
+        .tags(joinTags(request.getTags())).idempotencyKey(idempotencyKey)
         .attachments(request.getAttachments()).reporter(reporter).build();
 
     // Set direct project relationship first (required for Kanban, optional for

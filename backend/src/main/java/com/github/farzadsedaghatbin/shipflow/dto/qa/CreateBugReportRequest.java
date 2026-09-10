@@ -60,4 +60,12 @@ public class CreateBugReportRequest {
   private Long qaAssigneeId;
 
   private Long targetReleaseId;
+
+  /**
+   * Optional client-generated key (e.g. a UUID minted once when the form is submitted) that makes
+   * this request idempotent — a retried request carrying the same key returns the
+   * already-created bug report instead of creating a duplicate. See {@code BugReport.idempotencyKey}.
+   */
+  @Size(max = 100, message = "Idempotency key must be less than 100 characters")
+  private String idempotencyKey;
 }

@@ -84,6 +84,12 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  // A `useState` read inside handleSubmit's closure can't guard against two clicks that both
+  // land before React re-renders with `disabled={loading}` applied — both closures were created
+  // from the same pre-click render, so both read `loading` as false regardless of what the
+  // first call's `setLoading(true)` schedules. A ref mutates synchronously and is shared across
+  // every closure, so it actually blocks the second call. See handleSubmit below.
+  const submittingRef = useRef(false);
   const [tagInput, setTagInput] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
@@ -125,10 +131,17 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
         qaAssigneeId: bugReport?.qaAssigneeId,
         taskId: bugReport?.taskId,
         targetReleaseId: bugReport?.targetReleaseId,
+        // Minted once per "open the modal to create a new bug" session, not per keystroke —
+        // stays fixed through every retry of this same submission (including the PWA service
+        // worker replaying a queued request after a dropped connection), so the backend can
+        // recognize a replay and return the already-created bug report instead of a duplicate.
+        // Not needed for edit — updates aren't create requests.
+        idempotencyKey: bugReport ? undefined : crypto.randomUUID(),
       });
       setTagInput('');
       setError(null);
       setPendingAttachments([]);
+      submittingRef.current = false;
       loadPeople();
       loadReleases();
       loadPitches();
@@ -224,6 +237,9 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
   };
 
   const handleSubmit = async () => {
+    // See submittingRef's declaration for why this needs to be a ref, not `loading` state.
+    if (submittingRef.current) return;
+
     if (!formData.title?.trim()) {
       setError(t('bugReports.form.titleRequired', 'Title is required'));
       return;
@@ -237,6 +253,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
       return;
     }
 
+    submittingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -260,6 +277,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.saveBugReportFailed'));
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };
