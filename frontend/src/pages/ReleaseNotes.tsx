@@ -87,6 +87,37 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.14.1',
+    date: 'September 10, 2026',
+    title: 'AI Accuracy & Reliability Fixes',
+    highlights: [
+      {
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'Sprint AI Task Suggestions Work Now',
+        description:
+          'Sprint Planning\'s "Suggest Tasks with AI" button returned an error on every single click, while the equivalent feature on pitches worked fine. A missing database fetch on the sprint\'s project reference has been fixed.',
+      },
+      {
+        icon: <Search className="h-5 w-5" />,
+        title: 'Context-Aware Q&A Is Reachable Again',
+        description:
+          'The Q&A button on a Cycle, Sprint, or Pitch page was silently overridden by the general assistant floating on top of it, so questions about that specific sprint or pitch never got a grounded answer. Fixed.',
+      },
+      {
+        icon: <Bug className="h-5 w-5" />,
+        title: 'Bug Reports No Longer Get Submitted Twice',
+        description:
+          'A dropped connection could cause the exact same bug report to be created twice. Bug report submission is now idempotent, so a retried request never creates a duplicate.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'AI Q&A Finds Its Own Help Guides Again',
+        description:
+          'Basic questions like "what is a hill chart" often came back empty, because help-guide content was statistically crowded out by business data in search results. Guide content now gets a fair chance to surface.',
+      },
+    ],
+  },
+  {
     version: '1.14.0',
     date: 'September 9, 2026',
     title: 'AI You Can Trust',
