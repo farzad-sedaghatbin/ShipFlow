@@ -53,6 +53,7 @@ import {
   Bug,
   KeyRound,
   BarChart3,
+  Search,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -108,6 +109,17 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.14.1',
+      date: 'September 10, 2026',
+      title: t('publicRoadmap.shipped1141Title'),
+      highlights: [
+        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.shipped1141Item0Title'), description: t('publicRoadmap.shipped1141Item0Desc') },
+        { icon: <Search className="h-5 w-5" />, title: t('publicRoadmap.shipped1141Item1Title'), description: t('publicRoadmap.shipped1141Item1Desc') },
+        { icon: <Bug className="h-5 w-5" />, title: t('publicRoadmap.shipped1141Item2Title'), description: t('publicRoadmap.shipped1141Item2Desc') },
+        { icon: <FileText className="h-5 w-5" />, title: t('publicRoadmap.shipped1141Item3Title'), description: t('publicRoadmap.shipped1141Item3Desc') },
+      ],
+    },
     {
       version: '1.14.0',
       date: 'September 9, 2026',
