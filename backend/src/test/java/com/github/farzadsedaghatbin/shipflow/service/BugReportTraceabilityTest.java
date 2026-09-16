@@ -124,9 +124,10 @@ class BugReportTraceabilityTest {
     // Arrange
     CreateBugReportRequest request = CreateBugReportRequest.builder()
         .title("Application crashes on startup in IE11").description("Legacy browser compatibility issue")
-        .severity(BugSeverity.CRITICAL).build();
+        .severity(BugSeverity.CRITICAL).projectId(1L).build();
 
     when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
 
     BugReport savedBug = BugReport.builder().id(2L).bugKey("BUG-002").title(request.getTitle())
         .description(request.getDescription()).severity(request.getSeverity()).status(BugStatus.OPEN)

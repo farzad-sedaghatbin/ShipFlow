@@ -191,9 +191,12 @@ class QATestManagementControllerIntegrationTest {
 
   @Test
   void createBugReport_WithValidData_ShouldCreateBugReport() throws Exception {
+    Project project = projectRepository.save(Project.builder().name("Bug Report Project")
+        .projectKey("BRP").isActive(true).createdAt(LocalDateTime.now()).build());
+
     CreateBugReportRequest request = CreateBugReportRequest.builder().title("New Bug")
         .description("New bug description").severity(BugSeverity.MAJOR).status(BugStatus.OPEN)
-        .cycleId(testCycle.getId()).build();
+        .projectId(project.getId()).cycleId(testCycle.getId()).build();
 
     mockMvc.perform(post("/api/qa/bug-reports").contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
