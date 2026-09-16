@@ -31,6 +31,13 @@ Each release shows:
 4. Optionally link to a pitch, cycle, or release
 5. Assign a priority and team member
 
+## Which Project a Bug Belongs To
+Every bug belongs to exactly one project. Normally this is just the project you have selected when you report the bug, and you never have to think about it — the **New Bug Report** button is disabled while you are viewing **All Projects**, because there would be no project to file the bug against. If you link the bug to a pitch, cycle, task, or test run instead, the project is taken from that link.
+
+This matters because every bug list, board, and backlog view is scoped to one project. A bug with no project would be invisible everywhere except the **All Projects** view, so ShipFlow refuses to create one.
+
+If you have older bugs that ended up with no project (for example, created through the MCP `create_bug` tool before it required one), switch the project selector to **All Projects**: the bug list then shows a **Project** column, and those bugs are marked **No project**. Open one and use **Move** (admin only) to file it under the right project.
+
 ## Bug Severity Levels
 - **Critical** — Application is unusable, data loss risk
 - **High** — Major feature broken, no workaround
