@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The app served its entire frontend uncompressed, so every cold load pulled ~2.1 MB over the wire.** Reported as "it takes long to load everything" and confirmed by measurement against a production instance: `GET /assets/index-*.js` returned 1,940,546 bytes with no `Content-Encoding` header *even when the client sent `Accept-Encoding: gzip, deflate, br`*, plus 207 KB of CSS the same way, and there is no reverse proxy in front adding compression. The cause is simply that Tomcat ships with compression disabled and the app never turned it on — the server itself was blameless (load average 0.05, app CPU 0.2%, 2.5 ms to serve that bundle locally), which is why this never looked like a server problem. Enabled `server.compression` for the text types the app actually serves, with a 1 KB floor. Measured on the real bundle: **2102 KB -> 580 KB, a 72% reduction** on every first visit and after every deploy (hashed asset names are immutable-cached, so a deploy re-downloads them). Note `text/javascript` had to be listed explicitly — that's what Vite's bundle is served as, and a MIME type missing from the list is silently sent raw. New `ResponseCompressionIntegrationTest` asserts the header and the on-the-wire byte count using the JDK HTTP client (`TestRestTemplate` transparently decompresses, which would make the test pass whether or not compression was on); verified it fails with the setting disabled.
+
 ## [1.14.1] - 2026-09-10
 
 ### Fixed

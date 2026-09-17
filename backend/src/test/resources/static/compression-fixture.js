@@ -1,0 +1,43 @@
+// Test-only fixture for ResponseCompressionIntegrationTest. Not shipped in the app jar
+// (src/test/resources). Must stay well above server.compression.min-response-size and be
+// compressible, i.e. ordinary repetitive source text.
+export function sampleHandler0(payload) { return { ...payload, index: 0, label: 'compression fixture line 0' }; }
+export function sampleHandler1(payload) { return { ...payload, index: 1, label: 'compression fixture line 1' }; }
+export function sampleHandler2(payload) { return { ...payload, index: 2, label: 'compression fixture line 2' }; }
+export function sampleHandler3(payload) { return { ...payload, index: 3, label: 'compression fixture line 3' }; }
+export function sampleHandler4(payload) { return { ...payload, index: 4, label: 'compression fixture line 4' }; }
+export function sampleHandler5(payload) { return { ...payload, index: 5, label: 'compression fixture line 5' }; }
+export function sampleHandler6(payload) { return { ...payload, index: 6, label: 'compression fixture line 6' }; }
+export function sampleHandler7(payload) { return { ...payload, index: 7, label: 'compression fixture line 7' }; }
+export function sampleHandler8(payload) { return { ...payload, index: 8, label: 'compression fixture line 8' }; }
+export function sampleHandler9(payload) { return { ...payload, index: 9, label: 'compression fixture line 9' }; }
+export function sampleHandler10(payload) { return { ...payload, index: 10, label: 'compression fixture line 10' }; }
+export function sampleHandler11(payload) { return { ...payload, index: 11, label: 'compression fixture line 11' }; }
+export function sampleHandler12(payload) { return { ...payload, index: 12, label: 'compression fixture line 12' }; }
+export function sampleHandler13(payload) { return { ...payload, index: 13, label: 'compression fixture line 13' }; }
+export function sampleHandler14(payload) { return { ...payload, index: 14, label: 'compression fixture line 14' }; }
+export function sampleHandler15(payload) { return { ...payload, index: 15, label: 'compression fixture line 15' }; }
+export function sampleHandler16(payload) { return { ...payload, index: 16, label: 'compression fixture line 16' }; }
+export function sampleHandler17(payload) { return { ...payload, index: 17, label: 'compression fixture line 17' }; }
+export function sampleHandler18(payload) { return { ...payload, index: 18, label: 'compression fixture line 18' }; }
+export function sampleHandler19(payload) { return { ...payload, index: 19, label: 'compression fixture line 19' }; }
+export function sampleHandler20(payload) { return { ...payload, index: 20, label: 'compression fixture line 20' }; }
+export function sampleHandler21(payload) { return { ...payload, index: 21, label: 'compression fixture line 21' }; }
+export function sampleHandler22(payload) { return { ...payload, index: 22, label: 'compression fixture line 22' }; }
+export function sampleHandler23(payload) { return { ...payload, index: 23, label: 'compression fixture line 23' }; }
+export function sampleHandler24(payload) { return { ...payload, index: 24, label: 'compression fixture line 24' }; }
+export function sampleHandler25(payload) { return { ...payload, index: 25, label: 'compression fixture line 25' }; }
+export function sampleHandler26(payload) { return { ...payload, index: 26, label: 'compression fixture line 26' }; }
+export function sampleHandler27(payload) { return { ...payload, index: 27, label: 'compression fixture line 27' }; }
+export function sampleHandler28(payload) { return { ...payload, index: 28, label: 'compression fixture line 28' }; }
+export function sampleHandler29(payload) { return { ...payload, index: 29, label: 'compression fixture line 29' }; }
+export function sampleHandler30(payload) { return { ...payload, index: 30, label: 'compression fixture line 30' }; }
+export function sampleHandler31(payload) { return { ...payload, index: 31, label: 'compression fixture line 31' }; }
+export function sampleHandler32(payload) { return { ...payload, index: 32, label: 'compression fixture line 32' }; }
+export function sampleHandler33(payload) { return { ...payload, index: 33, label: 'compression fixture line 33' }; }
+export function sampleHandler34(payload) { return { ...payload, index: 34, label: 'compression fixture line 34' }; }
+export function sampleHandler35(payload) { return { ...payload, index: 35, label: 'compression fixture line 35' }; }
+export function sampleHandler36(payload) { return { ...payload, index: 36, label: 'compression fixture line 36' }; }
+export function sampleHandler37(payload) { return { ...payload, index: 37, label: 'compression fixture line 37' }; }
+export function sampleHandler38(payload) { return { ...payload, index: 38, label: 'compression fixture line 38' }; }
+export function sampleHandler39(payload) { return { ...payload, index: 39, label: 'compression fixture line 39' }; }
