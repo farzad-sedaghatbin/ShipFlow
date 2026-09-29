@@ -1540,7 +1540,8 @@
       "reopened": "Reopened",
       "wontFix": "Won't Fix",
       "duplicate": "Duplicate"
-    }
+    },
+    "project": "Project"
   },
   "empty": {
     "noData": "No data available",
@@ -2521,7 +2522,9 @@
       "lastUpdated": "Last Updated",
       "actions": "Actions",
       "viewDetails": "View details of {{title}}",
-      "noBugsFound": "No bug reports found"
+      "noBugsFound": "No bug reports found",
+      "project": "Project",
+      "noProject": "No project"
     },
     "actions": {
       "viewDetails": "View Details",

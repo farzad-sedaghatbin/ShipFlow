@@ -1223,6 +1223,9 @@ const BugReportsPage: React.FC = () => {
                     )}
                   </div>
                 </TableHead>
+                {isAllProjectsSelected && (
+                  <TableHead>{t('bugReports.table.project')}</TableHead>
+                )}
                 <TableHead>{t('bugReports.table.component')}</TableHead>
                 <TableHead>{t('bugReports.table.pitch')}</TableHead>
                 <TableHead>{t('bugReports.table.assignee')}</TableHead>
@@ -1329,6 +1332,22 @@ const BugReportsPage: React.FC = () => {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
+                  {/* Only shown in the All Projects view — in a single-project view every row
+                      belongs to that project, so the column would be pure noise. It exists to make
+                      project-less bugs identifiable: they are invisible in every project-scoped
+                      view (see BugReportSpecification), so this is the one place they can be
+                      spotted and reassigned via the detail dialog's "Move" action. */}
+                  {isAllProjectsSelected && (
+                    <TableCell>
+                      {bug.projectName ? (
+                        <span className="text-muted-foreground">{bug.projectName}</span>
+                      ) : (
+                        <Badge variant="warning" className="text-xs font-normal">
+                          {t('bugReports.table.noProject')}
+                        </Badge>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell>
                     {bug.component ? (
                       <Badge variant="outline" className="text-xs font-normal">{bug.component}</Badge>
@@ -1485,7 +1504,7 @@ const BugReportsPage: React.FC = () => {
               ))}
               {bugReports.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
+                  <TableCell colSpan={isAllProjectsSelected ? 11 : 10} className="text-center py-8">
                     <span className="text-muted-foreground">
                       {searchQuery || statusFilter.length > 0 || severityFilter.length > 0
                         ? t('bugReports.emptyState.noMatches')

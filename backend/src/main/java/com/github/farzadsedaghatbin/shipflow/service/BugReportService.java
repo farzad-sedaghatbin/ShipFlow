@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.service;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.*;
 import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.*;
+import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -46,6 +47,11 @@ public class BugReportService {
    * non-null, so {@link #splitTags} would later split it into a single blank tag and the UI
    * would render one empty badge instead of hiding the "Tags" section.
    */
+  /** Project owning the given cycle, or {@code null} when either is absent. */
+  private Project projectOf(Cycle cycle) {
+    return cycle != null ? cycle.getProject() : null;
+  }
+
   private String joinTags(List<String> tags) {
     if (tags == null)
       return null;
@@ -140,6 +146,13 @@ public class BugReportService {
       TestRun testRun = testRunRepository.findById(request.getTestRunId())
           .orElseThrow(() -> new IllegalArgumentException("Test run not found: " + request.getTestRunId()));
       bugReport.setTestRun(testRun);
+      // Derive project from the test run's cycle/pitch if not resolved above
+      if (bugReport.getProject() == null) {
+        bugReport.setProject(projectOf(testRun.getCycle()));
+      }
+      if (bugReport.getProject() == null && testRun.getPitch() != null) {
+        bugReport.setProject(projectOf(testRun.getPitch().getCycle()));
+      }
     }
 
     // Set task if provided
@@ -147,6 +160,11 @@ public class BugReportService {
       Task task = taskRepository.findById(request.getTaskId())
           .orElseThrow(() -> new IllegalArgumentException("Task not found: " + request.getTaskId()));
       bugReport.setTask(task);
+      // Derive project from the task if not resolved above. A task always belongs to a project,
+      // either directly (SCRUM product backlog / Debt-Improvement tasks) or through its cycle.
+      if (bugReport.getProject() == null) {
+        bugReport.setProject(task.getProject() != null ? task.getProject() : projectOf(task.getCycle()));
+      }
     }
 
     if (request.getAssigneeId() != null) {
@@ -165,6 +183,15 @@ public class BugReportService {
       com.github.farzadsedaghatbin.shipflow.entity.Release release = releaseRepository.findById(request.getTargetReleaseId())
           .orElseThrow(() -> new IllegalArgumentException("Release not found: " + request.getTargetReleaseId()));
       bugReport.setTargetRelease(release);
+    }
+
+    // A bug with no project is unreachable in the UI: every bug list, board and backlog view is
+    // project-scoped (BugReportSpecification matches on project_id OR cycle.project_id), so an
+    // unscoped bug can only ever be opened by its direct URL. Refuse to create one rather than
+    // silently orphaning it — the project is resolved above from an explicit projectId, or
+    // derived from the pitch / cycle / test run / task the bug is filed against.
+    if (bugReport.getProject() == null) {
+      throw new BadRequestException(messageService.getMessage("error.bug.project.required"));
     }
 
     bugReport = bugReportRepository.save(bugReport);
@@ -588,7 +615,17 @@ public class BugReportService {
         .build();
   }
 
-  /** Move a bug report to a different project. Clears cycle and pitch cross-references. */
+  /**
+   * Move a bug report to a different project. Clears cycle and pitch cross-references.
+   *
+   * <p>Must stay {@code @Transactional}: with {@code spring.jpa.open-in-view=false} (production),
+   * each repository call would otherwise run in its own short transaction, so {@link #toDTO}
+   * would dereference the bug's lazy {@code reporter}/{@code assignee}/{@code qaAssignee}
+   * associations with no open session — throwing {@code LazyInitializationException} and
+   * returning HTTP 500 <em>after</em> the move had already committed. This method was the only
+   * mutating one in this service without the annotation.
+   */
+  @Transactional
   public BugReportDTO moveBugReportToProject(Long bugId, Long targetProjectId) {
     BugReport bug = bugReportRepository.findById(bugId)
         .orElseThrow(() -> new com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException("BugReport not found with id: " + bugId));
