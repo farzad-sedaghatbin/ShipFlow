@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import dayjs, { Dayjs } from 'dayjs';
@@ -30,10 +30,18 @@ import { ViewMode } from '../components/backlog';
 // Large page size for Kanban — fetches effectively all tasks for the board
 const KANBAN_PAGE_SIZE = 500;
 
+// Query params owned by the backlog's filter state. Mirrored into the URL so a filtered
+// backlog can be shared/bookmarked; anything else in the query string (e.g. `addSubtask`)
+// is left alone.
+const BACKLOG_FILTER_KEYS = ['project', 'cycle', 'q', 'status', 'priority', 'assignee', 'creator', 'dep', 'category', 'tab', 'sortBy', 'sortOrder'];
+const SORT_FIELDS = ['createdAt', 'priority', 'status', 'dueDate', 'title'] as const;
+type SortField = typeof SORT_FIELDS[number];
+const toIds = (values: string[]) => values.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+
 export function useBacklogPage() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isKanbanProject, currentProject, isSwitchingProject, notifyProjectSwitchComplete } = useProject();
+  const { isKanbanProject, currentProject, isSwitchingProject, notifyProjectSwitchComplete, loading: projectsLoading } = useProject();
   const { user } = useAuth();
 
   // Data
@@ -55,10 +63,19 @@ export function useBacklogPage() {
 
   // Selection / view
   const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
+  // Cycle from a shared link (`?cycle=`). loadInitialData normally auto-selects the project's
+  // first cycle; this makes it honor the link's cycle instead, once, then fall back to normal.
+  const urlCycleRef = useRef<number | 'all' | null>((() => {
+    const v = searchParams.get('cycle');
+    if (!v) return null;
+    return v === 'all' ? 'all' : (Number(v) || null);
+  })());
   // Category is now a filter, not primary navigation (tabs removed — see §C.1). 'all' means no
   // category filtering, matching the optional `category` param already accepted server-side.
-  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>('all');
-  const [tabValue, setTabValue] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>(
+    () => (searchParams.get('category') as TaskCategory | null) ?? 'all',
+  );
+  const [tabValue, setTabValue] = useState(() => (searchParams.get('tab') === 'my' ? 'my' : 'all'));
   const [viewMode, setViewMode] = useState<ViewMode>(isKanbanProject ? 'kanban' : 'list');
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);
 
@@ -68,16 +85,23 @@ export function useBacklogPage() {
   ]);
 
   // Filters / sort / pagination
-  const [statusFilter, setStatusFilter] = useState<TaskStatus[]>([]);
-  const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>([]);
-  const [assigneeFilter, setAssigneeFilter] = useState<number[]>([]);
-  const [creatorFilter, setCreatorFilter] = useState<number[]>([]);
+  // Filters are initialised from the URL so a shared backlog link opens with the same view.
+  const [statusFilter, setStatusFilter] = useState<TaskStatus[]>(() => searchParams.getAll('status') as TaskStatus[]);
+  const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>(() => searchParams.getAll('priority') as TaskPriority[]);
+  const [assigneeFilter, setAssigneeFilter] = useState<number[]>(() => toIds(searchParams.getAll('assignee')));
+  const [creatorFilter, setCreatorFilter] = useState<number[]>(() => toIds(searchParams.getAll('creator')));
   const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>('all');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');
+  const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>(() => {
+    const v = searchParams.get('dep');
+    return v === 'blocked' || v === 'blocking' ? v : 'all';
+  });
   const [excludeMode] = useState(false);
-  const [sortBy, setSortBy] = useState<'createdAt' | 'priority' | 'status' | 'dueDate' | 'title'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<SortField>(() => {
+    const v = searchParams.get('sortBy');
+    return (SORT_FIELDS as readonly string[]).includes(v ?? '') ? v as SortField : 'createdAt';
+  });
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => (searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -161,15 +185,25 @@ export function useBacklogPage() {
       }
       setPersons(personsRes);
       setTeams(teamsRes.data);
+      const urlCycle = urlCycleRef.current;
+      const urlCycleAvailable = urlCycle === 'all'
+        || (urlCycle !== null && cyclesRes.data.some((c: Cycle) => c.id === urlCycle));
       if (currentProject) {
         const projectCycles = cyclesRes.data.filter((c: Cycle) => c.projectId === currentProject.id);
-        setSelectedCycle(projectCycles.length > 0 ? projectCycles[0].id : 'all');
+        if (urlCycleAvailable) {
+          setSelectedCycle(urlCycle as number | 'all');
+          urlCycleRef.current = null;
+        } else {
+          setSelectedCycle(projectCycles.length > 0 ? projectCycles[0].id : 'all');
+        }
         try {
           const releasesRes = await releaseService.getByProject(currentProject.id);
           setReleases(releasesRes.data);
         } catch { setReleases([]); }
       } else {
-        setSelectedCycle('all');
+        // Don't consume the link's cycle yet — this also runs while the project context is
+        // still resolving, before the project-scoped branch above gets its turn.
+        setSelectedCycle(urlCycleAvailable ? urlCycle as number | 'all' : 'all');
         setReleases([]);
       }
     } catch (error) { console.error('Failed to load data:', error); }
@@ -477,6 +511,43 @@ export function useBacklogPage() {
     setDialogOpen(true);
   };
 
+  // Keep the URL in sync with the filters so the address bar is always a shareable link to this
+  // exact filtered view. `project` is included because cycle/assignee ids are project-scoped —
+  // ProjectContext reads it on load, so the recipient lands in the right project first.
+  // Skipped until the project context has resolved: it reads `?project=` from the URL only
+  // after its own async load, so rewriting the URL before then would strip the link's project.
+  useEffect(() => {
+    if (projectsLoading || loading) return;
+    setSearchParams((prev) => {
+      const next = new URLSearchParams();
+      prev.forEach((v, k) => { if (!BACKLOG_FILTER_KEYS.includes(k)) next.append(k, v); });
+      if (currentProject?.id) next.set('project', String(currentProject.id));
+      if (!isKanbanProject && selectedCycle !== 'all') next.set('cycle', String(selectedCycle));
+      if (searchQuery) next.set('q', searchQuery);
+      statusFilter.forEach((v) => next.append('status', v));
+      priorityFilter.forEach((v) => next.append('priority', v));
+      assigneeFilter.forEach((v) => next.append('assignee', String(v)));
+      creatorFilter.forEach((v) => next.append('creator', String(v)));
+      if (dependencyFilter !== 'all') next.set('dep', dependencyFilter);
+      if (categoryFilter !== 'all') next.set('category', categoryFilter);
+      if (tabValue === 'my') next.set('tab', 'my');
+      if (sortBy !== 'createdAt') next.set('sortBy', sortBy);
+      if (sortOrder !== 'desc') next.set('sortOrder', sortOrder);
+      return next.toString() === prev.toString() ? prev : next;
+    }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectsLoading, loading, currentProject?.id, isKanbanProject, selectedCycle, searchQuery, statusFilter, priorityFilter, assigneeFilter,
+    creatorFilter, dependencyFilter, categoryFilter, tabValue, sortBy, sortOrder]);
+
+  const handleCopyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success(t('common.linkCopied'));
+    } catch {
+      toast.error(t('common.copyFailed', 'Could not copy the link'));
+    }
+  };
+
   // Deep-link from TaskDetailPage's "Add subtask" CTA: /backlog?addSubtask=<parentTaskId>
   useEffect(() => {
     const addSubtaskParam = searchParams.get('addSubtask');
@@ -683,6 +754,7 @@ export function useBacklogPage() {
     currentProject,
 
     // Handlers
+    handleCopyShareLink,
     handleToggleColumn,
     handleToggleStatusFilter,
     handleTogglePriorityFilter,

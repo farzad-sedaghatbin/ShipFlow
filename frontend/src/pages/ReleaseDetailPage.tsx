@@ -43,6 +43,7 @@ import {
 import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 const getRiskBadgeVariant = (risk: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (risk) {
@@ -75,6 +76,8 @@ export default function ReleaseDetailPage() {
   const goBack = useBackNavigation('/releases-management');
   const { showSuccess, showError } = useToast();
   const [release, setRelease] = useState<Release | null>(null);
+  // A shared link to another project's release opens under that project, not this tab's last one.
+  useFollowEntityProject(release?.projectId);
   const [progress, setProgress] = useState<ReleaseProgress | null>(null);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loading, setLoading] = useState(true);

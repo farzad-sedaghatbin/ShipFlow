@@ -60,6 +60,7 @@ import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
 import { Markdown } from '../components/ui/markdown';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 // ========================
 // Sortable Epic Item
@@ -128,6 +129,8 @@ export default function InitiativeDetailPage() {
   const goBack = useBackNavigation('/initiatives');
   const { showSuccess, showError } = useToast();
   const [initiative, setInitiative] = useState<Initiative | null>(null);
+  // A shared link to another project's initiative opens under that project, not this tab's last one.
+  useFollowEntityProject(initiative?.projectId);
   const [epics, setEpics] = useState<Epic[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);

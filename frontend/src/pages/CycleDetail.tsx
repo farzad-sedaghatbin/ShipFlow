@@ -45,6 +45,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 export default function CycleDetail() {
   const { t, i18n } = useTranslation();
@@ -55,6 +56,8 @@ export default function CycleDetail() {
   const { showSuccess, showError } = useToast();
   const { isScrumProject } = useProject();
   const [cycle, setCycle] = useState<Cycle | null>(null);
+  // A shared link to another project's cycle opens under that project, not this tab's last one.
+  useFollowEntityProject(cycle?.projectId);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [retroStatus, setRetroStatus] = useState<CycleRetroStatus | null>(null);

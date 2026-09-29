@@ -83,7 +83,7 @@ import BugKanbanBoard from '../components/BugKanbanBoard';
 import { BugViewDialog } from '../components/BugViewDialog';
 import { BugReportsSkeleton } from '../components/Skeletons';
 
-const FILTER_KEYS = ['q', 'status', 'severity', 'assignee', 'reporter', 'cycle', 'pitch', 'release', 'exclude', 'sortBy', 'sortOrder', 'page', 'size'];
+const FILTER_KEYS = ['project', 'q', 'status', 'severity', 'assignee', 'reporter', 'cycle', 'pitch', 'release', 'exclude', 'sortBy', 'sortOrder', 'page', 'size'];
 
 const severityBadgeVariants: Record<BugSeverity, 'default' | 'secondary' | 'info' | 'warning' | 'destructive'> = {
   TRIVIAL: 'secondary',
@@ -211,8 +211,11 @@ const BugReportsPage: React.FC = () => {
   const [pitchFilter, setPitchFilter] = useState<number | undefined>(() => {
     const v = searchParams.get('pitch'); return v ? parseInt(v) : undefined;
   });
-  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(() => {
-    const v = searchParams.get('release'); return v ? parseInt(v) : undefined;
+  // A release id, or 'none' for bugs with no target release (URL: `release=none`).
+  const [releaseFilter, setReleaseFilter] = useState<number | 'none' | undefined>(() => {
+    const v = searchParams.get('release');
+    if (!v) return undefined;
+    return v === 'none' ? 'none' : parseInt(v);
   });
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
@@ -277,6 +280,10 @@ const BugReportsPage: React.FC = () => {
   // Keep URL in sync with filter state so the address bar is always shareable
   // and browser Back/Forward restores the exact filter view.
   useEffect(() => {
+    // ProjectContext reads `?project=` only after its own async load; rewriting the URL before
+    // then (child effects run first) stripped the shared link's project and opened it in the
+    // recipient's last-used project instead.
+    if (projectsLoading) return;
     setSearchParams(prev => {
       const next = new URLSearchParams();
       // Carry through non-filter params that may be set by other code
@@ -306,7 +313,7 @@ const BugReportsPage: React.FC = () => {
       return next;
     }, { replace: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentProject?.id, statusFilter, severityFilter, assigneeFilter, reporterFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
+  }, [projectsLoading, currentProject?.id, statusFilter, severityFilter, assigneeFilter, reporterFilter, cycleFilter, pitchFilter, releaseFilter, excludeMode, sortBy, sortOrder, page, rowsPerPage, searchQuery]);
 
   // Reset cycle/pitch/release filters only when the user actively SWITCHES
   // project while already on this page — never during ProjectContext's
@@ -422,7 +429,9 @@ const BugReportsPage: React.FC = () => {
 
       let bugData = response.data.content;
       if (releaseFilter !== undefined) {
-        bugData = bugData.filter(bug => bug.targetReleaseId === releaseFilter);
+        bugData = releaseFilter === 'none'
+          ? bugData.filter(bug => bug.targetReleaseId == null)
+          : bugData.filter(bug => bug.targetReleaseId === releaseFilter);
       }
 
       setBugReports(bugData);
@@ -1072,10 +1081,11 @@ const BugReportsPage: React.FC = () => {
               <Combobox
                 options={[
                   { value: 'all', label: t('bugReports.filters.allReleases', 'All Releases') },
+                  { value: 'none', label: t('bugReports.filters.noRelease', 'No release') },
                   ...releases.map(r => ({ value: r.id.toString(), label: `${r.name} (${r.version})` })),
                 ]}
                 value={releaseFilter?.toString() ?? 'all'}
-                onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : parseInt(value))}
+                onValueChange={(value) => setReleaseFilter(value === 'all' ? undefined : value === 'none' ? 'none' : parseInt(value))}
                 placeholder={t('bugReports.filters.allReleases', 'All Releases')}
                 searchPlaceholder="Search releases..."
               />

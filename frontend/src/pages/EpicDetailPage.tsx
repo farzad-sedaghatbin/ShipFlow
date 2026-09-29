@@ -55,6 +55,7 @@ import { PermissionGate } from '../hooks/usePermission';
 import AIPitchWriterModal from '../components/AIPitchWriterModal';
 import { Sparkles } from 'lucide-react';
 import { useProject } from '../contexts';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 export default function EpicDetailPage() {
   const { t, i18n } = useTranslation();
@@ -64,6 +65,8 @@ export default function EpicDetailPage() {
   const { showSuccess, showError } = useToast();
   const { currentProject } = useProject();
   const [epic, setEpic] = useState<Epic | null>(null);
+  // A shared link to another project's epic opens under that project, not this tab's last one.
+  useFollowEntityProject(epic?.projectId);
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);

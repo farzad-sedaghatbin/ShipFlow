@@ -315,6 +315,18 @@ public class QATestManagementController {
     return ResponseEntity.ok(bugReportService.updateBugReport(id, request, userId));
   }
 
+  @PatchMapping("/bug-reports/{id}/assignee")
+  @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN')")
+  @Operation(
+      summary = "Assign (or unassign) a bug's assignee",
+      description = "Lightweight PATCH that only changes the general assignee."
+          + " Pass a null assigneeId to unassign. All other bug fields are untouched.")
+  public ResponseEntity<BugReportDTO> updateBugAssignee(@PathVariable Long id,
+      @RequestBody UpdateBugAssigneeRequest request) {
+    checkFeatureEnabled();
+    return ResponseEntity.ok(bugReportService.updateBugReportAssignee(id, request.getAssigneeId()));
+  }
+
   @PatchMapping("/bug-reports/{id}/qa-assignee")
   @PreAuthorize("hasAnyRole('MEMBER', 'MANAGER', 'ADMIN')")
   @Operation(

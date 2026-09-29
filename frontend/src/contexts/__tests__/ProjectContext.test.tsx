@@ -93,3 +93,45 @@ describe('ProjectContext — per-tab project selection (sessionStorage)', () => 
     expect(result.current.isAllProjectsSelected).toBe(true);
   });
 });
+
+describe('ProjectContext — followEntityProject (cross-project deep links)', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    window.history.replaceState({}, '', '/');
+  });
+
+  it("switches this tab to the entity's project without touching the new-tab default", async () => {
+    localStorage.setItem(SELECTED_PROJECT_KEY, String(projectA.id));
+    const { result } = renderHook(() => useProject(), { wrapper });
+    await waitFor(() => expect(result.current.currentProject?.id).toBe(projectA.id));
+
+    act(() => {
+      result.current.followEntityProject(projectB.id);
+    });
+
+    expect(result.current.currentProject?.id).toBe(projectB.id);
+    expect(sessionStorage.getItem(SELECTED_PROJECT_KEY)).toBe(String(projectB.id));
+    expect(localStorage.getItem(SELECTED_PROJECT_KEY)).toBe(String(projectA.id));
+    expect(result.current.isSwitchingProject).toBe(false);
+  });
+
+  it('keeps "All Projects" mode and ignores unknown projects', async () => {
+    localStorage.setItem(SELECTED_PROJECT_KEY, 'all');
+    const { result } = renderHook(() => useProject(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => {
+      result.current.followEntityProject(projectB.id);
+    });
+    expect(result.current.currentProject).toBeNull();
+
+    act(() => {
+      result.current.selectProject(projectA);
+    });
+    act(() => {
+      result.current.followEntityProject(999);
+    });
+    expect(result.current.currentProject?.id).toBe(projectA.id);
+  });
+});

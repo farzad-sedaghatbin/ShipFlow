@@ -25,6 +25,7 @@ import {
   FolderInput,
   AlertCircle,
   ExternalLink,
+  Package,
 } from 'lucide-react';
 import {
   Dialog,
@@ -271,6 +272,23 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
     }
   }, [localBug, bug, onUpdate]);
 
+  // The general assignee goes through its own PATCH (like the QA assignee below) because the full
+  // update ignores a null assigneeId, so "Unassigned" could never actually be saved from here.
+  const handleAssigneeUpdate = useCallback(async (assigneeId: number | null) => {
+    const current = localBug ?? bug;
+    if (!current) return;
+    setIsSaving(true);
+    try {
+      const res = await qaTestManagementService.updateBugAssignee(current.id, assigneeId);
+      setLocalBug(res.data);
+      onUpdate?.(res.data);
+    } catch {
+      setLocalBug(bug);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [localBug, bug, onUpdate]);
+
   const handleQaAssigneeUpdate = useCallback(async (qaAssigneeId: number | null) => {
     const current = localBug ?? bug;
     if (!current) return;
@@ -289,6 +307,24 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
   if (!bug) return null;
   // After the guard, bug is non-null so effectiveBug is also non-null.
   const effectiveBug = localBug ?? bug;
+
+  // Picker options come from the project's members, but a bug can be assigned to any Person
+  // (the create/edit form lists the whole directory). When the current assignee isn't a project
+  // member the Select had no matching item and rendered blank, so the assignee looked lost.
+  // Always include the current value as an option.
+  const personOptions = (currentId?: number, currentName?: string) => {
+    const opts = members
+      .filter((m) => m.personId != null)
+      .map((m) => ({ id: m.personId as number, name: m.personName || m.username }));
+    if (currentId != null && !opts.some((o) => o.id === currentId)) {
+      opts.unshift({ id: currentId, name: currentName || `#${currentId}` });
+    }
+    return opts;
+  };
+  const assigneeOptions = personOptions(effectiveBug.assigneeId, effectiveBug.assigneeName);
+  const qaAssigneeOptions = personOptions(effectiveBug.qaAssigneeId, effectiveBug.qaAssigneeName);
+  const formatRelease = (name?: string, version?: string) =>
+    name && version ? `${name} (${version})` : name || version || '';
 
   const formatDateTime = (dateTime: string) => {
     const d = new Date(dateTime);
@@ -598,7 +634,7 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                         <Select
                           value={effectiveBug.assigneeId?.toString() ?? '__none__'}
                           onValueChange={(v) =>
-                            handleInlineUpdate({ assigneeId: v === '__none__' ? undefined : Number(v) })
+                            handleAssigneeUpdate(v === '__none__' ? null : Number(v))
                           }
                           disabled={isSaving}
                         >
@@ -607,9 +643,9 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
-                            {members.filter(m => m.personId != null).map((m) => (
-                              <SelectItem key={m.userId} value={m.personId!.toString()}>
-                                {m.personName || m.username}
+                            {assigneeOptions.map((o) => (
+                              <SelectItem key={o.id} value={o.id.toString()}>
+                                {o.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -636,9 +672,9 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none__">{t('common.unassigned')}</SelectItem>
-                            {members.filter(m => m.personId != null).map((m) => (
-                              <SelectItem key={m.userId} value={m.personId!.toString()}>
-                                {m.personName || m.username}
+                            {qaAssigneeOptions.map((o) => (
+                              <SelectItem key={o.id} value={o.id.toString()}>
+                                {o.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -661,6 +697,27 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                       </Label>
                       <div className="font-medium">{formatDateTime(effectiveBug.updatedAt)}</div>
                     </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Package className="h-3 w-3" />
+                        {t('bugReports.targetRelease', 'Target release')}
+                      </Label>
+                      <div className="font-medium">
+                        {formatRelease(effectiveBug.targetReleaseName, effectiveBug.targetReleaseVersion)
+                          || t('bugReports.noRelease', 'No target release')}
+                      </div>
+                    </div>
+                    {effectiveBug.fixedInReleaseId != null && (
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Package className="h-3 w-3" />
+                          {t('bugReports.fixedInRelease', 'Fixed in release')}
+                        </Label>
+                        <div className="font-medium">
+                          {formatRelease(effectiveBug.fixedInReleaseName, effectiveBug.fixedInReleaseVersion)}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Relationships */}
@@ -757,14 +814,14 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                   )}
 
                   {/* Tags */}
-                  {(bug.tagList?.length || bug.tags) && (
+                  {(effectiveBug.tagList?.length || effectiveBug.tags) && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground flex items-center gap-1">
                         <Tag className="h-3 w-3" />
                         {t('bugs.tags')}
                       </Label>
                       <div className="flex flex-wrap gap-1">
-                        {(bug.tagList || bug.tags?.split(',') || []).map((tag, idx) => (
+                        {(effectiveBug.tagList || effectiveBug.tags?.split(',') || []).map((tag, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {typeof tag === 'string' ? tag.trim() : tag}
                           </Badge>

@@ -46,6 +46,7 @@ import { ActivityTimeline } from '../components/ActivityTimeline';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useAuth } from '../contexts';
 import { MoveToProjectDialog } from '../components/MoveToProjectDialog';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
   { value: 'BACKLOG', label: 'Backlog', variant: 'secondary' },
@@ -72,6 +73,8 @@ export default function TaskDetailPage() {
   const navigate = useNavigate();
   const goBack = useBackNavigation('/backlog');
   const [task, setTask] = useState<Task | null>(null);
+  // A shared link to another project's task opens under that project, not this tab's last one.
+  useFollowEntityProject(task?.projectId);
   const [subtasks, setSubtasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTimerTaskId, setActiveTimerTaskId] = useState<number | null>(null);

@@ -43,6 +43,7 @@ import {
   TestCasesSection,
 } from '../components/pitchDetail';
 import type { ShapeUpFields } from '../components/pitchDetail/PitchShapingSection';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 export default function PitchDetail() {
   const { t, i18n } = useTranslation();
@@ -55,6 +56,8 @@ export default function PitchDetail() {
   const isAdmin = user?.role === 'ADMIN';
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [pitch, setPitch] = useState<Pitch | null>(null);
+  // A shared link to another project's pitch opens under that project, not this tab's last one.
+  useFollowEntityProject(pitch?.projectId);
   const [epics, setEpics] = useState<Epic[]>([]);
   const [workLogPersonSummaries, setWorkLogPersonSummaries] = useState<WorkLogPersonSummary[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);

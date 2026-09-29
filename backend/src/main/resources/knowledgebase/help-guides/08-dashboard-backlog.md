@@ -38,6 +38,9 @@ The Backlog in ShipFlow holds ideas and tasks that haven't been shaped into pitc
 3. Filter by priority, assignee, creator, or release
 4. Drag items to reorder by priority
 
+### Sharing a Filtered Backlog
+The Backlog's filters (cycle, search, status, priority, assignee, creator, dependency, category, "My tasks", and sort order) are stored in the page URL. Click the **link** button next to Export CSV to copy it. Anyone you send it to sees the same filtered list, in the same project, even if they last had a different project selected.
+
 ### Sub-Tasks Group Under Their Parent
 A sub-task always renders directly under its parent task — in the list view regardless of the active sort field, and on the Kanban board when they share a status column. This is especially useful in Kanban-mode projects, which have no Pitch concept to group backlog items by otherwise. If a sub-task's column differs from its parent's, a "N subtasks" badge on the parent and a "Sub-task of ..." caption on the sub-task keep the relationship visible.
 

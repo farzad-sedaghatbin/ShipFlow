@@ -329,4 +329,22 @@ class QATestManagementControllerIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.qaAssigneeId").doesNotExist());
   }
+
+  @Test
+  void updateBugAssignee_ShouldAssignAndUnassign() throws Exception {
+    Person dev = personRepository.save(Person.builder().name("Reza Dev").email("reza-dev@example.com")
+        .isActive(true).createdAt(LocalDateTime.now()).build());
+
+    mockMvc.perform(patch("/api/qa/bug-reports/{id}/assignee", testBugReport.getId())
+        .contentType(MediaType.APPLICATION_JSON).content("{\"assigneeId\":" + dev.getId() + "}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.assigneeId", is(dev.getId().intValue())))
+        .andExpect(jsonPath("$.assigneeName", is("Reza Dev")));
+
+    // Unassign (null clears it — the full PUT ignores a null assigneeId, so this is the only way)
+    mockMvc.perform(patch("/api/qa/bug-reports/{id}/assignee", testBugReport.getId())
+        .contentType(MediaType.APPLICATION_JSON).content("{\"assigneeId\":null}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.assigneeId").doesNotExist());
+  }
 }

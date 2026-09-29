@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Bug Reports: "No release" option in the release filter** — lists bugs without a target release (shareable as `release=none`).
+- **Backlog: shareable filtered views** — the Backlog's filters (cycle, search, status, priority, assignee, creator, dependency, category, "my tasks", sort) are now kept in the URL, and a new copy-link button next to Export CSV copies it. The link also carries `project=`, so the recipient opens it in the right project.
+- `PATCH /api/qa/bug-reports/{id}/assignee`: sets or clears a bug's assignee, mirroring the existing `/qa-assignee` endpoint.
+
+### Fixed
+- **Bug tags weren't saved** when a tag was typed but not confirmed with Enter before clicking Save. The modal now includes any pending tag text (comma-separated) in the saved list, and also adds it when the tag field loses focus.
+- **The assignee disappeared in the bug detail view.** The inline picker only listed project members, but a bug can be assigned to any person, so a non-member assignee matched no option and showed up blank. The current assignee and QA assignee are now always in the list. Picking "Unassigned" there now actually clears the assignee; the full update ignores a null `assigneeId`, so it goes through the new PATCH endpoint.
+- **The bug detail view never showed the release**, although the edit form did. The detail view now shows the target release, and the fixed-in release when one is set.
+- **A link to another project's item opened under your own last-selected project.** Detail pages (bug, task, pitch, cycle, epic, initiative, release, test case) now switch the tab to the item's project, via `ProjectContext.followEntityProject` / `useFollowEntityProject`. Only the current tab changes; the default project for new tabs stays as it was. Also fixed the Bug Reports page's filter-to-URL sync: it ran before ProjectContext had read `?project=` and removed the parameter, so shared filtered bug links opened in the wrong project.
+
 ## [1.14.1] - 2026-09-10
 
 ### Fixed

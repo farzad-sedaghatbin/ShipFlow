@@ -184,6 +184,9 @@ export const qaTestManagementService = {
     api.put<BugReport>(`/qa/bug-reports/${id}`, request),
 
   /** Lightweight PATCH to assign/unassign the QA tester for a bug. Pass null to unassign. */
+  updateBugAssignee: (id: number, assigneeId: number | null) =>
+    api.patch<BugReport>(`/qa/bug-reports/${id}/assignee`, { assigneeId }),
+
   updateBugQaAssignee: (id: number, qaAssigneeId: number | null) =>
     api.patch<BugReport>(`/qa/bug-reports/${id}/qa-assignee`, { qaAssigneeId }),
 

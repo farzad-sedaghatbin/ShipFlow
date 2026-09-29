@@ -221,14 +221,26 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Merge text still sitting in the tag input (never confirmed with Enter) into a tag list.
+  // Commas separate multiple tags, matching how they're stored server-side.
+  const withPendingTags = (tags: string[] | undefined, pending: string): string[] => {
+    const next = [...(tags || [])];
+    pending.split(',').map((p) => p.trim()).filter(Boolean).forEach((tag) => {
+      if (!next.includes(tag)) next.push(tag);
+    });
+    return next;
+  };
+
+  const commitTagInput = () => {
+    if (!tagInput.trim()) return;
+    handleChange('tags', withPendingTags(formData.tags, tagInput));
+    setTagInput('');
+  };
+
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing && tagInput.trim()) {
       e.preventDefault();
-      const newTag = tagInput.trim();
-      if (!formData.tags?.includes(newTag)) {
-        handleChange('tags', [...(formData.tags || []), newTag]);
-      }
-      setTagInput('');
+      commitTagInput();
     }
   };
 
@@ -257,11 +269,16 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
     setLoading(true);
     setError(null);
 
+    // A tag typed but never confirmed with Enter used to be silently dropped on save.
+    const payload = { ...formData, tags: withPendingTags(formData.tags, tagInput) };
+    handleChange('tags', payload.tags);
+    setTagInput('');
+
     try {
       if (isEdit) {
-        await onSubmit(formData as UpdateBugReportRequest);
+        await onSubmit(payload as UpdateBugReportRequest);
       } else {
-        const createdBug = await onSubmit(formData as CreateBugReportRequest);
+        const createdBug = await onSubmit(payload as CreateBugReportRequest);
         if (pendingAttachments.length > 0 && createdBug && typeof createdBug === 'object' && 'id' in createdBug) {
           const bugId = (createdBug as BugReport).id;
           try {
@@ -521,6 +538,7 @@ const BugReportModal: React.FC<BugReportModalProps> = ({
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleAddTag}
+              onBlur={commitTagInput}
               placeholder={t('bugReports.form.tagsPlaceholder', 'Add tags (press Enter)')}
             />
             {formData.tags && formData.tags.length > 0 && (
