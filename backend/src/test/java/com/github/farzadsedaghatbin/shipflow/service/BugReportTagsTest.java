@@ -9,9 +9,11 @@ import com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.CreateBugReportRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.qa.UpdateBugReportRequest;
 import com.github.farzadsedaghatbin.shipflow.entity.BugReport;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
@@ -39,16 +41,22 @@ class BugReportTagsTest {
   @Mock
   private UserRepository userRepository;
 
+  @Mock
+  private ProjectRepository projectRepository;
+
   @InjectMocks
   private BugReportService bugReportService;
 
   private User user;
+  private Project project;
 
   @BeforeEach
   void setUp() {
     ReflectionTestUtils.setField(bugReportService, "testManagementEnabled", true);
     user = User.builder().id(1L).username("qa.tester").build();
+    project = Project.builder().id(1L).name("Test Project").projectKey("TST").build();
     lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+    lenient().when(projectRepository.findById(1L)).thenReturn(Optional.of(project));
     lenient().when(bugReportRepository.save(any(BugReport.class))).thenAnswer(inv -> inv.getArgument(0));
   }
 
@@ -56,7 +64,7 @@ class BugReportTagsTest {
   @DisplayName("Tags entered on create round-trip through toDTO as both tags and tagList")
   void createBugReport_WithTags_RoundTripsCorrectly() {
     CreateBugReportRequest request = CreateBugReportRequest.builder().title("Login fails").description("...")
-        .severity(BugSeverity.MAJOR).tags(List.of("auth", "login", "regression")).build();
+        .severity(BugSeverity.MAJOR).projectId(1L).tags(List.of("auth", "login", "regression")).build();
 
     BugReportDTO result = bugReportService.createBugReport(request, 1L);
 
@@ -68,7 +76,7 @@ class BugReportTagsTest {
   @DisplayName("Empty tags list is stored as null, not an empty-string tag")
   void createBugReport_WithEmptyTagsList_StoresNull() {
     CreateBugReportRequest request = CreateBugReportRequest.builder().title("Login fails").description("...")
-        .severity(BugSeverity.MAJOR).tags(List.of()).build();
+        .severity(BugSeverity.MAJOR).projectId(1L).tags(List.of()).build();
 
     BugReportDTO result = bugReportService.createBugReport(request, 1L);
 
@@ -83,7 +91,7 @@ class BugReportTagsTest {
   @DisplayName("Blank-only tag entries are dropped rather than stored as empty tags")
   void createBugReport_WithBlankTagEntries_DropsBlanks() {
     CreateBugReportRequest request = CreateBugReportRequest.builder().title("Login fails").description("...")
-        .severity(BugSeverity.MAJOR).tags(List.of("auth", "  ", "")).build();
+        .severity(BugSeverity.MAJOR).projectId(1L).tags(List.of("auth", "  ", "")).build();
 
     BugReportDTO result = bugReportService.createBugReport(request, 1L);
 

@@ -661,6 +661,22 @@ export function BugViewDialog({ bug, open, onOpenChange, onEdit, onUpdate, onMov
                       </Label>
                       <div className="font-medium">{formatDateTime(effectiveBug.updatedAt)}</div>
                     </div>
+                    {/* A bug with no project is hidden from every project-scoped list, so it can
+                        only be reached by its direct URL — surface that here rather than leaving
+                        the reason invisible. Admins can fix it with the Move action above. */}
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                        <FolderInput className="h-3 w-3" />
+                        {t('bugs.project')}
+                      </Label>
+                      {effectiveBug.projectName ? (
+                        <div className="font-medium">{effectiveBug.projectName}</div>
+                      ) : (
+                        <Badge variant="warning" className="text-xs font-normal">
+                          {t('bugReports.table.noProject')}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   {/* Relationships */}
