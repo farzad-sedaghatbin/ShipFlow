@@ -704,7 +704,9 @@
       "severity": "شدت",
       "status": "وضعیت",
       "title": "عنوان",
-      "viewDetails": "مشاهده جزئیات {{title}}"
+      "viewDetails": "مشاهده جزئیات {{title}}",
+      "project": "پروژه",
+      "noProject": "بدون پروژه"
     },
     "searchPerson": "جستجوی افراد...",
     "component": "بخش",
@@ -1903,7 +1905,8 @@
       "reopened": "بازگشایی",
       "wontFix": "قابل حل نیست",
       "duplicate": "تکراری"
-    }
+    },
+    "project": "پروژه"
   },
   "errors": {
     "acceptSuggestionFailed": "پذیرش پیشنهاد ناموفق بود",

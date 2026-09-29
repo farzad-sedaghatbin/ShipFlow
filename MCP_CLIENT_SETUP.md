@@ -266,7 +266,7 @@ Once connected, your AI assistant has access to these tools:
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
 | `create_scope` | Create a Hill Chart scope for a pitch (pitchId, title required; optional: description, progress) |
 | `record_test_run` | Record the result of executing a test case — status (PASSED/FAILED/BLOCKED/SKIPPED/PENDING/RUNNING), notes, actualResult, buildVersion, environment |
-| `create_bug` | Create a bug report (title, description, severity required; optional: projectId, pitchId, cycleId, taskId, stepsToReproduce, expectedBehavior, actualBehavior, environment, assigneeUsername). The calling MCP user becomes the reporter. |
+| `create_bug` | Create a bug report (title, description, severity required; also a project — pass `projectId`, or a `pitchId`/`cycleId`/`taskId` it can be derived from, otherwise the call is rejected: a bug with no project is invisible in every project-scoped list. Optional: stepsToReproduce, expectedBehavior, actualBehavior, environment, assigneeUsername). The calling MCP user becomes the reporter. |
 | `update_bug_status` | Update a bug report's status (OPEN, IN_PROGRESS, RESOLVED, VERIFIED, CLOSED, REOPENED, WONT_FIX, DUPLICATE) and optional resolution text |
 | `update_bug_assignee` | Reassign an existing bug report — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true`. Identify the bug by `bugKey` or `bugReportId`. |
 

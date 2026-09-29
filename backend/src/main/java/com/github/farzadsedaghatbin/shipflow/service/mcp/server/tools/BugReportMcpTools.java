@@ -191,11 +191,12 @@ public class BugReportMcpTools {
         "name",
         TOOL_CREATE_BUG,
         "description",
-            "Create a new bug report. Optionally link it to a project, pitch, cycle, or task — "
-                + "association scopes are all optional but at least one is recommended so the bug "
-                + "shows up in the right board/backlog view. Returns the created bug including its "
-                + "generated bugKey (e.g. \"BUG-125\"). The authenticated MCP user becomes the "
-                + "reporter. Requires WRITE API key scope.",
+            "Create a new bug report. The bug MUST end up in a project, so pass projectId — or "
+                + "a pitchId/cycleId/taskId that belongs to one, which the project is then derived "
+                + "from. A bug with no project is rejected, because every bug list and board is "
+                + "project-scoped and an unscoped bug would be invisible in the UI. Returns the "
+                + "created bug including its generated bugKey (e.g. \"BUG-125\"). The "
+                + "authenticated MCP user becomes the reporter. Requires WRITE API key scope.",
         "inputSchema",
             Map.of(
                 "type",
@@ -216,17 +217,24 @@ public class BugReportMcpTools {
                                 List.of("TRIVIAL", "MINOR", "MAJOR", "CRITICAL", "BLOCKER"))),
                         Map.entry("projectId",
                             Map.of("type", "integer",
-                                "description", "Optional project ID to associate the bug with")),
+                                "description",
+                                    "Project ID the bug belongs to. Required unless a pitchId, "
+                                        + "cycleId or taskId is given to derive it from.")),
                         Map.entry("pitchId",
                             Map.of("type", "integer",
-                                "description", "Optional pitch ID to associate the bug with")),
+                                "description",
+                                    "Optional pitch ID to associate the bug with. Its project is "
+                                        + "used when projectId is omitted.")),
                         Map.entry("cycleId",
                             Map.of("type", "integer",
-                                "description", "Optional cycle ID to associate the bug with")),
+                                "description",
+                                    "Optional cycle ID to associate the bug with. Its project is "
+                                        + "used when projectId is omitted.")),
                         Map.entry("taskId",
                             Map.of("type", "integer",
                                 "description",
-                                    "Optional task ID this bug was found while working on")),
+                                    "Optional task ID this bug was found while working on. Its "
+                                        + "project is used when projectId is omitted.")),
                         Map.entry("stepsToReproduce",
                             Map.of("type", "string",
                                 "description", "Optional steps to reproduce the bug")),
