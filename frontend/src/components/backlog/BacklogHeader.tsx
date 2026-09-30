@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Plus, List, Kanban, GanttChartSquare, CalendarDays, Download, Loader2 } from 'lucide-react';
+import { Plus, List, Kanban, GanttChartSquare, CalendarDays, Download, Loader2, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -29,6 +29,8 @@ export interface BacklogHeaderProps {
   onViewModeChange: (mode: ViewMode) => void;
   onNewTask: () => void;
   onExportCsv?: () => void;
+  /** Copies the current URL, which always encodes the active filters (see useBacklogPage). */
+  onCopyLink?: () => void;
 }
 
 export function BacklogHeader({
@@ -43,6 +45,7 @@ export function BacklogHeader({
   onViewModeChange,
   onNewTask,
   onExportCsv,
+  onCopyLink,
 }: BacklogHeaderProps) {
   const { t } = useTranslation();
 
@@ -157,6 +160,26 @@ export function BacklogHeader({
             </Tooltip>
           </TooltipProvider>
         </div>
+
+        {/* Copy a shareable link to this filtered view */}
+        {onCopyLink && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onCopyLink}
+                  aria-label={t('common.copyLink')}
+                  data-testid="backlog-copy-link"
+                >
+                  <Link className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t('common.copyLink')}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
 
         {/* Export CSV Button */}
         {onExportCsv && (

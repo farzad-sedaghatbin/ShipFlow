@@ -89,6 +89,7 @@ export default function BacklogPage() {
 
       <BacklogHeader
         categoryDescription={bp.categoryDescription}
+        onCopyLink={bp.handleCopyShareLink}
         cycles={bp.cycles}
         currentProject={bp.currentProject}
         isKanbanProject={bp.isKanbanProject}

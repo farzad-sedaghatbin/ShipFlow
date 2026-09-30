@@ -45,6 +45,14 @@ interface ProjectContextType {
   capabilities: ProjectTypeCapabilities;
   selectProject: (project: Project | null) => void;
   selectAllProjects: () => void;
+  /**
+   * Align this tab with the project an opened entity (bug, task, pitch…) belongs to. Used by
+   * detail pages so a shared link to project B's item doesn't render under project A just
+   * because A was this browser's last-selected project. Only this tab's sessionStorage is
+   * updated (localStorage — the default for new tabs — is left alone), no switch spinner is
+   * raised, and "All Projects" mode is kept as-is since it already covers every project.
+   */
+  followEntityProject: (projectId: number | null | undefined) => void;
   refreshProjects: () => Promise<void>;
   /** Call when data has finished loading after project switch */
   notifyProjectSwitchComplete: () => void;
@@ -153,6 +161,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(SELECTED_PROJECT_KEY, ALL_PROJECTS_VALUE);
   }, []);
 
+  const followEntityProject = useCallback((projectId: number | null | undefined) => {
+    if (projectId == null || loading) return;
+    if (currentProject === null || currentProject.id === projectId) return;
+    const target = projects.find(p => p.id === projectId);
+    // Not in the user's active projects (archived, or no access) — keep the current context.
+    if (!target) return;
+    setCurrentProject(target);
+    sessionStorage.setItem(SELECTED_PROJECT_KEY, target.id.toString());
+  }, [loading, currentProject, projects]);
+
   const notifyProjectSwitchComplete = useCallback((completedSwitchId?: number) => {
     // Only clear switching state if this completion matches the latest switch
     // This prevents race conditions when switching projects rapidly
@@ -226,6 +244,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         capabilities,
         selectProject,
         selectAllProjects,
+        followEntityProject,
         refreshProjects,
         notifyProjectSwitchComplete,
       }}

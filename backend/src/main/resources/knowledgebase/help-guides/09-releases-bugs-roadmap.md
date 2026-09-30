@@ -49,10 +49,12 @@ A bug has two distinct people:
 - **Assignee** — the person responsible for *fixing* the bug.
 - **QA Tester** — the person responsible for *testing/verifying* the fix.
 
+Tags are saved when you press Enter, and also when you save the form with a tag still typed in the field. Separate several tags with commas.
+
 Set either one inline from the bug detail dialog, or when creating/editing a bug. Leave the QA Tester unassigned until the fix is ready, then pick who should verify it. Changing the QA Tester is recorded in the bug's Activity history.
 
 ## Sharing a Bug
-Use the **Copy link** action (the three-dot menu on a kanban card, or the link button on a list row) to copy a direct URL to the bug. Anyone with access can open the link to land on that bug's full page.
+Use the **Copy link** action (the three-dot menu on a kanban card, or the link button on a list row) to copy a direct URL to the bug. Anyone with access can open the link to land on that bug's full page. The link opens in the bug's own project, even if the person opening it last had a different project selected.
 
 ## Filtering Bugs
 The Bug Reports page has multi-select filters for **Status**, **Severity**, **Assignee**, and **Reporter** — pick any combination and bugs matching all active filters are shown (toggle **Exclude** to invert the selection). The Reporter filter lets you narrow the backlog to bugs raised by specific people, which is handy when triaging incoming reports. Active filters are reflected in the page URL, so a filtered view is shareable and survives the browser back button, and they also drive the overview stat cards at the top of the page. You can save a filter combination as a named filter to reuse it later.
@@ -62,7 +64,8 @@ Toggle between the **list** (paginated table) and **kanban** (status-column boar
 
 ## Tracking Bugs Across Releases
 - Bugs can be tagged to specific releases
-- Filter bugs by release to see what was fixed
+- Filter bugs by release to see what was fixed, or pick **No release** to find bugs that haven't been planned into a release yet
+- The bug detail view shows the bug's target release (and the release it was actually fixed in, once set)
 - Slipped bugs (not fixed in target release) are highlighted
 
 # Roadmap

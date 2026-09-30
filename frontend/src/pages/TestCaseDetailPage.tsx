@@ -20,6 +20,7 @@ import { SoftDeleteButton } from '../components/SoftDeleteButton';
 import { EntityHistoryDialog } from '../components/EntityHistoryDialog';
 import { useBackNavigation } from '../hooks/useBackNavigation';
 import { cn } from '../lib/utils';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 const getPriorityStyle = (priority: string): string => {
   switch (priority) {
@@ -57,6 +58,8 @@ const TestCaseDetailPage: React.FC = () => {
   const id = safeParseId(idParam);
 
   const [testCase, setTestCase] = useState<TestCase | null>(null);
+  // A shared link to another project's testCase opens under that project, not this tab's last one.
+  useFollowEntityProject(testCase?.projectId);
   const [testRuns, setTestRuns] = useState<TestRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

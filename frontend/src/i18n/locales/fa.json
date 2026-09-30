@@ -633,7 +633,8 @@
       "allReleases": "همه نسخه‌ها",
       "release": "نسخه",
       "excludeLabel": "حذف فیلترها",
-      "excludeTooltip": "وقتی روشن است، اشکال‌هایی که با فیلترهای انتخابی مطابقت ندارند نمایش داده می‌شوند (فیلتر معکوس می‌شود)"
+      "excludeTooltip": "وقتی روشن است، اشکال‌هایی که با فیلترهای انتخابی مطابقت ندارند نمایش داده می‌شوند (فیلتر معکوس می‌شود)",
+      "noRelease": "بدون نسخه"
     },
     "loadFailed": "بارگذاری گزارش‌های باگ ناموفق بود",
     "noBugs": "هیچ باگی گزارش نشده",
@@ -762,7 +763,13 @@
       "none": "هنوز فیلتری ذخیره نشده",
       "apply": "اعمال",
       "delete": "حذف"
-    }
+    },
+    "targetRelease": "نسخه هدف",
+    "noRelease": "بدون نسخه هدف",
+    "selectRelease": "انتخاب نسخه هدف",
+    "searchRelease": "جستجوی نسخه‌ها...",
+    "targetReleaseHint": "این باگ را برای پیگیری به یک نسخه مرتبط کنید",
+    "fixedInRelease": "رفع‌شده در نسخه"
   },
   "bugAttachments": {
     "title": "پیوست‌ها",
@@ -1236,7 +1243,8 @@
     "deselectAll": "لغو انتخاب همه",
     "creating": "در حال ایجاد...",
     "anonymous": "ناشناس",
-    "votesByAuthor": "{{votes}} رأی توسط {{author}}"
+    "votesByAuthor": "{{votes}} رأی توسط {{author}}",
+    "copyFailed": "کپی لینک ناموفق بود"
   },
   "competitorsComparison": {
     "accessibility": "دسترسی‌پذیری",

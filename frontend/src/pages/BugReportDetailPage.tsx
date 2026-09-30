@@ -8,6 +8,7 @@ import BugReportModal from '../components/BugReportModal';
 import qaTestManagementService from '../services/qaTestManagementService';
 import { BugReport, CreateBugReportRequest, UpdateBugReportRequest } from '../types';
 import { useBackNavigation } from '../hooks/useBackNavigation';
+import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 export default function BugReportDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +16,8 @@ export default function BugReportDetailPage() {
   const goBack = useBackNavigation('/qa/bug-reports');
   const { t } = useTranslation();
   const [bug, setBug] = useState<BugReport | null>(null);
+  // A shared link to another project's bug opens under that project, not this tab's last one.
+  useFollowEntityProject(bug?.projectId);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);

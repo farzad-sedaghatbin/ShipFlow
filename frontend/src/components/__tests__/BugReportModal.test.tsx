@@ -113,4 +113,21 @@ describe('BugReportModal', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
+
+  it('saves a tag that was typed but never confirmed with Enter', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<BugReportModal open onClose={vi.fn()} onSubmit={onSubmit} />);
+    fillRequiredFields();
+
+    const tagInput = screen.getByLabelText(/Tags/i);
+    fireEvent.change(tagInput, { target: { value: 'login' } });
+    fireEvent.keyDown(tagInput, { key: 'Enter' });
+    // Typed, but the user goes straight to Save without pressing Enter.
+    fireEvent.change(tagInput, { target: { value: 'mobile, safari' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /Report Bug|Submit|Create/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(onSubmit.mock.calls[0][0].tags).toEqual(['login', 'mobile', 'safari']);
+  });
 });

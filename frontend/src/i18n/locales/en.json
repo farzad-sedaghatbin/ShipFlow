@@ -115,7 +115,8 @@
     "new": "New",
     "noData": "No data available",
     "anonymous": "Anonymous",
-    "votesByAuthor": "{{votes}} votes by {{author}}"
+    "votesByAuthor": "{{votes}} votes by {{author}}",
+    "copyFailed": "Could not copy the link"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -2498,7 +2499,8 @@
       "searchReporter": "Search reporters...",
       "noReporter": "No reporters found",
       "excludeLabel": "Exclude filters",
-      "excludeTooltip": "When ON, shows bugs that do NOT match the selected filters (inverts the filter)"
+      "excludeTooltip": "When ON, shows bugs that do NOT match the selected filters (inverts the filter)",
+      "noRelease": "No release"
     },
     "sort": {
       "lastUpdated": "Last Updated",
@@ -2667,7 +2669,8 @@
       "none": "No saved filters yet",
       "apply": "Apply",
       "delete": "Delete"
-    }
+    },
+    "fixedInRelease": "Fixed in release"
   },
   "roadmap": {
     "title": "Roadmap",
