@@ -321,6 +321,7 @@ public class McpToolDispatcher {
 
       // Comment write tools — auth passed explicitly to avoid SecurityContextHolder on executor thread
       case CommentMcpTools.TOOL_ADD_COMMENT -> commentTools.addComment(args, auth);
+      case CommentMcpTools.TOOL_GET_COMMENTS -> commentTools.getComments(args, auth);
 
       // Worklog write tools — auth passed explicitly for user/person resolution
       case WorklogMcpTools.TOOL_LOG_WORK -> worklogTools.logWork(args, auth);
@@ -380,6 +381,7 @@ public class McpToolDispatcher {
         TestCaseMcpTools.getTestRunsDefinition(),
         BugReportMcpTools.getBugReportsDefinition(),
         BugReportMcpTools.getBugReportDefinition(),
+        CommentMcpTools.getCommentsDefinition(),
         BugReportMcpTools.getBugAttachmentsDefinition(),
         BugReportMcpTools.downloadBugAttachmentDefinition());
   }

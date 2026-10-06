@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **MCP: `get_comments` read tool.** Reads the comment thread on a task or bug report (by `entityId`, or `bugKey` for a bug). Until now MCP clients could post a comment with `add_comment` but not read the thread. It is a read tool, so it works without write scope. An entity that doesn't exist returns an error rather than an empty list.
 - **Bug Reports: "No release" option in the release filter** — lists bugs without a target release (shareable as `release=none`).
 - **Backlog: shareable filtered views** — the Backlog's filters (cycle, search, status, priority, assignee, creator, dependency, category, "my tasks", sort) are now kept in the URL, and a new copy-link button next to Export CSV copies it. The link also carries `project=`, so the recipient opens it in the right project.
 - `PATCH /api/qa/bug-reports/{id}/assignee`: sets or clears a bug's assignee, mirroring the existing `/qa-assignee` endpoint.
