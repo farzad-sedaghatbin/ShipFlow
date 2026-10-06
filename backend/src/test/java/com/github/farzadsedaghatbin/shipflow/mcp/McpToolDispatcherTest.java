@@ -104,7 +104,7 @@ class McpToolDispatcherTest {
     CycleMcpTools cycleTools = new CycleMcpTools(cycleService);
     TaskMcpTools taskTools = new TaskMcpTools(taskService, userRepository);
     PitchMcpTools pitchTools = new PitchMcpTools(pitchService);
-    CommentMcpTools commentTools = new CommentMcpTools(commentService, userRepository);
+    CommentMcpTools commentTools = new CommentMcpTools(commentService, userRepository, bugReportService);
     WiseArchitectureMcpTools wiseArchTools = new WiseArchitectureMcpTools(wiseArchitectureService, wiseArchHistoryService, userRepository);
     WorkContextMcpTools workContextTools = new WorkContextMcpTools(pitchService, cycleService, taskService, hillChartService, retroService);
     TaskContextMcpTools taskContextTools = new TaskContextMcpTools(taskService, pitchService, cycleService, testCaseService, bugReportService);
@@ -622,6 +622,71 @@ class McpToolDispatcherTest {
     @SuppressWarnings("unchecked")
     List<Map<String, Object>> content = (List<Map<String, Object>>) result.get("content");
     assertThat((String) content.get(0).get("text")).contains("SHAPED");
+  }
+
+  // ── get_comments ──────────────────────────────────────────────────────────
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> callTool(String name, Map<String, Object> args) throws Exception {
+    org.mockito.Mockito.lenient().doReturn("mcpuser").when(auth).getName();
+    org.mockito.Mockito.lenient().when(userRepository.findByUsername("mcpuser")).thenReturn(Optional.of(
+        com.github.farzadsedaghatbin.shipflow.entity.User.builder().id(7L).username("mcpuser").build()));
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID),
+        org.mockito.ArgumentMatchers.any());
+    dispatcher.dispatch(SESSION_ID, Map.of(
+        "jsonrpc", "2.0", "method", "tools/call",
+        "params", Map.of("name", name, "arguments", args), "id", 77));
+    // A successful call carries "result"; a rejected one (bad params) carries a JSON-RPC "error".
+    return (Map<String, Object>) (captured.containsKey("error") ? captured.get("error") : captured.get("result"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void toolsCall_getComments_returnsTaskThreadWithoutWriteScope() throws Exception {
+    // Read tool: works with writeEnabled=false (the setUp default)
+    CommentDTO c1 = CommentDTO.builder().id(1L).content("First").authorName("Sara").authorUsername("sara")
+        .isEdited(false).canEdit(true).build();
+    CommentDTO c2 = CommentDTO.builder().id(2L).content("Second, edited").authorName("Ali")
+        .authorUsername("ali").isEdited(true).build();
+    when(commentService.getCommentsForExistingEntity(
+        com.github.farzadsedaghatbin.shipflow.entity.enums.CommentEntityType.TASK, 5L, 7L))
+        .thenReturn(List.of(c1, c2));
+
+    Map<String, Object> result = callTool("get_comments", Map.of("entityType", "TASK", "entityId", 5));
+
+    assertThat(result.get("isError")).isEqualTo(false);
+    String text = (String) ((List<Map<String, Object>>) result.get("content")).get(0).get("text");
+    assertThat(text).contains("\"count\":2", "First", "Second, edited", "\"authorUsername\":\"sara\"",
+        "\"edited\":true");
+    // UI-only fields are not exposed to agents
+    assertThat(text).doesNotContain("canEdit");
+  }
+
+  @Test
+  void toolsCall_getComments_resolvesBugByKey() throws Exception {
+    when(bugReportService.getBugReportByKey("BUG-125")).thenReturn(
+        com.github.farzadsedaghatbin.shipflow.dto.qa.BugReportDTO.builder().id(42L).bugKey("BUG-125").build());
+    when(commentService.getCommentsForExistingEntity(
+        com.github.farzadsedaghatbin.shipflow.entity.enums.CommentEntityType.BUG_REPORT, 42L, 7L))
+        .thenReturn(List.of(CommentDTO.builder().id(9L).content("Repro on Safari").build()));
+
+    Map<String, Object> result = callTool("get_comments", Map.of("entityType", "BUG_REPORT", "bugKey", "BUG-125"));
+
+    assertThat(result.get("isError")).isEqualTo(false);
+    assertThat(result.toString()).contains("Repro on Safari", "\"entityId\":42");
+  }
+
+  @Test
+  void toolsCall_getComments_rejectsWikiPages() throws Exception {
+    Map<String, Object> result = callTool("get_comments", Map.of("entityType", "WIKI_PAGE", "entityId", 3));
+
+    assertThat(result.get("code")).isEqualTo(-32602);
+    assertThat(result.toString()).contains("Must be TASK or BUG_REPORT");
+    org.mockito.Mockito.verifyNoInteractions(commentService);
   }
 
   @Test
@@ -2175,7 +2240,7 @@ class McpToolDispatcherTest {
     assertThat(toolNames).contains(
         "whoami",
         "get_test_cases", "get_test_case", "get_test_runs",
-        "get_bug_reports", "get_bug_report");
+        "get_bug_reports", "get_bug_report", "get_comments");
     // Write tools must NOT be present (writeEnabled=false at setUp; test methods that need them
     // flip the property locally and don't affect this one)
     assertThat(toolNames).doesNotContain("record_test_run");

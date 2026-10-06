@@ -120,6 +120,17 @@ public class CommentService {
   }
 
   /**
+   * Get all comments for an entity, first checking the entity exists — so a caller with a wrong
+   * id (e.g. an MCP agent) gets a clear error instead of an empty list that reads as "no
+   * comments".
+   */
+  @Transactional(readOnly = true)
+  public List<CommentDTO> getCommentsForExistingEntity(CommentEntityType entityType, Long entityId, Long userId) {
+    validateEntityExists(entityType, entityId);
+    return getComments(entityType, entityId, userId);
+  }
+
+  /**
    * Get comments for an entity with pagination.
    */
   @Transactional(readOnly = true)

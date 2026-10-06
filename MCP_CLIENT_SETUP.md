@@ -241,6 +241,7 @@ Once connected, your AI assistant has access to these tools:
 | `get_test_runs` | Execution history of a test case — status, notes, actualResult, linked bug |
 | `get_bug_reports` | Bug reports linked to a task, pitch, or cycle — severity, status, repro steps |
 | `get_bug_report` | Single bug report by `bugKey` (e.g. `"BUG-125"`) or numeric `bugReportId` |
+| `get_comments` | Comment thread on a task or bug, oldest first: `entityType` (`TASK` or `BUG_REPORT`) plus `entityId`, or `bugKey` for a bug. Returns id, content, author name and username, createdAt/updatedAt and an `edited` flag. Read-only counterpart to `add_comment`. Wiki pages are excluded, since wiki-space access rules aren't enforced at the comment layer. |
 | `get_bug_attachments` | List a bug's attachments — fileName, type, size, `isImage`, and `extractedText` (for PDFs/docs) |
 | `download_bug_attachment` | Download an image attachment (by its `attachmentId`) as a **viewable image** so you can see design mockups/screenshots |
 | `get_pitches` | Pitches for a project (filterable by status) |
