@@ -4108,7 +4108,8 @@
     "viewHistory": "مشاهده تاریخچه",
     "workActivityTitle": "فعالیت کاری اخیر",
     "workLogActivity": "فعالیت گزارش کار",
-    "workingHere": "در حال کار اینجا"
+    "workingHere": "در حال کار اینجا",
+    "personCreatedUserFailed": "شخص ایجاد شد، اما حساب کاربری ساخته نشد. آن را از بخش مدیریت کاربران ایجاد کنید."
   },
   "permissionManagement": {
     "actions": "عملیات‌ها",
