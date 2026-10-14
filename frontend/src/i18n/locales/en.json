@@ -4275,7 +4275,8 @@
     "viewHistory": "View History",
     "workLogActivity": "Work Log Activity",
     "workingHere": "Working Here",
-    "tryDifferentSearch": "Try a different search term"
+    "tryDifferentSearch": "Try a different search term",
+    "personCreatedUserFailed": "Person created, but the user account could not be created. Create it from User Management."
   },
   "pitchBoard": {
     "title": "Pitch Board",
