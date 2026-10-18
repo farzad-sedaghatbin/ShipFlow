@@ -205,14 +205,37 @@ export default function People() {
     }
 
     setSaving(true);
+    // Only the Person fields go to /persons — CreatePersonRequest on the backend has
+    // no user fields, so sending the whole form posted the plaintext password to an
+    // endpoint that silently discarded it.
+    const personPayload = {
+      name: formData.name,
+      email: formData.email,
+      skills: formData.skills,
+      avatarUrl: formData.avatarUrl,
+    };
     try {
       if (editingPerson) {
-        await api.put(`/persons/${editingPerson.id}`, formData);
+        await api.put(`/persons/${editingPerson.id}`, personPayload);
         showToast(t('peopleManagement.personUpdated'), 'success');
       } else {
-        await api.post('/persons', formData);
+        const { data: createdPerson } = await api.post<Person>('/persons', personPayload);
         if (formData.createUser) {
-          showToast(t('peopleManagement.personAndUserCreated'), 'success');
+          // The account is a second call: creating a Person never creates a User.
+          // Until this existed the checkbox was a no-op that still reported success.
+          try {
+            await api.post('/auth/register', {
+              username: formData.username || formData.email,
+              password: formData.password,
+              role: formData.userRole,
+              personId: createdPerson.id,
+            });
+            showToast(t('peopleManagement.personAndUserCreated'), 'success');
+          } catch {
+            // The person saved, the account did not. Report the partial state rather
+            // than a blanket success — claiming success is what hid this for so long.
+            showToast(t('peopleManagement.personCreatedUserFailed'), 'error');
+          }
         } else {
           showToast(t('peopleManagement.personCreated'), 'success');
         }
