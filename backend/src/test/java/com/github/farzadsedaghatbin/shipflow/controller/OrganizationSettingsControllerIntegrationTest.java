@@ -62,6 +62,52 @@ class OrganizationSettingsControllerIntegrationTest {
     mockMvc.perform(get("/api/admin/settings")).andExpect(status().isForbidden());
   }
 
+  /**
+   * The cycle form is used by MANAGERs but only had the ADMIN-only settings
+   * endpoint to read the organization's default lengths from. The 403 raised a
+   * "no permission" toast on every visit and the form silently fell back to
+   * hard-coded 6/2/2 weeks. This slice is open to any authenticated user.
+   */
+  @Test
+  @WithMockUser(username = "manager", roles = {"MANAGER"})
+  @DisplayName("GET /api/admin/settings/cycle-defaults - Non-admin gets the configured lengths")
+  void getCycleDefaults_NonAdmin_ShouldReturnConfiguredLengths() throws Exception {
+    OrganizationSettings existing = OrganizationSettings.builder().organizationName("Test Org")
+        .defaultCycleLengthWeeks(8).defaultCooldownWeeks(3).defaultSprintLengthWeeks(4)
+        .riskThresholdsJson("{\"lowMax\":25,\"mediumMax\":55,\"highMax\":80}").taskCategoriesJson("[]")
+        .pitchCategoriesJson("[]").timeZone("UTC").dateFormat("MM/DD/YYYY").enableNotifications(true)
+        .enableAIFeatures(true).enableWiseArchitecture(false).updatedBy("system").build();
+    settingsRepository.save(existing);
+
+    mockMvc.perform(get("/api/admin/settings/cycle-defaults")).andExpect(status().isOk())
+        .andExpect(jsonPath("$.defaultCycleLengthWeeks", is(8))).andExpect(jsonPath("$.defaultCooldownWeeks", is(3)))
+        .andExpect(jsonPath("$.defaultSprintLengthWeeks", is(4)))
+        // Only the three lengths — nothing else from the admin settings leaks through.
+        .andExpect(jsonPath("$.organizationName").doesNotExist()).andExpect(jsonPath("$.riskThresholds").doesNotExist());
+  }
+
+  @Test
+  @WithMockUser(username = "manager", roles = {"MANAGER"})
+  @DisplayName("GET /api/admin/settings/cycle-defaults - Falls back to 6/2/2 when nothing is configured")
+  void getCycleDefaults_NoSettings_ShouldReturnBuiltInDefaults() throws Exception {
+    mockMvc.perform(get("/api/admin/settings/cycle-defaults")).andExpect(status().isOk())
+        .andExpect(jsonPath("$.defaultCycleLengthWeeks", is(6))).andExpect(jsonPath("$.defaultCooldownWeeks", is(2)))
+        .andExpect(jsonPath("$.defaultSprintLengthWeeks", is(2)));
+  }
+
+  @Test
+  @DisplayName("GET /api/admin/settings/cycle-defaults - Should still require authentication")
+  void getCycleDefaults_Unauthenticated_ShouldRedirect() throws Exception {
+    mockMvc.perform(get("/api/admin/settings/cycle-defaults")).andExpect(status().is3xxRedirection());
+  }
+
+  @Test
+  @WithMockUser(username = "manager", roles = {"MANAGER"})
+  @DisplayName("GET /api/admin/settings - Full settings must stay admin-only after adding cycle-defaults")
+  void getSettings_Manager_StillForbidden() throws Exception {
+    mockMvc.perform(get("/api/admin/settings")).andExpect(status().isForbidden());
+  }
+
   @Test
   @WithMockUser(username = "admin", roles = {"ADMIN"})
   @DisplayName("GET /api/admin/settings - Should return default settings when none exist")

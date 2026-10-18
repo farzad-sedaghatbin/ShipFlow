@@ -149,7 +149,11 @@ export default function MeetingList() {
           ? retroService.getByProject(currentProject.id)
           : Promise.resolve({ data: [] }),
         personService.getAll(true), // Get active persons
-        organizationSettingsService.getSettings().catch(() => ({ data: null })),
+        // Not getSettings(): that is ADMIN-only, so every non-admin got a 403 here and the
+        // global interceptor toasted "You don't have permission" on each visit even though
+        // this .catch hid the failure from the component. getMeetingTypes() is open to any
+        // authenticated user and returns exactly what is needed.
+        organizationSettingsService.getMeetingTypes().catch(() => ({ data: null })),
       ]);
       setPitches(pitchesRes.data);
       setCycles(cyclesRes.data);
@@ -157,8 +161,8 @@ export default function MeetingList() {
       setPersons(personsRes);
       
       // Load meeting type configs from org settings
-      if (settingsRes.data?.meetingTypes) {
-        setMeetingTypeConfigs(settingsRes.data.meetingTypes.filter((mt: MeetingTypeConfig) => mt.isActive));
+      if (Array.isArray(settingsRes.data)) {
+        setMeetingTypeConfigs(settingsRes.data.filter((mt: MeetingTypeConfig) => mt.isActive));
       }
       
       // Load meetings with pagination, filters, and project filter

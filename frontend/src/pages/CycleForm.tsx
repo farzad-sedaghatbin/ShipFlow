@@ -102,7 +102,10 @@ export default function CycleForm() {
 
   const loadOrganizationSettings = async () => {
     try {
-      const response = await organizationSettingsService.getSettings();
+      // getCycleDefaults, not getSettings: the latter is ADMIN-only, so a manager's form
+      // got a 403 (plus an error toast) and silently fell back to 6/2/2 weeks instead of
+      // the organization's configured lengths.
+      const response = await organizationSettingsService.getCycleDefaults();
       setDefaultCycleLengthWeeks(response.data.defaultCycleLengthWeeks || 6);
       setDefaultCooldownWeeks(response.data.defaultCooldownWeeks || 2);
       setDefaultSprintLengthWeeks(response.data.defaultSprintLengthWeeks || 2);

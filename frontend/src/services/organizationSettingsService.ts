@@ -10,6 +10,16 @@ export const organizationSettingsService = {
    */
   getSettings: () => api.get<OrganizationSettings>('/admin/settings'),
   getMeetingTypes: () => api.get<OrganizationSettings['meetingTypes']>('/admin/settings/meeting-types'),
+  /**
+   * Default cycle/cooldown/sprint lengths. Open to any authenticated user, unlike
+   * getSettings() which is ADMIN-only — use this from pages managers can reach.
+   */
+  getCycleDefaults: () =>
+    api.get<{
+      defaultCycleLengthWeeks?: number;
+      defaultCooldownWeeks?: number;
+      defaultSprintLengthWeeks?: number;
+    }>('/admin/settings/cycle-defaults'),
 
   /**
    * Update organization settings
