@@ -87,6 +87,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.14.2',
+    date: 'October 18, 2026',
+    title: 'Account Creation, Bug Reports & Faster Loads',
+    highlights: [
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Creating a Person Now Really Creates Their Account',
+        description:
+          "The People page's \"Create user account for this person\" option never actually created the account \u2014 it reported success while only saving the person, so the new teammate had no way to log in. It now creates the account and links it to that person, and tells you plainly if the account step fails instead of claiming success.",
+      },
+      {
+        icon: <Bug className="h-5 w-5" />,
+        title: 'Bug Reports Can No Longer Go Missing',
+        description:
+          'A bug report could be filed without a project and then be invisible everywhere afterwards. Bug detail also gained tags, assignee and target release, a "no release" filter, and shareable filtered Backlog links.',
+      },
+      {
+        icon: <Zap className="h-5 w-5" />,
+        title: 'Much Faster First Load',
+        description:
+          'The frontend is now served compressed \u2014 a cold load drops from about 2.1 MB to 580 KB, which is most noticeable on mobile and slow connections.',
+      },
+    ],
+  },
+  {
     version: '1.14.1',
     date: 'September 10, 2026',
     title: 'AI Accuracy & Reliability Fixes',

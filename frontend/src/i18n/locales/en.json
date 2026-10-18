@@ -5769,7 +5769,14 @@
     "shipped1121Item0Title": "Clean Production Installs Stay Clean",
     "shipped1121Item0Desc": "A fresh production install no longer arrives with a “Mobile App — Scrum Demo” project you never asked for. The demo seeder is now opt-in, and archiving or deleting that project no longer stops the application from starting.",
     "shipped1121Item1Title": "Support for the Latest Claude Models",
-    "shipped1121Item1Desc": "Choosing a current Claude model such as claude-sonnet-5 made every AI feature fail, because ShipFlow always sent a temperature setting the newest models reject. It is now omitted by default, so the latest models work out of the box."
+    "shipped1121Item1Desc": "Choosing a current Claude model such as claude-sonnet-5 made every AI feature fail, because ShipFlow always sent a temperature setting the newest models reject. It is now omitted by default, so the latest models work out of the box.",
+    "shipped1142Title": "Account Creation, Bug Reports & Faster Loads",
+    "shipped1142Item0Title": "Creating a Person Now Really Creates Their Account",
+    "shipped1142Item0Desc": "The People page's “Create user account for this person” option never actually created the account — it reported success while only saving the person, so the new teammate had no way to log in. It now creates the account, links it to that person, and says so plainly if the account step fails.",
+    "shipped1142Item1Title": "Bug Reports Can No Longer Go Missing",
+    "shipped1142Item1Desc": "A bug report could be filed without a project and then be invisible everywhere afterwards. Bug detail also gained tags, assignee and target release, a “no release” filter, and shareable filtered Backlog links.",
+    "shipped1142Item2Title": "Much Faster First Load",
+    "shipped1142Item2Desc": "The frontend is now served compressed — a cold load drops from about 2.1 MB to 580 KB, most noticeable on mobile and slow connections."
   },
   "releaseNotes": {
     "title": "Release Notes",
