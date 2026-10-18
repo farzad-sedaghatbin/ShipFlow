@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.14.2] - 2026-10-18
+
 ### Added
 - **MCP: `get_comments` read tool.** Reads the comment thread on a task or bug report (by `entityId`, or `bugKey` for a bug). Until now MCP clients could post a comment with `add_comment` but not read the thread. It is a read tool, so it works without write scope. An entity that doesn't exist returns an error rather than an empty list.
 - **Bug Reports: "No release" option in the release filter** — lists bugs without a target release (shareable as `release=none`).
