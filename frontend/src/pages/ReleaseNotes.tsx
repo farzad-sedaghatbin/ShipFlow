@@ -87,6 +87,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.14.3',
+    date: 'October 20, 2026',
+    title: 'Managers Can See the Projects They Create',
+    highlights: [
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'A Project You Create Is Now Yours to See',
+        description:
+          'A manager who created a project got a success message and then never saw it \u2014 it was saved but not assigned to anyone who could open it. The person who creates a project now gets Manager access to it automatically.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'No More False "No Permission" Warnings',
+        description:
+          'Non-admin users saw a red "You don\u0027t have permission" message every time they opened Meetings, caused by a request for admin-only settings. Meetings now loads cleanly for everyone.',
+      },
+      {
+        icon: <Sliders className="h-5 w-5" />,
+        title: 'Cycle Forms Use Your Organization\u0027s Real Defaults',
+        description:
+          'Managers creating a cycle were always shown 6/2/2 weeks, ignoring the lengths your organization configured. The form now picks up your actual cycle, cooldown and sprint lengths.',
+      },
+    ],
+  },
+  {
     version: '1.14.2',
     date: 'October 18, 2026',
     title: 'Account Creation, Bug Reports & Faster Loads',

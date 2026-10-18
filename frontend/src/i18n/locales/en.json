@@ -5776,7 +5776,14 @@
     "shipped1142Item1Title": "Bug Reports Can No Longer Go Missing",
     "shipped1142Item1Desc": "A bug report could be filed without a project and then be invisible everywhere afterwards. Bug detail also gained tags, assignee and target release, a “no release” filter, and shareable filtered Backlog links.",
     "shipped1142Item2Title": "Much Faster First Load",
-    "shipped1142Item2Desc": "The frontend is now served compressed — a cold load drops from about 2.1 MB to 580 KB, most noticeable on mobile and slow connections."
+    "shipped1142Item2Desc": "The frontend is now served compressed — a cold load drops from about 2.1 MB to 580 KB, most noticeable on mobile and slow connections.",
+    "shipped1143Title": "Managers Can See the Projects They Create",
+    "shipped1143Item0Title": "A Project You Create Is Now Yours to See",
+    "shipped1143Item0Desc": "A manager who created a project got a success message and then never saw it — it was saved but not assigned to anyone who could open it. The person who creates a project now gets Manager access to it automatically.",
+    "shipped1143Item1Title": "No More False “No Permission” Warnings",
+    "shipped1143Item1Desc": "Non-admin users saw a red “You don’t have permission” message every time they opened Meetings, caused by a request for admin-only settings. Meetings now loads cleanly for everyone.",
+    "shipped1143Item2Title": "Cycle Forms Use Your Organization’s Real Defaults",
+    "shipped1143Item2Desc": "Managers creating a cycle were always shown 6/2/2 weeks, ignoring the lengths your organization configured. The form now picks up your actual cycle, cooldown and sprint lengths."
   },
   "releaseNotes": {
     "title": "Release Notes",
