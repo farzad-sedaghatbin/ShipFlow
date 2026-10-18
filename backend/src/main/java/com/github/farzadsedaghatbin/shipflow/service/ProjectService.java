@@ -194,12 +194,55 @@ public class ProjectService {
 
     project = projectRepository.save(project);
 
+    grantCreatorAccess(project);
+
     // For Kanban projects, create a default "Continuous Flow" cycle
     if (project.getProjectType() == ProjectType.KANBAN) {
       createDefaultKanbanCycle(project);
     }
 
     return toDTO(project);
+  }
+
+  /**
+   * Makes the project visible to the person who just created it.
+   *
+   * <p>
+   * The controller lets MANAGERs create projects, but non-admins only see projects
+   * they are the owner of, directly assigned to, or reach through a team. Nothing
+   * here used to grant the creator any of those, so a manager's new project saved
+   * and returned 201 and then never appeared in their own list, project switcher,
+   * or on direct navigation (which is denied). ADMINs see every project already and
+   * need no row. If the creator was named as the owner they already have access
+   * through ownership, so no duplicate assignment is written.
+   */
+  private void grantCreatorAccess(Project project) {
+    Optional<User> creator = currentUserIfAuthenticated();
+    if (creator.isEmpty() || creator.get().getRole() == UserRole.ADMIN) {
+      return;
+    }
+    User user = creator.get();
+    boolean isOwner = project.getOwner() != null && project.getOwner().getId().equals(user.getId());
+    if (isOwner || userProjectRepository.existsByUserIdAndProjectId(user.getId(), project.getId())) {
+      return;
+    }
+    userProjectRepository.save(UserProject.builder().user(user).project(project).projectRole(ProjectRole.MANAGER)
+        .grantedBy(user).build());
+    log.info("Granted creator '{}' MANAGER access to new project {} ({})", user.getUsername(), project.getId(),
+        project.getProjectKey());
+  }
+
+  /**
+   * The authenticated user, or empty when there is none (e.g. a seeder or import
+   * calling create outside a request). Unlike getCurrentUser this never throws.
+   */
+  private Optional<User> currentUserIfAuthenticated() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated()
+        || "anonymousUser".equals(authentication.getPrincipal())) {
+      return Optional.empty();
+    }
+    return userRepository.findByUsername(authentication.getName());
   }
 
   /**

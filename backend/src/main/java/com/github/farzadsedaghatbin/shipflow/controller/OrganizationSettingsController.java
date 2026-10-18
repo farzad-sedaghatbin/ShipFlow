@@ -44,6 +44,17 @@ public class OrganizationSettingsController {
     return ResponseEntity.ok(settingsService.getSettings());
   }
 
+  @GetMapping("/settings/cycle-defaults")
+  @Operation(summary = "Get default cycle/cooldown/sprint lengths (accessible to all authenticated users)")
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<com.github.farzadsedaghatbin.shipflow.dto.admin.CycleDefaultsDTO> getCycleDefaults() {
+    OrganizationSettingsDTO settings = settingsService.getSettings();
+    return ResponseEntity.ok(com.github.farzadsedaghatbin.shipflow.dto.admin.CycleDefaultsDTO.builder()
+        .defaultCycleLengthWeeks(settings.getDefaultCycleLengthWeeks())
+        .defaultCooldownWeeks(settings.getDefaultCooldownWeeks())
+        .defaultSprintLengthWeeks(settings.getDefaultSprintLengthWeeks()).build());
+  }
+
   @GetMapping("/settings/meeting-types")
   @Operation(summary = "Get meeting type configurations (accessible to all authenticated users)")
   @PreAuthorize("isAuthenticated()")
