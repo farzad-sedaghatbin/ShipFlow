@@ -17,13 +17,14 @@ import {
   Lock,
   UserPlus
 } from 'lucide-react';
-import { useToast } from '../contexts';
+import { useToast, useAuth } from '../contexts';
 import api from '../services/api';
 import { workLogService } from '../services/workLogService';
 import { Person, CreatePersonRequest, TeamAssignment, WorkLog, UserRole } from '../types';
 import EmptyState from '../components/EmptyState';
 import { EmptyPeopleIllustration, EmptyWorkLogsIllustration } from '../components/illustrations';
 import { cn } from '../lib/utils';
+import { getPeopleCapabilities } from '../utils/peoplePermissions';
 
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -71,6 +72,9 @@ const MIN_PASSWORD_LENGTH = 6;
 export default function People() {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
+  const { user } = useAuth();
+  // Mirrors the server's rules; see utils/peoplePermissions.ts.
+  const { canManagePeople, canCreateLoginAccounts } = getPeopleCapabilities(user?.role);
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -364,10 +368,12 @@ export default function People() {
       <div>
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
           <h1 className="text-3xl font-bold tracking-tight">{t('peopleManagement.title')}</h1>
-          <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('peopleManagement.addPerson')}
-          </Button>
+          {canManagePeople && (
+            <Button onClick={() => handleOpenDialog()} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('peopleManagement.addPerson')}
+            </Button>
+          )}
         </div>
 
         {/* Stats Cards */}
@@ -465,9 +471,11 @@ export default function People() {
                       <Button variant="ghost" size="icon-sm" onClick={() => handleViewHistory(person)}>
                         <History className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleOpenDialog(person)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      {canManagePeople && (
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleOpenDialog(person)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       {person.isActive && (
                         <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => openDeleteConfirm(person)}>
                           <Trash2 className="h-4 w-4" />
@@ -581,19 +589,21 @@ export default function People() {
                         </TooltipTrigger>
                         <TooltipContent>{t('peopleManagement.teamHistory')}</TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => handleOpenDialog(person)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{t('peopleManagement.edit')}</TooltipContent>
-                      </Tooltip>
+                      {canManagePeople && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => handleOpenDialog(person)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{t('peopleManagement.edit')}</TooltipContent>
+                        </Tooltip>
+                      )}
                       {person.isActive && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -707,8 +717,8 @@ export default function People() {
                 />
               </div>
               
-              {/* User Account Creation Section */}
-              {!editingPerson && (
+              {/* User Account Creation Section — admin only: the server refuses non-admins here */}
+              {!editingPerson && canCreateLoginAccounts && (
                 <>
                   <div className="border-t pt-4">
                     <div className="flex items-center space-x-2">
