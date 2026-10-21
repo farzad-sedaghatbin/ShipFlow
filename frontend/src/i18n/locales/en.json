@@ -5783,7 +5783,12 @@
     "shipped1143Item1Title": "No More False “No Permission” Warnings",
     "shipped1143Item1Desc": "Non-admin users saw a red “You don’t have permission” message every time they opened Meetings, caused by a request for admin-only settings. Meetings now loads cleanly for everyone.",
     "shipped1143Item2Title": "Cycle Forms Use Your Organization’s Real Defaults",
-    "shipped1143Item2Desc": "Managers creating a cycle were always shown 6/2/2 weeks, ignoring the lengths your organization configured. The form now picks up your actual cycle, cooldown and sprint lengths."
+    "shipped1143Item2Desc": "Managers creating a cycle were always shown 6/2/2 weeks, ignoring the lengths your organization configured. The form now picks up your actual cycle, cooldown and sprint lengths.",
+    "shipped1144Title": "Managers Can Add People",
+    "shipped1144Item0Title": "Managers Can Add and Edit People",
+    "shipped1144Item0Desc": "Managers could open the People page but every attempt to add or edit someone was refused with “You don’t have permission”. Managers can now add and edit people. Creating a login account for them stays with admins.",
+    "shipped1144Item1Title": "Controls You Can’t Use Are Now Hidden",
+    "shipped1144Item1Desc": "The People page used to show Add Person and Edit to every role, including ones the server would always refuse. It now shows them only to the roles that can use them, and shows the “Create user account” option only to admins."
   },
   "releaseNotes": {
     "title": "Release Notes",

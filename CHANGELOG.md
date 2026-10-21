@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.14.4] - 2026-10-21
+
 ### Fixed
 - **Managers could open People but not add or edit anyone.** `PersonController` create and update require `USER:CREATE` / `USER:UPDATE`, but migration `V58` gave `MANAGER` only `USER:READ` ("Manager can read users"), while the People page showed **Add Person** and the edit buttons to every role. A manager clicking either got "You don't have permission to perform this action." Found on a production instance. The `USER` resource gates exactly those two endpoints and nothing else (managing login accounts is a separate ADMIN-only rule: `UserController` is `hasRole('ADMIN')` and `POST /api/auth/register` exempts only an admin from the registration gate), so the new migration `V2026_10_21_0001__grant_manager_person_create_update` grants `MANAGER` create and update on people and nothing wider; it is idempotent against the unique `(role, resource_type, permission_type)` constraint, was run twice against PostgreSQL 16 to confirm, and takes effect immediately because `PermissionService.hasPermission` reads the table directly rather than a cache. On the page, Add Person and both Edit buttons now show only for ADMIN and MANAGER, and the **Create user account** option shows only for ADMIN — previously a manager who could add a person would still have hit a failure on the account step. The role rules live in a small tested helper, `utils/peoplePermissions.ts`, so the page and its test cannot drift. `PERMISSION_MATRIX.md` updated (MANAGER now ✅ for `USER` create/update) with a note that this resource covers people, not login accounts.
 
