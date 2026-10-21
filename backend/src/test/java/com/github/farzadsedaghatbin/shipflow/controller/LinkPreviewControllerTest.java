@@ -7,13 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.github.farzadsedaghatbin.shipflow.config.SocialCrawlerFilter;
-import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
-import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
-import com.github.farzadsedaghatbin.shipflow.entity.Task;
-import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
-import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
-import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
-import java.time.LocalDate;
+import com.github.farzadsedaghatbin.shipflow.service.LinkPreviewService;
+import com.github.farzadsedaghatbin.shipflow.service.LinkPreviewService.LinkPreview;
 import java.util.Optional;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,25 +23,22 @@ import org.springframework.web.filter.ForwardedHeaderFilter;
 /**
  * Standalone (no Spring context) tests for the Open Graph pages behind link previews.
  *
- * <p>The interesting behaviour is host derivation: these URLs used to be hardcoded to
+ * <p>The interesting behaviour here is host derivation: these URLs used to be hardcoded to
  * {@code https://shipflow.dev}, so every self-hosted instance advertised the public demo's host.
+ * What each preview <em>says</em> comes from {@link LinkPreviewService} and is tested there.
  */
 @DisplayName("Link Preview Controller")
 class LinkPreviewControllerTest {
 
+  private static final LinkPreview TASK = new LinkPreview("Instant transfer", "Task · Backlog · Urgent");
+
   private MockMvc mockMvc;
-  private TaskRepository taskRepository;
-  private PitchRepository pitchRepository;
-  private CycleRepository cycleRepository;
+  private LinkPreviewService linkPreviewService;
 
   @BeforeEach
   void setUp() {
-    taskRepository = Mockito.mock(TaskRepository.class);
-    pitchRepository = Mockito.mock(PitchRepository.class);
-    cycleRepository = Mockito.mock(CycleRepository.class);
-    mockMvc = MockMvcBuilders
-        .standaloneSetup(new LinkPreviewController(pitchRepository, taskRepository, cycleRepository))
-        .build();
+    linkPreviewService = Mockito.mock(LinkPreviewService.class);
+    mockMvc = MockMvcBuilders.standaloneSetup(new LinkPreviewController(linkPreviewService)).build();
   }
 
   /**
@@ -67,8 +59,7 @@ class LinkPreviewControllerTest {
   @Test
   @DisplayName("task preview advertises the host actually being browsed, not shipflow.dev")
   void taskPreviewUsesRequestHost() throws Exception {
-    when(taskRepository.findById(anyLong())).thenReturn(Optional.of(
-        Task.builder().title("Instant transfer").description("POST /transfers").build()));
+    when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(TASK));
 
     mockMvc.perform(previewRequest("/preview/task/7", "shipflow.acme.internal"))
         .andExpect(status().isOk())
@@ -82,15 +73,14 @@ class LinkPreviewControllerTest {
   @Test
   @DisplayName("behind a TLS-terminating proxy the preview advertises https, no port")
   void behindProxyUsesForwardedScheme() throws Exception {
-    when(taskRepository.findById(anyLong())).thenReturn(Optional.of(
-        Task.builder().title("Instant transfer").build()));
+    when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(TASK));
 
     // The shape Cloudflare (or nginx, or an ingress) sends the container: plain HTTP on an
     // internal port, public scheme in X-Forwarded-Proto. ForwardedHeaderFilter is what
     // `server.forward-headers-strategy=framework` installs in the prod profile; without it the
     // app builds http:// URLs, which is what cost the previews in the first place.
     MockMvc behindProxy = MockMvcBuilders
-        .standaloneSetup(new LinkPreviewController(pitchRepository, taskRepository, cycleRepository))
+        .standaloneSetup(new LinkPreviewController(linkPreviewService))
         .addFilters(new ForwardedHeaderFilter())
         .build();
 
@@ -109,25 +99,24 @@ class LinkPreviewControllerTest {
         .andExpect(content().string(Matchers.not(Matchers.containsString("http://"))));
   }
 
+  // The page HTML-escapes everything it prints, so the "·" separator in a summary is emitted as the
+  // entity &middot; — which crawlers decode back to "·". The assertions below expect that escaped form.
   @Test
-  @DisplayName("task preview keeps the crawler-visible title and description")
-  void taskPreviewExposesTitleAndDescription() throws Exception {
-    when(taskRepository.findById(anyLong())).thenReturn(Optional.of(
-        Task.builder().title("Instant transfer").description("**Bold** and `code`").build()));
+  @DisplayName("the card shows exactly the title and summary the lookup service returned")
+  void previewShowsTheServiceTitleAndSummary() throws Exception {
+    when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(TASK));
 
     mockMvc.perform(previewRequest("/preview/task/7", "host"))
         .andExpect(content().string(Matchers.containsString(
             "<meta property=\"og:title\" content=\"Instant transfer — ShipFlow\"/>")))
-        // Markdown is stripped so the description reads cleanly in a preview card
         .andExpect(content().string(Matchers.containsString(
-            "<meta property=\"og:description\" content=\"Bold and code\"/>")));
+            "<meta property=\"og:description\" content=\"Task &middot; Backlog &middot; Urgent\"/>")));
   }
 
   @Test
   @DisplayName("a direct /preview hit bounces the visitor on to the SPA")
   void directHitKeepsBounceScript() throws Exception {
-    when(taskRepository.findById(anyLong())).thenReturn(Optional.of(
-        Task.builder().title("Instant transfer").build()));
+    when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(TASK));
 
     mockMvc.perform(previewRequest("/preview/task/7", "host"))
         .andExpect(content().string(Matchers.containsString(
@@ -137,8 +126,7 @@ class LinkPreviewControllerTest {
   @Test
   @DisplayName("served in place at the shared URL, the bounce script is omitted")
   void inPlaceOmitsBounceScript() throws Exception {
-    when(taskRepository.findById(anyLong())).thenReturn(Optional.of(
-        Task.builder().title("Instant transfer").build()));
+    when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(TASK));
 
     // What SocialCrawlerFilter's forward looks like from the controller's side. Keeping the
     // bounce here would reload the very URL being previewed, forever, for any crawler that
@@ -151,69 +139,72 @@ class LinkPreviewControllerTest {
   }
 
   @Test
-  @DisplayName("pitch preview prefers the problem statement and links the pitch URL")
+  @DisplayName("bug report preview links the bug report URL")
+  void bugPreview() throws Exception {
+    when(linkPreviewService.forBug(9L)).thenReturn(Optional.of(
+        new LinkPreview("Login loops", "Bug report · Trivial · Open")));
+
+    mockMvc.perform(previewRequest("/preview/bug/9", "host"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString(
+            "<meta property=\"og:url\" content=\"https://host/qa/bug-reports/9\"/>")))
+        .andExpect(content().string(Matchers.containsString("Login loops")))
+        .andExpect(content().string(Matchers.containsString("Bug report &middot; Trivial &middot; Open")));
+  }
+
+  @Test
+  @DisplayName("pitch preview links the pitch URL")
   void pitchPreview() throws Exception {
-    when(pitchRepository.findById(anyLong())).thenReturn(Optional.of(
-        Pitch.builder().title("Faster onboarding").problemStatement("Signup takes 9 steps")
-            .description("ignored when a problem statement exists").build()));
+    when(linkPreviewService.forPitch(3L)).thenReturn(Optional.of(
+        new LinkPreview("Faster onboarding", "Pitch · In Progress")));
 
     mockMvc.perform(previewRequest("/preview/pitch/3", "host"))
         .andExpect(status().isOk())
         .andExpect(content().string(Matchers.containsString(
             "<meta property=\"og:url\" content=\"https://host/pitches/3\"/>")))
-        .andExpect(content().string(Matchers.containsString("Signup takes 9 steps")));
+        .andExpect(content().string(Matchers.containsString("Pitch &middot; In Progress")));
   }
 
   @Test
-  @DisplayName("cycle preview summarises the dates and links the cycle URL")
+  @DisplayName("cycle preview links the cycle URL")
   void cyclePreview() throws Exception {
-    when(cycleRepository.findById(anyLong())).thenReturn(Optional.of(
-        Cycle.builder().name("Cycle 12").startDate(LocalDate.of(2026, 8, 1))
-            .endDate(LocalDate.of(2026, 8, 28)).build()));
-    when(pitchRepository.countByCycleIdNotDeleted(12L)).thenReturn(4L);
+    when(linkPreviewService.forCycle(12L)).thenReturn(Optional.of(
+        new LinkPreview("Cycle 12", "Cycle: 4 pitches · 2026-08-01 – 2026-08-28")));
 
     mockMvc.perform(previewRequest("/preview/cycle/12", "host"))
         .andExpect(status().isOk())
         .andExpect(content().string(Matchers.containsString(
             "<meta property=\"og:url\" content=\"https://host/cycles/12\"/>")))
-        .andExpect(content().string(Matchers.containsString("4 pitches")))
-        .andExpect(content().string(Matchers.containsString("2026-08-01")));
+        .andExpect(content().string(Matchers.containsString("4 pitches")));
   }
 
   @Test
-  @DisplayName("cycle preview counts pitches by query, never through the lazy collection")
-  void cyclePreviewDoesNotTouchLazyCollection() throws Exception {
-    // Regression: cyclePreview used to read cycle.getPitches().size(). The collection is LAZY and
-    // the controller runs outside a transaction, so that threw LazyInitializationException and
-    // every cycle link previewed as a 500 — reproduced against the live demo before this fix.
-    // Mimic a detached entity by making the getter blow up the way Hibernate's proxy does.
-    Cycle detached = Mockito.spy(Cycle.builder().name("Cycle 12")
-        .startDate(LocalDate.of(2026, 8, 1)).endDate(LocalDate.of(2026, 8, 28)).build());
-    Mockito.when(detached.getPitches())
-        .thenThrow(new org.hibernate.LazyInitializationException("no Session"));
-    when(cycleRepository.findById(anyLong())).thenReturn(Optional.of(detached));
-    when(pitchRepository.countByCycleIdNotDeleted(12L)).thenReturn(1L);
-
-    mockMvc.perform(previewRequest("/preview/cycle/12", "host"))
-        .andExpect(status().isOk())
-        .andExpect(content().string(Matchers.containsString("1 pitch ")));
-  }
-
-  @Test
-  @DisplayName("an unknown entity returns 404 with generic branding")
+  @DisplayName("an unknown or deleted entity returns 404 with generic branding")
   void unknownEntityIsNotFound() throws Exception {
-    when(taskRepository.findById(anyLong())).thenReturn(Optional.empty());
+    when(linkPreviewService.forTask(anyLong())).thenReturn(Optional.empty());
 
     mockMvc.perform(previewRequest("/preview/task/999", "host"))
         .andExpect(status().isNotFound())
-        .andExpect(content().string(Matchers.containsString("ShipFlow")));
+        .andExpect(content().string(Matchers.containsString("ShipFlow")))
+        // 404 stays at the entity's own URL so the SPA can render its usual not-found state.
+        .andExpect(content().string(Matchers.containsString("https://host/backlog/999")));
   }
 
   @Test
-  @DisplayName("titles and descriptions are HTML-escaped")
+  @DisplayName("a missing bug report returns 404 at its own URL")
+  void unknownBugIsNotFound() throws Exception {
+    when(linkPreviewService.forBug(anyLong())).thenReturn(Optional.empty());
+
+    mockMvc.perform(previewRequest("/preview/bug/999", "host"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().string(Matchers.containsString("https://host/qa/bug-reports/999")));
+  }
+
+  @Test
+  @DisplayName("titles and summaries are HTML-escaped")
   void escapesHtml() throws Exception {
-    when(taskRepository.findById(anyLong())).thenReturn(Optional.of(
-        Task.builder().title("<script>alert(1)</script>").description("\"quoted\"").build()));
+    when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(
+        new LinkPreview("<script>alert(1)</script>", "\"quoted\"")));
 
     mockMvc.perform(previewRequest("/preview/task/7", "host"))
         .andExpect(content().string(Matchers.not(Matchers.containsString("<script>alert(1)"))))

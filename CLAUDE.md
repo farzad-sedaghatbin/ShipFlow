@@ -549,6 +549,15 @@ ShipFlow's open-core licensing lives entirely in the `license` package (`License
 5. Update the frontend: the Organization Settings → Licence tab already surfaces `features[]` from `GET /api/license/status` — if the gated feature has its own settings UI, disable/hide the relevant control based on that response rather than letting the request round-trip into a 403.
 6. As of v1.14.0, **no shipped feature is gated this way yet** — the annotation and aspect exist as plumbing for the first real commercial feature to use.
 
+### Preview a new kind of item in shared links (link previews)
+
+Chat apps (WhatsApp, Slack, iMessage) fetch a shared URL with **no login**, so link previews are public. The contract lives in `LinkPreviewService`: it returns a title and a one-line summary built from **general, non-sensitive facts only** (kind of item, status, priority/severity) — never free text a person wrote (descriptions, problem statements, comments). Soft-deleted items resolve to "not found".
+
+1. Add a `forThing(id)` method to `LinkPreviewService` mapping the entity to a `LinkPreview(title, summary)` — use a not-deleted lookup, and labels only.
+2. Add `GET /preview/thing/{id}` to `LinkPreviewController` using `render(...)`, with the entity's canonical SPA path.
+3. Add the SPA path to `SocialCrawlerFilter` (`Pattern` + `resolvePreviewUrl`) — it must match the route in `App.tsx` exactly; list pages deliberately fall through to the generic card.
+4. Tests: add a case to `LinkPreviewServiceTest` that gives the entity a credential-shaped description and asserts it never appears, plus a path in `SocialCrawlerFilterTest.mapsEveryEntityType`.
+
 ### Debug an AI feature
 
 - Check `application-dev.properties` for active LLM provider
