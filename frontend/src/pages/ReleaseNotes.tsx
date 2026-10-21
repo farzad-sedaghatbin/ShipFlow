@@ -87,6 +87,25 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.14.4',
+    date: 'October 21, 2026',
+    title: 'Managers Can Add People',
+    highlights: [
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Managers Can Add and Edit People',
+        description:
+          'Managers could open the People page but every attempt to add or edit someone was refused with "You don\u0027t have permission". Managers can now add and edit people. Creating a login account for them stays with admins.',
+      },
+      {
+        icon: <Shield className="h-5 w-5" />,
+        title: 'Controls You Can\u0027t Use Are Now Hidden',
+        description:
+          'The People page used to show Add Person and Edit to every role, including ones the server would always refuse. It now shows them only to the roles that can use them, and shows the "Create user account" option only to admins.',
+      },
+    ],
+  },
+  {
     version: '1.14.3',
     date: 'October 20, 2026',
     title: 'Managers Can See the Projects They Create',
