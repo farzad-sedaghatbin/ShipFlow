@@ -45,9 +45,9 @@ ShapeUp Tracker uses a 4-tier role model with fine-grained permissions:
 | | UPDATE | ✅ | ✅ | ❌ | ❌ |
 | | DELETE | ✅ | ✅ | ❌ | ❌ |
 | | MANAGE | ✅ | ✅ | ❌ | ❌ |
-| **USER** | CREATE | ✅ | ❌ | ❌ | ❌ |
+| **USER** | CREATE | ✅ | ✅ | ❌ | ❌ |
 | | READ | ✅ | ✅ | ✅ | ✅ |
-| | UPDATE | ✅ | ❌ | ❌ | ❌ |
+| | UPDATE | ✅ | ✅ | ❌ | ❌ |
 | | DELETE | ✅ | ❌ | ❌ | ❌ |
 | | MANAGE | ✅ | ❌ | ❌ | ❌ |
 | **DASHBOARD** | CREATE | ✅ | ✅ | ✅ (own) | ❌ |
@@ -115,6 +115,8 @@ ShapeUp Tracker uses a 4-tier role model with fine-grained permissions:
 | **WISE_ARCHITECTURE** | READ | ✅ | ✅ | ✅ | ❌ |
 | | EXECUTE | ✅ | ✅ | ✅ | ❌ |
 | | MANAGE | ✅ | ❌ | ❌ | ❌ |
+
+> **`USER` covers people, not login accounts.** The `USER` resource is checked in exactly two places — `PersonController` create (`USER:CREATE`) and update (`USER:UPDATE`) — so MANAGERs can add and edit people (granted by migration `V2026_10_21_0001`; before it, `V58` gave MANAGER read only). Creating, deactivating or re-roling a **login account** is a separate rule enforced in code, not by this table: `UserController` is `hasRole('ADMIN')` and `POST /api/auth/register` exempts only an authenticated ADMIN from the registration gate. Managers therefore cannot create logins, and the People page hides the "Create user account" option from them.
 
 ---
 
