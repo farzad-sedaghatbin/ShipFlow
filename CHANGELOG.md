@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The ShipFlow logo had a fake "transparent" checkerboard painted into its pixels, so it appeared in every link preview and icon.** The master `icon.png` and every PNG derived from it (`android-chrome-192x192`, `android-chrome-512x512`, `apple-touch-icon`) were opaque images whose grey squares were literal pixel data — the usual result of exporting an image from a tool that shows transparency as a grid. It showed up as a checkerboard behind the arrows in WhatsApp/Slack previews (the 512px file is the default `og:image` for the site, the SEO helper, and every task/bug/pitch/cycle preview), on the Android and Apple home-screen icons, and as the in-app logo tile in the sidebar and login page (where it was served as a 7.8 MB, 2048px download for a ~32px image). The arrows are now cut out of the original with a real alpha channel — same design — and the shipped icons are the logo on solid white: `android-chrome-*` at 62% of the canvas so the 512 stays inside the maskable safe zone the PWA manifest declares, `apple-touch-icon` opaque as iOS requires, and `icon.png` (the in-app tile) a 512px white tile so the dark-navy arrow keeps its contrast on dark themes. Total icon weight drops from ~8.3 MB to ~0.15 MB. A transparent 1024px source is kept at `frontend/brand/logo-master-1024.png`, outside `public/` so it is not shipped. Note the default `og:image` in `index.html` is an absolute `https://shipflow.dev/...` URL, so a self-hosted instance's generic link card still pulls its image from shipflow.dev until that host serves the new file.
+
 ## [1.14.4] - 2026-10-21
 
 ### Fixed
