@@ -154,6 +154,10 @@ Yes. Call `get_bug_attachments` (by `bugKey` or `bugReportId`) to list a bug's f
 
 ## Can I share ShipFlow links in Slack or iMessage with rich previews?
 
-Yes. Every task, pitch, and cycle detail page has a **Copy shareable link** button (link icon near the page title). Copying that link and pasting it into Slack, iMessage, WhatsApp, or Notion will unfurl a preview showing the item title and description.
+Yes. Task, pitch, and cycle detail pages have a **Copy link** button (link icon near the page title). Copying that link and pasting it into Slack, iMessage, WhatsApp, or Notion will unfurl a preview showing the item's **title and a one-line summary of general details** — for example `Task · In Progress · High` or `Bug report · High · Open`.
 
-If you paste the direct app URL (e.g. from the browser bar), ShipFlow also handles that automatically for known social platforms.
+Previews deliberately show only general information. They never include the description, problem statement, comments or any other text you wrote, because a preview is fetched by chat apps that are not signed in to ShipFlow. Deleted items stop previewing.
+
+If you paste the direct app URL (e.g. from the browser bar), ShipFlow also handles that automatically for known social platforms — but only for a link to **one** item: a task (`/backlog/42`), a bug report (`/qa/bug-reports/7`), a pitch, or a cycle. For a bug report, open it and copy the address from your browser bar.
+
+The **Copy link** button on the Backlog and Bug Reports *list* pages is different: it copies the list with your current filters (for example `/backlog?project=5`). A list link shows the general ShipFlow card in a chat preview, because there is no single item to describe. To share one specific task or bug, open it first and copy its own link.

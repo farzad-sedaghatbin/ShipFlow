@@ -58,6 +58,7 @@ class SocialCrawlerFilterTest {
     assertForward("/backlog/1", "/preview/task/1");
     assertForward("/pitches/2", "/preview/pitch/2");
     assertForward("/cycles/3", "/preview/cycle/3");
+    assertForward("/qa/bug-reports/4", "/preview/bug/4");
   }
 
   private void assertForward(String requestUri, String expectedForward) throws Exception {
@@ -97,7 +98,7 @@ class SocialCrawlerFilterTest {
   @DisplayName("crawler UAs on non-entity URLs fall through to the SPA")
   void nonEntityUrlsPassThrough() throws Exception {
     for (String uri : new String[] {"/dashboard", "/backlog", "/backlog/42/subtasks", "/blog/hello",
-        "/pitches/abc"}) {
+        "/pitches/abc", "/qa/bug-reports", "/qa/bug-reports/4/edit", "/backlog?project=5"}) {
       MockHttpServletResponse response = new MockHttpServletResponse();
       FilterChain chain = Mockito.mock(FilterChain.class);
 
