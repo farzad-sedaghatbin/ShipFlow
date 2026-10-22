@@ -7,14 +7,23 @@ import { cn } from "@/lib/utils"
 
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> & {
+    /**
+     * Replaces the viewport's default `overscroll-contain`. Pass `overscroll-y-contain
+     * overscroll-x-auto` for a vertical list that sits inside a horizontally scrolling board:
+     * with `contain` on both axes a sideways swipe that starts on the list never reaches the board.
+     */
+    viewportClassName?: string
+  }
+>(({ className, viewportClassName, children, ...props }, ref) => (
   <ScrollAreaPrimitive.Root
     ref={ref}
     className={cn("relative overflow-hidden", className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit] overscroll-contain">
+    <ScrollAreaPrimitive.Viewport
+      className={cn("h-full w-full rounded-[inherit]", viewportClassName ?? "overscroll-contain")}
+    >
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />

@@ -390,7 +390,10 @@ function KanbanColumn({
       </div>
 
       {/* Tasks */}
-      <ScrollArea className={columnScrollClassName}>
+      {/* overscroll-x-auto: a sideways swipe that starts on a card must reach the board's own
+          horizontal scroller (the default overscroll-contain trapped it, so on a phone the board only
+          scrolled when the finger started in the gap between lanes). */}
+      <ScrollArea className={columnScrollClassName} viewportClassName="overscroll-y-contain overscroll-x-auto">
         <div className="pr-2">
           {columnTasks.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
