@@ -22,6 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * <p>Affected URL patterns → preview handler:
  * <ul>
  *   <li>{@code /backlog/{id}} → {@code /preview/task/{id}}
+ *   <li>{@code /qa/bug-reports/{id}} → {@code /preview/bug/{id}}
  *   <li>{@code /pitches/{id}} → {@code /preview/pitch/{id}}
  *   <li>{@code /cycles/{id}}  → {@code /preview/cycle/{id}}
  * </ul>
@@ -84,6 +85,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
   );
 
   private static final Pattern TASK_PATH   = Pattern.compile("^/backlog/(\\d+)$");
+  private static final Pattern BUG_PATH    = Pattern.compile("^/qa/bug-reports/(\\d+)$");
   private static final Pattern PITCH_PATH  = Pattern.compile("^/pitches/(\\d+)$");
   private static final Pattern CYCLE_PATH  = Pattern.compile("^/cycles/(\\d+)$");
 
@@ -120,6 +122,9 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
 
     m = TASK_PATH.matcher(path);
     if (m.matches()) return "/preview/task/" + m.group(1);
+
+    m = BUG_PATH.matcher(path);
+    if (m.matches()) return "/preview/bug/" + m.group(1);
 
     m = PITCH_PATH.matcher(path);
     if (m.matches()) return "/preview/pitch/" + m.group(1);
