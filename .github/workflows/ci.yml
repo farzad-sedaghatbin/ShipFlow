@@ -109,7 +109,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       # See "Build & install shipflow-plugin-api" in the build-and-test job above — same
       # requirement, separate runner/job so it must be repeated here.

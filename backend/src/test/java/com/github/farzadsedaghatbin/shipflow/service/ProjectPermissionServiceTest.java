@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +48,7 @@ class ProjectPermissionServiceTest {
 
   @BeforeEach
   void setUp() {
+    SecurityContextHolder.clearContext();
     adminUser = User.builder().id(1L).username("admin").role(UserRole.ADMIN).build();
     memberUser = User.builder().id(2L).username("member").role(UserRole.MEMBER).build();
     viewerUser = User.builder().id(3L).username("viewer").role(UserRole.MEMBER).build();
@@ -59,8 +61,12 @@ class ProjectPermissionServiceTest {
   }
 
   private void setAuth(String username) {
-    SecurityContextHolder.getContext().setAuthentication(
-        new UsernamePasswordAuthenticationToken(username, "pw", List.of()));
+    // Install a fresh context rather than mutating the current one: in the full suite an earlier
+    // test can leave behind a context this one's setAuthentication doesn't stick to, which made
+    // the service see no caller and left every stub below unused (UnnecessaryStubbingException).
+    SecurityContext context = SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(new UsernamePasswordAuthenticationToken(username, "pw", List.of()));
+    SecurityContextHolder.setContext(context);
   }
 
   @Nested
