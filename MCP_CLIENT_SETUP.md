@@ -28,6 +28,8 @@ All MCP clients authenticate with a ShipFlow API key.
 
 > Treat API keys like passwords. Do not commit them to git.
 
+**Restricting a key to one project.** The create dialog can also pin a key to a single project. Over MCP such a key sees only that project: `list_projects` returns just that one, list tools (`get_tasks`, `get_pitches`, `get_cycles`, `get_bug_reports`, `get_betting_candidates`) are narrowed to it even when called without a `projectId`, and any task, pitch, cycle, bug, test case, epic or attachment in another project answers `Resource not found or not accessible with this API key` — the same message whether or not the id exists, so ids can't be probed. Write tools (`create_task`, `create_bug`, `create_pitch`, `log_work`, `add_comment`, `record_test_run`, the `update_*` tools) are refused for foreign targets too. `create_pitch` needs an `epicId` in the key's project, comments on wiki pages are refused, and `wise_architecture_get_files` (analysis conversations can't be tied to a project) is unavailable; `wise_architecture_list_analyses` needs a `pitchId`. Tools with no rule for restricted keys are refused, so a newly added tool is closed by default. Unrestricted keys behave exactly as before. The check lives in `McpProjectScopeGuard`.
+
 ---
 
 ## Claude Code
@@ -635,7 +637,7 @@ You can enable or disable it at any time with a restart.
 - **Read-only by default.** Only enable write tools if you need them.
 - **Rotate keys regularly.** Revoke and regenerate API keys periodically.
 - **Do not share keys.** Each developer should have their own key.
-- **Key scope**: keys are scoped to your user account and can only access data your account can access.
+- **Key scope**: keys are scoped to your user account and can only access data your account can access. A key can additionally be restricted to a single project (see "Generate an API Key"), which is enforced for MCP as well as for `/api/v1/public/**`.
 - **URL-embedded tokens (`/mcp/{api-key}`, `/mcp/{api-key}/sse`) are weaker than headers, and are
   NOT automatically downgraded to read-only.** Proxies, load balancers, and browser history can log
   the full URL, including the key — and that key grants exactly the scope it was created with,
