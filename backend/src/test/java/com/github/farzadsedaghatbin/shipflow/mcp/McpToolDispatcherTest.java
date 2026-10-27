@@ -86,6 +86,14 @@ class McpToolDispatcherTest {
   @Mock private com.github.farzadsedaghatbin.shipflow.service.DocumentService documentService;
   @Mock private com.github.farzadsedaghatbin.shipflow.service.mcp.McpUsageReportService usageReportService;
 
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.TaskRepository taskRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.PitchRepository pitchRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.CycleRepository cycleRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository bugReportRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.TestCaseRepository testCaseRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.EpicRepository epicRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository documentRepository;
+
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
   private static final String SESSION_ID = "test-session-123";
@@ -113,11 +121,16 @@ class McpToolDispatcherTest {
     TestCaseMcpTools testCaseTools = new TestCaseMcpTools(testCaseService, testRunService, userRepository);
     BugReportMcpTools bugReportTools = new BugReportMcpTools(bugReportService, documentService, userRepository);
 
+    com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpProjectScopeGuard scopeGuard =
+        new com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpProjectScopeGuard(
+            taskRepository, pitchRepository, cycleRepository, bugReportRepository,
+            testCaseRepository, epicRepository, documentRepository);
+
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
         projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools,
         workContextTools, taskContextTools, worklogTools,
-        identityTools, testCaseTools, bugReportTools);
+        identityTools, testCaseTools, bugReportTools, scopeGuard);
     dispatcher.setUsageReportService(usageReportService);
 
     McpSession session = new McpSession(
@@ -2595,5 +2608,125 @@ class McpToolDispatcherTest {
     dispatcher.dispatch(SESSION_ID, request);
 
     assertThat(captured).isEqualTo(dispatcher.process(SESSION_ID, request));
+  }
+
+  // ── project-restricted API keys ───────────────────────────────────────────
+
+  private static com.github.farzadsedaghatbin.shipflow.entity.ApiKey keyRestrictedTo(Long projectId) {
+    return com.github.farzadsedaghatbin.shipflow.entity.ApiKey.builder()
+        .restrictedToProjectId(projectId).build();
+  }
+
+  private com.github.farzadsedaghatbin.shipflow.entity.Task taskInProject(long id, long projectId) {
+    com.github.farzadsedaghatbin.shipflow.entity.Task t =
+        new com.github.farzadsedaghatbin.shipflow.entity.Task();
+    t.setId(id);
+    t.setProject(com.github.farzadsedaghatbin.shipflow.entity.Project.builder().id(projectId).build());
+    return t;
+  }
+
+  @Test
+  void restrictedKey_listProjects_returnsOnlyItsOwnProject() throws Exception {
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(1L));
+    when(projectService.findAccessibleProjects()).thenReturn(List.of(
+        ProjectDTO.builder().id(1L).name("Mine").projectType(ProjectType.SHAPE_UP).build(),
+        ProjectDTO.builder().id(2L).name("Other").projectType(ProjectType.SHAPE_UP).build()));
+
+    Map<String, Object> result = callTool("list_projects", Map.of());
+
+    @SuppressWarnings("unchecked")
+    String text = (String) ((List<Map<String, Object>>) result.get("content")).get(0).get("text");
+    assertThat(text).contains("Mine").doesNotContain("Other");
+  }
+
+  @Test
+  void unrestrictedKey_listProjects_returnsEveryProject() throws Exception {
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(null));
+    when(projectService.findAccessibleProjects()).thenReturn(List.of(
+        ProjectDTO.builder().id(1L).name("Mine").projectType(ProjectType.SHAPE_UP).build(),
+        ProjectDTO.builder().id(2L).name("Other").projectType(ProjectType.SHAPE_UP).build()));
+
+    Map<String, Object> result = callTool("list_projects", Map.of());
+
+    @SuppressWarnings("unchecked")
+    String text = (String) ((List<Map<String, Object>>) result.get("content")).get(0).get("text");
+    assertThat(text).contains("Mine").contains("Other");
+  }
+
+  @Test
+  void restrictedKey_getTaskInOtherProject_isDeniedWithoutReachingTheService() throws Exception {
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(1L));
+    when(taskRepository.findByIdNotDeleted(9L)).thenReturn(Optional.of(taskInProject(9L, 2L)));
+
+    Map<String, Object> result = callTool("get_task", Map.of("taskId", 9));
+
+    assertThat((String) result.get("message")).contains("not found or not accessible");
+    org.mockito.Mockito.verify(taskService, org.mockito.Mockito.never()).getTaskById(9L);
+  }
+
+  @Test
+  void restrictedKey_getTaskInOwnProject_isAllowed() throws Exception {
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(1L));
+    when(taskRepository.findByIdNotDeleted(9L)).thenReturn(Optional.of(taskInProject(9L, 1L)));
+    when(taskService.getTaskById(9L)).thenReturn(TaskDTO.builder().id(9L).title("Mine").build());
+
+    Map<String, Object> result = callTool("get_task", Map.of("taskId", 9));
+
+    assertThat(result.get("isError")).isEqualTo(false);
+  }
+
+  @Test
+  void unrestrictedKey_getTaskInAnyProject_isAllowed() throws Exception {
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(null));
+    when(taskService.getTaskById(9L)).thenReturn(TaskDTO.builder().id(9L).title("Any").build());
+
+    Map<String, Object> result = callTool("get_task", Map.of("taskId", 9));
+
+    assertThat(result.get("isError")).isEqualTo(false);
+    org.mockito.Mockito.verifyNoInteractions(taskRepository);
+  }
+
+  @Test
+  void restrictedKey_getTasksWithoutProject_isNarrowedToItsProject() throws Exception {
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(1L));
+    when(taskService.getTasksByProjectId(1L)).thenReturn(List.of(
+        TaskDTO.builder().id(1L).title("A").projectId(1L).build(),
+        TaskDTO.builder().id(2L).title("B").projectId(2L).build()));
+
+    Map<String, Object> result = callTool("get_tasks", Map.of("mine", false, "assigneeId", 4));
+
+    @SuppressWarnings("unchecked")
+    String text = (String) ((List<Map<String, Object>>) result.get("content")).get(0).get("text");
+    org.mockito.Mockito.verify(taskService, org.mockito.Mockito.never()).getTasksByPersonId(4L);
+    assertThat(text).doesNotContain("\"B\"");
+  }
+
+  @Test
+  void restrictedKey_createTaskInOtherProject_isRefused() throws Exception {
+    properties.setWriteEnabled(true);
+    org.mockito.Mockito.lenient().doReturn(java.util.List.of(
+        new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")))
+        .when(auth).getAuthorities();
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(1L));
+
+    Map<String, Object> result = callTool("create_task", Map.of("projectId", 2, "title", "x"));
+
+    assertThat((String) result.get("message")).contains("not found or not accessible");
+    org.mockito.Mockito.verify(taskService, org.mockito.Mockito.never())
+        .createTask(org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void restrictedKey_wikiCommentTarget_isRefused() throws Exception {
+    properties.setWriteEnabled(true);
+    org.mockito.Mockito.lenient().doReturn(java.util.List.of(
+        new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE")))
+        .when(auth).getAuthorities();
+    when(auth.getDetails()).thenReturn(keyRestrictedTo(1L));
+
+    Map<String, Object> result = callTool("add_comment",
+        Map.of("entityType", "WIKI_PAGE", "entityId", 3, "content", "hi"));
+
+    assertThat((String) result.get("message")).contains("not found or not accessible");
   }
 }
