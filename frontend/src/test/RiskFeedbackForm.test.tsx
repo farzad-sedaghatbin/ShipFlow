@@ -64,6 +64,12 @@ describe('RiskFeedbackForm', () => {
     
     // Click cancel
     const cancelButton = screen.getByRole('button', { name: /Cancel/i });
+    // Radix keeps `pointer-events: none` on the page until the dialog has finished mounting; on a
+    // slow CI runner user-event can click inside that window and is (correctly) refused. Wait for
+    // the button to become clickable instead of racing the dialog.
+    await waitFor(() => {
+      expect(getComputedStyle(cancelButton).pointerEvents).not.toBe('none');
+    });
     await user.click(cancelButton);
     
     // Dialog should be closed (use waitFor to account for animation)
