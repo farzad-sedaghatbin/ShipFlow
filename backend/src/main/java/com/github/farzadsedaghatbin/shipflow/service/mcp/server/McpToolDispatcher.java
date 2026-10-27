@@ -99,6 +99,9 @@ public class McpToolDispatcher {
   private final BugReportMcpTools bugReportTools;
   private final RoadmapMcpTools roadmapTools;
 
+  /** Applies an API key's single-project restriction to every tool call (see its Javadoc). */
+  private final McpProjectScopeGuard scopeGuard;
+
   /**
    * Names of all write tools, derived once from {@link #writeTools()} at construction time.
    * Allows O(1) membership checks in {@link #isWriteTool(String)} without rebuilding the
@@ -257,7 +260,8 @@ public class McpToolDispatcher {
       SecurityContext toolContext = SecurityContextHolder.createEmptyContext();
       toolContext.setAuthentication(auth);
       SecurityContextHolder.setContext(toolContext);
-      result = dispatchTool(toolName, args, auth);
+      Map<String, Object> scopedArgs = scopeGuard.authorize(toolName, args, apiKey);
+      result = scopeGuard.filterResult(dispatchTool(toolName, scopedArgs, auth), apiKey);
       recordUsage(username, apiKey, toolName, true, null, System.currentTimeMillis() - startMs);
     } catch (Exception e) {
       recordUsage(username, apiKey, toolName, false, e.getMessage(), System.currentTimeMillis() - startMs);
