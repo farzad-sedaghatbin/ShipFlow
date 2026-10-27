@@ -15,6 +15,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TestCaseRepository;
@@ -25,6 +26,7 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTo
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.IdentityMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.RoadmapMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TestCaseMcpTools;
@@ -75,6 +77,7 @@ public class McpProjectScopeGuard {
   private final TestCaseRepository testCaseRepository;
   private final EpicRepository epicRepository;
   private final UploadedDocumentRepository documentRepository;
+  private final InitiativeRepository initiativeRepository;
 
   /** The project the key is restricted to, or {@code null} when unrestricted / no key. */
   public static Long restrictedProjectId(ApiKey apiKey) {
@@ -177,6 +180,38 @@ public class McpProjectScopeGuard {
         c.pitch("pitchId");
         c.cycle("cycleId");
         c.scopeList();
+      }
+      // Roadmap tools also accept snake_case aliases (project_id, epic_id, ...); fold those into the
+      // camelCase keys first so an alias can't slip past the checks below.
+      case RoadmapMcpTools.TOOL_GET_ROADMAP,
+          RoadmapMcpTools.TOOL_GET_EPICS,
+          RoadmapMcpTools.TOOL_CREATE_INITIATIVE -> {
+        c.foldAliases();
+        c.scopeList();
+      }
+      case RoadmapMcpTools.TOOL_CREATE_EPIC -> {
+        c.foldAliases();
+        c.scopeList();
+        c.initiative("initiativeId");
+      }
+      case RoadmapMcpTools.TOOL_UPDATE_EPIC -> {
+        c.foldAliases();
+        c.requirePresent("epicId");
+        c.epic("epicId");
+        c.initiative("initiativeId");
+      }
+      case RoadmapMcpTools.TOOL_ADD_EPIC_DEPENDENCY -> {
+        c.foldAliases();
+        c.requirePresent("epicId");
+        c.requirePresent("targetEpicId");
+        c.epic("epicId");
+        c.epic("targetEpicId");
+      }
+      case RoadmapMcpTools.TOOL_LINK_TASK_TO_EPIC -> {
+        c.foldAliases();
+        c.requirePresent("taskId");
+        c.task("taskId");
+        c.epic("epicId");
       }
       default -> throw denied();
     }
@@ -320,6 +355,38 @@ public class McpProjectScopeGuard {
           e -> e.getProject() != null ? e.getProject().getId() : null);
     }
 
+    void initiative(String key) {
+      entity(key, initiativeRepository::findByIdNotDeleted,
+          i -> i.getProject() != null ? i.getProject().getId() : null);
+    }
+
+    /** Refuses the call when an id the tool needs (and this guard must check) is missing. */
+    void requirePresent(String key) {
+      if (args.get(key) == null) {
+        throw denied();
+      }
+    }
+
+    /**
+     * Copies each snake_case argument (e.g. {@code epic_id}) to its camelCase key and drops the
+     * alias, so the checks and the tool see one value. A camelCase key, when present, wins — the
+     * same precedence the roadmap tools use.
+     */
+    void foldAliases() {
+      Map<String, Object> folded = new HashMap<>();
+      args.forEach((k, v) -> {
+        if (k.indexOf('_') >= 0) {
+          folded.putIfAbsent(snakeToCamel(k), v);
+        }
+      });
+      args.forEach((k, v) -> {
+        if (k.indexOf('_') < 0) {
+          folded.put(k, v);
+        }
+      });
+      args = folded;
+    }
+
     void attachment(String key) {
       Long id = toLong(args.get(key));
       if (id == null) {
@@ -371,6 +438,20 @@ public class McpProjectScopeGuard {
       narrowed.put("projectId", restricted);
       args = narrowed;
     }
+  }
+
+  private static String snakeToCamel(String key) {
+    StringBuilder sb = new StringBuilder(key.length());
+    boolean upper = false;
+    for (char ch : key.toCharArray()) {
+      if (ch == '_') {
+        upper = true;
+      } else {
+        sb.append(upper ? Character.toUpperCase(ch) : ch);
+        upper = false;
+      }
+    }
+    return sb.toString();
   }
 
   private static Long toLong(Object val) {

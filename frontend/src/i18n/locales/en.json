@@ -2738,7 +2738,14 @@
     "releaseTasks_other": "{{count}} tasks",
     "releaseBugs_one": "{{count}} bug",
     "releaseBugs_other": "{{count}} bugs",
-    "releaseNoItems": "No items linked"
+    "releaseNoItems": "No items linked",
+    "taskDue": "Due",
+    "blockedBy": "Blocked by",
+    "blocking": "Blocks",
+    "hasDependencies": "This epic has dependencies",
+    "showDependencies": "Show dependencies",
+    "dependencyBlocks": "Blocks (finish to start)",
+    "dependencyConflict": "Date conflict"
   },
   "initiatives": {
     "title": "Initiatives",
@@ -2905,7 +2912,24 @@
     "unlinkPitch": "Unlink Pitch",
     "nameRequired": "Name is required",
     "updated": "Epic updated",
-    "createError": "Failed to create epic"
+    "createError": "Failed to create epic",
+    "tasks": "Tasks",
+    "completedTasks": "completed tasks",
+    "newTask": "New task",
+    "newTaskPlaceholder": "Task title",
+    "linkExistingTask": "Link existing task",
+    "searchTasks": "Search tasks...",
+    "noUnlinkedTasks": "No tasks without an epic",
+    "noTasks": "No tasks yet",
+    "noTasksHint": "Create a task above or link an existing one.",
+    "taskLinked": "Task linked to epic",
+    "taskUnlinked": "Task unlinked from epic",
+    "taskLinkError": "Could not change the task's epic",
+    "unlinkTask": "Unlink task",
+    "taskCreated": "Task created",
+    "taskCreateError": "Could not create the task",
+    "epic": "Epic",
+    "noEpic": "No epic"
   },
   "releases": {
     "title": "Releases",

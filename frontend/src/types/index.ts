@@ -874,6 +874,10 @@ export interface Task {
   pitchTitle?: string;
   scopeId?: number;
   scopeName?: string;
+
+  // Epic link (Kanban/Scrum projects)
+  epicId?: number | null;
+  epicName?: string | null;
   
   // Auto-created scope for root tasks linked to pitch (Scope-Task Bridge)
   autoCreatedScopeId?: number;
@@ -942,6 +946,8 @@ export interface CreateTaskRequest {
   // cycleId is supplied (project is derived from the cycle).
   projectId?: number;
   pitchId?: number;
+  /** Optional epic to attach the task to (Kanban/Scrum). */
+  epicId?: number;
   status?: TaskStatus;
   priority?: TaskPriority;
   category?: TaskCategory;
@@ -1688,6 +1694,9 @@ export interface Epic {
   // Progress metrics
   pitchCount?: number;
   completedPitchCount?: number;
+  /** Task counts (Kanban/Scrum); only present if the server supplies them. */
+  taskCount?: number;
+  completedTaskCount?: number;
   progressPercentage?: number;
   // Nested pitches
   pitches?: PitchSummary[];
@@ -1832,6 +1841,28 @@ export interface TimelineEpic {
   progress: number;
   quarterLabel?: string;
   pitches?: TimelinePitch[];
+  /** Root tasks linked to the epic (Kanban/Scrum projects). Absent on older servers. */
+  tasks?: TimelineTask[];
+}
+
+/** A task shown under an epic on the roadmap (Kanban/Scrum). Tasks have no start/end, only a due date. */
+export interface TimelineTask {
+  id: number;
+  title: string;
+  status: string;
+  priority?: string;
+  dueDate?: string | null;
+  progress: number;
+  epicId: number;
+  parentTaskId?: number | null;
+}
+
+/** Epic-to-epic dependency edge on the roadmap: source epic blocks target epic. */
+export interface RoadmapDependency {
+  id: number;
+  sourceEpicId: number;
+  targetEpicId: number;
+  dependencyType: string;
 }
 
 export interface TimelineInitiative {
@@ -1866,6 +1897,10 @@ export interface TimelineRelease {
  */
 export interface RoadmapTimeline {
   projectId: number;
+  /** Methodology of the project; absent on older servers. */
+  projectType?: ProjectType;
+  /** Epic dependencies for the project; absent on older servers (treat as empty). */
+  dependencies?: RoadmapDependency[];
   startDate: string;
   endDate: string;
   initiatives: TimelineInitiative[];

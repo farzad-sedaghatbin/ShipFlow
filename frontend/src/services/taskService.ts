@@ -228,6 +228,9 @@ export const taskService = {
   setTargetRelease: (id: number, releaseId: number) =>
     api.patch<Task>(`/tasks/${id}/release/${releaseId}`),
   clearTargetRelease: (id: number) => api.patch<Task>(`/tasks/${id}/unlink-release`),
+  /** Link a task to an epic, or pass null to unlink (Kanban/Scrum projects). */
+  setEpic: (id: number, epicId: number | null) => api.patch<Task>(`/tasks/${id}/epic`, { epicId }),
+
   delete: (id: number) => api.delete(`/tasks/${id}`),
   
   // Sub-task hierarchy

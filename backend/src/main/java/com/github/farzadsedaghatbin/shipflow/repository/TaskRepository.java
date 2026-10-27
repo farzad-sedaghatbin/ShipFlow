@@ -283,6 +283,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.cycle.id = :cycleId AND t.parentTask IS NULL")
     List<Task> findRootTasksByCycleId(@Param("cycleId") Long cycleId);
 
+    // Epic queries (Kanban/Scrum roadmap)
+    @Query("SELECT t FROM Task t WHERE t.epic.id = :epicId AND t.deletedAt IS NULL ORDER BY t.sortOrder ASC, t.createdAt ASC")
+    List<Task> findByEpicIdNotDeleted(@Param("epicId") Long epicId);
+
+    @Query("SELECT t FROM Task t WHERE t.epic.id IN :epicIds AND t.deletedAt IS NULL ORDER BY t.sortOrder ASC, t.createdAt ASC")
+    List<Task> findByEpicIdInNotDeleted(@Param("epicIds") java.util.Collection<Long> epicIds);
+
     // Pitch and scope queries for traceability
     @Query("SELECT t FROM Task t WHERE t.pitch.id = :pitchId AND t.deletedAt IS NULL")
     List<Task> findByPitchId(@Param("pitchId") Long pitchId);

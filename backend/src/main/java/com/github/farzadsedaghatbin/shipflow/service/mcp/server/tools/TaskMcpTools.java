@@ -131,7 +131,10 @@ public class TaskMcpTools {
                 + "populates the pitch dropdown in the UI and associates the task with the "
                 + "pitch's hill-chart scope. Supply parentTaskId to create the task as a subtask "
                 + "of another task (it will appear under the parent in the task tree and in "
-                + "get_task_context's task.children list). Requires WRITE API key scope.",
+                + "get_task_context's task.children list). This creates a backlog work item — NOT a "
+                + "roadmap/timeline bar; to build a roadmap use create_epic (and "
+                + "create_initiative). Optionally pass epicId to put the task under a roadmap "
+                + "epic. Requires WRITE API key scope.",
         "inputSchema",
             Map.of(
                 "type",
@@ -157,6 +160,14 @@ public class TaskMcpTools {
                                 "Pitch ID to link this task to. When cycleId and projectId are "
                                     + "both omitted, the task's cycle and project are derived "
                                     + "from this pitch instead. Alternative to cycleId/projectId."),
+                        "epicId",
+                        Map.of(
+                            "type", "integer",
+                            "description",
+                                "Optional roadmap epic ID to place this task under (Kanban/Scrum "
+                                    + "projects; the epic must be in the same project). Use "
+                                    + "get_epics to find IDs. Tasks are backlog work items — to "
+                                    + "create roadmap bars use create_epic instead."),
                         "parentTaskId",
                         Map.of(
                             "type", "integer",
@@ -475,6 +486,11 @@ public class TaskMcpTools {
     Object parentTaskIdArg = args.get("parentTaskId");
     if (parentTaskIdArg != null) {
       request.setParentTaskId(toLong(parentTaskIdArg));
+    }
+
+    Object epicIdArg = args.get("epicId");
+    if (epicIdArg != null) {
+      request.setEpicId(toLong(epicIdArg));
     }
 
     Object assigneeUsernameArg = args.get("assigneeUsername");

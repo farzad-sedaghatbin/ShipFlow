@@ -251,6 +251,8 @@ Once connected, your AI assistant has access to these tools:
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
 | `wise_architecture_list_analyses` | Past Wise Architecture analyses for the current user (filterable by pitchId) |
 | `wise_architecture_get_files` | Retrieve generated Markdown implementation guides for a past analysis |
+| `get_roadmap` | Roadmap timeline for a `projectId` (optional `startDate`/`endDate`, ISO; default today-3mo..today+12mo): initiatives, epics with progress and child pitches (Shape Up) or root tasks (Kanban/Scrum), releases, and epic `dependencies` (`sourceEpicId` BLOCKS `targetEpicId`), plus `projectType` |
+| `get_epics` | Epics of a `projectId` — id, name, status, dates, initiative, priority, pitch/task counts. Use it to find epic IDs |
 | `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId`, `cycleId`, or `taskId` — `taskId` resolves to the task's parent pitch or cycle) |
 | `get_task_context` | **Task-rooted aggregator for coding agents** — given a single `taskId`, returns the task (with dependency graph and subtasks), its parent pitch (Shape Up fields + `wireframeLinks`), parent cycle, sibling tasks under the same pitch, and a server-generated `hints` array (Figma URL guidance, blocked-by detail, thin-context warnings). Use this instead of stitching `get_task` + `get_pitch_detail` + `get_tasks` when the goal is "implement this task". |
 
@@ -258,10 +260,15 @@ Once connected, your AI assistant has access to these tools:
 
 | Tool | What it does |
 |------|-------------|
-| `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **parentTaskId** for subtasks, assigneeUsername, priority) |
+| `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **epicId** (roadmap epic, same project), **parentTaskId** for subtasks, assigneeUsername, priority) |
 | `update_task` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, priority (LOW/MEDIUM/HIGH/URGENT), dueDate (YYYY-MM-DD). Omitted fields keep their current values. Use `update_task_status` / `update_task_assignee` for those specific fields. |
 | `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
 | `update_task_assignee` | Reassign an existing task — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true` |
+| `create_initiative` | Create a roadmap initiative (`projectId`, `name`; optional description, startDate, endDate, color). Use with `create_epic` to build a roadmap/timeline from a plan or image — not `create_task` |
+| `create_epic` | Create a roadmap epic = a dated bar (`projectId`, `name`; optional description, startDate, endDate, `initiativeId`, color, priority HIGH/MEDIUM/LOW). The right tool for roadmaps/timelines; `create_task` is for backlog work items |
+| `update_epic` | PATCH-semantic epic update (`epicId` + any of name, description, startDate, endDate, initiativeId, color, status, priority) |
+| `add_epic_dependency` | Dependency arrow between epics: `epicId` (source) BLOCKS `targetEpicId`; optional `dependencyType` BLOCKS (default) / DEPENDS_ON / RELATED_TO. Same project only; cycles rejected |
+| `link_task_to_epic` | Put a task under an epic (Kanban/Scrum), or unlink with `epicId: null`. `create_task` also accepts `epicId` |
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
 | `update_pitch` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, appetiteDays. Omitted fields keep their current values. Use `update_pitch_status` for status changes. |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |

@@ -58,6 +58,9 @@ class EpicServiceTest {
   private UserRepository userRepository;
 
   @Mock
+  private com.github.farzadsedaghatbin.shipflow.repository.TaskRepository taskRepository;
+
+  @Mock
   private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks

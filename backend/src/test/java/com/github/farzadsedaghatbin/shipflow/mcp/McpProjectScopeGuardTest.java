@@ -49,6 +49,7 @@ class McpProjectScopeGuardTest {
   @Mock private BugReportRepository bugReportRepository;
   @Mock private TestCaseRepository testCaseRepository;
   @Mock private EpicRepository epicRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository initiativeRepository;
   @Mock private UploadedDocumentRepository documentRepository;
 
   private McpProjectScopeGuard guard;
@@ -64,7 +65,7 @@ class McpProjectScopeGuardTest {
     guard =
         new McpProjectScopeGuard(
             taskRepository, pitchRepository, cycleRepository, bugReportRepository,
-            testCaseRepository, epicRepository, documentRepository);
+            testCaseRepository, epicRepository, documentRepository, initiativeRepository);
 
     for (long id : new long[] {10, 20}) {
       Project p = project(id == 10 ? OWN : FOREIGN);
@@ -99,6 +100,12 @@ class McpProjectScopeGuardTest {
       epic.setId(id);
       epic.setProject(p);
       lenient().when(epicRepository.findByIdNotDeleted(id)).thenReturn(Optional.of(epic));
+
+      com.github.farzadsedaghatbin.shipflow.entity.Initiative initiative =
+          new com.github.farzadsedaghatbin.shipflow.entity.Initiative();
+      initiative.setId(id);
+      initiative.setProject(p);
+      lenient().when(initiativeRepository.findByIdNotDeleted(id)).thenReturn(Optional.of(initiative));
 
       UploadedDocument doc = new UploadedDocument();
       doc.setEntityType("BUG_REPORT");
@@ -289,5 +296,57 @@ class McpProjectScopeGuardTest {
             McpPitchDTO.builder().projectId(FOREIGN).build(),
             McpPitchDTO.builder().projectId(OWN).build());
     assertThat((List<?>) guard.filterResult(pitches, restricted)).hasSize(1);
+  }
+
+  // ── Roadmap tools ─────────────────────────────────────────────────────────
+
+  @Test
+  void roadmapListTools_areNarrowedToTheRestrictedProject() {
+    for (String tool : List.of("get_roadmap", "get_epics", "create_initiative")) {
+      assertThat(guard.authorize(tool, Map.of(), restricted)).containsEntry("projectId", OWN);
+      assertDenied(tool, Map.of("projectId", FOREIGN));
+    }
+  }
+
+  @Test
+  void createEpic_deniesAForeignProjectOrInitiative() {
+    assertAllowed("create_epic", Map.of("projectId", OWN, "name", "x", "initiativeId", 10));
+    assertDenied("create_epic", Map.of("projectId", FOREIGN, "name", "x"));
+    assertDenied("create_epic", Map.of("projectId", OWN, "name", "x", "initiativeId", 20));
+  }
+
+  @Test
+  void epicWriteTools_checkEveryEpicTaskAndInitiative() {
+    assertAllowed("update_epic", Map.of("epicId", 10, "name", "x"));
+    assertDenied("update_epic", Map.of("epicId", 20, "name", "x"));
+    assertDenied("update_epic", Map.of("epicId", 10, "initiativeId", 20));
+    assertDenied("update_epic", Map.of("name", "x"));
+
+    assertAllowed("add_epic_dependency", Map.of("epicId", 10, "targetEpicId", 10));
+    assertDenied("add_epic_dependency", Map.of("epicId", 10, "targetEpicId", 20));
+    assertDenied("add_epic_dependency", Map.of("epicId", 20, "targetEpicId", 10));
+
+    assertAllowed("link_task_to_epic", Map.of("taskId", 10, "epicId", 10));
+    assertDenied("link_task_to_epic", Map.of("taskId", 10, "epicId", 20));
+    assertDenied("link_task_to_epic", Map.of("taskId", 20, "epicId", 10));
+  }
+
+  /** The roadmap tools accept snake_case aliases; an alias must not bypass the checks. */
+  @Test
+  void roadmapTools_snakeCaseAliasesCannotBypassTheRestriction() {
+    assertDenied("update_epic", Map.of("epic_id", 20, "name", "x"));
+    assertDenied("add_epic_dependency", Map.of("epic_id", 10, "target_epic_id", 20));
+    assertDenied("link_task_to_epic", Map.of("task_id", 10, "epic_id", 20));
+    assertDenied("create_epic", Map.of("project_id", FOREIGN, "name", "x"));
+    assertDenied("create_epic", Map.of("projectId", OWN, "name", "x", "initiative_id", 20));
+
+    Map<String, Object> folded = guard.authorize("update_epic", Map.of("epic_id", 10), restricted);
+    assertThat(folded).containsEntry("epicId", 10).doesNotContainKey("epic_id");
+  }
+
+  @Test
+  void roadmapTools_unrestrictedKeyIsUntouched() {
+    Map<String, Object> args = Map.of("epic_id", 20, "name", "x");
+    assertThat(guard.authorize("update_epic", args, unrestricted)).isSameAs(args);
   }
 }
