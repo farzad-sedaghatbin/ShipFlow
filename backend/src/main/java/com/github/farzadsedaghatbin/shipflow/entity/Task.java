@@ -91,6 +91,15 @@ public class Task {
   private Pitch pitch;
 
   /**
+   * The epic this task rolls up to (optional). Used by Kanban/Scrum projects, where tasks (not
+   * pitches) sit under epics on the roadmap.
+   */
+  @NotAudited
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "epic_id")
+  private Epic epic;
+
+  /**
    * The scope (hill chart point) this task is associated with (optional). Links
    * the task to a specific scope for better traceability.
    */

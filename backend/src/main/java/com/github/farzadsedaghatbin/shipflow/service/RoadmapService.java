@@ -5,10 +5,16 @@ import com.github.farzadsedaghatbin.shipflow.dto.RoadmapTimelineDTO.*;
 import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
+import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.Release;
+import com.github.farzadsedaghatbin.shipflow.entity.EpicDependency;
+import com.github.farzadsedaghatbin.shipflow.entity.Task;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ReleaseRepository;
@@ -16,8 +22,11 @@ import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -36,6 +45,8 @@ public class RoadmapService {
   private final ReleaseRepository releaseRepository;
   private final TaskRepository taskRepository;
   private final BugReportRepository bugReportRepository;
+  private final EpicDependencyRepository epicDependencyRepository;
+  private final ProjectRepository projectRepository;
 
   /**
    * Get the complete roadmap timeline for a project within a date range.
@@ -50,15 +61,19 @@ public class RoadmapService {
     List<Initiative> initiatives =
         initiativeRepository.findByProjectIdAndDateRangeNotDeleted(projectId, startDate, endDate);
 
+    // Bulk-load root tasks for every epic of the project once (Kanban/Scrum), instead of N+1
+    List<Epic> projectEpics = epicRepository.findByProjectIdNotDeleted(projectId);
+    Map<Long, List<Task>> rootTasksByEpic = loadRootTasksByEpic(projectEpics);
+
     List<TimelineInitiative> timelineInitiatives = initiatives.stream()
-        .map(i -> toTimelineInitiative(i, startDate, endDate))
+        .map(i -> toTimelineInitiative(i, startDate, endDate, rootTasksByEpic))
         .collect(Collectors.toList());
 
     // Get orphan epics (not linked to any initiative) — only those with dates in range
     List<Epic> orphanEpics = epicRepository.findOrphanEpicsByProjectIdNotDeleted(projectId);
     List<TimelineEpic> orphanTimelineEpics = new ArrayList<>(orphanEpics.stream()
         .filter(e -> hasDatesInRange(e.getTargetStartDate(), e.getTargetEndDate(), startDate, endDate))
-        .map(this::toTimelineEpic)
+        .map(e -> toTimelineEpic(e, rootTasksByEpic))
         .toList());
 
     // Also include epics that belong to initiatives with no dates at all (those initiatives
@@ -68,7 +83,7 @@ public class RoadmapService {
         epicRepository.findEpicsWithDatesLinkedToUndatedInitiatives(projectId);
     epicsFromUndatedInitiatives.stream()
         .filter(e -> hasDatesInRange(e.getTargetStartDate(), e.getTargetEndDate(), startDate, endDate))
-        .map(this::toTimelineEpic)
+        .map(e -> toTimelineEpic(e, rootTasksByEpic))
         .forEach(orphanTimelineEpics::add);
 
     // Get releases within the date range
@@ -104,8 +119,13 @@ public class RoadmapService {
     LocalDate minDate = calculateMinDate(timelineInitiatives, orphanTimelineEpics, timelineReleases, startDate);
     LocalDate maxDate = calculateMaxDate(timelineInitiatives, orphanTimelineEpics, timelineReleases, endDate);
 
+    Project project = projectRepository.findById(projectId).orElse(null);
+
     return RoadmapTimelineDTO.builder()
         .projectId(projectId)
+        .projectName(project != null ? project.getName() : null)
+        .projectType(project != null && project.getProjectType() != null ? project.getProjectType().name() : null)
+        .dependencies(loadDependencies(projectEpics))
         .startDate(minDate)
         .endDate(maxDate)
         .initiatives(timelineInitiatives)
@@ -132,15 +152,48 @@ public class RoadmapService {
     return getRoadmapTimeline(projectId, startDate, endDate);
   }
 
+  private Map<Long, List<Task>> loadRootTasksByEpic(List<Epic> epics) {
+    if (epics.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    List<Long> epicIds = epics.stream().map(Epic::getId).collect(Collectors.toList());
+    Map<Long, List<Task>> result = new HashMap<>();
+    for (Task t : taskRepository.findByEpicIdInNotDeleted(epicIds)) {
+      if (t.getParentTask() == null && t.getEpic() != null) {
+        result.computeIfAbsent(t.getEpic().getId(), k -> new ArrayList<>()).add(t);
+      }
+    }
+    return result;
+  }
+
+  private List<TimelineDependency> loadDependencies(List<Epic> projectEpics) {
+    if (projectEpics.isEmpty()) {
+      return new ArrayList<>();
+    }
+    Set<Long> ids = projectEpics.stream().map(Epic::getId).collect(Collectors.toCollection(HashSet::new));
+    return epicDependencyRepository.findBySourceEpicIdInAndTargetEpicIdIn(ids, ids).stream()
+        .map(this::toTimelineDependency)
+        .collect(Collectors.toList());
+  }
+
+  private TimelineDependency toTimelineDependency(EpicDependency d) {
+    return TimelineDependency.builder()
+        .id(d.getId())
+        .sourceEpicId(d.getSourceEpic().getId())
+        .targetEpicId(d.getTargetEpic().getId())
+        .dependencyType(d.getDependencyType().name())
+        .build();
+  }
+
   private TimelineInitiative toTimelineInitiative(
-      Initiative initiative, LocalDate rangeStart, LocalDate rangeEnd) {
+      Initiative initiative, LocalDate rangeStart, LocalDate rangeEnd, Map<Long, List<Task>> rootTasksByEpic) {
     List<TimelineEpic> epics = initiative.getEpics().stream()
         .filter(e -> e.getDeletedAt() == null)
         .filter(e -> hasDatesInRange(e.getTargetStartDate(), e.getTargetEndDate(), rangeStart, rangeEnd))
-        .map(this::toTimelineEpic)
+        .map(e -> toTimelineEpic(e, rootTasksByEpic))
         .collect(Collectors.toList());
 
-    double progress = calculateInitiativeProgress(initiative);
+    double progress = calculateInitiativeProgress(initiative, rootTasksByEpic);
 
     return TimelineInitiative.builder()
         .id(initiative.getId())
@@ -156,13 +209,17 @@ public class RoadmapService {
         .build();
   }
 
-  private TimelineEpic toTimelineEpic(Epic epic) {
+  private TimelineEpic toTimelineEpic(Epic epic, Map<Long, List<Task>> rootTasksByEpic) {
+    List<Task> rootTasks = rootTasksByEpic.getOrDefault(epic.getId(), Collections.emptyList());
+    List<TimelineTask> timelineTasks =
+        rootTasks.stream().map(this::toTimelineTask).collect(Collectors.toList());
+
     List<TimelinePitch> pitches = epic.getPitches().stream()
         .filter(p -> p.getDeletedAt() == null)
         .map(this::toTimelinePitch)
         .collect(Collectors.toList());
 
-    double progress = calculateEpicProgress(epic);
+    double progress = calculateEpicProgress(epic, rootTasks);
 
     return TimelineEpic.builder()
         .id(epic.getId())
@@ -175,6 +232,26 @@ public class RoadmapService {
         .progress(progress)
         .quarterLabel(computeQuarterLabel(epic.getTargetStartDate(), epic.getTargetEndDate()))
         .pitches(pitches)
+        .tasks(timelineTasks)
+        .build();
+  }
+
+  private TimelineTask toTimelineTask(Task task) {
+    double progress = switch (task.getStatus()) {
+      case DONE -> 100.0;
+      case IN_REVIEW -> 80.0;
+      case IN_PROGRESS -> 50.0;
+      case BACKLOG, TODO, BLOCKED, CANCELLED -> 0.0;
+    };
+    return TimelineTask.builder()
+        .id(task.getId())
+        .title(task.getTitle())
+        .status(task.getStatus().name())
+        .priority(task.getPriority() != null ? task.getPriority().name() : null)
+        .dueDate(task.getDueDate())
+        .progress(progress)
+        .epicId(task.getEpic() != null ? task.getEpic().getId() : null)
+        .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
         .build();
   }
 
@@ -236,7 +313,7 @@ public class RoadmapService {
         r -> (Long) r[1]));
   }
 
-  private double calculateInitiativeProgress(Initiative initiative) {
+  private double calculateInitiativeProgress(Initiative initiative, Map<Long, List<Task>> rootTasksByEpic) {
     List<Epic> activeEpics = initiative.getEpics().stream()
         .filter(e -> e.getDeletedAt() == null)
         .collect(Collectors.toList());
@@ -246,18 +323,18 @@ public class RoadmapService {
     }
 
     double totalProgress = activeEpics.stream()
-        .mapToDouble(this::calculateEpicProgress)
+        .mapToDouble(e -> calculateEpicProgress(e, rootTasksByEpic.getOrDefault(e.getId(), Collections.emptyList())))
         .sum();
 
     return totalProgress / activeEpics.size();
   }
 
-  private double calculateEpicProgress(Epic epic) {
+  private double calculateEpicProgress(Epic epic, List<Task> rootTasks) {
     List<Pitch> activePitches = epic.getPitches().stream()
         .filter(p -> p.getDeletedAt() == null)
         .collect(Collectors.toList());
 
-    if (activePitches.isEmpty()) {
+    if (activePitches.isEmpty() && rootTasks.isEmpty()) {
       return switch (epic.getStatus()) {
         case COMPLETED -> 100.0;
         case CANCELLED -> 0.0;
@@ -269,7 +346,10 @@ public class RoadmapService {
         .filter(p -> p.getStatus() == PitchStatus.DONE)
         .count();
 
-    return (double) completed / activePitches.size() * 100.0;
+    long completedTasks = rootTasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
+    int total = activePitches.size() + rootTasks.size();
+
+    return (double) (completed + completedTasks) / total * 100.0;
   }
 
   private boolean hasDatesInRange(LocalDate itemStart, LocalDate itemEnd, LocalDate rangeStart, LocalDate rangeEnd) {

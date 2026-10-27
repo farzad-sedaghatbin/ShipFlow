@@ -37,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EpicService {
 
   private final EpicRepository epicRepository;
+  private final com.github.farzadsedaghatbin.shipflow.repository.TaskRepository taskRepository;
   private final InitiativeRepository initiativeRepository;
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
@@ -209,6 +210,8 @@ public class EpicService {
     epic.setDeletedAt(LocalDateTime.now());
     epic.setDeletedBy(currentUser);
     epicRepository.save(epic);
+    // Unlink tasks so they don't keep pointing at a deleted epic
+    taskRepository.findByEpicIdNotDeleted(id).forEach(t -> t.setEpic(null));
     log.info("Soft deleted epic: {}", epic.getName());
   }
 
@@ -312,6 +315,19 @@ public class EpicService {
           .count();
     }
 
+    // Root tasks linked to this epic (Kanban/Scrum); null-safe for unit tests
+    java.util.List<com.github.farzadsedaghatbin.shipflow.entity.Task> epicTasks = taskRepository != null
+        ? taskRepository.findByEpicIdNotDeleted(epic.getId()).stream()
+            .filter(t -> t.getParentTask() == null).collect(Collectors.toList())
+        : java.util.Collections.emptyList();
+    if (epicTasks == null) {
+      epicTasks = java.util.Collections.emptyList();
+    }
+    int taskCount = epicTasks.size();
+    int completedTaskCount = (int) epicTasks.stream()
+        .filter(t -> t.getStatus() == com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus.DONE).count();
+    int totalItems = pitchCount + taskCount;
+
     // Load dependency data (informational only; null-safe for unit tests)
     List<EpicDependencyDTO> blockingEpics = (epicDependencyRepository != null && epicDependencyService != null)
         ? epicDependencyRepository.findBySourceEpicId(epic.getId())
@@ -343,7 +359,9 @@ public class EpicService {
         .updatedAt(epic.getUpdatedAt())
         .pitchCount(pitchCount)
         .completedPitchCount(completedPitchCount)
-        .progressPercentage(pitchCount > 0 ? (completedPitchCount * 100.0) / pitchCount : 0.0)
+        .taskCount(taskCount)
+        .completedTaskCount(completedTaskCount)
+        .progressPercentage(totalItems > 0 ? ((completedPitchCount + completedTaskCount) * 100.0) / totalItems : 0.0)
         // Roadmap dependencies (informational)
         .blockingEpics(blockingEpics)
         .blockedByEpics(blockedByEpics)

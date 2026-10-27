@@ -57,6 +57,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final DashboardNotificationRepository dashboardNotificationRepository;
   private final InitiativeRepository initiativeRepository;
   private final EpicRepository epicRepository;
+  private final com.github.farzadsedaghatbin.shipflow.repository.EpicDependencyRepository epicDependencyRepository;
   private final ReleaseRepository releaseRepository;
   private final WiseArchitectureAdviceRepository wiseArchitectureAdviceRepository;
   private final BugReportRepository bugReportRepository;
@@ -1684,6 +1685,68 @@ public class SampleDataInitializer implements CommandLineRunner {
             .sortOrder(1)
             .build();
     initiativeRepository.save(infraInitiative);
+
+    // ── DVP Epics (Kanban: tasks sit under epics on the roadmap, v1.14.5) ─────
+    Epic observabilityEpic =
+        epicRepository.save(
+            Epic.builder()
+                .name("Observability Stack")
+                .description("Metrics, logs and traces for every service.")
+                .status(EpicStatus.IN_PROGRESS)
+                .initiative(infraInitiative)
+                .project(devopsProject)
+                .targetStartDate(LocalDate.of(2026, 1, 20))
+                .targetEndDate(LocalDate.of(2026, 4, 30))
+                .sortOrder(1)
+                .build());
+    Epic gitopsEpic =
+        epicRepository.save(
+            Epic.builder()
+                .name("GitOps Deployments")
+                .description("Declarative, auditable deployments via Argo CD.")
+                .status(EpicStatus.PLANNED)
+                .initiative(infraInitiative)
+                .project(devopsProject)
+                .targetStartDate(LocalDate.of(2026, 4, 1))
+                .targetEndDate(LocalDate.of(2026, 7, 31))
+                .sortOrder(2)
+                .build());
+
+    taskRepository.save(
+        Task.builder()
+            .title("Roll out Prometheus + Grafana")
+            .status(TaskStatus.DONE)
+            .priority(TaskPriority.HIGH)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .epic(observabilityEpic)
+            .build());
+    taskRepository.save(
+        Task.builder()
+            .title("Centralised log shipping")
+            .status(TaskStatus.IN_PROGRESS)
+            .priority(TaskPriority.MEDIUM)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .epic(observabilityEpic)
+            .build());
+    taskRepository.save(
+        Task.builder()
+            .title("Bootstrap Argo CD")
+            .status(TaskStatus.TODO)
+            .priority(TaskPriority.MEDIUM)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .epic(gitopsEpic)
+            .build());
+
+    // Observability must land before GitOps (source BLOCKS target)
+    epicDependencyRepository.save(
+        com.github.farzadsedaghatbin.shipflow.entity.EpicDependency.builder()
+            .sourceEpic(observabilityEpic)
+            .targetEpic(gitopsEpic)
+            .dependencyType(com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.BLOCKS)
+            .build());
   }
 
   private void createWiseArchitectureHistory(

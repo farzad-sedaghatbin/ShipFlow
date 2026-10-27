@@ -35,7 +35,7 @@ import { initiativeService } from '../services/initiativeService';
 import { epicService } from '../services/epicService';
 import { Initiative, InitiativeStatus, Epic, ReorderRequest } from '../types';
 import { cn } from '../lib/utils';
-import { useToast } from '../contexts';
+import { useToast, useProject } from '../contexts';
 import { useBackNavigation } from '../hooks/useBackNavigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -65,7 +65,7 @@ import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 // ========================
 // Sortable Epic Item
 // ========================
-function SortableEpicItem({ epic, getStatusBadgeVariant, t }: { epic: Epic; getStatusBadgeVariant: (s: string) => 'default' | 'secondary' | 'destructive' | 'outline'; t: (key: string) => string }) {
+function SortableEpicItem({ epic, getStatusBadgeVariant, t, isShapeUp }: { epic: Epic; isShapeUp: boolean; getStatusBadgeVariant: (s: string) => 'default' | 'secondary' | 'destructive' | 'outline'; t: (key: string) => string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: epic.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -101,7 +101,11 @@ function SortableEpicItem({ epic, getStatusBadgeVariant, t }: { epic: Epic; getS
           {t(`epics.status.${epic.status.toLowerCase()}`)}
         </Badge>
         <div className="text-sm text-muted-foreground w-20 text-right">
-          {epic.pitchCount || 0} {t('epics.pitches')}
+          {isShapeUp
+            ? `${epic.pitchCount || 0} ${t('epics.pitches')}`
+            : epic.taskCount !== undefined
+              ? `${epic.taskCount} ${t('epics.tasks')}`
+              : ''}
         </div>
         <div className="w-32">
           <Progress value={epic.progressPercentage || 0} className="h-2" />
@@ -128,6 +132,8 @@ export default function InitiativeDetailPage() {
   const navigate = useNavigate();
   const goBack = useBackNavigation('/initiatives');
   const { showSuccess, showError } = useToast();
+  const { currentProject } = useProject();
+  const isShapeUp = (currentProject?.projectType ?? 'SHAPE_UP') === 'SHAPE_UP';
   const [initiative, setInitiative] = useState<Initiative | null>(null);
   // A shared link to another project's initiative opens under that project, not this tab's last one.
   useFollowEntityProject(initiative?.projectId);
@@ -364,14 +370,18 @@ export default function InitiativeDetailPage() {
                 <div className="text-2xl font-bold text-green-600">{initiative.completedEpicCount || 0}</div>
                 <p className="text-xs text-muted-foreground">{t('initiatives.completedEpics')}</p>
               </div>
-              <div>
-                <div className="text-2xl font-bold">{initiative.totalPitchCount || 0}</div>
-                <p className="text-xs text-muted-foreground">{t('initiatives.pitches')}</p>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">{initiative.completedPitchCount || 0}</div>
-                <p className="text-xs text-muted-foreground">{t('initiatives.completedPitches')}</p>
-              </div>
+              {isShapeUp && (
+                <>
+                  <div>
+                    <div className="text-2xl font-bold">{initiative.totalPitchCount || 0}</div>
+                    <p className="text-xs text-muted-foreground">{t('initiatives.pitches')}</p>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{initiative.completedPitchCount || 0}</div>
+                    <p className="text-xs text-muted-foreground">{t('initiatives.completedPitches')}</p>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -406,6 +416,7 @@ export default function InitiativeDetailPage() {
                       epic={epic}
                       getStatusBadgeVariant={getStatusBadgeVariant}
                       t={t}
+                      isShapeUp={isShapeUp}
                     />
                   ))}
                 </div>

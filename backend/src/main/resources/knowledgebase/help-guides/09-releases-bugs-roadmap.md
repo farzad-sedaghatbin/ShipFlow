@@ -107,11 +107,24 @@ Initiatives are high-level strategic goals (e.g., "Improve user onboarding"):
 4. Link epics to the initiative
 
 ## Epics
-Epics are large bodies of work within an initiative that break down into pitches:
+Epics are large bodies of work within an initiative. What sits under an epic depends on the project's methodology:
+- **Shape Up projects**: an epic breaks down into **pitches**.
+- **Kanban and Scrum projects**: an epic breaks down into **tasks**. Pitches never appear under an epic in these projects.
+
+To create one:
 1. Navigate to **Epics** from the sidebar
 2. Click **New Epic**
 3. Fill in name, description, status, **target start/end dates**, and link to an initiative
-4. Link pitches to the epic for end-to-end traceability
+4. Link work to the epic for end-to-end traceability — pitches in Shape Up, tasks in Kanban/Scrum
+
+## Linking Tasks to an Epic (Kanban and Scrum)
+- On the epic's page, the **Tasks** section lists its tasks. Use **Link existing task** to pick a task that has no epic yet, **New task** to create one directly under the epic, or **Unlink** to remove a task from it.
+- From a task's detail view, use the **Epic** field to move the task to another epic or clear it.
+- On the roadmap, expand an epic to see its tasks. A task with a due date in the visible window shows a small marker on its due date.
+- An epic's progress counts every pitch and top-level task under it: the share of them that are done. Subtasks are not counted separately.
+
+## Epic Dependencies on the Roadmap
+When one epic **blocks** another (set on the epic page under Dependencies), the roadmap draws an arrow from the end of the blocking epic's bar to the start of the blocked epic's bar. The arrow turns **red** when the blocked epic is scheduled to start before the blocking epic ends, so scheduling conflicts stand out. Each epic row also shows a small "Blocked by" / "Blocks" indicator, which is easier to read on a phone. Use the **Show dependencies** switch in the legend to hide or show the arrows. Arrows are drawn only when both epics are visible on the timeline.
 
 ## Linking Work to Releases
 To see pitches and bugs on a release milestone, open the item and set its **Target Release** field to the desired release — the roadmap automatically counts and displays these on the release tooltip.

@@ -84,6 +84,10 @@ class McpToolDispatcherTest {
   @Mock private TestRunService testRunService;
   @Mock private BugReportService bugReportService;
   @Mock private com.github.farzadsedaghatbin.shipflow.service.DocumentService documentService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.RoadmapService roadmapService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.EpicService epicService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.InitiativeService initiativeService;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.EpicDependencyService epicDependencyService;
   @Mock private com.github.farzadsedaghatbin.shipflow.service.mcp.McpUsageReportService usageReportService;
 
   private McpToolDispatcher dispatcher;
@@ -113,11 +117,15 @@ class McpToolDispatcherTest {
     TestCaseMcpTools testCaseTools = new TestCaseMcpTools(testCaseService, testRunService, userRepository);
     BugReportMcpTools bugReportTools = new BugReportMcpTools(bugReportService, documentService, userRepository);
 
+    com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.RoadmapMcpTools roadmapTools =
+        new com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.RoadmapMcpTools(
+            roadmapService, epicService, initiativeService, epicDependencyService, taskService, projectService);
+
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
         projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools,
         workContextTools, taskContextTools, worklogTools,
-        identityTools, testCaseTools, bugReportTools);
+        identityTools, testCaseTools, bugReportTools, roadmapTools);
     dispatcher.setUsageReportService(usageReportService);
 
     McpSession session = new McpSession(
@@ -2595,5 +2603,74 @@ class McpToolDispatcherTest {
     dispatcher.dispatch(SESSION_ID, request);
 
     assertThat(captured).isEqualTo(dispatcher.process(SESSION_ID, request));
+  }
+
+  // ── Roadmap tools ─────────────────────────────────────────────────────────
+
+  @SuppressWarnings("unchecked")
+  private List<String> listToolNames(boolean write) throws Exception {
+    properties.setWriteEnabled(write);
+    if (write) {
+      java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+          List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+      org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+    }
+    var captured = new HashMap<String, Object>();
+    org.mockito.Mockito.doAnswer(inv -> {
+      captured.putAll((Map<String, Object>) inv.getArgument(1));
+      return null;
+    }).when(sessionManager).send(org.mockito.ArgumentMatchers.eq(SESSION_ID), org.mockito.ArgumentMatchers.any());
+    dispatcher.dispatch(SESSION_ID, Map.of("jsonrpc", "2.0", "method", "tools/list", "id", 31));
+    Map<String, Object> result = (Map<String, Object>) captured.get("result");
+    return ((List<Map<String, Object>>) result.get("tools")).stream().map(t -> (String) t.get("name")).toList();
+  }
+
+  @Test
+  void toolsList_roadmapReadToolsAlwaysListed_writeToolsOnlyWithWriteScope() throws Exception {
+    List<String> readOnly = listToolNames(false);
+    assertThat(readOnly).contains("get_roadmap", "get_epics");
+    assertThat(readOnly).doesNotContain("create_epic", "create_initiative", "update_epic",
+        "add_epic_dependency", "link_task_to_epic");
+
+    List<String> withWrite = listToolNames(true);
+    assertThat(withWrite).contains("get_roadmap", "get_epics", "create_epic", "create_initiative",
+        "update_epic", "add_epic_dependency", "link_task_to_epic");
+  }
+
+  @Test
+  void toolsCall_createEpic_rejectedWithoutWriteEnabled() throws Exception {
+    Map<String, Object> error = callTool("create_epic", Map.of("projectId", 1, "name", "X"));
+    assertThat((String) error.get("message")).contains("Write tools are disabled");
+    org.mockito.Mockito.verifyNoInteractions(epicService);
+  }
+
+  @Test
+  void toolsCall_getRoadmap_usesDefaultWindowForReadScope() throws Exception {
+    when(roadmapService.getRoadmapTimeline(org.mockito.ArgumentMatchers.eq(5L),
+        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(com.github.farzadsedaghatbin.shipflow.dto.RoadmapTimelineDTO.builder().projectId(5L)
+            .projectType("KANBAN").build());
+
+    Map<String, Object> result = callTool("get_roadmap", Map.of("projectId", 5));
+
+    assertThat(result.get("isError")).isEqualTo(false);
+    assertThat(result.toString()).contains("KANBAN");
+    org.mockito.Mockito.verify(projectService).requireProjectAccess(5L);
+  }
+
+  @Test
+  void toolsCall_createEpic_withWriteScope_createsEpic() throws Exception {
+    properties.setWriteEnabled(true);
+    java.util.Collection<org.springframework.security.core.GrantedAuthority> authorities =
+        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("SCOPE_WRITE"));
+    org.mockito.Mockito.doReturn(authorities).when(auth).getAuthorities();
+    when(epicService.createEpic(org.mockito.ArgumentMatchers.any())).thenReturn(
+        com.github.farzadsedaghatbin.shipflow.dto.EpicDTO.builder().id(99L).name("Launch").build());
+
+    Map<String, Object> result = callTool("create_epic",
+        Map.of("projectId", 5, "name", "Launch", "startDate", "2026-11-01", "endDate", "2026-12-15"));
+
+    assertThat(result.get("isError")).isEqualTo(false);
+    assertThat(result.toString()).contains("Launch");
   }
 }

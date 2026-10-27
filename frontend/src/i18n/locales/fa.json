@@ -852,7 +852,14 @@
     "releaseTasks_other": "{{count}} وظیفه",
     "releaseBugs_one": "{{count}} باگ",
     "releaseBugs_other": "{{count}} باگ",
-    "releaseNoItems": "هیچ آیتمی پیوند نشده"
+    "releaseNoItems": "هیچ آیتمی پیوند نشده",
+    "taskDue": "سررسید",
+    "blockedBy": "مسدود شده توسط",
+    "blocking": "مسدودکنندهٔ",
+    "hasDependencies": "این اپیک وابستگی دارد",
+    "showDependencies": "نمایش وابستگی‌ها",
+    "dependencyBlocks": "مسدودکننده (پایان تا شروع)",
+    "dependencyConflict": "تداخل زمانی"
   },
   "initiatives": {
     "title": "ابتکارات",
@@ -984,7 +991,25 @@
     "created": "ایجاد شده",
     "complete": "تکمیل",
     "completedPitches": "پیچ‌های تکمیل شده",
-    "noPitches": "هنوز پیچی وجود ندارد"
+    "noPitches": "هنوز پیچی وجود ندارد",
+    "tasks": "وظایف",
+    "completedTasks": "وظیفهٔ تکمیل‌شده",
+    "newTask": "وظیفهٔ جدید",
+    "newTaskPlaceholder": "عنوان وظیفه",
+    "linkExistingTask": "اتصال وظیفهٔ موجود",
+    "searchTasks": "جستجوی وظایف...",
+    "noUnlinkedTasks": "وظیفه‌ای بدون اپیک وجود ندارد",
+    "noTasks": "هنوز وظیفه‌ای وجود ندارد",
+    "noTasksHint": "در بالا یک وظیفه بسازید یا وظیفه‌ای موجود را متصل کنید.",
+    "taskLinked": "وظیفه به اپیک متصل شد",
+    "taskUnlinked": "وظیفه از اپیک جدا شد",
+    "taskLinkError": "تغییر اپیک وظیفه ممکن نشد",
+    "unlinkTask": "جدا کردن وظیفه",
+    "taskCreated": "وظیفه ایجاد شد",
+    "taskCreateError": "ایجاد وظیفه ممکن نشد",
+    "epic": "اپیک",
+    "noEpic": "بدون اپیک",
+    "completed": "تکمیل‌شده"
   },
   "releases": {
     "title": "انتشارها",

@@ -54,6 +54,12 @@ class RoadmapServiceTest {
   @Mock
   private BugReportRepository bugReportRepository;
 
+  @Mock
+  private com.github.farzadsedaghatbin.shipflow.repository.EpicDependencyRepository epicDependencyRepository;
+
+  @Mock
+  private com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository projectRepository;
+
   @InjectMocks
   private RoadmapService roadmapService;
 
@@ -400,5 +406,116 @@ class RoadmapServiceTest {
     RoadmapTimelineDTO.TimelineInitiative init = result.getInitiatives().get(0);
     assertThat(init.getEpics()).hasSize(1);
     assertThat(init.getEpics().get(0).getName()).isEqualTo("Mobile Checkout Redesign");
+  }
+
+  // ========== Tasks under epics, combined progress, dependencies, project type ==========
+
+  private com.github.farzadsedaghatbin.shipflow.entity.Task task(long id, Epic epic,
+      com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus status,
+      com.github.farzadsedaghatbin.shipflow.entity.Task parent) {
+    return com.github.farzadsedaghatbin.shipflow.entity.Task.builder().id(id).title("Task " + id).status(status)
+        .priority(com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority.MEDIUM).epic(epic)
+        .parentTask(parent).build();
+  }
+
+  private Epic kanbanEpic(long id, Project project) {
+    return Epic.builder().id(id).name("Kanban epic " + id).status(EpicStatus.IN_PROGRESS)
+        .targetStartDate(LocalDate.of(2026, 2, 1)).targetEndDate(LocalDate.of(2026, 4, 30))
+        .project(project).pitches(new java.util.ArrayList<>()).build();
+  }
+
+  @Test
+  void getRoadmapTimeline_KanbanEpic_ShowsRootTasksAndCombinedProgress() {
+    testProject.setProjectType(com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType.KANBAN);
+    Epic epic = kanbanEpic(10L, testProject);
+    var done = task(1L, epic, com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus.DONE, null);
+    var todo = task(2L, epic, com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus.TODO, null);
+    var subtask = task(3L, epic, com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus.DONE, todo);
+
+    when(projectRepository.findById(1L)).thenReturn(java.util.Optional.of(testProject));
+    when(epicRepository.findByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(epic));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(epic));
+    when(taskRepository.findByEpicIdInNotDeleted(any())).thenReturn(Arrays.asList(done, todo, subtask));
+
+    RoadmapTimelineDTO result =
+        roadmapService.getRoadmapTimeline(1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getProjectType()).isEqualTo("KANBAN");
+    assertThat(result.getOrphanEpics()).hasSize(1);
+    RoadmapTimelineDTO.TimelineEpic te = result.getOrphanEpics().get(0);
+    // subtasks are excluded; 1 of 2 root tasks done
+    assertThat(te.getTasks()).extracting(RoadmapTimelineDTO.TimelineTask::getId).containsExactly(1L, 2L);
+    assertThat(te.getTasks().get(0).getProgress()).isEqualTo(100.0);
+    assertThat(te.getTasks().get(1).getProgress()).isEqualTo(0.0);
+    assertThat(te.getTasks().get(0).getEpicId()).isEqualTo(10L);
+    assertThat(te.getProgress()).isEqualTo(50.0);
+    // one bulk query regardless of epic count
+    verify(taskRepository, times(1)).findByEpicIdInNotDeleted(any());
+  }
+
+  @Test
+  void getRoadmapTimeline_EpicProgressCombinesPitchesAndTasks() {
+    Epic epic = kanbanEpic(11L, testProject);
+    epic.setPitches(Arrays.asList(testPitch)); // DONE pitch
+    var todo = task(5L, epic, com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus.TODO, null);
+
+    when(epicRepository.findByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(epic));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(epic));
+    when(taskRepository.findByEpicIdInNotDeleted(any())).thenReturn(Arrays.asList(todo));
+
+    RoadmapTimelineDTO result =
+        roadmapService.getRoadmapTimeline(1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getOrphanEpics().get(0).getProgress()).isEqualTo(50.0);
+  }
+
+  @Test
+  void getRoadmapTimeline_EpicWithNeitherPitchesNorTasks_FallsBackToStatus() {
+    Epic epic = kanbanEpic(12L, testProject);
+    epic.setStatus(EpicStatus.COMPLETED);
+    when(epicRepository.findByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(epic));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(epic));
+
+    RoadmapTimelineDTO result =
+        roadmapService.getRoadmapTimeline(1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getOrphanEpics().get(0).getProgress()).isEqualTo(100.0);
+    assertThat(result.getOrphanEpics().get(0).getTasks()).isEmpty();
+  }
+
+  @Test
+  void getRoadmapTimeline_IncludesDependenciesBetweenProjectEpics() {
+    Epic a = kanbanEpic(20L, testProject);
+    Epic b = kanbanEpic(21L, testProject);
+    com.github.farzadsedaghatbin.shipflow.entity.EpicDependency dep =
+        com.github.farzadsedaghatbin.shipflow.entity.EpicDependency.builder().id(7L).sourceEpic(a).targetEpic(b)
+            .dependencyType(com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.BLOCKS).build();
+
+    when(epicRepository.findByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(a, b));
+    when(epicRepository.findOrphanEpicsByProjectIdNotDeleted(1L)).thenReturn(Arrays.asList(a, b));
+    when(epicDependencyRepository.findBySourceEpicIdInAndTargetEpicIdIn(any(), any()))
+        .thenReturn(Arrays.asList(dep));
+
+    RoadmapTimelineDTO result =
+        roadmapService.getRoadmapTimeline(1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+
+    assertThat(result.getDependencies()).hasSize(1);
+    RoadmapTimelineDTO.TimelineDependency d = result.getDependencies().get(0);
+    assertThat(d.getId()).isEqualTo(7L);
+    assertThat(d.getSourceEpicId()).isEqualTo(20L);
+    assertThat(d.getTargetEpicId()).isEqualTo(21L);
+    assertThat(d.getDependencyType()).isEqualTo("BLOCKS");
+    // Only epics of this project are ever queried for dependencies
+    org.mockito.ArgumentCaptor<java.util.Collection<Long>> ids = org.mockito.ArgumentCaptor.forClass(java.util.Collection.class);
+    verify(epicDependencyRepository).findBySourceEpicIdInAndTargetEpicIdIn(ids.capture(), ids.capture());
+    assertThat(ids.getAllValues().get(0)).containsExactlyInAnyOrder(20L, 21L);
+  }
+
+  @Test
+  void getRoadmapTimeline_NoEpics_ReturnsEmptyDependencies() {
+    RoadmapTimelineDTO result =
+        roadmapService.getRoadmapTimeline(1L, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+    assertThat(result.getDependencies()).isEmpty();
+    verifyNoInteractions(epicDependencyRepository);
   }
 }

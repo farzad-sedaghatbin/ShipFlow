@@ -12,6 +12,7 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTo
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.IdentityMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.PitchMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.ProjectMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.RoadmapMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TestCaseMcpTools;
@@ -96,6 +97,7 @@ public class McpToolDispatcher {
   private final IdentityMcpTools identityTools;
   private final TestCaseMcpTools testCaseTools;
   private final BugReportMcpTools bugReportTools;
+  private final RoadmapMcpTools roadmapTools;
 
   /**
    * Names of all write tools, derived once from {@link #writeTools()} at construction time.
@@ -353,6 +355,15 @@ public class McpToolDispatcher {
       case BugReportMcpTools.TOOL_UPDATE_BUG_STATUS -> bugReportTools.updateBugStatus(args, auth);
       case BugReportMcpTools.TOOL_UPDATE_BUG_ASSIGNEE -> bugReportTools.updateBugAssignee(args, auth);
 
+      // Roadmap: initiatives, epics, dependencies, timeline
+      case RoadmapMcpTools.TOOL_GET_ROADMAP -> roadmapTools.getRoadmap(args);
+      case RoadmapMcpTools.TOOL_GET_EPICS -> roadmapTools.getEpics(args);
+      case RoadmapMcpTools.TOOL_CREATE_INITIATIVE -> roadmapTools.createInitiative(args);
+      case RoadmapMcpTools.TOOL_CREATE_EPIC -> roadmapTools.createEpic(args);
+      case RoadmapMcpTools.TOOL_UPDATE_EPIC -> roadmapTools.updateEpic(args);
+      case RoadmapMcpTools.TOOL_ADD_EPIC_DEPENDENCY -> roadmapTools.addEpicDependency(args);
+      case RoadmapMcpTools.TOOL_LINK_TASK_TO_EPIC -> roadmapTools.linkTaskToEpic(args);
+
       default -> throw new McpToolException("Unknown tool: " + name);
     };
   }
@@ -383,7 +394,9 @@ public class McpToolDispatcher {
         BugReportMcpTools.getBugReportDefinition(),
         CommentMcpTools.getCommentsDefinition(),
         BugReportMcpTools.getBugAttachmentsDefinition(),
-        BugReportMcpTools.downloadBugAttachmentDefinition());
+        BugReportMcpTools.downloadBugAttachmentDefinition(),
+        RoadmapMcpTools.getRoadmapDefinition(),
+        RoadmapMcpTools.getEpicsDefinition());
   }
 
   /**
@@ -407,7 +420,12 @@ public class McpToolDispatcher {
         TestCaseMcpTools.recordTestRunDefinition(),
         BugReportMcpTools.createBugDefinition(),
         BugReportMcpTools.updateBugStatusDefinition(),
-        BugReportMcpTools.updateBugAssigneeDefinition());
+        BugReportMcpTools.updateBugAssigneeDefinition(),
+        RoadmapMcpTools.createInitiativeDefinition(),
+        RoadmapMcpTools.createEpicDefinition(),
+        RoadmapMcpTools.updateEpicDefinition(),
+        RoadmapMcpTools.addEpicDependencyDefinition(),
+        RoadmapMcpTools.linkTaskToEpicDefinition());
   }
 
   /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */

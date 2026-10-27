@@ -1,5 +1,5 @@
 import type { MouseEvent as ReactMouseEvent } from 'react';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatLocalizedDate } from '../utils/dateLocalization';
@@ -13,13 +13,20 @@ import {
   CheckCircle,
   Flag,
   Maximize2,
+  ListChecks,
+  Ban,
+  AlertTriangle,
 } from 'lucide-react';
 import { roadmapService } from '../services/roadmapService';
 import { epicService } from '../services/epicService';
 import { initiativeService } from '../services/initiativeService';
 import {
   RoadmapTimeline,
+  TimelineEpic,
+  TimelineTask,
 } from '../types';
+import { getBarExtent, computeConnectors } from '../utils/roadmapDependencies';
+import { Switch } from '../components/ui/switch';
 import { useProject, useToast } from '../contexts';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -55,21 +62,11 @@ const calculateBarStyle = (
   timelineStart: Date,
   timelineEnd: Date
 ): { left: string; width: string } | null => {
-  if (!startDate && !endDate) return null;
-
-  const totalDays = Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
-  const start = startDate || endDate!;
-  const end = endDate || startDate!;
-
-  const startOffset = Math.ceil((start.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24));
-  const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-  const left = Math.max(0, (startOffset / totalDays) * 100);
-  const width = Math.min((duration / totalDays) * 100, 100 - left);
-
+  const extent = getBarExtent(startDate, endDate, timelineStart, timelineEnd);
+  if (!extent) return null;
   return {
-    left: `${left}%`,
-    width: `${Math.max(width, 2)}%`, // Minimum 2% width for visibility
+    left: `${extent.left * 100}%`,
+    width: `${extent.width * 100}%`,
   };
 };
 
@@ -84,6 +81,16 @@ const STATUS_COLORS: Record<string, string> = {
   PLANNING: '#60a5fa',
   STAGING: '#a855f7',
   RELEASED: '#16a34a',
+};
+
+const TASK_STATUS_COLORS: Record<string, string> = {
+  BACKLOG: '#94a3b8',
+  TODO: '#3b82f6',
+  IN_PROGRESS: '#8b5cf6',
+  IN_REVIEW: '#a855f7',
+  BLOCKED: '#f97316',
+  DONE: '#22c55e',
+  CANCELLED: '#ef4444',
 };
 
 const getStatusCssColor = (status: string): string => {
@@ -276,6 +283,209 @@ function TimelineBar({ startDate, endDate, timelineStart, timelineEnd, status, c
   );
 }
 
+interface EpicDependencyInfo {
+  blockedBy: string[];
+  blocking: string[];
+}
+
+interface RoadmapEpicBlockProps {
+  epic: TimelineEpic;
+  /** Prefix used for the epic's row-index key ('epic' inside an initiative, 'orphan' otherwise). */
+  rowKeyPrefix: 'epic' | 'orphan';
+  nested: boolean;
+  isShapeUp: boolean;
+  expanded: boolean;
+  onToggle: (id: number) => void;
+  rowIndices: Map<string, number>;
+  timelineStart: Date;
+  timelineEnd: Date;
+  onDatesChange: (id: number, startDate: string, endDate: string) => void;
+  depInfo?: EpicDependencyInfo;
+}
+
+const stripe = (rowIndices: Map<string, number>, key: string) =>
+  (rowIndices.get(key) ?? 0) % 2 === 1 ? 'bg-muted/20' : '';
+
+/** Number of expandable children an epic has: pitches for Shape Up, tasks otherwise. */
+const getEpicChildCount = (epic: TimelineEpic, isShapeUp: boolean) =>
+  (isShapeUp ? epic.pitches?.length : epic.tasks?.length) ?? 0;
+
+function RoadmapTaskRow({
+  task,
+  rowClass,
+  indentClass,
+  timelineStart,
+  timelineEnd,
+}: {
+  task: TimelineTask;
+  rowClass: string;
+  indentClass: string;
+  timelineStart: Date;
+  timelineEnd: Date;
+}) {
+  const { t } = useTranslation();
+  const due = task.dueDate ? parseDate(task.dueDate) : null;
+  const totalDays = Math.max(1, Math.ceil((timelineEnd.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24)));
+  const pct = due ? ((due.getTime() - timelineStart.getTime()) / (1000 * 60 * 60 * 24) / totalDays) * 100 : null;
+  const color = TASK_STATUS_COLORS[task.status] || '#94a3b8';
+  return (
+    <div className={`flex items-center h-9 hover:bg-muted/50 ${rowClass}`}>
+      <div className={`w-72 shrink-0 flex items-center gap-2 py-1 pr-2 ${indentClass}`}>
+        <CheckCircle className="h-3 w-3 shrink-0" style={{ color }} />
+        <Link
+          to={`/tasks/${task.id}`}
+          className="text-xs truncate hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {task.title}
+        </Link>
+      </div>
+      <div className="flex-1 relative h-9">
+        {pct !== null && pct >= 0 && pct <= 100 && (
+          <div
+            className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-[2px]"
+            style={{ left: `${pct}%`, backgroundColor: color }}
+            title={`${t('roadmap.taskDue')}: ${task.dueDate}`}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One epic row plus its expanded children (pitches in Shape Up, tasks in Kanban/Scrum)
+ * and an optional dependency summary row. Used both under initiatives and for orphan epics.
+ */
+function RoadmapEpicBlock({
+  epic,
+  rowKeyPrefix,
+  nested,
+  isShapeUp,
+  expanded,
+  onToggle,
+  rowIndices,
+  timelineStart,
+  timelineEnd,
+  onDatesChange,
+  depInfo,
+}: RoadmapEpicBlockProps) {
+  const { t } = useTranslation();
+  const hasDeps = !!depInfo && (depInfo.blockedBy.length > 0 || depInfo.blocking.length > 0);
+  const childCount = getEpicChildCount(epic, isShapeUp);
+  const expandable = childCount > 0 || hasDeps;
+  const labelPad = nested ? 'pl-8 pr-2' : 'px-2';
+  const childIndent = nested ? 'pl-14' : 'pl-10';
+  const items = isShapeUp ? epic.pitches : epic.tasks;
+  const doneCount = isShapeUp
+    ? (epic.pitches ?? []).filter((p) => p.status === 'DONE').length
+    : (epic.tasks ?? []).filter((tk) => tk.status === 'DONE').length;
+
+  return (
+    <div>
+      <div
+        data-epic-row={epic.id}
+        className={`flex items-center h-10 hover:bg-muted/50 ${stripe(rowIndices, `${rowKeyPrefix}-${epic.id}`)}`}
+      >
+        <div className={`w-72 shrink-0 flex items-center gap-2 py-1 ${labelPad}`}>
+          <button onClick={() => onToggle(epic.id)} className="flex items-center gap-2 flex-1 min-w-0 text-left">
+            {expandable ? (
+              expanded ? (
+                <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              )
+            ) : (
+              <span className="w-3.5 shrink-0" />
+            )}
+            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
+            <Link to={`/epics/${epic.id}`} className="text-sm hover:underline truncate" onClick={(e) => e.stopPropagation()}>
+              {epic.name}
+            </Link>
+          </button>
+          {hasDeps && depInfo && (
+            <span
+              className="shrink-0 text-muted-foreground"
+              title={[
+                depInfo.blockedBy.length > 0 ? `${t('roadmap.blockedBy')}: ${depInfo.blockedBy.join(', ')}` : '',
+                depInfo.blocking.length > 0 ? `${t('roadmap.blocking')}: ${depInfo.blocking.join(', ')}` : '',
+              ].filter(Boolean).join(' | ')}
+              aria-label={t('roadmap.hasDependencies')}
+            >
+              {depInfo.blockedBy.length > 0 ? <Ban className="h-3.5 w-3.5 text-orange-500" /> : <ListChecks className="h-3.5 w-3.5" />}
+            </span>
+          )}
+          <Badge variant="outline" className="text-[10px] shrink-0">
+            {t(`epics.status.${epic.status.toLowerCase()}`)}
+          </Badge>
+          {childCount > 0 && (
+            <span className="text-[10px] text-muted-foreground shrink-0">
+              {doneCount}/{childCount}
+            </span>
+          )}
+        </div>
+        <div className="flex-1 relative h-10">
+          <TimelineBar
+            startDate={epic.startDate}
+            endDate={epic.endDate}
+            timelineStart={timelineStart}
+            timelineEnd={timelineEnd}
+            status={epic.status}
+            progress={epic.progress}
+            onDatesChange={(s, e) => onDatesChange(epic.id, s, e)}
+          />
+        </div>
+      </div>
+
+      {expanded && hasDeps && depInfo && (
+        <div className={`flex items-center h-7 text-[11px] text-muted-foreground hover:bg-muted/50 ${stripe(rowIndices, `dep-${epic.id}`)}`}>
+          <div className={`w-72 shrink-0 flex flex-col justify-center pr-2 ${childIndent}`}>
+            {depInfo.blockedBy.length > 0 && (
+              <span className="truncate">{t('roadmap.blockedBy')}: {depInfo.blockedBy.join(', ')}</span>
+            )}
+            {depInfo.blocking.length > 0 && (
+              <span className="truncate">{t('roadmap.blocking')}: {depInfo.blocking.join(', ')}</span>
+            )}
+          </div>
+          <div className="flex-1" />
+        </div>
+      )}
+
+      {expanded && items && (isShapeUp
+        ? (epic.pitches ?? []).map((pitch) => (
+            <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${stripe(rowIndices, `pitch-${pitch.id}`)}`}>
+              <div className={`w-72 shrink-0 flex items-center gap-2 py-1 pr-2 ${childIndent}`}>
+                <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
+                <Link to={`/pitches/${pitch.id}`} className="text-xs truncate hover:underline" onClick={(e) => e.stopPropagation()}>
+                  {pitch.title}
+                </Link>
+              </div>
+              <div className="flex-1 relative h-9">
+                <TimelineBar
+                  startDate={pitch.startDate}
+                  endDate={pitch.endDate}
+                  timelineStart={timelineStart}
+                  timelineEnd={timelineEnd}
+                  status={pitch.status}
+                  progress={pitch.progress}
+                />
+              </div>
+            </div>
+          ))
+        : (epic.tasks ?? []).map((task) => (
+            <RoadmapTaskRow
+              key={task.id}
+              task={task}
+              rowClass={stripe(rowIndices, `task-${task.id}`)}
+              indentClass={childIndent}
+              timelineStart={timelineStart}
+              timelineEnd={timelineEnd}
+            />
+          )))}
+    </div>
+  );
+}
+
 export default function RoadmapPage() {
   const { t, i18n } = useTranslation();
   const { currentProject, isAllProjectsSelected } = useProject();
@@ -441,33 +651,102 @@ export default function RoadmapPage() {
     }
   };
 
+  // Shape Up shows pitches under epics; Kanban/Scrum show tasks. Prefer the server's answer.
+  const isShapeUp = (timeline?.projectType ?? currentProject?.projectType ?? 'SHAPE_UP') === 'SHAPE_UP';
+
+  const allEpics = useMemo(() => {
+    const list: TimelineEpic[] = [];
+    for (const init of timeline?.initiatives ?? []) list.push(...(init.epics ?? []));
+    list.push(...(timeline?.orphanEpics ?? []));
+    return list;
+  }, [timeline]);
+
+  // Per-epic "blocked by / blocking" names, shown on the epic row (readable on mobile and when collapsed)
+  const depInfoByEpic = useMemo(() => {
+    const names = new Map(allEpics.map((e) => [e.id, e.name]));
+    const info = new Map<number, EpicDependencyInfo>();
+    const get = (id: number) => {
+      let v = info.get(id);
+      if (!v) {
+        v = { blockedBy: [], blocking: [] };
+        info.set(id, v);
+      }
+      return v;
+    };
+    for (const d of timeline?.dependencies ?? []) {
+      const src = names.get(d.sourceEpicId);
+      const tgt = names.get(d.targetEpicId);
+      if (src === undefined || tgt === undefined) continue;
+      get(d.targetEpicId).blockedBy.push(src);
+      get(d.sourceEpicId).blocking.push(tgt);
+    }
+    return info;
+  }, [timeline, allEpics]);
+
   // Pre-compute flat row indices for stable striping (must be before early returns)
   const rowIndices = useMemo(() => {
     const indices = new Map<string, number>();
     let idx = 0;
+    const addEpic = (prefix: 'epic' | 'orphan', epic: TimelineEpic) => {
+      indices.set(`${prefix}-${epic.id}`, idx++);
+      if (!expandedEpics.has(epic.id)) return;
+      if (depInfoByEpic.has(epic.id)) indices.set(`dep-${epic.id}`, idx++);
+      if (isShapeUp) {
+        for (const pitch of epic.pitches ?? []) indices.set(`pitch-${pitch.id}`, idx++);
+      } else {
+        for (const task of epic.tasks ?? []) indices.set(`task-${task.id}`, idx++);
+      }
+    };
     for (const init of timeline?.initiatives ?? []) {
       indices.set(`init-${init.id}`, idx++);
       if (expandedInitiatives.has(init.id)) {
-        for (const epic of init.epics ?? []) {
-          indices.set(`epic-${epic.id}`, idx++);
-          if (expandedEpics.has(epic.id)) {
-            for (const pitch of epic.pitches ?? []) {
-              indices.set(`pitch-${pitch.id}`, idx++);
-            }
-          }
-        }
+        for (const epic of init.epics ?? []) addEpic('epic', epic);
       }
     }
-    for (const epic of timeline?.orphanEpics ?? []) {
-      indices.set(`orphan-${epic.id}`, idx++);
-      if (expandedEpics.has(epic.id)) {
-        for (const pitch of epic.pitches ?? []) {
-          indices.set(`pitch-${pitch.id}`, idx++);
-        }
-      }
-    }
+    for (const epic of timeline?.orphanEpics ?? []) addEpic('orphan', epic);
     return indices;
-  }, [timeline, expandedInitiatives, expandedEpics]);
+  }, [timeline, expandedInitiatives, expandedEpics, isShapeUp, depInfoByEpic]);
+
+  // ---- Dependency overlay: measure visible epic rows, then draw connectors ----
+  const [showDependencies, setShowDependencies] = useState(true);
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const [overlay, setOverlay] = useState<{ width: number; height: number; centers: [number, number][] }>({
+    width: 0,
+    height: 0,
+    centers: [],
+  });
+
+  useLayoutEffect(() => {
+    const el = rowsRef.current;
+    if (!el) return;
+    const measure = () => {
+      const box = el.getBoundingClientRect();
+      const centers: [number, number][] = [];
+      el.querySelectorAll<HTMLElement>('[data-epic-row]').forEach((row) => {
+        const r = row.getBoundingClientRect();
+        centers.push([Number(row.dataset.epicRow), Math.round(r.top - box.top + r.height / 2)]);
+      });
+      const next = { width: Math.max(0, Math.round(box.width) - 288), height: Math.round(box.height), centers };
+      setOverlay((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [timeline, expandedInitiatives, expandedEpics, isShapeUp, loading, viewMode, showDependencies]);
+
+  const connectors = useMemo(() => {
+    if (!showDependencies || !timeline?.dependencies?.length || overlay.width <= 0) return [];
+    return computeConnectors(
+      timeline.dependencies,
+      new Map(allEpics.map((e) => [e.id, e])),
+      new Map(overlay.centers),
+      timelineStart,
+      timelineEnd,
+      overlay.width
+    );
+  }, [showDependencies, timeline, allEpics, overlay, timelineStart, timelineEnd]);
 
   if (isAllProjectsSelected) {
     return (
@@ -649,7 +928,7 @@ export default function RoadmapPage() {
           </div>
 
           {/* Initiatives rows with grid overlay */}
-          <div className="relative">
+          <div className="relative" ref={rowsRef}>
             {/* Grid lines overlay — spans full height, aligned with timeline area */}
             <div className="absolute top-0 bottom-0 left-72 right-0 flex pointer-events-none">
               {/* Month boundary lines */}
@@ -689,6 +968,35 @@ export default function RoadmapPage() {
                 </div>
               )}
             </div>
+
+            {/* Epic dependency connectors */}
+            {connectors.length > 0 && (
+              <svg
+                className="absolute top-0 left-72 z-20 pointer-events-none overflow-visible"
+                width={overlay.width}
+                height={overlay.height}
+                aria-hidden="true"
+              >
+                <defs>
+                  <marker id="dep-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M0,0 L8,4 L0,8 z" className="fill-slate-500 dark:fill-slate-300" />
+                  </marker>
+                  <marker id="dep-arrow-conflict" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M0,0 L8,4 L0,8 z" className="fill-red-500" />
+                  </marker>
+                </defs>
+                {connectors.map((c) => (
+                  <path
+                    key={c.id}
+                    d={c.path}
+                    fill="none"
+                    strokeWidth={1.5}
+                    className={c.conflict ? 'stroke-red-500' : 'stroke-slate-500 dark:stroke-slate-300'}
+                    markerEnd={`url(#${c.conflict ? 'dep-arrow-conflict' : 'dep-arrow'})`}
+                  />
+                ))}
+              </svg>
+            )}
 
             {/* Data rows */}
             <div>
@@ -747,80 +1055,20 @@ export default function RoadmapPage() {
 
                     {/* Expanded Epics */}
                     {expandedInitiatives.has(initiative.id) && initiative.epics?.map((epic) => (
-                        <div key={epic.id}>
-                          {/* Epic row */}
-                          <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`epic-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
-                            <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-8 pr-2">
-                              <button
-                                onClick={() => toggleEpic(epic.id)}
-                                className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                              >
-                                {epic.pitches && epic.pitches.length > 0 ? (
-                                  expandedEpics.has(epic.id) ? (
-                                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                  ) : (
-                                    <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                  )
-                                ) : (
-                                  <span className="w-3.5 shrink-0" />
-                                )}
-                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
-                                <Link
-                                  to={`/epics/${epic.id}`}
-                                  className="text-sm hover:underline truncate"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {epic.name}
-                                </Link>
-                              </button>
-                              <Badge variant="outline" className="text-[10px] shrink-0">
-                                {t(`epics.status.${epic.status.toLowerCase()}`)}
-                              </Badge>
-                              {epic.pitches && epic.pitches.length > 0 && (
-                                <span className="text-[10px] text-muted-foreground shrink-0">
-                                  {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex-1 relative h-10">
-                              <TimelineBar
-                                startDate={epic.startDate}
-                                endDate={epic.endDate}
-                                timelineStart={timelineStart}
-                                timelineEnd={timelineEnd}
-                                status={epic.status}
-                                progress={epic.progress}
-                                onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
-                              />
-                            </div>
-                          </div>
-
-                          {/* Expanded Pitches */}
-                          {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
-                              <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${(rowIndices.get(`pitch-${pitch.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
-                                <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-14 pr-2">
-                                  <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
-                                  <Link
-                                    to={`/pitches/${pitch.id}`}
-                                    className="text-xs truncate hover:underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    {pitch.title}
-                                  </Link>
-                                </div>
-                                <div className="flex-1 relative h-9">
-                                  <TimelineBar
-                                    startDate={pitch.startDate}
-                                    endDate={pitch.endDate}
-                                    timelineStart={timelineStart}
-                                    timelineEnd={timelineEnd}
-                                    status={pitch.status}
-                                    progress={pitch.progress}
-                                  />
-                                </div>
-                              </div>
-                          ))}
-                        </div>
+                      <RoadmapEpicBlock
+                        key={epic.id}
+                        epic={epic}
+                        rowKeyPrefix="epic"
+                        nested
+                        isShapeUp={isShapeUp}
+                        expanded={expandedEpics.has(epic.id)}
+                        onToggle={toggleEpic}
+                        rowIndices={rowIndices}
+                        timelineStart={timelineStart}
+                        timelineEnd={timelineEnd}
+                        onDatesChange={handleEpicDatesChange}
+                        depInfo={depInfoByEpic.get(epic.id)}
+                      />
                     ))}
                   </div>
               ))}
@@ -837,79 +1085,20 @@ export default function RoadmapPage() {
                     <div className="flex-1" />
                   </div>
                   {timeline.orphanEpics.map((epic) => (
-                      <div key={epic.id}>
-                        <div className={`flex items-center h-10 hover:bg-muted/50 ${(rowIndices.get(`orphan-${epic.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
-                          <div className="w-72 shrink-0 flex items-center gap-2 py-1 px-2">
-                            <button
-                              onClick={() => toggleEpic(epic.id)}
-                              className="flex items-center gap-2 flex-1 min-w-0 text-left"
-                            >
-                              {epic.pitches && epic.pitches.length > 0 ? (
-                                expandedEpics.has(epic.id) ? (
-                                  <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                ) : (
-                                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                )
-                              ) : (
-                                <span className="w-3.5 shrink-0" />
-                              )}
-                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
-                              <Link
-                                to={`/epics/${epic.id}`}
-                                className="text-sm hover:underline truncate"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {epic.name}
-                              </Link>
-                            </button>
-                            <Badge variant="outline" className="text-[10px] shrink-0">
-                              {t(`epics.status.${epic.status.toLowerCase()}`)}
-                            </Badge>
-                            {epic.pitches && epic.pitches.length > 0 && (
-                              <span className="text-[10px] text-muted-foreground shrink-0">
-                                {epic.pitches.filter(p => p.status === 'DONE').length}/{epic.pitches.length}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex-1 relative h-10">
-                            <TimelineBar
-                              startDate={epic.startDate}
-                              endDate={epic.endDate}
-                              timelineStart={timelineStart}
-                              timelineEnd={timelineEnd}
-                              status={epic.status}
-                              progress={epic.progress}
-                              onDatesChange={(s, e) => handleEpicDatesChange(epic.id, s, e)}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Expanded Pitches */}
-                        {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
-                            <div key={pitch.id} className={`flex items-center h-9 hover:bg-muted/50 ${(rowIndices.get(`pitch-${pitch.id}`) ?? 0) % 2 === 1 ? 'bg-muted/20' : ''}`}>
-                              <div className="w-72 shrink-0 flex items-center gap-2 py-1 pl-10 pr-2">
-                                <CheckCircle className="h-3 w-3 text-muted-foreground shrink-0" />
-                                <Link
-                                  to={`/pitches/${pitch.id}`}
-                                  className="text-xs truncate hover:underline"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {pitch.title}
-                                </Link>
-                              </div>
-                              <div className="flex-1 relative h-9">
-                                <TimelineBar
-                                  startDate={pitch.startDate}
-                                  endDate={pitch.endDate}
-                                  timelineStart={timelineStart}
-                                  timelineEnd={timelineEnd}
-                                  status={pitch.status}
-                                  progress={pitch.progress}
-                                />
-                              </div>
-                            </div>
-                        ))}
-                      </div>
+                    <RoadmapEpicBlock
+                      key={epic.id}
+                      epic={epic}
+                      rowKeyPrefix="orphan"
+                      nested={false}
+                      isShapeUp={isShapeUp}
+                      expanded={expandedEpics.has(epic.id)}
+                      onToggle={toggleEpic}
+                      rowIndices={rowIndices}
+                      timelineStart={timelineStart}
+                      timelineEnd={timelineEnd}
+                      onDatesChange={handleEpicDatesChange}
+                      depInfo={depInfoByEpic.get(epic.id)}
+                    />
                   ))}
                 </div>
               )}
@@ -981,6 +1170,21 @@ export default function RoadmapPage() {
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ef4444' }} />
               <span>{t('roadmap.cancelled')}</span>
             </div>
+            {/* Dependencies */}
+            <div className="w-px self-stretch bg-border" />
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Switch checked={showDependencies} onCheckedChange={setShowDependencies} aria-label={t('roadmap.showDependencies')} />
+              <span>{t('roadmap.showDependencies')}</span>
+            </label>
+            <div className="flex items-center gap-1">
+              <span className="inline-block w-5 border-t-2 border-slate-500 dark:border-slate-300" />
+              <span>{t('roadmap.dependencyBlocks')}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3 text-red-500" />
+              <span className="inline-block w-5 border-t-2 border-red-500" />
+              <span>{t('roadmap.dependencyConflict')}</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1000,6 +1204,7 @@ export default function RoadmapPage() {
         onToggleInitiative={toggleInitiative}
         onToggleEpic={toggleEpic}
         projectName={currentProject?.name}
+        isShapeUp={isShapeUp}
       />
     </div>
   );

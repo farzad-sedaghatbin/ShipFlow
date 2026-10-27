@@ -3,11 +3,13 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.CreateEpicRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.EpicDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.ReorderRequest;
+import com.github.farzadsedaghatbin.shipflow.dto.TaskDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.security.RequirePermission;
 import com.github.farzadsedaghatbin.shipflow.service.EpicService;
+import com.github.farzadsedaghatbin.shipflow.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 public class EpicController {
 
   private final EpicService epicService;
+  private final TaskService taskService;
 
   @GetMapping
   @PreAuthorize("isAuthenticated()")
@@ -77,6 +80,13 @@ public class EpicController {
   @Operation(summary = "Get epic by ID")
   public ResponseEntity<EpicDTO> getEpicById(@PathVariable Long id) {
     return ResponseEntity.ok(epicService.getEpicById(id));
+  }
+
+  @GetMapping("/{id}/tasks")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Get tasks linked to an epic (Kanban/Scrum roadmap)")
+  public ResponseEntity<List<TaskDTO>> getEpicTasks(@PathVariable Long id) {
+    return ResponseEntity.ok(taskService.getTasksByEpicId(id));
   }
 
   @PostMapping
