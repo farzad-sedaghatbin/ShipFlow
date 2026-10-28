@@ -62,7 +62,7 @@ Images (JPEG, PNG, GIF, WebP, SVG), documents (PDF, DOC, DOCX, TXT, MD), plus JS
 3. **View** — images show as thumbnails; click any attachment to preview or download it with its original filename.
 4. **Delete** — hover the attachment and click the **trash** icon.
 
-If you add files *before* the task is created, they're queued and uploaded automatically once you save the task.
+You can also attach files while **creating** a task: the **New Task** dialog has an Attachments drop zone (several files at once is fine). The files wait in the dialog and are uploaded as soon as the task is created; if one of them fails, the task is still saved and the files that didn't make it are named so you can add them again. The **Edit** dialog shows the task's Attachments card too, so you don't need to open the task to add a file.
 
 ## Permissions
 

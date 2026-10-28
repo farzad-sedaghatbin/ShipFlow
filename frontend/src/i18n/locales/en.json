@@ -8200,7 +8200,10 @@
     "tooLarge": "File exceeds the 10 MB limit",
     "unsupportedType": "Unsupported file type",
     "uploading": "Uploading...",
-    "empty": "No attachments yet"
+    "empty": "No attachments yet",
+    "remove": "Remove",
+    "uploadAfterCreate": "These files will be uploaded when the task is created.",
+    "someFailed": "The task was created, but these files could not be attached: {{files}}"
   },
   "wikiLinks": {
     "title": "Linked Wiki Pages",
