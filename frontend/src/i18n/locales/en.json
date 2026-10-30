@@ -5812,7 +5812,18 @@
     "shipped1144Item0Title": "Managers Can Add and Edit People",
     "shipped1144Item0Desc": "Managers could open the People page but every attempt to add or edit someone was refused with “You don’t have permission”. Managers can now add and edit people. Creating a login account for them stays with admins.",
     "shipped1144Item1Title": "Controls You Can’t Use Are Now Hidden",
-    "shipped1144Item1Desc": "The People page used to show Add Person and Edit to every role, including ones the server would always refuse. It now shows them only to the roles that can use them, and shows the “Create user account” option only to admins."
+    "shipped1144Item1Desc": "The People page used to show Add Person and Edit to every role, including ones the server would always refuse. It now shows them only to the roles that can use them, and shows the “Create user account” option only to admins.",
+    "shipped1145Title": "Epics for Every Project, Safer Link Previews",
+    "shipped1145Item0Title": "Epics Now Work on Kanban and Scrum Projects",
+    "shipped1145Item0Desc": "Epics on Kanban and Scrum projects used to list pitches and had no way to hold the project's own tasks. They now hold tasks, and the roadmap shows the dependencies between epics, which were saved before but never drawn. You can also pick a task's epic straight from the task dialog.",
+    "shipped1145Item1Title": "Attach Files While Creating a Task",
+    "shipped1145Item1Desc": "The New Task dialog had no attachments at all, so you had to save the task first and come back to add a file. You can now attach files as you create the task.",
+    "shipped1145Item2Title": "Restricted API Keys Stay Restricted in MCP",
+    "shipped1145Item2Desc": "An API key restricted to one project could still list and read every other project through the MCP server. The restriction is now honoured across every MCP tool. MCP also gains roadmap tools: read initiatives and epics, create and update epics, and add epic dependencies.",
+    "shipped1145Item3Title": "Link Previews Show Only General Details",
+    "shipped1145Item3Desc": "A shared link to a task, bug report, pitch or cycle now previews only its title, kind and status, never text someone wrote, since previews are visible to anyone with the link. Bug reports now get previews too, and deleted items no longer preview at all.",
+    "shipped1145Item4Title": "Smoother Boards on Phones, Cleaner Logo",
+    "shipped1145Item4Desc": "On a phone the backlog and bug boards only scrolled sideways if your finger started between two lanes. They now scroll when you swipe on a card too. The logo also had a fake transparency checkerboard baked into its pixels, which showed up in link previews and icons; it is now a clean image."
   },
   "releaseNotes": {
     "title": "Release Notes",

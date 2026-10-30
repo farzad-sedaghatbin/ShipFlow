@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.14.5] - 2026-10-30
+
 ### Added
 - **MCP: roadmap tools.** `get_roadmap`, `get_epics` (read) and `create_initiative`, `create_epic`, `update_epic`, `add_epic_dependency`, `link_task_to_epic` (write). Until now the MCP server had no initiative, epic or dependency tools at all, so when a user gave Claude a picture of their roadmap and asked it to build it, the only thing it could do was call `create_task` and fill the backlog. The new tools' descriptions point a model at them for roadmap work and away from `create_task`, which gains an optional `epicId`. `add_epic_dependency`: `epicId` blocks `targetEpicId`. Like every existing MCP tool, these check project access for the key's user but do not apply an API key's single-project restriction and since #645 a project-restricted key is limited to its own project for these tools too (snake_case argument aliases are folded before the check, so they can't bypass it).
 
