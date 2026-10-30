@@ -52,6 +52,7 @@ import {
   Filter,
   Bug,
   KeyRound,
+  Smartphone,
   BarChart3,
   Search,
 } from 'lucide-react';
@@ -109,6 +110,18 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.14.5',
+      date: 'October 30, 2026',
+      title: t('publicRoadmap.shipped1145Title'),
+      highlights: [
+        { icon: <Kanban className="h-5 w-5" />, title: t('publicRoadmap.shipped1145Item0Title'), description: t('publicRoadmap.shipped1145Item0Desc') },
+        { icon: <Paperclip className="h-5 w-5" />, title: t('publicRoadmap.shipped1145Item1Title'), description: t('publicRoadmap.shipped1145Item1Desc') },
+        { icon: <KeyRound className="h-5 w-5" />, title: t('publicRoadmap.shipped1145Item2Title'), description: t('publicRoadmap.shipped1145Item2Desc') },
+        { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.shipped1145Item3Title'), description: t('publicRoadmap.shipped1145Item3Desc') },
+        { icon: <Smartphone className="h-5 w-5" />, title: t('publicRoadmap.shipped1145Item4Title'), description: t('publicRoadmap.shipped1145Item4Desc') },
+      ],
+    },
     {
       version: '1.14.4',
       date: 'October 21, 2026',

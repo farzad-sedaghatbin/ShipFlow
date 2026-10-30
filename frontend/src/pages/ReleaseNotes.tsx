@@ -87,6 +87,43 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.14.5',
+    date: 'October 30, 2026',
+    title: 'Epics for Every Project, Safer Link Previews',
+    highlights: [
+      {
+        icon: <Kanban className="h-5 w-5" />,
+        title: 'Epics Now Work on Kanban and Scrum Projects',
+        description:
+          'Epics on Kanban and Scrum projects used to list pitches and had no way to hold the project\u0027s own tasks. They now hold tasks, and the roadmap shows the dependencies between epics, which were saved before but never drawn. You can also pick a task\u0027s epic straight from the task dialog.',
+      },
+      {
+        icon: <Paperclip className="h-5 w-5" />,
+        title: 'Attach Files While Creating a Task',
+        description:
+          'The New Task dialog had no attachments at all, so you had to save the task first and come back to add a file. You can now attach files as you create the task.',
+      },
+      {
+        icon: <KeyRound className="h-5 w-5" />,
+        title: 'Restricted API Keys Stay Restricted in MCP',
+        description:
+          'An API key restricted to one project could still list and read every other project through the MCP server. The restriction is now honoured across every MCP tool. MCP also gains roadmap tools: read initiatives and epics, create and update epics, and add epic dependencies.',
+      },
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Link Previews Show Only General Details',
+        description:
+          'A shared link to a task, bug report, pitch or cycle now previews only its title, kind and status, never text someone wrote, since previews are visible to anyone with the link. Bug reports now get previews too, and deleted items no longer preview at all.',
+      },
+      {
+        icon: <Smartphone className="h-5 w-5" />,
+        title: 'Smoother Boards on Phones, Cleaner Logo',
+        description:
+          'On a phone the backlog and bug boards only scrolled sideways if your finger started between two lanes. They now scroll when you swipe on a card too. The logo also had a fake transparency checkerboard baked into its pixels, which showed up in link previews and icons; it is now a clean image.',
+      },
+    ],
+  },
+  {
     version: '1.14.4',
     date: 'October 21, 2026',
     title: 'Managers Can Add People',
