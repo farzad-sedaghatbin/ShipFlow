@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
 import { taskService } from '../services/taskService';
+import { taskAttachmentService } from '../services/taskAttachmentService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { teamService } from '../services/teamService';
@@ -59,6 +60,7 @@ export function useBacklogPage() {
   const [loading, setLoading] = useState(true);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
 
   // Selection / view
@@ -472,6 +474,7 @@ export function useBacklogPage() {
         category: task.category,
         pitchId: task.pitchId,
         parentTaskId: task.parentTaskId,
+        epicId: task.epicId ?? undefined,
       });
       setDueDate(task.dueDate ? dayjs(task.dueDate) : null);
     } else {
@@ -492,10 +495,11 @@ export function useBacklogPage() {
       });
       setDueDate(null);
     }
+    setPendingFiles([]);
     setDialogOpen(true);
   };
 
-  const handleCloseDialog = () => { setDialogOpen(false); setEditingTask(null); setFieldErrors({}); };
+  const handleCloseDialog = () => { setDialogOpen(false); setEditingTask(null); setFieldErrors({}); setPendingFiles([]); };
 
   const handleAddSubTask = (parentTask: Task) => {
     setFormData({
@@ -508,6 +512,7 @@ export function useBacklogPage() {
     });
     setDueDate(null);
     setEditingTask(null);
+    setPendingFiles([]);
     setDialogOpen(true);
   };
 
@@ -618,14 +623,31 @@ export function useBacklogPage() {
       const data: CreateTaskRequest = { ...formData, dueDate: dueDate ? dueDate.format('YYYY-MM-DD') : undefined };
       if (editingTask) {
         await taskService.update(editingTask.id, data);
+        // A null epicId on update means "unchanged", so clearing the epic needs its own call.
+        if (editingTask.epicId && !data.epicId) {
+          await taskService.setEpic(editingTask.id, null);
+        }
         toast.success(t('backlogPage.taskUpdated'));
       } else {
         // Don't send category on create — the backend already derives PITCH_SCOPE vs
         // DEBT_IMPROVEMENT from whether pitchId is set (there's no category tab to seed this
         // from anymore, see §C.1).
         delete data.category;
-        await taskService.create(data);
+        const created = await taskService.create(data);
         toast.success(t('backlogPage.taskCreated'));
+        // Attachments need the task id, so they go up right after the task is created. The task
+        // itself is saved either way; any file that fails is reported by name.
+        const failed: string[] = [];
+        for (const file of pendingFiles) {
+          try {
+            await taskAttachmentService.uploadAttachment(created.data.id, file);
+          } catch {
+            failed.push(file.name);
+          }
+        }
+        if (failed.length > 0) {
+          toast.error(t('attachments.someFailed', { files: failed.join(', ') }));
+        }
       }
       handleCloseDialog(); loadTasks(); loadStatistics();
     } catch (error: any) { toast.error(getUserFriendlyError(error)); }
@@ -750,6 +772,7 @@ export function useBacklogPage() {
     viewDialog, setViewDialog,
     viewHistory,
     isKanbanProject,
+    pendingFiles, setPendingFiles,
     isSwitchingProject,
     currentProject,
 

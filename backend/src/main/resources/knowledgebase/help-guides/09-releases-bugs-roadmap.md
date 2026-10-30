@@ -119,6 +119,7 @@ To create one:
 
 ## Linking Tasks to an Epic (Kanban and Scrum)
 - On the epic's page, the **Tasks** section lists its tasks. Use **Link existing task** to pick a task that has no epic yet, **New task** to create one directly under the epic, or **Unlink** to remove a task from it.
+- When creating or editing a task on the Backlog, pick its epic in the **Epic** field of the task dialog (top-level tasks only; a subtask belongs to its parent's epic).
 - From a task's detail view, use the **Epic** field to move the task to another epic or clear it.
 - On the roadmap, expand an epic to see its tasks. A task with a due date in the visible window shows a small marker on its due date.
 - An epic's progress counts every pitch and top-level task under it: the share of them that are done. Subtasks are not counted separately.
