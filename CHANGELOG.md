@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Pages sat "pending" and felt slow on servers behind plain HTTP/1.1.** The service worker sent the never-ending notification stream (`GET /api/notifications/stream`) through the same network-first cache route as ordinary API reads. Workbox copies each response into the cache, which waits for a body that never ends, and when the page aborted and reconnected, the worker's own upstream request was not cancelled. Each reconnect left another open connection behind; browsers allow only 6 per origin over HTTP/1.1, so everything else queued. The stream now has its own network-only route registered ahead of the cache route. (A deployment should also serve HTTP/2, which removes the 6-connection ceiling: `http2 on;` in the nginx `server` block.)
+
 ## [1.14.5] - 2026-10-30
 
 ### Added
