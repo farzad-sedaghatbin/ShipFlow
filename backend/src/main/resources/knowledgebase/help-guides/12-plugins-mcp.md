@@ -161,6 +161,8 @@ Yes. Task, pitch, and cycle detail pages have a **Copy link** button (link icon 
 
 Previews deliberately show only general information. They never include the description, problem statement, comments or any other text you wrote, because a preview is fetched by chat apps that are not signed in to ShipFlow. Deleted items stop previewing.
 
-If you paste the direct app URL (e.g. from the browser bar), ShipFlow also handles that automatically for known social platforms — but only for a link to **one** item: a task (`/backlog/42`), a bug report (`/qa/bug-reports/7`), a pitch, or a cycle. For a bug report, open it and copy the address from your browser bar.
+If you paste the direct app URL (e.g. from the browser bar), ShipFlow also handles that automatically for known social platforms — but only for a link to **one** item: a task (`/backlog/42`), a bug report (`/qa/bug-reports/BUG-150`, or by number), a pitch, a cycle, an initiative (`/initiatives/3`), a wiki space (`/wiki/1`) or a wiki page (`/wiki/1/8`). For a bug report, open it and copy the address from your browser bar — that `BUG-…` address previews. The roadmap (`/roadmap`) previews as a "Roadmap" card; it has no project in its address, so the card cannot name one.
+
+Wiki previews show the space name and page count, or the page title and its space — never page content. A wiki space with per-space access grants is private, so its links preview only as "Wiki space" or "Wiki page", without names.
 
 The **Copy link** button on the Backlog and Bug Reports *list* pages is different: it copies the list with your current filters (for example `/backlog?project=5`). A list link shows the general ShipFlow card in a chat preview, because there is no single item to describe. To share one specific task or bug, open it first and copy its own link.
