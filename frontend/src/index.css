@@ -708,6 +708,20 @@ html[dir="rtl"] ol {
   text-decoration: underline;
 }
 
+/* BlockNote (wiki editor) ships no link styling, and Tailwind's preflight
+   resets every <a> to inherit color with no underline — so links rendered as
+   plain text while still being clickable. */
+.bn-editor a[href] {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.bn-editor a[href]:hover {
+  text-decoration-thickness: 2px;
+}
+
 .markdown-content hr {
   border: 0;
   border-top: 1px solid var(--color-border);
