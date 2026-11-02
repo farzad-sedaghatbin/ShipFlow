@@ -87,6 +87,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.14.6',
+    date: 'November 2, 2026',
+    title: 'Faster Pages, Better Links',
+    highlights: [
+      {
+        icon: <Zap className="h-5 w-5" />,
+        title: 'Pages No Longer Stall on Plain HTTP/1.1',
+        description:
+          'The live notification connection was being kept open by the app\u0027s offline cache, and every reconnect leaked another one. On servers without HTTP/2 the browser ran out of connections and ordinary requests sat pending. Notifications now bypass the cache, so pages stay fast.',
+      },
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Link Previews for Bugs, Wiki, Initiatives and the Roadmap',
+        description:
+          'Shared links to a bug report (by its key), a wiki space or page, an initiative or the roadmap now show their own preview card in WhatsApp and Slack instead of the generic ShipFlow card, still using only general details.',
+      },
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Links in Wiki Pages Look Like Links',
+        description:
+          'Links inside wiki pages were clickable but looked like plain text. They now use the primary colour with an underline.',
+      },
+    ],
+  },
+  {
     version: '1.14.5',
     date: 'October 30, 2026',
     title: 'Epics for Every Project, Safer Link Previews',
