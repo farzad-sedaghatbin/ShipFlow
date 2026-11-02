@@ -13,12 +13,15 @@ import com.github.farzadsedaghatbin.shipflow.repository.CommentRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.event.AgentMentionedEvent;
+import com.github.farzadsedaghatbin.shipflow.service.agent.AgentIdentityService;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -41,6 +44,8 @@ public class CommentService {
   private final WikiPageRepository wikiPageRepository;
   private final MessageService messageService;
   private final DashboardNotificationService notificationService;
+  private final AgentIdentityService agentIdentityService;
+  private final ApplicationEventPublisher eventPublisher;
 
   // Pattern to match @name mentions (letters, numbers, dots, underscores)
   // Matches @FirstName, @r.jahani, or @"First Name" for names with spaces
@@ -66,6 +71,13 @@ public class CommentService {
 
     // Process mentions and send notifications
     processMentions(request.getContent(), author, request.getEntityType(), request.getEntityId());
+
+    // @ShipFlow wakes the agent. Only a human comment can: the agent's own replies are saved
+    // directly (never through here), and the isAgent guard stops any loop regardless.
+    if (!agentIdentityService.isAgent(author) && agentIdentityService.mentionsAgent(request.getContent())) {
+      eventPublisher.publishEvent(
+          new AgentMentionedEvent(comment.getId(), request.getEntityType(), request.getEntityId(), userId));
+    }
 
     return toDTO(comment, userId);
   }
@@ -233,14 +245,17 @@ public class CommentService {
 
   private CommentDTO toDTO(Comment comment, Long currentUserId) {
     User author = comment.getAuthor();
-    String authorName = author.getPerson() != null ? author.getPerson().getName() : author.getUsername();
+    boolean byAgent = agentIdentityService.isAgent(author);
+    String authorName = byAgent
+        ? AgentIdentityService.AGENT_DISPLAY_NAME
+        : author.getPerson() != null ? author.getPerson().getName() : author.getUsername();
 
     // Get current user for permission checks
     User currentUser = userRepository.findById(currentUserId).orElse(null);
 
     return CommentDTO.builder().id(comment.getId()).content(comment.getContent())
         .entityType(comment.getEntityType()).entityId(comment.getEntityId()).authorId(author.getId())
-        .authorName(authorName).authorUsername(author.getUsername()).isEdited(comment.getIsEdited())
+        .authorName(authorName).authorUsername(author.getUsername()).isAgent(byAgent).isEdited(comment.getIsEdited())
         .createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt())
         .reactions(buildReactionSummary(comment.getId(), currentUserId))
         .canEdit(canUserEdit(comment, currentUserId))
@@ -277,19 +292,29 @@ public class CommentService {
    */
   @Transactional(readOnly = true)
   public List<MentionUserDTO> searchUsersForMention(String query) {
-    if (query == null || query.trim().isEmpty()) {
-      // Return first 10 active users with person profiles if no query
-      return userRepository.findByIsActiveTrue().stream()
-          .filter(u -> u.getPerson() != null)
-          .limit(10)
-          .map(this::toMentionUserDTO)
-          .collect(Collectors.toList());
+    List<MentionUserDTO> result = new ArrayList<>();
+    String q = query == null ? "" : query.trim();
+
+    // The ShipFlow Agent is always offered first when the query could mean it.
+    if (agentIdentityService.isEnabled()
+        && (q.isEmpty() || AgentIdentityService.AGENT_DISPLAY_NAME.toLowerCase().startsWith(q.toLowerCase()))) {
+      result.add(agentMentionDTO());
     }
 
-    return userRepository.searchByPersonNameForMention(query.trim()).stream()
-        .limit(10)
-        .map(this::toMentionUserDTO)
-        .collect(Collectors.toList());
+    List<User> users = q.isEmpty()
+        // Return first 10 active users with person profiles if no query
+        ? userRepository.findByIsActiveTrue().stream().filter(u -> u.getPerson() != null).limit(10)
+            .collect(Collectors.toList())
+        : userRepository.searchByPersonNameForMention(q).stream().limit(10).collect(Collectors.toList());
+    users.stream().map(this::toMentionUserDTO).forEach(result::add);
+    return result;
+  }
+
+  private MentionUserDTO agentMentionDTO() {
+    Long id = agentIdentityService.findAgentUser().map(User::getId).orElse(-1L);
+    return MentionUserDTO.builder().id(id).username(AgentIdentityService.AGENT_USERNAME)
+        .displayName(AgentIdentityService.AGENT_DISPLAY_NAME).department("AI teammate")
+        .skills("Answers questions about this item, its project and your knowledge base").build();
   }
 
   /**

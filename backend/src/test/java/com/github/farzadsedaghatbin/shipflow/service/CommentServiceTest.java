@@ -21,6 +21,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import com.github.farzadsedaghatbin.shipflow.event.AgentMentionedEvent;
+import com.github.farzadsedaghatbin.shipflow.service.agent.AgentIdentityService;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -55,6 +59,12 @@ class CommentServiceTest {
 
   @Mock
   private DashboardNotificationService notificationService;
+
+  @Mock
+  private AgentIdentityService agentIdentityService;
+
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   @InjectMocks
   private CommentService commentService;
@@ -564,6 +574,84 @@ class CommentServiceTest {
       assertThat(result).isNotNull();
       verify(notificationService, never()).notifyCommentMention(any(User.class), any(User.class), anyString(),
           anyLong(), anyString());
+    }
+  }
+
+  @Nested
+  @DisplayName("ShipFlow Agent mentions")
+  class AgentMentions {
+
+    private CommentDTO create(String content, User author) {
+      CreateCommentRequest request = CreateCommentRequest.builder().content(content)
+          .entityType(CommentEntityType.TASK).entityId(7L).build();
+      when(userRepository.findById(author.getId())).thenReturn(Optional.of(author));
+      when(taskRepository.existsById(7L)).thenReturn(true);
+      when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> {
+        Comment c = inv.getArgument(0);
+        c.setId(55L);
+        c.setCreatedAt(LocalDateTime.now());
+        return c;
+      });
+      when(reactionRepository.getReactionCountsByCommentId(anyLong())).thenReturn(Collections.emptyList());
+      when(reactionRepository.findUserReactionsByCommentIdAndUserId(anyLong(), anyLong()))
+          .thenReturn(Collections.emptyList());
+      return commentService.createComment(request, author.getId());
+    }
+
+    @Test
+    @DisplayName("A human @ShipFlow comment publishes an AgentMentionedEvent as that human")
+    void mentionPublishesEvent() {
+      when(agentIdentityService.mentionsAgent("@ShipFlow what is blocking this?")).thenReturn(true);
+
+      create("@ShipFlow what is blocking this?", testUser);
+
+      ArgumentCaptor<AgentMentionedEvent> captor = ArgumentCaptor.forClass(AgentMentionedEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+      assertThat(captor.getValue().commentId()).isEqualTo(55L);
+      assertThat(captor.getValue().entityType()).isEqualTo(CommentEntityType.TASK);
+      assertThat(captor.getValue().entityId()).isEqualTo(7L);
+      assertThat(captor.getValue().requesterUserId()).isEqualTo(testUser.getId());
+    }
+
+    @Test
+    @DisplayName("A comment without @ShipFlow publishes nothing")
+    void plainCommentPublishesNothing() {
+      create("just a note", testUser);
+      verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("A comment authored by the agent never wakes the agent (no reply loops)")
+    void agentAuthoredCommentNeverTriggers() {
+      when(agentIdentityService.isAgent(testUser)).thenReturn(true);
+      lenient().when(agentIdentityService.mentionsAgent(anyString())).thenReturn(true);
+
+      create("@ShipFlow talking to myself", testUser);
+
+      verify(eventPublisher, never()).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("@-mention search offers the agent first when enabled")
+    void searchOffersAgentFirst() {
+      when(agentIdentityService.isEnabled()).thenReturn(true);
+      when(agentIdentityService.findAgentUser()).thenReturn(Optional.empty());
+      when(userRepository.searchByPersonNameForMention("ship")).thenReturn(Collections.emptyList());
+
+      List<MentionUserDTO> result = commentService.searchUsersForMention("ship");
+
+      assertThat(result).hasSize(1);
+      assertThat(result.get(0).getDisplayName()).isEqualTo("ShipFlow");
+      assertThat(result.get(0).getUsername()).isEqualTo(AgentIdentityService.AGENT_USERNAME);
+    }
+
+    @Test
+    @DisplayName("@-mention search leaves the agent out when the query is another name")
+    void searchOmitsAgentForOtherNames() {
+      when(agentIdentityService.isEnabled()).thenReturn(true);
+      when(userRepository.searchByPersonNameForMention("bob")).thenReturn(Collections.emptyList());
+
+      assertThat(commentService.searchUsersForMention("bob")).isEmpty();
     }
   }
 }

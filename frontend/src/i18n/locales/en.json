@@ -7669,6 +7669,8 @@
     "testCaseDeleteFailed": "Failed to delete test case"
   },
   "comments": {
+    "agentBadge": "AI",
+    "agentThinking": "ShipFlow is thinking…",
     "title": "Comments",
     "placeholder": "Add a comment about this {{entityType}}...",
     "post": "Post Comment",

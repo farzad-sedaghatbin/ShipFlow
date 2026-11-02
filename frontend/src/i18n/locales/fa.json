@@ -6605,6 +6605,8 @@
     "testCaseDeleteFailed": "خطا در حذف تست کیس"
   },
   "comments": {
+    "agentBadge": "هوش مصنوعی",
+    "agentThinking": "ShipFlow در حال فکر کردن است…",
     "title": "نظرات",
     "placeholder": "یک نظر درباره این {{entityType}} اضافه کنید...",
     "post": "ارسال نظر",
