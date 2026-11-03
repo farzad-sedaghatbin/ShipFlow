@@ -2806,4 +2806,55 @@ class McpToolDispatcherTest {
 
     assertThat((String) result.get("message")).contains("not found or not accessible");
   }
+
+  // ── executeWriteToolAs: running a confirmed agent action as a person ──────
+
+  @Test
+  void executeWriteToolAs_runsAWriteToolInsideTheGivenProject() {
+    when(taskRepository.findByIdNotDeleted(9L)).thenReturn(Optional.of(taskInProject(9L, 1L)));
+    when(taskService.updateTaskStatus(9L, com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus.DONE))
+        .thenReturn(TaskDTO.builder().id(9L).title("Mine").build());
+
+    // The MCP server's own write toggle is OFF in setUp(); an agent action must not depend on it.
+    Object result = dispatcher.executeWriteToolAs(
+        "update_task_status", Map.of("taskId", 9, "status", "DONE"), auth, 1L);
+
+    assertThat(result).isNotNull();
+    org.mockito.Mockito.verify(taskService)
+        .updateTaskStatus(9L, com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus.DONE);
+  }
+
+  @Test
+  void executeWriteToolAs_refusesATaskInAnotherProjectWithoutReachingTheService() {
+    when(taskRepository.findByIdNotDeleted(9L)).thenReturn(Optional.of(taskInProject(9L, 2L)));
+
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> dispatcher.executeWriteToolAs(
+            "update_task_status", Map.of("taskId", 9, "status", "DONE"), auth, 1L))
+        .hasMessageContaining("not found or not accessible");
+    org.mockito.Mockito.verify(taskService, org.mockito.Mockito.never())
+        .updateTaskStatus(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any());
+  }
+
+  @Test
+  void executeWriteToolAs_refusesAReadToolAndAMissingProject() {
+    org.assertj.core.api.Assertions.assertThatThrownBy(
+            () -> dispatcher.executeWriteToolAs("get_task", Map.of("taskId", 9), auth, 1L))
+        .hasMessageContaining("Not a write tool");
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> dispatcher.executeWriteToolAs(
+            "update_task_status", Map.of("taskId", 9, "status", "DONE"), auth, null))
+        .hasMessageContaining("project is required");
+  }
+
+  @Test
+  void executeWriteToolAs_restoresTheCallersSecurityContext() {
+    org.springframework.security.core.context.SecurityContext before =
+        org.springframework.security.core.context.SecurityContextHolder.getContext();
+    when(taskRepository.findByIdNotDeleted(9L)).thenReturn(Optional.of(taskInProject(9L, 1L)));
+    when(taskService.updateTaskStatus(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any()))
+        .thenReturn(TaskDTO.builder().id(9L).build());
+
+    dispatcher.executeWriteToolAs("update_task_status", Map.of("taskId", 9, "status", "DONE"), auth, 1L);
+
+    assertThat(org.springframework.security.core.context.SecurityContextHolder.getContext()).isSameAs(before);
+  }
 }

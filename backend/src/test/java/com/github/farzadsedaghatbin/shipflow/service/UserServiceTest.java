@@ -594,4 +594,24 @@ class UserServiceTest {
   void mapUserRoleToProjectRole_AdminReturnsNull() {
     assertThat(userService.mapUserRoleToProjectRole(UserRole.ADMIN)).isNull();
   }
+
+  @org.junit.jupiter.api.Test
+  @org.junit.jupiter.api.DisplayName("RAG project scope: an ADMIN is unrestricted (null), others get every project they can reach")
+  void accessibleProjectIdsForRag() {
+    com.github.farzadsedaghatbin.shipflow.entity.User admin =
+        com.github.farzadsedaghatbin.shipflow.entity.User.builder().id(1L).role(UserRole.ADMIN).build();
+    com.github.farzadsedaghatbin.shipflow.entity.User member =
+        com.github.farzadsedaghatbin.shipflow.entity.User.builder().id(2L).role(UserRole.MEMBER).build();
+    when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(admin));
+    when(userRepository.findById(2L)).thenReturn(java.util.Optional.of(member));
+    Project owned = new Project();
+    owned.setId(5L);
+    Project viaTeam = new Project();
+    viaTeam.setId(6L);
+    when(userProjectRepository.findAccessibleProjectsByUserId(2L)).thenReturn(java.util.List.of(owned, viaTeam));
+
+    org.assertj.core.api.Assertions.assertThat(userService.getAccessibleProjectIdsForUser(1L)).isNull();
+    org.assertj.core.api.Assertions.assertThat(userService.getAccessibleProjectIdsForUser(2L))
+        .containsExactlyInAnyOrder(5L, 6L);
+  }
 }
