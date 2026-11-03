@@ -26,6 +26,7 @@ import { useToast } from '../contexts';
 import { useBackNavigation } from '../hooks/useBackNavigation';
 import SortablePitchList from '../components/SortablePitchList';
 import EpicTasksSection from '../components/EpicTasksSection';
+import PlanningAttachments from '../components/PlanningAttachments';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -599,6 +600,9 @@ export default function EpicDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Screenshots, mock-ups and clips */}
+      <PlanningAttachments entityType="epic" entityId={epic.id} />
 
       {/* Tasks (Kanban/Scrum) */}
       {!isShapeUp && (

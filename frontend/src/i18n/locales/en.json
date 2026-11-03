@@ -2917,6 +2917,7 @@
     "completedTasks": "completed tasks",
     "newTask": "New task",
     "newTaskPlaceholder": "Task title",
+    "taskTitleRequired": "Type a title for the new task first",
     "linkExistingTask": "Link existing task",
     "searchTasks": "Search tasks...",
     "noUnlinkedTasks": "No tasks without an epic",
@@ -7667,6 +7668,22 @@
     "deleteTestCaseConfirmation": "Are you sure you want to delete the test case '{{title}}'?",
     "testCaseDeleted": "Test case deleted successfully",
     "testCaseDeleteFailed": "Failed to delete test case"
+  },
+  "planningAttachments": {
+    "title": "Attachments",
+    "dropHint": "Drop images or clips here, or click to choose",
+    "limits": "JPG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI — up to 20 MB each",
+    "empty": "No attachments yet.",
+    "uploaded_one": "{{count}} file attached",
+    "uploaded_other": "{{count}} files attached",
+    "uploaded": "{{count}} file(s) attached",
+    "unsupportedType": "unsupported file type",
+    "tooLarge": "larger than 20 MB",
+    "uploadFailed": "upload failed",
+    "deleteFailed": "Couldn't remove the attachment",
+    "openFailed": "Couldn't open the attachment",
+    "download": "Download",
+    "remove": "Remove"
   },
   "comments": {
     "agentBadge": "AI",

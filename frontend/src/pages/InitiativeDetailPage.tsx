@@ -60,6 +60,7 @@ import { Progress } from '../components/ui/progress';
 import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
 import { Markdown } from '../components/ui/markdown';
+import PlanningAttachments from '../components/PlanningAttachments';
 import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 
 // ========================
@@ -386,6 +387,9 @@ export default function InitiativeDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Screenshots, mock-ups and clips */}
+      <PlanningAttachments entityType="initiative" entityId={initiative.id} />
 
       {/* Epics */}
       <Card>
