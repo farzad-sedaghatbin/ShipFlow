@@ -1,6 +1,6 @@
 {
   "name": "shipflow-frontend",
-  "version": "1.14.6",
+  "version": "1.15.0",
   "private": true,
   "license": "Elastic-2.0",
   "dependencies": {

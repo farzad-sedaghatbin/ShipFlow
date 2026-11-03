@@ -87,6 +87,37 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.15.0',
+    date: 'November 3, 2026',
+    title: 'ShipFlow Agent',
+    highlights: [
+      {
+        icon: <Sparkles className="h-5 w-5" />,
+        title: 'A Mentionable AI Teammate',
+        description:
+          'Mention @ShipFlow in a comment on a task, bug report or wiki page and it answers as a comment with an AI badge, grounded in your project data and limited to what you are allowed to see.',
+      },
+      {
+        icon: <Wand2 className="h-5 w-5" />,
+        title: 'Agent Actions \u2014 You Confirm, Then It Acts',
+        description:
+          'Ask the agent to create a task, mark something done or reassign a bug. It proposes the change, you see exactly what will happen, and nothing is applied until you click Apply. It runs as you, so it can never do more than you could.',
+      },
+      {
+        icon: <Clock className="h-5 w-5" />,
+        title: 'Scheduled Agent Loops',
+        description:
+          'A daily standup digest, a cycle-health check and betting-table prep, sent to Slack, Teams or in-app on a schedule you choose. Facts come from your data, not the model; quiet runs are skipped. Works fully self-hosted with Ollama.',
+      },
+      {
+        icon: <Paperclip className="h-5 w-5" />,
+        title: 'Images and Videos on Epics and Initiatives',
+        description:
+          'Epics and initiatives can now carry image and video attachments, and the New task button on an epic page no longer looks disabled. The cycle summary also renders bold text properly instead of showing raw asterisks.',
+      },
+    ],
+  },
+  {
     version: '1.14.6',
     date: 'November 2, 2026',
     title: 'Faster Pages, Better Links',
