@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { narrativeService, CycleSummary, CycleNarrative } from '../services/narrativeService';
 import { cn } from '../lib/utils';
+import { Markdown } from './ui/markdown';
 import { PermissionGate } from '../hooks/usePermission';
 
 interface NarrativeSectionProps {
@@ -108,9 +109,13 @@ const NarrativeSection: React.FC<NarrativeSectionProps> = ({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <CardContent className="pt-0">
-            <div className="whitespace-pre-wrap break-words text-sm">
-              {narrative.content}
-            </div>
+            {/* Narratives (template or AI) contain **bold**, bullets and the odd heading, so they must
+                render as Markdown — plain text showed the raw asterisks. whitespace-pre-line keeps the
+                single line breaks the template relies on (e.g. one "• bet" per line). */}
+            <Markdown
+              content={narrative.content}
+              className="break-words text-sm whitespace-pre-line"
+            />
             <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <span className="text-xs text-muted-foreground">
                 {t('narratives.generatedAt')} {new Date(narrative.generatedAt).toLocaleString()}
