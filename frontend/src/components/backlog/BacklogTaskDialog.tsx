@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,12 @@ import { LocalizedDateInput } from '../LocalizedDateInput';
 import { Task, CreateTaskRequest, TaskStatus, TaskPriority, Person, Pitch, Team } from '../../types';
 import { statusOptions, priorityOptions } from './backlogTypes';
 import dayjs, { Dayjs } from 'dayjs';
+import { epicService } from '../../services/epicService';
+import { useProject } from '../../contexts';
+import TaskAttachments from '../TaskAttachments';
+import { PendingAttachments } from './PendingAttachments';
+
+const NO_EPIC = 'none';
 
 interface BacklogTaskDialogProps {
   open: boolean;
@@ -36,6 +43,9 @@ interface BacklogTaskDialogProps {
   teams: Team[];
   pitches: Pitch[];
   isKanbanProject: boolean;
+  /** Files picked while creating a task; uploaded by the caller once the task exists. */
+  pendingFiles: File[];
+  onPendingFilesChange: (files: File[]) => void;
   onOpenChange: (open: boolean) => void;
   onFormDataChange: (data: CreateTaskRequest) => void;
   onDueDateChange: (date: Dayjs | null) => void;
@@ -55,6 +65,8 @@ export function BacklogTaskDialog({
   teams,
   pitches,
   isKanbanProject,
+  pendingFiles,
+  onPendingFilesChange,
   onOpenChange,
   onFormDataChange,
   onDueDateChange,
@@ -63,6 +75,17 @@ export function BacklogTaskDialog({
   onClose,
 }: BacklogTaskDialogProps) {
   const { t } = useTranslation();
+  const { currentProject } = useProject();
+
+  // In Kanban/Scrum projects tasks sit directly under epics (Shape Up links pitches instead).
+  // Subtasks roll up through their parent, so only root tasks get the picker.
+  const showEpic =
+    !!currentProject && currentProject.projectType !== 'SHAPE_UP' && !formData.parentTaskId;
+  const { data: epics = [] } = useQuery({
+    queryKey: ['epics', 'project', currentProject?.id],
+    queryFn: async () => (await epicService.getByProject(currentProject!.id)).data,
+    enabled: open && showEpic,
+  });
 
   // Subtasks can never be set to Backlog (they're meant to be actioned right away, and the
   // backend rejects it) — filter it out whenever this dialog is creating or editing a subtask.
@@ -256,6 +279,29 @@ export function BacklogTaskDialog({
               placeholder={t('backlogPage.commaSeparated')}
             />
           </div>
+          {showEpic && (
+            <div className="grid gap-2">
+              <Label>{t('epics.epic')}</Label>
+              <Select
+                value={formData.epicId ? String(formData.epicId) : NO_EPIC}
+                onValueChange={(value) =>
+                  onFormDataChange({ ...formData, epicId: value === NO_EPIC ? undefined : Number(value) })
+                }
+              >
+                <SelectTrigger aria-label={t('epics.epic')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_EPIC}>{t('epics.noEpic')}</SelectItem>
+                  {epics.map((epic) => (
+                    <SelectItem key={epic.id} value={String(epic.id)}>
+                      {epic.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {/* Hide pitch field for Kanban projects */}
           {!isKanbanProject && (
             <div className="grid gap-2">
@@ -277,6 +323,11 @@ export function BacklogTaskDialog({
                 </SelectContent>
               </Select>
             </div>
+          )}
+          {editingTask ? (
+            <TaskAttachments taskId={editingTask.id} />
+          ) : (
+            <PendingAttachments files={pendingFiles} onChange={onPendingFilesChange} />
           )}
         </div>
         <DialogFooter>

@@ -323,7 +323,7 @@ public class QAService {
       if (securityFilter != null && userId != null) {
         try {
           Set<Long> userTeamIds = userService.getTeamIdsForUser(userId);
-          Set<Long> userProjectIds = userService.getProjectIdsForUser(userId);
+          Set<Long> userProjectIds = userService.getAccessibleProjectIdsForUser(userId);
           matches = securityFilter.filterByUserAccess(matches, userId, userTeamIds, userProjectIds);
         } catch (Exception e) {
           log.warn("Security filtering skipped due to error resolving user context for userId={}: {}",

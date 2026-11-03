@@ -2,14 +2,20 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.entity.BugReport;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
+import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +39,10 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Soft-deleted items resolve to empty, exactly as if they did not exist, so deleting something
  * also withdraws its preview. Bug reports have no soft-delete, so a deleted bug is simply absent.
  *
+ * <p>Wiki spaces with per-space grants are private, so for those this returns only "Wiki space" or
+ * "Wiki page", never the space name or page title. That is the same test the Knowledge Center uses
+ * to keep restricted spaces out of AI answers.
+ *
  * <p>To preview a new kind of item: add a method here that maps it to a {@link LinkPreview}, an
  * endpoint in {@code LinkPreviewController}, and a path in {@code SocialCrawlerFilter}. Keep the
  * summary to type/status-style labels.
@@ -49,6 +59,10 @@ public class LinkPreviewService {
   private final PitchRepository pitchRepository;
   private final BugReportRepository bugReportRepository;
   private final CycleRepository cycleRepository;
+  private final InitiativeRepository initiativeRepository;
+  private final WikiSpaceRepository wikiSpaceRepository;
+  private final WikiPageRepository wikiPageRepository;
+  private final WikiSpacePermissionRepository wikiSpacePermissionRepository;
   private final ProjectRepository projectRepository;
 
   @Transactional(readOnly = true)
@@ -56,9 +70,18 @@ public class LinkPreviewService {
     return taskRepository.findById(id).filter(task -> task.getDeletedAt() == null).map(this::toPreview);
   }
 
+  /**
+   * Bugs are linked by key ({@code BUG-150}, the URL the bug page settles on) as well as by
+   * numeric id (older links), so this accepts either — the same rule the bug page itself uses.
+   */
   @Transactional(readOnly = true)
-  public Optional<LinkPreview> forBug(Long id) {
-    return bugReportRepository.findById(id).map(this::toPreview);
+  public Optional<LinkPreview> forBug(String idOrKey) {
+    // 18 digits always fits a long; anything longer is treated as a key (and simply not found).
+    boolean numeric = idOrKey.length() <= 18 && idOrKey.chars().allMatch(Character::isDigit);
+    Optional<BugReport> bug = numeric
+        ? bugReportRepository.findById(Long.valueOf(idOrKey))
+        : bugReportRepository.findByBugKey(idOrKey);
+    return bug.map(this::toPreview);
   }
 
   @Transactional(readOnly = true)
@@ -96,6 +119,52 @@ public class LinkPreviewService {
         : String.format("Backlog: %d open task%s · %d in progress · %d done", open, open == 1 ? "" : "s",
             inProgress, done);
     return Optional.of(new LinkPreview("Backlog", summary));
+  }
+
+  /**
+   * The roadmap URL carries no id (the project comes from the viewer's session), so there is
+   * nothing specific to look up — but naming the page still beats the generic site card.
+   */
+  public LinkPreview forRoadmap() {
+    return new LinkPreview("Roadmap", "Roadmap · Initiatives and timeline");
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<LinkPreview> forInitiative(Long id) {
+    return initiativeRepository.findByIdNotDeleted(id).map(this::toPreview);
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<LinkPreview> forWikiSpace(Long spaceId) {
+    return liveSpace(spaceId).map(space -> {
+      if (isRestricted(space)) {
+        return new LinkPreview("Wiki space", "Wiki space · Private");
+      }
+      long pages = wikiPageRepository.countBySpaceIdAndDeletedAtIsNull(space.getId());
+      return new LinkPreview(space.getName(), "Wiki space · %d page%s".formatted(pages, pages == 1 ? "" : "s"));
+    });
+  }
+
+  /** The page must belong to the space in the URL, so an id from another space is not found. */
+  @Transactional(readOnly = true)
+  public Optional<LinkPreview> forWikiPage(Long spaceId, Long pageId) {
+    return liveSpace(spaceId).flatMap(space -> wikiPageRepository.findById(pageId)
+        .filter(page -> page.getDeletedAt() == null && space.getId().equals(page.getSpaceId()))
+        .map(page -> isRestricted(space)
+            ? new LinkPreview("Wiki page", "Wiki page · Private")
+            : new LinkPreview(page.getTitle(), "Wiki page · " + space.getName())));
+  }
+
+  private Optional<WikiSpace> liveSpace(Long spaceId) {
+    return wikiSpaceRepository.findById(spaceId).filter(space -> space.getDeletedAt() == null);
+  }
+
+  private boolean isRestricted(WikiSpace space) {
+    return wikiSpacePermissionRepository.existsBySpaceId(space.getId());
+  }
+
+  private LinkPreview toPreview(Initiative initiative) {
+    return new LinkPreview(initiative.getName(), join("Initiative", label(initiative.getStatus())));
   }
 
   private LinkPreview toPreview(Task task) {

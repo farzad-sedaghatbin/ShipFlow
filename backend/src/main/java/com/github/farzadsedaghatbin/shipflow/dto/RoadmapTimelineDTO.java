@@ -15,6 +15,8 @@ import lombok.*;
 public class RoadmapTimelineDTO {
   private Long projectId;
   private String projectName;
+  /** SHAPE_UP, KANBAN or SCRUM. Shape Up epics hold pitches; Kanban/Scrum epics hold tasks. */
+  private String projectType;
   private LocalDate startDate;
   private LocalDate endDate;
 
@@ -22,6 +24,13 @@ public class RoadmapTimelineDTO {
   private List<TimelineInitiative> initiatives;
   private List<TimelineEpic> orphanEpics; // Epics not linked to any initiative
   private List<TimelineRelease> releases;
+
+  /**
+   * Epic-to-epic dependencies where both epics belong to this project. Direction: the
+   * {@code sourceEpicId} epic BLOCKS the {@code targetEpicId} epic (the target is waiting on the
+   * source) when {@code dependencyType} is BLOCKS, which is the default.
+   */
+  private List<TimelineDependency> dependencies;
 
   /**
    * Initiative representation for timeline rendering.
@@ -66,8 +75,42 @@ public class RoadmapTimelineDTO {
     private Long initiativeId;
     private String quarterLabel;
 
-    // Child pitches
+    // Child pitches (Shape Up)
     private List<TimelinePitch> pitches;
+
+    // Child root tasks (Kanban/Scrum)
+    private List<TimelineTask> tasks;
+  }
+
+  /** Root task (no parent) linked to an epic, for Kanban/Scrum roadmaps. */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class TimelineTask {
+    private Long id;
+    private String title;
+    private String status;
+    private String priority;
+    private LocalDate dueDate;
+    private Double progress;
+    private Long epicId;
+    private Long parentTaskId;
+  }
+
+  /**
+   * Dependency between two epics. {@code sourceEpicId} BLOCKS {@code targetEpicId} for type
+   * BLOCKS (target waits on source); DEPENDS_ON is the inverse reading; RELATED_TO is symmetric.
+   */
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @Builder
+  public static class TimelineDependency {
+    private Long id;
+    private Long sourceEpicId;
+    private Long targetEpicId;
+    private String dependencyType;
   }
 
   /**

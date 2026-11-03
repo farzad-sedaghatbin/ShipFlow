@@ -66,6 +66,13 @@ class SocialCrawlerFilterTest {
     assertForward("/pitches/2", "/preview/pitch/2");
     assertForward("/cycles/3", "/preview/cycle/3");
     assertForward("/qa/bug-reports/4", "/preview/bug/4");
+    assertForward("/qa/bug-reports/BUG-150", "/preview/bug/BUG-150");
+    assertForward("/tasks/7", "/preview/task/7");
+    assertForward("/bugs/8", "/preview/bug/8");
+    assertForward("/initiatives/5", "/preview/initiative/5");
+    assertForward("/wiki/1", "/preview/wiki/1");
+    assertForward("/wiki/1/6", "/preview/wiki/1/6");
+    assertForward("/roadmap", "/preview/roadmap");
     assertForward("/backlog?project=5", "/preview/backlog?project=5");
   }
 

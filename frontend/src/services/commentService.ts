@@ -1,4 +1,5 @@
 import api from './api';
+import type { AgentActionProposal } from './agentActionService';
 
 // Types
 export type CommentEntityType = 'TASK' | 'BUG_REPORT' | 'WIKI_PAGE';
@@ -27,6 +28,10 @@ export interface Comment {
   authorId: number;
   authorName: string;
   authorUsername: string;
+  /** True when the ShipFlow Agent wrote this comment. */
+  isAgent?: boolean;
+  /** Changes the agent proposed in this comment (agent comments only). */
+  proposals?: AgentActionProposal[];
   isEdited: boolean;
   createdAt: string;
   updatedAt?: string;

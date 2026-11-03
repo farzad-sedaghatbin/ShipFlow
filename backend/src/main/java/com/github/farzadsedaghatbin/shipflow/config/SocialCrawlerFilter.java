@@ -21,11 +21,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <p>Affected URL patterns → preview handler:
  * <ul>
- *   <li>{@code /backlog/{id}} → {@code /preview/task/{id}}
- *   <li>{@code /qa/bug-reports/{id}} → {@code /preview/bug/{id}}
+ *   <li>{@code /backlog/{id}} and legacy {@code /tasks/{id}} → {@code /preview/task/{id}}
+ *   <li>{@code /qa/bug-reports/{id or key}} and legacy {@code /bugs/{id}} → {@code /preview/bug/{id or key}}
  *   <li>{@code /pitches/{id}} → {@code /preview/pitch/{id}}
  *   <li>{@code /cycles/{id}}  → {@code /preview/cycle/{id}}
  *   <li>{@code /backlog?project={id}} → {@code /preview/backlog?project={id}}
+ *   <li>{@code /initiatives/{id}} → {@code /preview/initiative/{id}}
+ *   <li>{@code /wiki/{spaceId}} and {@code /wiki/{spaceId}/{pageId}} → {@code /preview/wiki/...}
+ *   <li>{@code /roadmap} → {@code /preview/roadmap}
  * </ul>
  *
  * <p><strong>Why a forward and not a redirect.</strong> This used to answer crawlers with
@@ -85,11 +88,16 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
       "pinterest"
   );
 
-  private static final Pattern TASK_PATH   = Pattern.compile("^/backlog/(\\d+)$");
-  private static final Pattern BUG_PATH    = Pattern.compile("^/qa/bug-reports/(\\d+)$");
+  private static final Pattern TASK_PATH   = Pattern.compile("^/(?:backlog|tasks)/(\\d+)$");
+  // The bug page settles on the bug key (/qa/bug-reports/BUG-150) — that is the URL people copy —
+  // while older links and notifications still carry the numeric id.
+  private static final Pattern BUG_PATH    = Pattern.compile("^/(?:qa/bug-reports|bugs)/([A-Za-z0-9-]{1,64})$");
   private static final Pattern PITCH_PATH  = Pattern.compile("^/pitches/(\\d+)$");
   private static final Pattern CYCLE_PATH  = Pattern.compile("^/cycles/(\\d+)$");
   private static final Pattern PROJECT_PARAM = Pattern.compile("^\\d+$");
+  private static final Pattern INITIATIVE_PATH = Pattern.compile("^/initiatives/(\\d+)$");
+  private static final Pattern WIKI_SPACE_PATH = Pattern.compile("^/wiki/(\\d+)$");
+  private static final Pattern WIKI_PAGE_PATH  = Pattern.compile("^/wiki/(\\d+)/(\\d+)$");
 
   @Override
   protected void doFilterInternal(HttpServletRequest request,
@@ -133,6 +141,17 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
 
     m = CYCLE_PATH.matcher(path);
     if (m.matches()) return "/preview/cycle/" + m.group(1);
+
+    m = INITIATIVE_PATH.matcher(path);
+    if (m.matches()) return "/preview/initiative/" + m.group(1);
+
+    m = WIKI_SPACE_PATH.matcher(path);
+    if (m.matches()) return "/preview/wiki/" + m.group(1);
+
+    m = WIKI_PAGE_PATH.matcher(path);
+    if (m.matches()) return "/preview/wiki/" + m.group(1) + "/" + m.group(2);
+
+    if ("/roadmap".equals(path)) return "/preview/roadmap";
 
     // The backlog list lives at /backlog?project=N — only a numeric project id is forwarded.
     if ("/backlog".equals(path) && projectParam != null && PROJECT_PARAM.matcher(projectParam).matches()) {

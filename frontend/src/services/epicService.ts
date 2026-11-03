@@ -1,5 +1,5 @@
 import api from './api';
-import { Epic, CreateEpicRequest, EpicStatus, ReorderRequest } from '../types';
+import { Task, Epic, CreateEpicRequest, EpicStatus, ReorderRequest } from '../types';
 
 export const epicService = {
   getByProject: (projectId: number) => 
@@ -40,6 +40,9 @@ export const epicService = {
 
   updateDates: (id: number, startDate?: string, endDate?: string) =>
     api.patch<Epic>(`/epics/${id}/dates`, null, { params: { startDate, endDate } }),
+
+  /** Tasks linked to an epic (Kanban/Scrum projects). */
+  getTasks: (id: number) => api.get<Task[]>(`/epics/${id}/tasks`),
 
   // ===== Prioritization & Reordering =====
   /** Batch update sort order for epics */

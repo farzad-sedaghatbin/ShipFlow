@@ -259,7 +259,7 @@ function BugKanbanColumn({
       </div>
 
       {/* Bugs */}
-      <ScrollArea className="h-[calc(100vh-280px)]">
+      <ScrollArea className="h-[calc(100vh-280px)]" viewportClassName="overscroll-y-contain overscroll-x-auto">
         <div className="pr-2">
           {columnBugs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">

@@ -408,6 +408,14 @@ public class TaskController {
     return ResponseEntity.ok(taskService.setTargetRelease(id, releaseId));
   }
 
+  @PatchMapping("/{id}/epic")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(summary = "Link a task to an epic, or unlink it with a null epicId")
+  public ResponseEntity<TaskDTO> updateTaskEpic(@PathVariable Long id,
+      @RequestBody com.github.farzadsedaghatbin.shipflow.dto.UpdateTaskEpicRequest request) {
+    return ResponseEntity.ok(taskService.setTaskEpic(id, request.getEpicId()));
+  }
+
   @PatchMapping("/{id}/unlink-release")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(summary = "Clear target release from a task")

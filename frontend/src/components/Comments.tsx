@@ -4,12 +4,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { formatLocalizedDateTime } from '../utils/dateLocalization';
-import { Send, MessageSquare, Pencil, Trash2, Loader2, MoreHorizontal, AtSign } from 'lucide-react';
+import { Send, MessageSquare, Pencil, Trash2, Loader2, MoreHorizontal, AtSign, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
+import AgentProposals from './AgentProposals';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +52,13 @@ interface CommentsProps {
   locale?: string;
 }
 
+const AGENT_POLL_INTERVAL_MS = 3000;
+const AGENT_POLL_MAX_ATTEMPTS = 30; // ~90s, then stop waiting
+
+/** Mirrors the backend's AgentIdentityService pattern: `@ShipFlow`, not an email or a longer name. */
+const AGENT_MENTION = /(?<![\p{L}\p{N}._@])@shipflow(?![\p{L}\p{N}_]|\.[\p{L}\p{N}])/iu;
+const mentionsAgent = (content: string): boolean => AGENT_MENTION.test(content);
+
 const ENTITY_TYPE_MAP: Record<CommentsProps['entityType'], CommentEntityType> = {
   task: 'TASK',
   bug: 'BUG_REPORT',
@@ -83,6 +91,9 @@ const Comments: React.FC<CommentsProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState<number | null>(null);
+  // The ShipFlow Agent replies asynchronously; while we wait for it we poll for its comment.
+  const [agentThinking, setAgentThinking] = useState(false);
+  const agentPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Mention state
   const [mentionSuggestions, setMentionSuggestions] = useState<MentionUser[]>([]);
@@ -111,6 +122,39 @@ const Comments: React.FC<CommentsProps> = ({
   useEffect(() => {
     loadComments();
   }, [loadComments]);
+
+  const stopAgentPoll = useCallback(() => {
+    if (agentPollRef.current) {
+      clearInterval(agentPollRef.current);
+      agentPollRef.current = null;
+    }
+    setAgentThinking(false);
+  }, []);
+
+  // Stop polling on unmount or when the thread being viewed changes.
+  useEffect(() => stopAgentPoll, [stopAgentPoll, apiEntityType, entityId]);
+
+  const waitForAgentReply = useCallback(
+    (knownCount: number) => {
+      if (agentPollRef.current) clearInterval(agentPollRef.current);
+      setAgentThinking(true);
+      let attempts = 0;
+      agentPollRef.current = setInterval(async () => {
+        attempts += 1;
+        try {
+          const res = await commentService.getComments(apiEntityType, entityId);
+          const replied = res.data.slice(knownCount).some((c) => c.isAgent);
+          if (replied || attempts >= AGENT_POLL_MAX_ATTEMPTS) {
+            setComments(res.data);
+            stopAgentPoll();
+          }
+        } catch {
+          if (attempts >= AGENT_POLL_MAX_ATTEMPTS) stopAgentPoll();
+        }
+      }, AGENT_POLL_INTERVAL_MS);
+    },
+    [apiEntityType, entityId, stopAgentPoll],
+  );
 
   // Search for users when mention query changes
   useEffect(() => {
@@ -325,6 +369,9 @@ const Comments: React.FC<CommentsProps> = ({
       });
       setComments([...comments, response.data]);
       setNewComment('');
+      if (mentionsAgent(response.data.content)) {
+        waitForAgentReply(comments.length + 1);
+      }
     } catch (error) {
       console.error('Failed to add comment:', error);
     } finally {
@@ -416,6 +463,17 @@ const Comments: React.FC<CommentsProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Add Comment Form */}
+        {agentThinking && (
+          <div
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+            data-testid="agent-thinking"
+          >
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {t('comments.agentThinking')}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">
             <Textarea
@@ -512,6 +570,12 @@ const Comments: React.FC<CommentsProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm">{comment.authorName}</span>
+                        {comment.isAgent && (
+                          <Badge variant="default" className="text-xs px-2 py-0 gap-1">
+                            <Sparkles className="h-3 w-3" aria-hidden="true" />
+                            {t('comments.agentBadge')}
+                          </Badge>
+                        )}
                         <Badge variant="outline" className="text-xs px-2 py-0">
                           {formatLocalizedDateTime(comment.createdAt, locale)}
                         </Badge>
@@ -586,6 +650,22 @@ const Comments: React.FC<CommentsProps> = ({
                       <div className="text-sm markdown-content break-words">
                         {renderCommentContent(comment.content, comment.id)}
                       </div>
+                    )}
+
+                    {/* Changes the agent proposed — nothing applies until the requester confirms */}
+                    {comment.isAgent && comment.proposals && comment.proposals.length > 0 && (
+                      <AgentProposals
+                        proposals={comment.proposals}
+                        onUpdated={(updated) =>
+                          setComments((prev) =>
+                            prev.map((c) =>
+                              c.id === comment.id
+                                ? { ...c, proposals: c.proposals?.map((x) => (x.id === updated.id ? updated : x)) }
+                                : c,
+                            ),
+                          )
+                        }
+                      />
                     )}
 
                     {/* Reactions */}

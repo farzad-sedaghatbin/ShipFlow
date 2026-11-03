@@ -10,21 +10,30 @@ import static org.mockito.Mockito.when;
 
 import com.github.farzadsedaghatbin.shipflow.entity.BugReport;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
+import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
+import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.LinkPreviewService.LinkPreview;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +55,10 @@ class LinkPreviewServiceTest {
   private PitchRepository pitchRepository;
   private BugReportRepository bugReportRepository;
   private CycleRepository cycleRepository;
+  private InitiativeRepository initiativeRepository;
+  private WikiSpaceRepository wikiSpaceRepository;
+  private WikiPageRepository wikiPageRepository;
+  private WikiSpacePermissionRepository wikiSpacePermissionRepository;
   private ProjectRepository projectRepository;
   private LinkPreviewService service;
 
@@ -55,8 +68,13 @@ class LinkPreviewServiceTest {
     pitchRepository = mock(PitchRepository.class);
     bugReportRepository = mock(BugReportRepository.class);
     cycleRepository = mock(CycleRepository.class);
+    initiativeRepository = mock(InitiativeRepository.class);
+    wikiSpaceRepository = mock(WikiSpaceRepository.class);
+    wikiPageRepository = mock(WikiPageRepository.class);
+    wikiSpacePermissionRepository = mock(WikiSpacePermissionRepository.class);
     projectRepository = mock(ProjectRepository.class);
     service = new LinkPreviewService(taskRepository, pitchRepository, bugReportRepository, cycleRepository,
+        initiativeRepository, wikiSpaceRepository, wikiPageRepository, wikiSpacePermissionRepository,
         projectRepository);
   }
 
@@ -109,11 +127,27 @@ class LinkPreviewServiceTest {
     when(bugReportRepository.findById(3L)).thenReturn(Optional.of(BugReport.builder().title("Login loops")
         .description(SECRET).severity(BugSeverity.TRIVIAL).status(BugStatus.OPEN).build()));
 
-    LinkPreview preview = service.forBug(3L).orElseThrow();
+    LinkPreview preview = service.forBug("3").orElseThrow();
 
     assertThat(preview.title()).isEqualTo("Login loops");
     assertThat(preview.summary()).isEqualTo("Bug report · Trivial · Open");
     assertThat(preview.summary()).doesNotContain("hunter2");
+  }
+
+  @Test
+  @DisplayName("a bug is found by its key — the URL the bug page settles on — as well as by id")
+  void bugResolvesByKey() {
+    when(bugReportRepository.findByBugKey("BUG-150")).thenReturn(Optional.of(BugReport.builder()
+        .bugKey("BUG-150").title("Login loops").severity(BugSeverity.TRIVIAL).status(BugStatus.OPEN).build()));
+
+    assertThat(service.forBug("BUG-150").orElseThrow().title()).isEqualTo("Login loops");
+    verify(bugReportRepository, never()).findById(anyLong());
+  }
+
+  @Test
+  @DisplayName("a digit string too long for an id is treated as an unknown key, not an error")
+  void overlongNumericBugRefIsNotFound() {
+    assertThat(service.forBug("9".repeat(40))).isEmpty();
   }
 
   @Test
@@ -165,6 +199,89 @@ class LinkPreviewServiceTest {
     when(pitchRepository.countByCycleIdNotDeleted(12L)).thenReturn(1L);
 
     assertThat(service.forCycle(12L).orElseThrow().summary()).startsWith("Cycle: 1 pitch ");
+  }
+
+  @Test
+  @DisplayName("an initiative preview is its name and status — not its description")
+  void initiativeShowsNameAndStatusOnly() {
+    when(initiativeRepository.findByIdNotDeleted(4L)).thenReturn(Optional.of(Initiative.builder().name("Q4 growth")
+        .description(SECRET).status(InitiativeStatus.PLANNED).build()));
+
+    LinkPreview preview = service.forInitiative(4L).orElseThrow();
+
+    assertThat(preview.title()).isEqualTo("Q4 growth");
+    assertThat(preview.summary()).isEqualTo("Initiative · Planned");
+  }
+
+  @Test
+  @DisplayName("the roadmap has no id, so it gets a fixed named card")
+  void roadmapIsAFixedCard() {
+    assertThat(service.forRoadmap().title()).isEqualTo("Roadmap");
+  }
+
+  @Test
+  @DisplayName("a wiki space preview is its name and page count — not its description")
+  void wikiSpaceShowsNameAndPageCount() {
+    when(wikiSpaceRepository.findById(1L)).thenReturn(Optional.of(space(1L)));
+    when(wikiPageRepository.countBySpaceIdAndDeletedAtIsNull(1L)).thenReturn(3L);
+
+    LinkPreview preview = service.forWikiSpace(1L).orElseThrow();
+
+    assertThat(preview.title()).isEqualTo("Engineering");
+    assertThat(preview.summary()).isEqualTo("Wiki space · 3 pages");
+  }
+
+  @Test
+  @DisplayName("a wiki page preview is its title and space — never its content")
+  void wikiPageShowsTitleAndSpaceOnly() {
+    when(wikiSpaceRepository.findById(1L)).thenReturn(Optional.of(space(1L)));
+    when(wikiPageRepository.findById(8L)).thenReturn(Optional.of(WikiPage.builder().id(8L).spaceId(1L)
+        .title("On-call runbook").content(SECRET).contentText(SECRET).build()));
+
+    LinkPreview preview = service.forWikiPage(1L, 8L).orElseThrow();
+
+    assertThat(preview.title()).isEqualTo("On-call runbook");
+    assertThat(preview.summary()).isEqualTo("Wiki page · Engineering");
+  }
+
+  @Test
+  @DisplayName("a private wiki space hides its name and its pages' titles")
+  void restrictedWikiHidesNames() {
+    when(wikiSpaceRepository.findById(1L)).thenReturn(Optional.of(space(1L)));
+    when(wikiSpacePermissionRepository.existsBySpaceId(1L)).thenReturn(true);
+    when(wikiPageRepository.findById(8L)).thenReturn(Optional.of(WikiPage.builder().id(8L).spaceId(1L)
+        .title("Salary bands").build()));
+
+    assertThat(service.forWikiSpace(1L).orElseThrow()).isEqualTo(new LinkPreview("Wiki space", "Wiki space · Private"));
+    assertThat(service.forWikiPage(1L, 8L).orElseThrow()).isEqualTo(new LinkPreview("Wiki page", "Wiki page · Private"));
+  }
+
+  @Test
+  @DisplayName("a wiki page from another space, or a deleted one, previews as not found")
+  void wikiPageMustBeLiveAndInTheSpace() {
+    when(wikiSpaceRepository.findById(1L)).thenReturn(Optional.of(space(1L)));
+    when(wikiPageRepository.findById(8L)).thenReturn(Optional.of(WikiPage.builder().id(8L).spaceId(2L)
+        .title("Elsewhere").build()));
+    when(wikiPageRepository.findById(9L)).thenReturn(Optional.of(WikiPage.builder().id(9L).spaceId(1L)
+        .title("Gone").deletedAt(OffsetDateTime.now()).build()));
+
+    assertThat(service.forWikiPage(1L, 8L)).isEmpty();
+    assertThat(service.forWikiPage(1L, 9L)).isEmpty();
+  }
+
+  @Test
+  @DisplayName("a deleted wiki space previews as not found, and so do its pages")
+  void deletedWikiSpaceIsHidden() {
+    WikiSpace deleted = space(1L);
+    deleted.setDeletedAt(OffsetDateTime.now());
+    when(wikiSpaceRepository.findById(1L)).thenReturn(Optional.of(deleted));
+
+    assertThat(service.forWikiSpace(1L)).isEmpty();
+    assertThat(service.forWikiPage(1L, 8L)).isEmpty();
+  }
+
+  private static WikiSpace space(Long id) {
+    return WikiSpace.builder().id(id).name("Engineering").description(SECRET).build();
   }
 
   @Test

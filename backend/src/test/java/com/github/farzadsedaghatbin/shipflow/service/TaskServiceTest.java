@@ -1026,4 +1026,87 @@ class TaskServiceTest {
     assertThat(result.getSuccessCount()).isEqualTo(1);
     assertThat(result.getFailureCount()).isZero();
   }
+
+  // ========== Task -> Epic link (Kanban/Scrum roadmap) ==========
+
+  private Epic saveEpic(Project project, String name) {
+    return epicRepository.save(Epic.builder().name(name).status(EpicStatus.PLANNED).project(project)
+        .sortOrder(0).build());
+  }
+
+  @Test
+  void createTask_WithEpicInSameProject_LinksEpic() {
+    Project project = projectRepository.save(Project.builder().name("Epic Link Project").projectKey("ELP1")
+        .projectType(ProjectType.KANBAN).isActive(true).build());
+    Epic epic = saveEpic(project, "Checkout epic");
+
+    TaskDTO created = taskService.createTask(CreateTaskRequest.builder().title("Epic child")
+        .projectId(project.getId()).epicId(epic.getId()).build());
+
+    assertThat(created.getEpicId()).isEqualTo(epic.getId());
+    assertThat(created.getEpicName()).isEqualTo("Checkout epic");
+    assertThat(taskService.getTasksByEpicId(epic.getId())).extracting(TaskDTO::getId)
+        .containsExactly(created.getId());
+  }
+
+  @Test
+  void createTask_WithEpicFromOtherProject_IsRejected() {
+    Project project = projectRepository.save(Project.builder().name("Epic Own Project").projectKey("ELP2")
+        .projectType(ProjectType.KANBAN).isActive(true).build());
+    Project other = projectRepository.save(Project.builder().name("Epic Other Project").projectKey("ELP3")
+        .projectType(ProjectType.KANBAN).isActive(true).build());
+    Epic foreignEpic = saveEpic(other, "Foreign epic");
+
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Bad link").projectId(project.getId())
+        .epicId(foreignEpic.getId()).build();
+
+    assertThatThrownBy(() -> taskService.createTask(request)).isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("does not belong");
+  }
+
+  @Test
+  void createTask_WithSoftDeletedEpic_IsRejected() {
+    Project project = projectRepository.save(Project.builder().name("Epic Deleted Project").projectKey("ELP4")
+        .projectType(ProjectType.KANBAN).isActive(true).build());
+    Epic epic = saveEpic(project, "Gone epic");
+    epic.setDeletedAt(LocalDateTime.now());
+    epicRepository.save(epic);
+
+    CreateTaskRequest request = CreateTaskRequest.builder().title("Dead link").projectId(project.getId())
+        .epicId(epic.getId()).build();
+
+    assertThatThrownBy(() -> taskService.createTask(request)).isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Epic not found");
+  }
+
+  @Test
+  void setTaskEpic_LinksThenUnlinks() {
+    Project project = projectRepository.save(Project.builder().name("Epic Toggle Project").projectKey("ELP5")
+        .projectType(ProjectType.SCRUM).isActive(true).build());
+    Epic epic = saveEpic(project, "Toggle epic");
+    TaskDTO created = taskService.createTask(
+        CreateTaskRequest.builder().title("Toggle me").projectId(project.getId()).build());
+    assertThat(created.getEpicId()).isNull();
+
+    TaskDTO linked = taskService.setTaskEpic(created.getId(), epic.getId());
+    assertThat(linked.getEpicId()).isEqualTo(epic.getId());
+
+    TaskDTO unlinked = taskService.setTaskEpic(created.getId(), null);
+    assertThat(unlinked.getEpicId()).isNull();
+    assertThat(unlinked.getEpicName()).isNull();
+  }
+
+  @Test
+  void setTaskEpic_CrossProjectEpic_IsRejected() {
+    Project project = projectRepository.save(Project.builder().name("Epic X Project").projectKey("ELP6")
+        .projectType(ProjectType.KANBAN).isActive(true).build());
+    Project other = projectRepository.save(Project.builder().name("Epic Y Project").projectKey("ELP7")
+        .projectType(ProjectType.KANBAN).isActive(true).build());
+    Epic foreignEpic = saveEpic(other, "Foreign");
+    TaskDTO created = taskService.createTask(
+        CreateTaskRequest.builder().title("Stay put").projectId(project.getId()).build());
+
+    assertThatThrownBy(() -> taskService.setTaskEpic(created.getId(), foreignEpic.getId()))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
 }

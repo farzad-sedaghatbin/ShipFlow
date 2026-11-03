@@ -140,6 +140,8 @@ interface RoadmapPresentationModeProps {
   onToggleInitiative: (id: number) => void;
   onToggleEpic: (id: number) => void;
   projectName?: string;
+  /** Shape Up shows pitches under epics; Kanban/Scrum show tasks. */
+  isShapeUp?: boolean;
 }
 
 export default function RoadmapPresentationMode({
@@ -156,6 +158,7 @@ export default function RoadmapPresentationMode({
   onToggleInitiative,
   onToggleEpic,
   projectName,
+  isShapeUp = true,
 }: RoadmapPresentationModeProps) {
   const { t, i18n } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -483,7 +486,7 @@ export default function RoadmapPresentationMode({
 
                           {/* Expanded Pitches */}
                           <AnimatePresence>
-                            {expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
+                            {isShapeUp && expandedEpics.has(epic.id) && epic.pitches?.map((pitch) => (
                               <motion.div
                                 key={pitch.id}
                                 initial={{ height: 0, opacity: 0 }}
@@ -510,6 +513,25 @@ export default function RoadmapPresentationMode({
                                     progress={pitch.progress}
                                     height="h-6"
                                   />
+                                </div>
+                              </motion.div>
+                            ))}
+                            {!isShapeUp && expandedEpics.has(epic.id) && epic.tasks?.map((task) => (
+                              <motion.div
+                                key={task.id}
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className={`flex items-center rounded-lg ml-12 ${
+                                  isDarkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-200'
+                                }`}
+                              >
+                                <div className="flex-1 flex items-center gap-3 py-2 px-3">
+                                  <CheckCircle className={`h-4 w-4 shrink-0 ${task.status === 'DONE' ? 'text-green-500' : isDarkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                                  <span className={`text-sm truncate ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                                    {task.title}
+                                  </span>
                                 </div>
                               </motion.div>
                             ))}

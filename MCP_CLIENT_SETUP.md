@@ -28,6 +28,8 @@ All MCP clients authenticate with a ShipFlow API key.
 
 > Treat API keys like passwords. Do not commit them to git.
 
+**Restricting a key to one project.** The create dialog can also pin a key to a single project. Over MCP such a key sees only that project: `list_projects` returns just that one, list tools (`get_tasks`, `get_pitches`, `get_cycles`, `get_bug_reports`, `get_betting_candidates`) are narrowed to it even when called without a `projectId`, and any task, pitch, cycle, bug, test case, epic or attachment in another project answers `Resource not found or not accessible with this API key` — the same message whether or not the id exists, so ids can't be probed. Write tools (`create_task`, `create_bug`, `create_pitch`, `log_work`, `add_comment`, `record_test_run`, the `update_*` tools) are refused for foreign targets too. `create_pitch` needs an `epicId` in the key's project, comments on wiki pages are refused, and `wise_architecture_get_files` (analysis conversations can't be tied to a project) is unavailable; `wise_architecture_list_analyses` needs a `pitchId`. Tools with no rule for restricted keys are refused, so a newly added tool is closed by default. Unrestricted keys behave exactly as before. The check lives in `McpProjectScopeGuard`.
+
 ---
 
 ## Claude Code
@@ -249,6 +251,8 @@ Once connected, your AI assistant has access to these tools:
 | `get_betting_candidates` | Shaped pitches ready for the betting table |
 | `wise_architecture_list_analyses` | Past Wise Architecture analyses for the current user (filterable by pitchId) |
 | `wise_architecture_get_files` | Retrieve generated Markdown implementation guides for a past analysis |
+| `get_roadmap` | Roadmap timeline for a `projectId` (optional `startDate`/`endDate`, ISO; default today-3mo..today+12mo): initiatives, epics with progress and child pitches (Shape Up) or root tasks (Kanban/Scrum), releases, and epic `dependencies` (`sourceEpicId` BLOCKS `targetEpicId`), plus `projectType` |
+| `get_epics` | Epics of a `projectId` — id, name, status, dates, initiative, priority, pitch/task counts. Use it to find epic IDs |
 | `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId`, `cycleId`, or `taskId` — `taskId` resolves to the task's parent pitch or cycle) |
 | `get_task_context` | **Task-rooted aggregator for coding agents** — given a single `taskId`, returns the task (with dependency graph and subtasks), its parent pitch (Shape Up fields + `wireframeLinks`), parent cycle, sibling tasks under the same pitch, and a server-generated `hints` array (Figma URL guidance, blocked-by detail, thin-context warnings). Use this instead of stitching `get_task` + `get_pitch_detail` + `get_tasks` when the goal is "implement this task". |
 
@@ -256,10 +260,15 @@ Once connected, your AI assistant has access to these tools:
 
 | Tool | What it does |
 |------|-------------|
-| `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **parentTaskId** for subtasks, assigneeUsername, priority) |
+| `create_task` | Create a task in a cycle (cycleId, title required; optional: description, pitchId, **epicId** (roadmap epic, same project), **parentTaskId** for subtasks, assigneeUsername, priority) |
 | `update_task` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, priority (LOW/MEDIUM/HIGH/URGENT), dueDate (YYYY-MM-DD). Omitted fields keep their current values. Use `update_task_status` / `update_task_assignee` for those specific fields. |
 | `update_task_status` | Change task status (TODO, IN_PROGRESS, IN_REVIEW, DONE, BLOCKED) |
 | `update_task_assignee` | Reassign an existing task — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true` |
+| `create_initiative` | Create a roadmap initiative (`projectId`, `name`; optional description, startDate, endDate, color). Use with `create_epic` to build a roadmap/timeline from a plan or image — not `create_task` |
+| `create_epic` | Create a roadmap epic = a dated bar (`projectId`, `name`; optional description, startDate, endDate, `initiativeId`, color, priority HIGH/MEDIUM/LOW). The right tool for roadmaps/timelines; `create_task` is for backlog work items |
+| `update_epic` | PATCH-semantic epic update (`epicId` + any of name, description, startDate, endDate, initiativeId, color, status, priority) |
+| `add_epic_dependency` | Dependency arrow between epics: `epicId` (source) BLOCKS `targetEpicId`; optional `dependencyType` BLOCKS (default) / DEPENDS_ON / RELATED_TO. Same project only; cycles rejected |
+| `link_task_to_epic` | Put a task under an epic (Kanban/Scrum), or unlink with `epicId: null`. `create_task` also accepts `epicId` |
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
 | `update_pitch` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, appetiteDays. Omitted fields keep their current values. Use `update_pitch_status` for status changes. |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
@@ -635,7 +644,7 @@ You can enable or disable it at any time with a restart.
 - **Read-only by default.** Only enable write tools if you need them.
 - **Rotate keys regularly.** Revoke and regenerate API keys periodically.
 - **Do not share keys.** Each developer should have their own key.
-- **Key scope**: keys are scoped to your user account and can only access data your account can access.
+- **Key scope**: keys are scoped to your user account and can only access data your account can access. A key can additionally be restricted to a single project (see "Generate an API Key"), which is enforced for MCP as well as for `/api/v1/public/**`.
 - **URL-embedded tokens (`/mcp/{api-key}`, `/mcp/{api-key}/sse`) are weaker than headers, and are
   NOT automatically downgraded to read-only.** Proxies, load balancers, and browser history can log
   the full URL, including the key — and that key grants exactly the scope it was created with,

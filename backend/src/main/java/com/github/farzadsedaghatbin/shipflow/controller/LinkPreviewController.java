@@ -20,7 +20,7 @@ import org.springframework.web.util.HtmlUtils;
 
 /**
  * Publicly accessible controller that returns HTML pages containing Open Graph meta tags for
- * task, bug report, pitch, and cycle URLs. Social platforms (Slack, WhatsApp, iMessage, etc.) fetch
+ * task, bug report, pitch, cycle, initiative, wiki and roadmap URLs. Social platforms (Slack, WhatsApp, iMessage, etc.) fetch
  * these pages to generate rich link previews. After the OG crawl the page immediately redirects
  * the user's browser back to the SPA.
  *
@@ -55,9 +55,10 @@ public class LinkPreviewController {
     return render(linkPreviewService.forTask(id), "Task not found", "/backlog/" + id);
   }
 
-  @GetMapping(value = "/preview/bug/{id}", produces = "text/html;charset=UTF-8")
-  public ResponseEntity<String> bugPreview(@PathVariable Long id) {
-    return render(linkPreviewService.forBug(id), "Bug report not found", "/qa/bug-reports/" + id);
+  /** {@code ref} is a numeric id or a bug key; the pattern keeps anything else out of the page. */
+  @GetMapping(value = "/preview/bug/{ref:[A-Za-z0-9-]{1,64}}", produces = "text/html;charset=UTF-8")
+  public ResponseEntity<String> bugPreview(@PathVariable String ref) {
+    return render(linkPreviewService.forBug(ref), "Bug report not found", "/qa/bug-reports/" + ref);
   }
 
   @GetMapping(value = "/preview/pitch/{id}", produces = "text/html;charset=UTF-8")
@@ -68,6 +69,27 @@ public class LinkPreviewController {
   @GetMapping(value = "/preview/cycle/{id}", produces = "text/html;charset=UTF-8")
   public ResponseEntity<String> cyclePreview(@PathVariable Long id) {
     return render(linkPreviewService.forCycle(id), "Cycle not found", "/cycles/" + id);
+  }
+
+  @GetMapping(value = "/preview/initiative/{id}", produces = "text/html;charset=UTF-8")
+  public ResponseEntity<String> initiativePreview(@PathVariable Long id) {
+    return render(linkPreviewService.forInitiative(id), "Initiative not found", "/initiatives/" + id);
+  }
+
+  @GetMapping(value = "/preview/wiki/{spaceId}", produces = "text/html;charset=UTF-8")
+  public ResponseEntity<String> wikiSpacePreview(@PathVariable Long spaceId) {
+    return render(linkPreviewService.forWikiSpace(spaceId), "Wiki space not found", "/wiki/" + spaceId);
+  }
+
+  @GetMapping(value = "/preview/wiki/{spaceId}/{pageId}", produces = "text/html;charset=UTF-8")
+  public ResponseEntity<String> wikiPagePreview(@PathVariable Long spaceId, @PathVariable Long pageId) {
+    return render(linkPreviewService.forWikiPage(spaceId, pageId), "Wiki page not found",
+        "/wiki/" + spaceId + "/" + pageId);
+  }
+
+  @GetMapping(value = "/preview/roadmap", produces = "text/html;charset=UTF-8")
+  public ResponseEntity<String> roadmapPreview() {
+    return render(Optional.of(linkPreviewService.forRoadmap()), "Roadmap", "/roadmap");
   }
 
   @GetMapping(value = "/preview/backlog", produces = "text/html;charset=UTF-8")
@@ -143,8 +165,8 @@ public class LinkPreviewController {
     String safeTitle = HtmlUtils.htmlEscape(title);
     String safeDesc = HtmlUtils.htmlEscape(description);
     String safeRedirect = HtmlUtils.htmlEscape(canonicalPath);
-    String ogUrl = currentOrigin() + canonicalPath;
-    String ogImage = currentOrigin() + OG_IMAGE_PATH;
+    String ogUrl = HtmlUtils.htmlEscape(currentOrigin() + canonicalPath);
+    String ogImage = HtmlUtils.htmlEscape(currentOrigin() + OG_IMAGE_PATH);
     // Served in place, the bounce script would point at the URL we are already on and reload
     // forever — which JS-executing crawlers (Googlebot renders pages) would actually do. Only the
     // direct /preview/** hit, a genuinely different URL, gets the bounce.

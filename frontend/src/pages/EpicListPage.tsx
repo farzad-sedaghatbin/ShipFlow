@@ -308,18 +308,32 @@ export default function EpicListPage() {
                     </div>
                   )}
                   
-                  {/* Pitch count */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileText className="h-4 w-4" />
-                    <span>
-                      {epic.pitchCount || 0} {t('epics.pitches')}
-                      {epic.completedPitchCount !== undefined && (
-                        <span className="text-green-600 ml-1">
-                          ({epic.completedPitchCount} {t('epics.completed')})
-                        </span>
-                      )}
-                    </span>
-                  </div>
+                  {/* Pitch count (Shape Up) / task count (Kanban, Scrum) */}
+                  {(currentProject?.projectType ?? 'SHAPE_UP') === 'SHAPE_UP' ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      <span>
+                        {epic.pitchCount || 0} {t('epics.pitches')}
+                        {epic.completedPitchCount !== undefined && (
+                          <span className="text-green-600 ml-1">
+                            ({epic.completedPitchCount} {t('epics.completed')})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ) : epic.taskCount !== undefined ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileText className="h-4 w-4" />
+                      <span>
+                        {epic.taskCount} {t('epics.tasks')}
+                        {epic.completedTaskCount !== undefined && (
+                          <span className="text-green-600 ml-1">
+                            ({epic.completedTaskCount} {t('epics.completed')})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ) : null}
                   
                   {/* Progress */}
                   {epic.progressPercentage !== undefined && (

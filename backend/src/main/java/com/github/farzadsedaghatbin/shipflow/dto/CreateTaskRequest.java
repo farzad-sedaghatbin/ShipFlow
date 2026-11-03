@@ -48,6 +48,13 @@ public class CreateTaskRequest {
 
   private Long scopeId;
 
+  /**
+   * Optional epic to place this task under (Kanban/Scrum roadmap). Must belong to the same
+   * project as the task. On update, null leaves the current epic unchanged — use
+   * {@code PATCH /api/tasks/{id}/epic} to unlink.
+   */
+  private Long epicId;
+
   private TaskStatus status;
   private TaskPriority priority;
   private TaskCategory category;

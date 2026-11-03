@@ -6,6 +6,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.UploadedDocument;
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.DocumentService;
+import com.github.farzadsedaghatbin.shipflow.service.PlanningAttachmentService;
 import com.github.farzadsedaghatbin.shipflow.service.KnowledgeIngestionService;
 import com.github.farzadsedaghatbin.shipflow.service.PitchShapingExtractorService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class DocumentController {
 
   private final DocumentService documentService;
+  private final PlanningAttachmentService planningAttachmentService;
   private final UserRepository userRepository;
   private final PitchShapingExtractorService pitchShapingExtractorService;
 
@@ -270,6 +272,43 @@ public class DocumentController {
       log.error("Error linking document to pitch: {}", e.getMessage(), e);
       return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
     }
+  }
+
+  // ========== Epic / Initiative Attachments ==========
+
+  /** List the images/clips attached to an epic or initiative. {@code entityType}: epic | initiative. */
+  @GetMapping("/planning/{entityType}/{entityId}/attachments")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "List epic/initiative attachments")
+  public ResponseEntity<List<UploadedDocument>> getPlanningAttachments(@PathVariable String entityType,
+      @PathVariable Long entityId) {
+    return ResponseEntity.ok(planningAttachmentService.list(entityType, entityId));
+  }
+
+  /** Attach an image or short clip to an epic or initiative (JPG, PNG, GIF, WEBP, SVG, MP4, WEBM, MOV, AVI; 20 MB). */
+  @PostMapping(value = "/planning/{entityType}/{entityId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Upload epic/initiative attachment")
+  public ResponseEntity<DocumentUploadResponse> uploadPlanningAttachment(@PathVariable String entityType,
+      @PathVariable Long entityId, @RequestParam("file") MultipartFile file,
+      @AuthenticationPrincipal UserDetails userDetails) {
+    UserInfo userInfo = getUserInfo(userDetails);
+    DocumentUploadResponse response = planningAttachmentService.upload(entityType, entityId, file,
+        userInfo.userId, userInfo.username);
+    if (response.getErrorMessage() != null) {
+      return ResponseEntity.badRequest().body(response);
+    }
+    return ResponseEntity.ok(response);
+  }
+
+  /** Remove an attachment from an epic or initiative. */
+  @DeleteMapping("/planning/{entityType}/{entityId}/attachments/{attachmentId}")
+  @PreAuthorize("isAuthenticated()")
+  @Operation(summary = "Delete epic/initiative attachment")
+  public ResponseEntity<Map<String, String>> deletePlanningAttachment(@PathVariable String entityType,
+      @PathVariable Long entityId, @PathVariable Long attachmentId) {
+    planningAttachmentService.delete(entityType, entityId, attachmentId);
+    return ResponseEntity.ok(Map.of("message", "Attachment deleted successfully"));
   }
 
   // ========== Bug Report Attachments ==========

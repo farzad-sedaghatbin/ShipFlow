@@ -29,6 +29,10 @@ public interface EpicDependencyRepository extends JpaRepository<EpicDependency, 
    */
   List<EpicDependency> findBySourceEpicIdOrTargetEpicId(Long sourceEpicId, Long targetEpicId);
 
+  /** Dependencies whose source AND target are both within the given epic ids. */
+  List<EpicDependency> findBySourceEpicIdInAndTargetEpicIdIn(
+      java.util.Collection<Long> sourceEpicIds, java.util.Collection<Long> targetEpicIds);
+
   /** Delete a specific dependency between two epics. */
   void deleteBySourceEpicIdAndTargetEpicId(Long sourceEpicId, Long targetEpicId);
 }

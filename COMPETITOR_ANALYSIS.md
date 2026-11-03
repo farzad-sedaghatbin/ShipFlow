@@ -166,7 +166,7 @@ ShipFlow implements the [Model Context Protocol](https://modelcontextprotocol.io
 
 ### Positioning takeaway
 
-Don't sell "we have MCP" — that race is over. Sell **"the only self-hostable, source-available, Shape Up–native PM tool with fully-private, air-gapped AI."** That is the corner of the market the cloud majors cannot enter, and it's where the roadmap (see [ROADMAP.md](./ROADMAP.md) — v1.15.0 "ShipFlow Agent" ships the air-gapped answer to Linear Agent/Rovo/AI Teammates, then v1.19.0 completes MCP-server hardening with OAuth 2.0) is deliberately deepening.
+Don't sell "we have MCP" — that race is over. Sell **"the only self-hostable, source-available, Shape Up–native PM tool with fully-private, air-gapped AI."** That is the corner of the market the cloud majors cannot enter, and it's where the roadmap (see [ROADMAP.md](./ROADMAP.md) — v1.16.0 "ShipFlow Agent" ships the air-gapped answer to Linear Agent/Rovo/AI Teammates, then v1.19.0 completes MCP-server hardening with OAuth 2.0) is deliberately deepening.
 
 ---
 
@@ -217,7 +217,7 @@ Be honest with evaluators:
 - **You need a native app-store app** — ShipFlow is web-first. As of v1.11.0 it's installable as a PWA (offline-capable for already-visited pages, with background-sync for offline writes), which covers most "add to home screen" use cases, but it's still a browser-engine app, not a native binary. A full responsive-layout audit shipped in v1.11.0 (S58); a fully native mobile app remains out of scope for now.
 - **You need thousands of plugins** — Jira's plugin ecosystem is unmatched, and ShipFlow's Plugin SDK (v1.12.0) compiles plugins into the build as Spring beans rather than loading them dynamically from a marketplace — there is no plugin marketplace today.
 - **You need non-technical stakeholder tools** (timesheets, resource planning, portfolio rollups) — Asana/Monday/Jira win here today. ShipFlow has interactive Gantt-style timeline bars, task/epic/pitch dependencies, and per-task time tracking, but no capacity/timesheet rollups or cross-project portfolio view — this is the explicit target of the planned v1.18.0 "Stakeholder View" milestone.
-- **You need a mature AI agent that acts inside the tool today** — Linear Agent, Atlassian Rovo Agents, and Asana AI Teammates are all GA as of mid-2026, assignable to work and mentionable in comments. ShipFlow's equivalent (a mentionable, action-taking "ShipFlow Agent") is planned for v1.15.0, not yet shipped — its differentiator will be running fully self-hosted/air-gapped, which none of the cloud incumbents offer.
+- **You need a mature AI agent that acts inside the tool today** — Linear Agent, Atlassian Rovo Agents, and Asana AI Teammates are all GA as of mid-2026, assignable to work and mentionable in comments. ShipFlow's ShipFlow Agent (built for v1.16.0: `@ShipFlow` in comment threads, changes it *proposes* and you confirm, and scheduled standup/cycle-health/betting-prep reports) is younger and narrower — it cannot be assigned work or run open-ended multi-step tasks — but it runs fully self-hosted/air-gapped, which none of the cloud incumbents offer.
 
 ---
 

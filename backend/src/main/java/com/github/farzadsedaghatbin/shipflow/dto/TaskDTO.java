@@ -37,6 +37,10 @@ public class TaskDTO {
   private Long pitchId;
   private String pitchTitle;
 
+  // Epic relationship (Kanban/Scrum roadmap)
+  private Long epicId;
+  private String epicName;
+
   // Scope relationship
   private Long scopeId;
   private String scopeName;

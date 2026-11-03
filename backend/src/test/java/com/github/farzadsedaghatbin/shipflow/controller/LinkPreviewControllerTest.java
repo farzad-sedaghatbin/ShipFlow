@@ -141,7 +141,7 @@ class LinkPreviewControllerTest {
   @Test
   @DisplayName("bug report preview links the bug report URL")
   void bugPreview() throws Exception {
-    when(linkPreviewService.forBug(9L)).thenReturn(Optional.of(
+    when(linkPreviewService.forBug("9")).thenReturn(Optional.of(
         new LinkPreview("Login loops", "Bug report · Trivial · Open")));
 
     mockMvc.perform(previewRequest("/preview/bug/9", "host"))
@@ -150,6 +150,25 @@ class LinkPreviewControllerTest {
             "<meta property=\"og:url\" content=\"https://host/qa/bug-reports/9\"/>")))
         .andExpect(content().string(Matchers.containsString("Login loops")))
         .andExpect(content().string(Matchers.containsString("Bug report &middot; Trivial &middot; Open")));
+  }
+
+  @Test
+  @DisplayName("bug preview by key links the bug's key URL")
+  void bugPreviewByKey() throws Exception {
+    when(linkPreviewService.forBug("BUG-150")).thenReturn(Optional.of(
+        new LinkPreview("Login loops", "Bug report · High · Open")));
+
+    mockMvc.perform(previewRequest("/preview/bug/BUG-150", "host"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString(
+            "<meta property=\"og:url\" content=\"https://host/qa/bug-reports/BUG-150\"/>")));
+  }
+
+  @Test
+  @DisplayName("a bug ref with characters outside id/key form is not served")
+  void bugPreviewRejectsOddRefs() throws Exception {
+    mockMvc.perform(previewRequest("/preview/bug/BUG_1%22onload", "host"))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -176,6 +195,44 @@ class LinkPreviewControllerTest {
         .andExpect(content().string(Matchers.containsString(
             "<meta property=\"og:url\" content=\"https://host/cycles/12\"/>")))
         .andExpect(content().string(Matchers.containsString("4 pitches")));
+  }
+
+  @Test
+  @DisplayName("wiki space and page previews link their own wiki URLs")
+  void wikiPreviews() throws Exception {
+    when(linkPreviewService.forWikiSpace(1L)).thenReturn(Optional.of(
+        new LinkPreview("Engineering", "Wiki space · 3 pages")));
+    when(linkPreviewService.forWikiPage(1L, 8L)).thenReturn(Optional.of(
+        new LinkPreview("On-call runbook", "Wiki page · Engineering")));
+
+    mockMvc.perform(previewRequest("/preview/wiki/1", "host"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString(
+            "<meta property=\"og:url\" content=\"https://host/wiki/1\"/>")))
+        .andExpect(content().string(Matchers.containsString("Engineering — ShipFlow")));
+    mockMvc.perform(previewRequest("/preview/wiki/1/8", "host"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString(
+            "<meta property=\"og:url\" content=\"https://host/wiki/1/8\"/>")))
+        .andExpect(content().string(Matchers.containsString("On-call runbook — ShipFlow")));
+  }
+
+  @Test
+  @DisplayName("initiative and roadmap previews link their own URLs")
+  void initiativeAndRoadmapPreviews() throws Exception {
+    when(linkPreviewService.forInitiative(4L)).thenReturn(Optional.of(
+        new LinkPreview("Q4 growth", "Initiative · Planned")));
+    when(linkPreviewService.forRoadmap()).thenReturn(
+        new LinkPreview("Roadmap", "Roadmap · Initiatives and timeline"));
+
+    mockMvc.perform(previewRequest("/preview/initiative/4", "host"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString("https://host/initiatives/4")));
+    mockMvc.perform(previewRequest("/preview/roadmap", "host"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString(
+            "<meta property=\"og:url\" content=\"https://host/roadmap\"/>")))
+        .andExpect(content().string(Matchers.containsString("Roadmap — ShipFlow")));
   }
 
   @Test
@@ -215,7 +272,7 @@ class LinkPreviewControllerTest {
   @Test
   @DisplayName("a missing bug report returns 404 at its own URL")
   void unknownBugIsNotFound() throws Exception {
-    when(linkPreviewService.forBug(anyLong())).thenReturn(Optional.empty());
+    when(linkPreviewService.forBug(Mockito.anyString())).thenReturn(Optional.empty());
 
     mockMvc.perform(previewRequest("/preview/bug/999", "host"))
         .andExpect(status().isNotFound())

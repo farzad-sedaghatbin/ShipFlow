@@ -21,8 +21,8 @@ import { TaskAttachment } from '../types';
 import { taskAttachmentService } from '../services/taskAttachmentService';
 import { useAuth } from '../contexts';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const ALLOWED_TYPES = [
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+export const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -32,7 +32,17 @@ const ALLOWED_TYPES = [
   'application/zip', 'application/x-zip-compressed',
 ];
 
-function fileIcon(contentType: string) {
+/** Accept list for a file input: the allowed MIME types plus extensions browsers often leave untyped. */
+export const ATTACHMENT_ACCEPT = [...ALLOWED_TYPES, '.json', '.zip'].join(',');
+
+/** Returns the i18n key of the reason a file can't be attached, or null when it's fine. */
+export function attachmentRejection(file: File): string | null {
+  if (file.size > MAX_FILE_SIZE) return 'attachments.tooLarge';
+  if (!ALLOWED_TYPES.includes(file.type)) return 'attachments.unsupportedType';
+  return null;
+}
+
+export function fileIcon(contentType: string) {
   if (contentType.startsWith('image/')) return <Image className="h-4 w-4 text-blue-500" />;
   if (contentType === 'application/pdf') return <FileText className="h-4 w-4 text-red-500" />;
   if (contentType === 'application/json') return <FileText className="h-4 w-4 text-amber-500" />;
@@ -42,7 +52,7 @@ function fileIcon(contentType: string) {
   return <File className="h-4 w-4 text-muted-foreground" />;
 }
 
-function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -98,12 +108,9 @@ export default function TaskAttachments({ taskId }: Props) {
   function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     const file = files[0];
-    if (file.size > MAX_FILE_SIZE) {
-      toast.error(t('attachments.tooLarge'));
-      return;
-    }
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      toast.error(t('attachments.unsupportedType'));
+    const rejection = attachmentRejection(file);
+    if (rejection) {
+      toast.error(t(rejection));
       return;
     }
     uploadMutation.mutate(file);
@@ -178,7 +185,7 @@ export default function TaskAttachments({ taskId }: Props) {
               ref={fileInputRef}
               type="file"
               className="hidden"
-              accept={[...ALLOWED_TYPES, '.json', '.zip'].join(',')}
+              accept={ATTACHMENT_ACCEPT}
               onChange={(e) => handleFiles(e.target.files)}
             />
           </div>

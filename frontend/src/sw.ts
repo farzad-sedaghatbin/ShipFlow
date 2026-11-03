@@ -40,6 +40,16 @@ registerRoute(
   })
 );
 
+// ─── Live streams must bypass the cache ─────────────────────────────────────
+// The notification SSE stream never ends. Under NetworkFirst, Workbox tees the
+// response into Cache.put(), which waits for a body that never finishes (so it
+// buffers forever), and when the page aborts its fetch the worker's own upstream
+// request is not cancelled. Every reconnect therefore leaks an open connection,
+// and over HTTP/1.1 those exhaust the browser's 6 connections per origin so
+// ordinary requests sit "pending". Registered before the GET /api/** route so it
+// wins (Workbox uses the first matching route).
+registerRoute(({ url }) => url.pathname === '/api/notifications/stream', new NetworkOnly(), 'GET');
+
 // ─── Read-through cache for GET /api/** ────────────────────────────────────
 // Network-first: always try live data first (8s timeout), fall back to the
 // last good response when offline so pages that already loaded once remain

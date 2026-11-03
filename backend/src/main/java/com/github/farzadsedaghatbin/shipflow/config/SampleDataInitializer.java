@@ -57,6 +57,7 @@ public class SampleDataInitializer implements CommandLineRunner {
   private final DashboardNotificationRepository dashboardNotificationRepository;
   private final InitiativeRepository initiativeRepository;
   private final EpicRepository epicRepository;
+  private final com.github.farzadsedaghatbin.shipflow.repository.EpicDependencyRepository epicDependencyRepository;
   private final ReleaseRepository releaseRepository;
   private final WiseArchitectureAdviceRepository wiseArchitectureAdviceRepository;
   private final BugReportRepository bugReportRepository;
@@ -1684,6 +1685,68 @@ public class SampleDataInitializer implements CommandLineRunner {
             .sortOrder(1)
             .build();
     initiativeRepository.save(infraInitiative);
+
+    // ── DVP Epics (Kanban: tasks sit under epics on the roadmap, v1.14.5) ─────
+    Epic observabilityEpic =
+        epicRepository.save(
+            Epic.builder()
+                .name("Observability Stack")
+                .description("Metrics, logs and traces for every service.")
+                .status(EpicStatus.IN_PROGRESS)
+                .initiative(infraInitiative)
+                .project(devopsProject)
+                .targetStartDate(LocalDate.of(2026, 1, 20))
+                .targetEndDate(LocalDate.of(2026, 4, 30))
+                .sortOrder(1)
+                .build());
+    Epic gitopsEpic =
+        epicRepository.save(
+            Epic.builder()
+                .name("GitOps Deployments")
+                .description("Declarative, auditable deployments via Argo CD.")
+                .status(EpicStatus.PLANNED)
+                .initiative(infraInitiative)
+                .project(devopsProject)
+                .targetStartDate(LocalDate.of(2026, 4, 1))
+                .targetEndDate(LocalDate.of(2026, 7, 31))
+                .sortOrder(2)
+                .build());
+
+    taskRepository.save(
+        Task.builder()
+            .title("Roll out Prometheus + Grafana")
+            .status(TaskStatus.DONE)
+            .priority(TaskPriority.HIGH)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .epic(observabilityEpic)
+            .build());
+    taskRepository.save(
+        Task.builder()
+            .title("Centralised log shipping")
+            .status(TaskStatus.IN_PROGRESS)
+            .priority(TaskPriority.MEDIUM)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .epic(observabilityEpic)
+            .build());
+    taskRepository.save(
+        Task.builder()
+            .title("Bootstrap Argo CD")
+            .status(TaskStatus.TODO)
+            .priority(TaskPriority.MEDIUM)
+            .category(TaskCategory.DEBT_IMPROVEMENT)
+            .project(devopsProject)
+            .epic(gitopsEpic)
+            .build());
+
+    // Observability must land before GitOps (source BLOCKS target)
+    epicDependencyRepository.save(
+        com.github.farzadsedaghatbin.shipflow.entity.EpicDependency.builder()
+            .sourceEpic(observabilityEpic)
+            .targetEpic(gitopsEpic)
+            .dependencyType(com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType.BLOCKS)
+            .build());
   }
 
   private void createWiseArchitectureHistory(
@@ -2159,7 +2222,30 @@ public class SampleDataInitializer implements CommandLineRunner {
 
     createWorkflowAutomationExecutions(taskDoneRule, pitchChangeRule, cycleStartRule);
 
-    log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
+    // A ShipFlow Agent loop (S71): a weekday standup digest delivered in-app (the demo has no
+    // Slack/Teams). Enabled, so the scheduler gives it a slot and it really runs.
+    var agentTemplate = templates.stream()
+        .filter(t -> t.getActionType() == ActionType.AGENT_STANDUP_DIGEST).findFirst().orElse(null);
+    WorkflowAutomation standupRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Daily standup digest")
+        .description("Every weekday morning the ShipFlow Agent posts what moved, what is blocked and what is overdue.")
+        .project(project)
+        .triggerType(TriggerType.SCHEDULE)
+        .actionType(ActionType.AGENT_STANDUP_DIGEST)
+        .triggerConfig("{\"cron\":\"0 0 9 * * MON-FRI\",\"timezone\":\"UTC\"}")
+        .actionConfig("{\"channels\":[\"IN_APP\"],\"lookbackHours\":24,\"useAi\":true}")
+        .enabled(true)
+        .template(agentTemplate)
+        .executionCount(2L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 6, 15, 9, 0))
+        .build());
+    saveExecution(standupRule, "SCHEDULE", "{\"trigger\":\"SCHEDULE\",\"scheduledFor\":\"2026-06-12T09:00:00Z\"}",
+        AutomationExecutionStatus.SUCCESS, "Sent to In-app (4 members)", LocalDateTime.of(2026, 6, 12, 9, 0));
+    saveExecution(standupRule, "SCHEDULE", "{\"trigger\":\"SCHEDULE\",\"scheduledFor\":\"2026-06-15T09:00:00Z\"}",
+        AutomationExecutionStatus.SUCCESS, "Sent to In-app (4 members) (with an AI summary)",
+        LocalDateTime.of(2026, 6, 15, 9, 0));
+
+    log.info("Workflow automation sample data created: 5 demo rules for project '{}'", project.getName());
   }
 
   /**

@@ -8,6 +8,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.WorkflowAutomation;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionType;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
+import com.github.farzadsedaghatbin.shipflow.service.agent.loop.AgentLoopService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,13 +32,23 @@ public class WorkflowAutomationActionDispatcher {
   private final TaskRepository taskRepository;
   private final UserProjectRepository userProjectRepository;
   private final DashboardNotificationService notificationService;
+  private final AgentLoopService agentLoopService;
 
-  public void dispatch(WorkflowAutomation automation, Map<String, Object> context) {
+  /**
+   * Runs the automation's action.
+   *
+   * @return what happened, in words, for the execution log; {@code null} when the action has
+   *     nothing more to say than "it ran"
+   */
+  public String dispatch(WorkflowAutomation automation, Map<String, Object> context) {
     ActionType action = automation.getActionType();
     String config = automation.getActionConfig() != null ? automation.getActionConfig() : "{}";
     String rendered = renderTemplate(config, context);
 
+    String detail = null;
     switch (action) {
+      case AGENT_STANDUP_DIGEST, AGENT_CYCLE_HEALTH_CHECK, AGENT_BETTING_PREP ->
+          detail = agentLoopService.run(automation, context);
       case NOTIFY_ASSIGNEE -> handleNotifyAssignee(automation, rendered, context);
       case NOTIFY_PROJECT_MEMBERS -> handleNotifyProjectMembers(automation, rendered, context);
       case SEND_WEBHOOK -> handleSendWebhook(automation, rendered, context);
@@ -47,6 +58,7 @@ public class WorkflowAutomationActionDispatcher {
       case CREATE_TASK -> handleCreateTask(automation, rendered, context);
       default -> log.warn("Unknown action type: {}", action);
     }
+    return detail;
   }
 
   /** Extracts the message text out of the rendered {@code {"message": "..."}} action config. */

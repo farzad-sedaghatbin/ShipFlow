@@ -1,5 +1,6 @@
 import api from './api';
 import type {
+  AgentLoopPreview,
   CreateAutomationRequest,
   WorkflowAutomation,
   WorkflowAutomationExecution,
@@ -37,6 +38,15 @@ export const automationService = {
 
   delete: (id: number) =>
     api.delete(`/automations/${id}`),
+
+  // Agent loops
+  /** Generates what the loop would send right now, without sending anything. */
+  preview: (id: number) =>
+    api.post<AgentLoopPreview>(`/automations/${id}/preview`),
+
+  /** Runs the loop now, as if its slot had arrived. Resolves to the execution record. */
+  runNow: (id: number) =>
+    api.post<WorkflowAutomationExecution>(`/automations/${id}/run-now`),
 
   // Execution logs
   getExecutionLog: (id: number, limit = 50) =>

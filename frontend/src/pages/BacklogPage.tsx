@@ -179,6 +179,8 @@ export default function BacklogPage() {
         persons={bp.persons}
         teams={bp.teams}
         pitches={bp.pitches}
+        pendingFiles={bp.pendingFiles}
+        onPendingFilesChange={bp.setPendingFiles}
         isKanbanProject={bp.isKanbanProject}
         onOpenChange={bp.setDialogOpen}
         onFormDataChange={bp.setFormData}

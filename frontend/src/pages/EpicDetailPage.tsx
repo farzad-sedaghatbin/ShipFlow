@@ -21,10 +21,12 @@ import {
 import { epicService } from '../services/epicService';
 import { pitchService } from '../services/pitchService';
 import { getEpicDependencies, addEpicDependency, removeEpicDependency } from '../services/epicDependencyService';
-import { Epic, EpicStatus, Pitch, BusinessValue, EpicDependency, DependencyType } from '../types';
+import { Epic, EpicStatus, Pitch, Task, BusinessValue, EpicDependency, DependencyType } from '../types';
 import { useToast } from '../contexts';
 import { useBackNavigation } from '../hooks/useBackNavigation';
 import SortablePitchList from '../components/SortablePitchList';
+import EpicTasksSection from '../components/EpicTasksSection';
+import PlanningAttachments from '../components/PlanningAttachments';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -68,6 +70,9 @@ export default function EpicDetailPage() {
   // A shared link to another project's epic opens under that project, not this tab's last one.
   useFollowEntityProject(epic?.projectId);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  // Shape Up epics group pitches; Kanban/Scrum epics group tasks.
+  const isShapeUp = (currentProject?.projectType ?? 'SHAPE_UP') === 'SHAPE_UP';
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(false);
 
@@ -115,6 +120,30 @@ export default function EpicDetailPage() {
       setLoading(false);
     }
   };
+
+  const loadTasks = useCallback(async () => {
+    if (!id || isShapeUp) return;
+    try {
+      const res = await epicService.getTasks(Number(id));
+      setTasks(res.data);
+    } catch (error) {
+      console.error('Failed to load epic tasks:', error);
+    }
+  }, [id, isShapeUp]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const handleTasksChanged = useCallback(async () => {
+    await loadTasks();
+    try {
+      const res = await epicService.getById(Number(id));
+      setEpic(res.data);
+    } catch (error) {
+      console.error('Failed to refresh epic:', error);
+    }
+  }, [loadTasks, id]);
 
   const openDepDialog = async () => {
     try {
@@ -349,6 +378,7 @@ export default function EpicDetailPage() {
   }
 
   const completedPitches = pitches.filter(p => p.status === 'DONE').length;
+  const completedTasks = tasks.filter(tk => tk.status === 'DONE').length;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -487,12 +517,12 @@ export default function EpicDetailPage() {
             
             <div className="grid grid-cols-2 gap-4 text-center pt-4">
               <div>
-                <div className="text-2xl font-bold">{pitches.length}</div>
-                <p className="text-xs text-muted-foreground">{t('epics.pitches')}</p>
+                <div className="text-2xl font-bold">{isShapeUp ? pitches.length : tasks.length}</div>
+                <p className="text-xs text-muted-foreground">{isShapeUp ? t('epics.pitches') : t('epics.tasks')}</p>
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">{completedPitches}</div>
-                <p className="text-xs text-muted-foreground">{t('epics.completedPitches')}</p>
+                <div className="text-2xl font-bold text-green-600">{isShapeUp ? completedPitches : completedTasks}</div>
+                <p className="text-xs text-muted-foreground">{isShapeUp ? t('epics.completedPitches') : t('epics.completedTasks')}</p>
               </div>
             </div>
           </CardContent>
@@ -571,7 +601,22 @@ export default function EpicDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Pitches */}
+      {/* Screenshots, mock-ups and clips */}
+      <PlanningAttachments entityType="epic" entityId={epic.id} />
+
+      {/* Tasks (Kanban/Scrum) */}
+      {!isShapeUp && (
+        <EpicTasksSection
+          epicId={epic.id}
+          projectId={epic.projectId}
+          projectType={currentProject?.projectType ?? 'KANBAN'}
+          tasks={tasks}
+          onChanged={handleTasksChanged}
+        />
+      )}
+
+      {/* Pitches (Shape Up) */}
+      {isShapeUp && (
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -667,6 +712,7 @@ export default function EpicDetailPage() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Epic Dependency Dialog */}
       <Dialog open={depDialog} onOpenChange={setDepDialog}>
@@ -721,6 +767,7 @@ export default function EpicDetailPage() {
       </Dialog>
 
       {/* Quick Add Idea Dialog */}
+      {isShapeUp && (<>
       <Dialog open={ideaDialog} onOpenChange={setIdeaDialog}>
         <DialogContent>
           <DialogHeader>
@@ -790,6 +837,7 @@ export default function EpicDetailPage() {
           setIdeaDialog(true);
         }}
       />
+      </>)}
 
       {/* Delete Dialog */}
       <Dialog open={deleteDialog} onOpenChange={setDeleteDialog}>

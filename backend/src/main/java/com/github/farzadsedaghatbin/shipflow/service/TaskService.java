@@ -12,6 +12,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.TaskDependencyDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TaskStatisticsDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.pitch.TaskSuggestionDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.HillChartPoint;
 import com.github.farzadsedaghatbin.shipflow.entity.Person;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
@@ -33,6 +34,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.exception.ResourceNotFoundException;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.HillChartPointRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PersonRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
@@ -57,6 +59,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -90,6 +93,7 @@ public class TaskService {
   private final ScopeProgressService scopeProgressService;
   private final ProjectPermissionService projectPermissionService;
   private final TaskCycleHistoryService taskCycleHistoryService;
+  private final EpicRepository epicRepository;
 
   public List<TaskDTO> getAllTasks() {
     return taskRepository.findAllNotDeleted().stream().map(this::toDTO).collect(Collectors.toList());
@@ -242,6 +246,7 @@ public class TaskService {
         .completionPercentage(Math.round(completionPercentage * 100.0) / 100.0).build();
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public TaskDTO createTask(CreateTaskRequest request) {
     // Resolve cycle and project. Resolution order:
     //  1. Explicit cycleId wins (back-compat + Kanban's hidden-cycle mechanism, untouched).
@@ -341,6 +346,11 @@ public class TaskService {
       task.setPitch(parentTask.getPitch());
     }
 
+    // Set epic if provided (must be a live epic of the same project)
+    if (request.getEpicId() != null) {
+      task.setEpic(resolveEpicForProject(request.getEpicId(), taskProject != null ? taskProject.getId() : null));
+    }
+
     // Set scope if provided
     if (request.getScopeId() != null) {
       HillChartPoint scope = hillChartPointRepository.findById(request.getScopeId()).orElseThrow(
@@ -425,6 +435,7 @@ public class TaskService {
         savedScope.getId(), task.getId(), task.getPitch() != null ? task.getPitch().getId() : "null");
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public TaskDTO updateTask(Long id, CreateTaskRequest request) {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
@@ -586,6 +597,11 @@ public class TaskService {
       task.setTeam(null);
     }
 
+    // Epic: only changes when explicitly provided (null = leave unchanged; unlink via setTaskEpic)
+    if (request.getEpicId() != null) {
+      task.setEpic(resolveEpicForProject(request.getEpicId(), resolveProjectId(task)));
+    }
+
     Task saved = taskRepository.save(task);
 
     // Record one cycle-history snapshot when this update changed the task's cycle (either
@@ -712,6 +728,7 @@ public class TaskService {
     return toDTO(taskRepository.save(task));
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public TaskDTO updateTaskStatus(Long id, TaskStatus status) {
     return updateTaskStatus(id, status, null);
   }
@@ -769,6 +786,7 @@ public class TaskService {
     return toDTO(taskRepository.save(task));
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public TaskDTO updateTaskStatus(Long id, TaskStatus status, String comment) {
     Task task = taskRepository.findByIdNotDeleted(id)
         .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + id));
@@ -818,6 +836,38 @@ public class TaskService {
     eventPublisher.publishEvent(event);
     log.debug("Published TaskStatusChangedEvent for task {} (status: {} -> {})",
         task.getId(), oldStatus, newStatus);
+  }
+
+  /**
+   * Link a task to an epic, or unlink it when {@code epicId} is null. The epic must exist, not be
+   * soft-deleted, and belong to the same project as the task.
+   */
+  @CacheEvict(value = "roadmap", allEntries = true)
+  public TaskDTO setTaskEpic(Long taskId, Long epicId) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+    task.setEpic(epicId == null ? null : resolveEpicForProject(epicId, resolveProjectId(task)));
+    return toDTO(taskRepository.save(task));
+  }
+
+  /** Non-deleted tasks (root tasks and subtasks) linked to the given epic. */
+  @Transactional(readOnly = true)
+  public List<TaskDTO> getTasksByEpicId(Long epicId) {
+    if (epicRepository.findByIdNotDeleted(epicId).isEmpty()) {
+      throw new ResourceNotFoundException("Epic not found with id: " + epicId);
+    }
+    return taskRepository.findByEpicIdNotDeleted(epicId).stream().map(this::toDTO)
+        .collect(Collectors.toList());
+  }
+
+  private Epic resolveEpicForProject(Long epicId, Long projectId) {
+    Epic epic = epicRepository.findByIdNotDeleted(epicId)
+        .orElseThrow(() -> new IllegalArgumentException("Epic not found with id: " + epicId));
+    Long epicProjectId = epic.getProject() != null ? epic.getProject().getId() : null;
+    if (projectId == null || epicProjectId == null || !epicProjectId.equals(projectId)) {
+      throw new IllegalArgumentException("Epic " + epicId + " does not belong to the task's project");
+    }
+    return epic;
   }
 
   public TaskDTO updateTaskPriority(Long id, TaskPriority priority) {
@@ -1057,6 +1107,7 @@ public class TaskService {
     }
   }
 
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void deleteTask(Long id) {
     Task task = taskRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + id));
@@ -1432,6 +1483,8 @@ public class TaskService {
         .projectKey(resolveProjectKey(task))
         .pitchId(task.getPitch() != null ? task.getPitch().getId() : null)
         .pitchTitle(task.getPitch() != null ? task.getPitch().getTitle() : null)
+        .epicId(task.getEpic() != null ? task.getEpic().getId() : null)
+        .epicName(task.getEpic() != null ? task.getEpic().getName() : null)
         .targetReleaseId(task.getTargetRelease() != null ? task.getTargetRelease().getId() : null)
         .targetReleaseName(task.getTargetRelease() != null ? task.getTargetRelease().getName() : null)
         .targetReleaseVersion(task.getTargetRelease() != null ? task.getTargetRelease().getVersion() : null)

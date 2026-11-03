@@ -219,6 +219,26 @@ public class UserService {
   }
 
   /**
+   * Every project the user can actually see, by ANY access path — direct assignment, ownership or
+   * team membership — for the RAG security filter. {@code null} means "no project restriction"
+   * (ADMIN), which {@code SecurityDocumentFilter} treats as allow-all.
+   *
+   * <p>Not the same as {@link #getProjectIdsForUser}, which is direct assignments only: now that
+   * knowledge chunks carry a {@code projectId}, filtering with that narrower set would hide a
+   * project's chunks from its own owner and from team members.
+   */
+  @Transactional(readOnly = true)
+  public Set<Long> getAccessibleProjectIdsForUser(Long userId) {
+    boolean admin = userRepository.findById(userId).map(u -> u.getRole() == UserRole.ADMIN).orElse(false);
+    if (admin) {
+      return null;
+    }
+    return userProjectRepository.findAccessibleProjectsByUserId(userId).stream()
+        .map(Project::getId)
+        .collect(Collectors.toSet());
+  }
+
+  /**
    * Returns the set of team IDs the given user belongs to (via their linked Person).
    * Only active team assignments are considered.
    * Used by the RAG security filter to scope document retrieval.

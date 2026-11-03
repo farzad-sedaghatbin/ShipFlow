@@ -11,6 +11,7 @@ import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class EpicDependencyService {
    * Add a dependency between epics. Validates that the dependency doesn't create
    * a circular reference.
    */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public EpicDependencyDTO addDependency(Long sourceEpicId, CreateEpicDependencyRequest request) {
     // Validate both epics exist
     Epic sourceEpic = epicRepository.findByIdNotDeleted(sourceEpicId)
@@ -69,6 +71,7 @@ public class EpicDependencyService {
   }
 
   /** Remove a dependency between epics, verifying it belongs to the given epic. */
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void removeDependency(Long epicId, Long dependencyId) {
     EpicDependency dependency = epicDependencyRepository.findById(dependencyId)
         .orElseThrow(() -> new IllegalArgumentException(
@@ -85,6 +88,7 @@ public class EpicDependencyService {
    * @deprecated Use {@link #removeDependency(Long, Long)} with explicit epic ownership check.
    */
   @Deprecated
+  @CacheEvict(value = "roadmap", allEntries = true)
   public void removeDependency(Long dependencyId) {
     if (!epicDependencyRepository.existsById(dependencyId)) {
       throw new IllegalArgumentException(localizationService.getMessage("dependency.not.found", dependencyId));

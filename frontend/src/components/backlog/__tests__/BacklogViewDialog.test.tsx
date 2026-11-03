@@ -21,6 +21,10 @@ vi.mock('../../Comments', () => ({
   ),
 }));
 
+vi.mock('../../TaskEpicField', () => ({
+  default: () => <div data-testid="task-epic-field" />,
+}));
+
 vi.mock('../../TaskDependencies', () => ({
   default: () => <div data-testid="task-dependencies" />,
 }));

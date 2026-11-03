@@ -17,6 +17,7 @@ import TaskDependencies from '../TaskDependencies';
 import TaskAttachments from '../TaskAttachments';
 import Comments from '../Comments';
 import { taskService } from '../../services/taskService';
+import TaskEpicField from '../TaskEpicField';
 
 interface BacklogViewDialogProps {
   open: boolean;
@@ -128,6 +129,13 @@ export function BacklogViewDialog({
                   </div>
                 </div>
               )}
+              <TaskEpicField
+                task={task}
+                onChanged={(updated) => {
+                  setViewDialogTask(updated);
+                  onReloadTasks();
+                }}
+              />
               {task.parentTaskTitle && (
                 <div>
                   <Label className="text-xs text-muted-foreground">{t('backlogPage.parentTask')}</Label>
