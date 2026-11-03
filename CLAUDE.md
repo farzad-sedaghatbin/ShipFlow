@@ -577,7 +577,7 @@ Chat apps (WhatsApp, Slack, iMessage) fetch a shared URL with **no login**, so l
 
 1. Add a `forThing(id)` method to `LinkPreviewService` mapping the entity to a `LinkPreview(title, summary)` — use a not-deleted lookup, and labels only.
 2. Add `GET /preview/thing/{id}` to `LinkPreviewController` using `render(...)`, with the entity's canonical SPA path.
-3. Add the SPA path to `SocialCrawlerFilter` (`Pattern` + `resolvePreviewUrl`) — it must match the route in `App.tsx` exactly; list pages deliberately fall through to the generic card.
+3. Add the SPA path to `SocialCrawlerFilter` (`Pattern` + `resolvePreviewUrl`) — it must match the route in `App.tsx` exactly; most list pages deliberately fall through to the generic card; the one exception is `/backlog?project=N` (counts only, see `forBacklog`).
 4. Tests: add a case to `LinkPreviewServiceTest` that gives the entity a credential-shaped description and asserts it never appears, plus a path in `SocialCrawlerFilterTest.mapsEveryEntityType`.
 
 ### Debug an AI feature

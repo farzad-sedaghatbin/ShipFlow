@@ -25,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>{@code /qa/bug-reports/{id or key}} and legacy {@code /bugs/{id}} → {@code /preview/bug/{id or key}}
  *   <li>{@code /pitches/{id}} → {@code /preview/pitch/{id}}
  *   <li>{@code /cycles/{id}}  → {@code /preview/cycle/{id}}
+ *   <li>{@code /backlog?project={id}} → {@code /preview/backlog?project={id}}
  *   <li>{@code /initiatives/{id}} → {@code /preview/initiative/{id}}
  *   <li>{@code /wiki/{spaceId}} and {@code /wiki/{spaceId}/{pageId}} → {@code /preview/wiki/...}
  *   <li>{@code /roadmap} → {@code /preview/roadmap}
@@ -93,6 +94,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
   private static final Pattern BUG_PATH    = Pattern.compile("^/(?:qa/bug-reports|bugs)/([A-Za-z0-9-]{1,64})$");
   private static final Pattern PITCH_PATH  = Pattern.compile("^/pitches/(\\d+)$");
   private static final Pattern CYCLE_PATH  = Pattern.compile("^/cycles/(\\d+)$");
+  private static final Pattern PROJECT_PARAM = Pattern.compile("^\\d+$");
   private static final Pattern INITIATIVE_PATH = Pattern.compile("^/initiatives/(\\d+)$");
   private static final Pattern WIKI_SPACE_PATH = Pattern.compile("^/wiki/(\\d+)$");
   private static final Pattern WIKI_PAGE_PATH  = Pattern.compile("^/wiki/(\\d+)/(\\d+)$");
@@ -104,7 +106,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
 
     String ua = request.getHeader("User-Agent");
     if (ua != null && isCrawler(ua)) {
-      String previewUrl = resolvePreviewUrl(request.getRequestURI());
+      String previewUrl = resolvePreviewUrl(request.getRequestURI(), request.getParameter("project"));
       if (previewUrl != null) {
         request.setAttribute(IN_PLACE_ATTRIBUTE, Boolean.TRUE);
         request.getRequestDispatcher(previewUrl).forward(request, response);
@@ -125,7 +127,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
     return false;
   }
 
-  private String resolvePreviewUrl(String path) {
+  private String resolvePreviewUrl(String path, String projectParam) {
     Matcher m;
 
     m = TASK_PATH.matcher(path);
@@ -150,6 +152,11 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
     if (m.matches()) return "/preview/wiki/" + m.group(1) + "/" + m.group(2);
 
     if ("/roadmap".equals(path)) return "/preview/roadmap";
+
+    // The backlog list lives at /backlog?project=N — only a numeric project id is forwarded.
+    if ("/backlog".equals(path) && projectParam != null && PROJECT_PARAM.matcher(projectParam).matches()) {
+      return "/preview/backlog?project=" + projectParam;
+    }
 
     return null;
   }

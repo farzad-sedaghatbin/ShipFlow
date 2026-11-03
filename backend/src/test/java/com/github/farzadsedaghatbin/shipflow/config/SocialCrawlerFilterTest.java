@@ -24,7 +24,14 @@ class SocialCrawlerFilterTest {
   private final SocialCrawlerFilter filter = new SocialCrawlerFilter();
 
   private MockHttpServletRequest crawlerRequest(String uri, String userAgent) {
-    MockHttpServletRequest request = new MockHttpServletRequest("GET", uri);
+    int q = uri.indexOf('?');
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", q < 0 ? uri : uri.substring(0, q));
+    if (q >= 0) {
+      for (String pair : uri.substring(q + 1).split("&")) {
+        String[] kv = pair.split("=", 2);
+        request.addParameter(kv[0], kv.length > 1 ? kv[1] : "");
+      }
+    }
     request.setScheme("https");
     request.setServerName("shipflow.dev");
     request.setSecure(true);
@@ -66,6 +73,17 @@ class SocialCrawlerFilterTest {
     assertForward("/wiki/1", "/preview/wiki/1");
     assertForward("/wiki/1/6", "/preview/wiki/1/6");
     assertForward("/roadmap", "/preview/roadmap");
+    assertForward("/backlog?project=5", "/preview/backlog?project=5");
+  }
+
+  @Test
+  @DisplayName("a backlog list without a numeric project id is not previewed")
+  void backlogListNeedsNumericProject() throws Exception {
+    for (String uri : new String[] {"/backlog", "/backlog?project=abc", "/backlog?project="}) {
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      filter.doFilter(crawlerRequest(uri, "WhatsApp/2.23"), response, Mockito.mock(FilterChain.class));
+      assertThat(response.getForwardedUrl()).as(uri).isNull();
+    }
   }
 
   private void assertForward(String requestUri, String expectedForward) throws Exception {
@@ -105,7 +123,7 @@ class SocialCrawlerFilterTest {
   @DisplayName("crawler UAs on non-entity URLs fall through to the SPA")
   void nonEntityUrlsPassThrough() throws Exception {
     for (String uri : new String[] {"/dashboard", "/backlog", "/backlog/42/subtasks", "/blog/hello",
-        "/pitches/abc", "/qa/bug-reports", "/qa/bug-reports/4/edit", "/backlog?project=5"}) {
+        "/pitches/abc", "/qa/bug-reports", "/qa/bug-reports/4/edit", "/backlog?other=5"}) {
       MockHttpServletResponse response = new MockHttpServletResponse();
       FilterChain chain = Mockito.mock(FilterChain.class);
 

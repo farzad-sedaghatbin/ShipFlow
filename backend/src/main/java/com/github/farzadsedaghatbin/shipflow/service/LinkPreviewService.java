@@ -6,14 +6,19 @@ import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,6 +63,7 @@ public class LinkPreviewService {
   private final WikiSpaceRepository wikiSpaceRepository;
   private final WikiPageRepository wikiPageRepository;
   private final WikiSpacePermissionRepository wikiSpacePermissionRepository;
+  private final ProjectRepository projectRepository;
 
   @Transactional(readOnly = true)
   public Optional<LinkPreview> forTask(Long id) {
@@ -87,6 +93,32 @@ public class LinkPreviewService {
   @Transactional(readOnly = true)
   public Optional<LinkPreview> forCycle(Long id) {
     return cycleRepository.findById(id).map(this::toPreview);
+  }
+
+  /**
+   * A project's backlog list ({@code /backlog?project=N}). Counts only — never task titles, which
+   * are free text — and not the project's name either, so the card says what the page is without
+   * saying anything about the work.
+   */
+  @Transactional(readOnly = true)
+  public Optional<LinkPreview> forBacklog(Long projectId) {
+    if (projectId == null || !projectRepository.existsById(projectId)) {
+      return Optional.empty();
+    }
+    Map<TaskStatus, Long> counts = new EnumMap<>(TaskStatus.class);
+    List<Object[]> rows = taskRepository.countByStatusForProject(projectId);
+    for (Object[] row : rows) {
+      counts.put((TaskStatus) row[0], ((Number) row[1]).longValue());
+    }
+    long total = counts.values().stream().mapToLong(Long::longValue).sum();
+    long done = counts.getOrDefault(TaskStatus.DONE, 0L);
+    long cancelled = counts.getOrDefault(TaskStatus.CANCELLED, 0L);
+    long inProgress = counts.getOrDefault(TaskStatus.IN_PROGRESS, 0L);
+    long open = total - done - cancelled;
+    String summary = total == 0 ? "Backlog: no tasks yet"
+        : String.format("Backlog: %d open task%s · %d in progress · %d done", open, open == 1 ? "" : "s",
+            inProgress, done);
+    return Optional.of(new LinkPreview("Backlog", summary));
   }
 
   /**

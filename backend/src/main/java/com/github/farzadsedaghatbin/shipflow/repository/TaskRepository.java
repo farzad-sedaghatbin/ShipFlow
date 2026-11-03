@@ -209,6 +209,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.cycle IS NULL AND t.deletedAt IS NULL AND t.parentTask IS NULL AND t.project.projectType = :projectType")
     List<Task> findProductBacklogTasks(@Param("projectId") Long projectId, @Param("projectType") com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType projectType);
 
+    /** {@code [TaskStatus, count]} rows for a project's live tasks — what the backlog link preview summarises. */
+    @Query("SELECT t.status, COUNT(t) FROM Task t WHERE t.project.id = :projectId AND t.deletedAt IS NULL GROUP BY t.status")
+    List<Object[]> countByStatusForProject(@Param("projectId") Long projectId);
+
     @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.deletedAt IS NULL")
     Page<Task> findByProjectIdPaged(@Param("projectId") Long projectId, Pageable pageable);
 
