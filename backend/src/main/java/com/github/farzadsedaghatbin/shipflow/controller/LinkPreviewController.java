@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -67,6 +68,11 @@ public class LinkPreviewController {
   @GetMapping(value = "/preview/cycle/{id}", produces = "text/html;charset=UTF-8")
   public ResponseEntity<String> cyclePreview(@PathVariable Long id) {
     return render(linkPreviewService.forCycle(id), "Cycle not found", "/cycles/" + id);
+  }
+
+  @GetMapping(value = "/preview/backlog", produces = "text/html;charset=UTF-8")
+  public ResponseEntity<String> backlogPreview(@RequestParam Long project) {
+    return render(linkPreviewService.forBacklog(project), "Backlog not found", "/backlog?project=" + project);
   }
 
   private ResponseEntity<String> render(Optional<LinkPreview> found, String missingReason, String canonicalPath) {

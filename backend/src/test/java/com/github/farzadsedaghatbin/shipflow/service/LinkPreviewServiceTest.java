@@ -20,10 +20,12 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.service.LinkPreviewService.LinkPreview;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,6 +46,7 @@ class LinkPreviewServiceTest {
   private PitchRepository pitchRepository;
   private BugReportRepository bugReportRepository;
   private CycleRepository cycleRepository;
+  private ProjectRepository projectRepository;
   private LinkPreviewService service;
 
   @BeforeEach
@@ -52,7 +55,9 @@ class LinkPreviewServiceTest {
     pitchRepository = mock(PitchRepository.class);
     bugReportRepository = mock(BugReportRepository.class);
     cycleRepository = mock(CycleRepository.class);
-    service = new LinkPreviewService(taskRepository, pitchRepository, bugReportRepository, cycleRepository);
+    projectRepository = mock(ProjectRepository.class);
+    service = new LinkPreviewService(taskRepository, pitchRepository, bugReportRepository, cycleRepository,
+        projectRepository);
   }
 
   @Test
@@ -171,5 +176,33 @@ class LinkPreviewServiceTest {
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(Task.builder().title("No labels").build()));
     assertThat(service.forTask(1L).orElseThrow().summary()).isEqualTo("Task");
+  }
+
+  @Test
+  @DisplayName("a backlog preview summarises task counts and nothing a person wrote")
+  void backlogShowsCountsOnly() {
+    when(projectRepository.existsById(5L)).thenReturn(true);
+    when(taskRepository.countByStatusForProject(5L)).thenReturn(List.<Object[]>of(
+        new Object[] {TaskStatus.BACKLOG, 10L}, new Object[] {TaskStatus.IN_PROGRESS, 3L},
+        new Object[] {TaskStatus.DONE, 6L}, new Object[] {TaskStatus.CANCELLED, 1L}));
+
+    LinkPreview preview = service.forBacklog(5L).orElseThrow();
+
+    assertThat(preview.title()).isEqualTo("Backlog");
+    assertThat(preview.summary()).isEqualTo("Backlog: 13 open tasks · 3 in progress · 6 done");
+    verify(taskRepository).countByStatusForProject(5L);
+    verify(taskRepository, never()).findByProjectIdNotDeleted(anyLong());
+  }
+
+  @Test
+  @DisplayName("an empty backlog says so, and an unknown project is absent")
+  void backlogEmptyAndMissing() {
+    when(projectRepository.existsById(5L)).thenReturn(true);
+    when(taskRepository.countByStatusForProject(5L)).thenReturn(List.of());
+    assertThat(service.forBacklog(5L).orElseThrow().summary()).isEqualTo("Backlog: no tasks yet");
+
+    when(projectRepository.existsById(99L)).thenReturn(false);
+    assertThat(service.forBacklog(99L)).isEmpty();
+    assertThat(service.forBacklog(null)).isEmpty();
   }
 }

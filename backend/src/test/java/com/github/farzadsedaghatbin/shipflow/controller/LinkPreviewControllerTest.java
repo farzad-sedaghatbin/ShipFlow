@@ -191,6 +191,28 @@ class LinkPreviewControllerTest {
   }
 
   @Test
+  @DisplayName("backlog preview shows the counts and keeps the project in its canonical URL")
+  void backlogPreview() throws Exception {
+    when(linkPreviewService.forBacklog(5L))
+        .thenReturn(Optional.of(new LinkPreview("Backlog", "Backlog: 13 open tasks · 3 in progress · 6 done")));
+
+    mockMvc.perform(previewRequest("/preview/backlog", "host").param("project", "5"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString("13 open tasks")))
+        .andExpect(content().string(Matchers.containsString("https://host/backlog?project=5")));
+  }
+
+  @Test
+  @DisplayName("an unknown project's backlog returns 404 at its own URL")
+  void unknownBacklogIsNotFound() throws Exception {
+    when(linkPreviewService.forBacklog(99L)).thenReturn(Optional.empty());
+
+    mockMvc.perform(previewRequest("/preview/backlog", "host").param("project", "99"))
+        .andExpect(status().isNotFound())
+        .andExpect(content().string(Matchers.containsString("https://host/backlog?project=99")));
+  }
+
+  @Test
   @DisplayName("a missing bug report returns 404 at its own URL")
   void unknownBugIsNotFound() throws Exception {
     when(linkPreviewService.forBug(anyLong())).thenReturn(Optional.empty());

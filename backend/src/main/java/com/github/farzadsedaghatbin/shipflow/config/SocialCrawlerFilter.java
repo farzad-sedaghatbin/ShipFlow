@@ -25,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *   <li>{@code /qa/bug-reports/{id}} → {@code /preview/bug/{id}}
  *   <li>{@code /pitches/{id}} → {@code /preview/pitch/{id}}
  *   <li>{@code /cycles/{id}}  → {@code /preview/cycle/{id}}
+ *   <li>{@code /backlog?project={id}} → {@code /preview/backlog?project={id}}
  * </ul>
  *
  * <p><strong>Why a forward and not a redirect.</strong> This used to answer crawlers with
@@ -88,6 +89,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
   private static final Pattern BUG_PATH    = Pattern.compile("^/qa/bug-reports/(\\d+)$");
   private static final Pattern PITCH_PATH  = Pattern.compile("^/pitches/(\\d+)$");
   private static final Pattern CYCLE_PATH  = Pattern.compile("^/cycles/(\\d+)$");
+  private static final Pattern PROJECT_PARAM = Pattern.compile("^\\d+$");
 
   @Override
   protected void doFilterInternal(HttpServletRequest request,
@@ -96,7 +98,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
 
     String ua = request.getHeader("User-Agent");
     if (ua != null && isCrawler(ua)) {
-      String previewUrl = resolvePreviewUrl(request.getRequestURI());
+      String previewUrl = resolvePreviewUrl(request.getRequestURI(), request.getParameter("project"));
       if (previewUrl != null) {
         request.setAttribute(IN_PLACE_ATTRIBUTE, Boolean.TRUE);
         request.getRequestDispatcher(previewUrl).forward(request, response);
@@ -117,7 +119,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
     return false;
   }
 
-  private String resolvePreviewUrl(String path) {
+  private String resolvePreviewUrl(String path, String projectParam) {
     Matcher m;
 
     m = TASK_PATH.matcher(path);
@@ -131,6 +133,11 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
 
     m = CYCLE_PATH.matcher(path);
     if (m.matches()) return "/preview/cycle/" + m.group(1);
+
+    // The backlog list lives at /backlog?project=N — only a numeric project id is forwarded.
+    if ("/backlog".equals(path) && projectParam != null && PROJECT_PARAM.matcher(projectParam).matches()) {
+      return "/preview/backlog?project=" + projectParam;
+    }
 
     return null;
   }
