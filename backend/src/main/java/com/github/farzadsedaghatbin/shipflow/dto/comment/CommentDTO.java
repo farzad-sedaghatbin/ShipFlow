@@ -26,6 +26,9 @@ public class CommentDTO {
   private String authorName;
   private String authorUsername;
 
+  /** True when the ShipFlow Agent wrote this comment (UI shows an AI badge). */
+  private Boolean isAgent;
+
   // Metadata
   private Boolean isEdited;
   private LocalDateTime createdAt;

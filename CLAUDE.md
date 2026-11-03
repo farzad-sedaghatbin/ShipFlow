@@ -164,6 +164,14 @@ ShipFlow is **methodology-agnostic** — supports Shape Up + Kanban + Scrum (v1.
 | — | **Out-of-plan**: open-core licensing (licence keys, `@RequiresLicensedFeature` gating plumbing, Community Edition user/automation limits) — see the licensing note above | ✅ done |
 | — | **Out-of-plan, unplanned Scrum-parity feedback batch** (tester Sara Jahani) — see the versioning note above and `CHANGELOG.md`'s `[1.14.0]` entry for full detail: Scrum terminology/mis-gating bug fixes, consistent back-navigation + per-tab project isolation, Scrum-native reports (burnup/sprint/release), Active Sprint Board (Scrum previously had none), AI task-suggestion + Q&A parity for Scrum, Project Agreements feature, configurable-methodology-structure design analysis (not implemented, deferred), Task Test Cases panel fix | ✅ done |
 
+### v1.16.0 session map (in progress)
+
+| Session | Task | Status |
+|---------|------|--------|
+| S69 | `@ShipFlow` mentionable agent in comment threads — `AgentMentionedEvent` → `AgentMentionListener` → `AgentReplyService`; inactive `shipflow-agent` user (no seat, no login); answers as the requester (project/wiki access check + `SecurityDocumentFilter`); read-only; AI badge + thinking indicator in `Comments.tsx`; help guide `32-shipflow-agent.md` | ✅ done |
+| S70 | Agent actions via the existing MCP write-tool layer, propose→confirm; also add `projectId` to knowledge-chunk metadata so `SecurityDocumentFilter` can scope RAG by project | ⏳ next |
+| S71 | Agent loops (standup digest, cycle-health check, betting-table prep) as Workflow Automation action types | ⏳ planned |
+
 ### Future milestones overview
 
 > **Renumbered 2026-09-09** — see the versioning note above. Session numbers (S69 onward) are unchanged; only the version label each range ships under moved up by one.

@@ -27,6 +27,8 @@ export interface Comment {
   authorId: number;
   authorName: string;
   authorUsername: string;
+  /** True when the ShipFlow Agent wrote this comment. */
+  isAgent?: boolean;
   isEdited: boolean;
   createdAt: string;
   updatedAt?: string;

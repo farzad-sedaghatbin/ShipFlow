@@ -117,8 +117,16 @@ To create one:
 3. Fill in name, description, status, **target start/end dates**, and link to an initiative
 4. Link work to the epic for end-to-end traceability — pitches in Shape Up, tasks in Kanban/Scrum
 
+## Attaching Images and Clips to an Initiative or Epic
+Initiatives and epics have a written description, but a mock-up or a screenshot often says more. Both detail pages have an **Attachments** section for this:
+- Click the drop area (or drag files onto it) and choose one or more files. Accepted: **JPG, PNG, GIF, WEBP, SVG** images and **MP4, WEBM, MOV, AVI** clips, up to **20 MB** each. Other file types are rejected before they are sent.
+- Images appear as thumbnails; click one to see it full size (clips play in the same viewer). Each file also has **Download** and **Remove** buttons.
+- Anyone with access to the project can see the attachments. Adding or removing them needs at least the **Contributor** role on the project.
+- Attachments are not read by the AI Q&A, so text that matters for search belongs in the description.
+
 ## Linking Tasks to an Epic (Kanban and Scrum)
-- On the epic's page, the **Tasks** section lists its tasks. Use **Link existing task** to pick a task that has no epic yet, **New task** to create one directly under the epic, or **Unlink** to remove a task from it.
+- On the epic's page, the **Tasks** section lists its tasks. Use **Link existing task** to pick a task that has no epic yet, or **Unlink** to remove a task from it.
+- To create a task directly under the epic, type its title in the box next to **New task** and click the button (or press Enter). If you click it with the box empty, you'll get a reminder to type a title first.
 - When creating or editing a task on the Backlog, pick its epic in the **Epic** field of the task dialog (top-level tasks only; a subtask belongs to its parent's epic).
 - From a task's detail view, use the **Epic** field to move the task to another epic or clear it.
 - On the roadmap, expand an epic to see its tasks. A task with a due date in the visible window shows a small marker on its due date.

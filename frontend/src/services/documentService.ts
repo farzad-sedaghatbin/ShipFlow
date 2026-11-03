@@ -29,6 +29,8 @@ export interface UploadedDocument {
   indexedForQA: boolean;
 }
 
+export type PlanningEntityType = 'epic' | 'initiative';
+
 export interface ExtractionStatus {
   available: boolean;
   message: string;
@@ -147,6 +149,26 @@ export const documentService = {
   // Delete bug attachment
   deleteBugAttachment: (attachmentId: number) =>
     api.delete<{ message: string }>(`/documents/bug/attachment/${attachmentId}`),
+
+  // ========== Epic / Initiative Attachments ==========
+
+  // Images and short clips attached to an epic or initiative
+  getPlanningAttachments: (entityType: PlanningEntityType, entityId: number) =>
+    api.get<UploadedDocument[]>(`/documents/planning/${entityType}/${entityId}/attachments`),
+
+  uploadPlanningAttachment: (entityType: PlanningEntityType, entityId: number, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<DocumentUploadResponse>(
+      `/documents/planning/${entityType}/${entityId}/attachments`,
+      formData,
+    );
+  },
+
+  deletePlanningAttachment: (entityType: PlanningEntityType, entityId: number, attachmentId: number) =>
+    api.delete<{ message: string }>(
+      `/documents/planning/${entityType}/${entityId}/attachments/${attachmentId}`,
+    ),
 
   // Fetch attachment as an authenticated blob URL suitable for <img>/<video> src
   fetchAttachmentBlobUrl: async (id: number): Promise<string> => {

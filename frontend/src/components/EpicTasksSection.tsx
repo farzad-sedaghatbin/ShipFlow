@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, ListChecks, Plus, Unlink, Link2 } from 'lucide-react';
@@ -91,9 +91,16 @@ export default function EpicTasksSection({ epicId, projectId, projectType, tasks
     }
   };
 
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   const handleCreate = async () => {
     const title = newTitle.trim();
-    if (!title) return;
+    if (!title) {
+      // Don't leave the button dead-looking: say what's missing and put the cursor there.
+      showError(t('epics.taskTitleRequired'));
+      titleInputRef.current?.focus();
+      return;
+    }
     try {
       setBusy(true);
       // Scrum tasks may live in the product backlog; Kanban tasks need a cycle (the board's default one).
@@ -137,6 +144,7 @@ export default function EpicTasksSection({ epicId, projectId, projectType, tasks
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="flex flex-1 gap-2">
             <Input
+              ref={titleInputRef}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -145,7 +153,7 @@ export default function EpicTasksSection({ epicId, projectId, projectType, tasks
               placeholder={t('epics.newTaskPlaceholder')}
               aria-label={t('epics.newTask')}
             />
-            <Button onClick={handleCreate} disabled={busy || !newTitle.trim()}>
+            <Button onClick={handleCreate} disabled={busy}>
               <Plus className="h-4 w-4 mr-2" />
               {t('epics.newTask')}
             </Button>

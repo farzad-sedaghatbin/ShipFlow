@@ -996,6 +996,7 @@
     "completedTasks": "وظیفهٔ تکمیل‌شده",
     "newTask": "وظیفهٔ جدید",
     "newTaskPlaceholder": "عنوان وظیفه",
+    "taskTitleRequired": "ابتدا یک عنوان برای تسک جدید بنویسید",
     "linkExistingTask": "اتصال وظیفهٔ موجود",
     "searchTasks": "جستجوی وظایف...",
     "noUnlinkedTasks": "وظیفه‌ای بدون اپیک وجود ندارد",
@@ -6604,7 +6605,25 @@
     "testCaseDeleted": "تست کیس با موفقیت حذف شد",
     "testCaseDeleteFailed": "خطا در حذف تست کیس"
   },
+  "planningAttachments": {
+    "title": "پیوست‌ها",
+    "dropHint": "عکس یا ویدیو را اینجا رها کنید، یا برای انتخاب کلیک کنید",
+    "limits": "JPG، PNG، GIF، WEBP، SVG، MP4، WEBM، MOV، AVI — هر فایل تا ۲۰ مگابایت",
+    "empty": "هنوز پیوستی اضافه نشده است.",
+    "uploaded_one": "{{count}} فایل پیوست شد",
+    "uploaded_other": "{{count}} فایل پیوست شد",
+    "uploaded": "{{count}} فایل پیوست شد",
+    "unsupportedType": "نوع فایل پشتیبانی نمی‌شود",
+    "tooLarge": "بزرگ‌تر از ۲۰ مگابایت",
+    "uploadFailed": "بارگذاری ناموفق بود",
+    "deleteFailed": "حذف پیوست انجام نشد",
+    "openFailed": "باز کردن پیوست انجام نشد",
+    "download": "دانلود",
+    "remove": "حذف"
+  },
   "comments": {
+    "agentBadge": "هوش مصنوعی",
+    "agentThinking": "ShipFlow در حال فکر کردن است…",
     "title": "نظرات",
     "placeholder": "یک نظر درباره این {{entityType}} اضافه کنید...",
     "post": "ارسال نظر",
