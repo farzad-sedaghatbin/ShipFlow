@@ -61,6 +61,8 @@ class AgentReplyServiceTest {
   @Mock private ObjectProvider<ProjectSnapshotService> snapshotService;
   @Mock private ObjectProvider<EmbeddingSearchService> searchService;
   @Mock private ObjectProvider<SecurityDocumentFilter> securityFilter;
+  @Mock private AgentActionService actionService;
+  private final AgentActionCatalog catalog = new AgentActionCatalog();
   @Mock private ChatLanguageModel model;
   @Mock private ProjectSnapshotService snapshot;
 
@@ -77,7 +79,9 @@ class AgentReplyServiceTest {
         new AgentReplyService(
             identity, commentRepository, userRepository, taskRepository, bugReportRepository,
             wikiPageRepository, wikiSpaceRepository, wikiPermissionService, userProjectRepository,
-            userService, chatModel, snapshotService, searchService, securityFilter);
+            userService, chatModel, snapshotService, searchService, securityFilter, actionService,
+            new AgentActionParser(new com.fasterxml.jackson.databind.ObjectMapper()),
+            catalog);
 
     member = User.builder().id(1L).username("sara").role(UserRole.MEMBER).isActive(true)
         .person(Person.builder().name("Sara").build()).build();
@@ -250,7 +254,7 @@ class AgentReplyServiceTest {
     when(search.search(anyString(), any()))
         .thenReturn(EmbeddingSearchService.SearchResult.builder().matches(List.of()).context("").build());
     when(userService.getTeamIdsForUser(1L)).thenReturn(Set.of(2L));
-    when(userService.getProjectIdsForUser(1L)).thenReturn(Set.of(5L));
+    when(userService.getAccessibleProjectIdsForUser(1L)).thenReturn(Set.of(5L));
     when(filter.filterByUserAccess(any(), eq(1L), eq(Set.of(2L)), eq(Set.of(5L)))).thenReturn(List.of());
     when(search.buildContext(any())).thenReturn("");
     when(model.generate(anyString())).thenReturn("ok");
@@ -275,5 +279,107 @@ class AgentReplyServiceTest {
     ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
     verify(model).generate(prompt.capture());
     assertThat(prompt.getValue()).doesNotContain("SECRET").doesNotContain("RELATED KNOWLEDGE");
+  }
+
+  // ── S70: proposing changes ──────────────────────────────────────────────────
+
+  private static final String ACTION_BLOCK =
+      "\n```shipflow-actions\n"
+          + "[{\"tool\":\"update_task_status\",\"arguments\":{\"taskId\":3,\"status\":\"DONE\"},"
+          + "\"summary\":\"Mark the task done\"}]\n```";
+
+  @Test
+  @DisplayName("When the requester can write, the prompt teaches the model to propose changes and names the item ids")
+  void promptOffersActions() {
+    when(actionService.mayPropose(requester(), 5L)).thenReturn(true);
+    when(model.generate(anyString())).thenReturn("ok");
+
+    service.reply(event);
+
+    ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
+    verify(model).generate(prompt.capture());
+    assertThat(prompt.getValue())
+        .contains("CHANGES YOU MAY PROPOSE")
+        .contains("shipflow-actions")
+        .contains("update_task_status")
+        .contains("Reference: TASK id=3, projectId=5");
+  }
+
+  @Test
+  @DisplayName("When the requester cannot write, the model is not even told about actions")
+  void promptWithoutActions() {
+    when(model.generate(anyString())).thenReturn("ok");
+
+    service.reply(event);
+
+    ArgumentCaptor<String> prompt = ArgumentCaptor.forClass(String.class);
+    verify(model).generate(prompt.capture());
+    assertThat(prompt.getValue()).doesNotContain("CHANGES YOU MAY PROPOSE");
+  }
+
+  @Test
+  @DisplayName("A proposal is screened, stored against the reply, and listed in the comment text from the REAL tool and arguments")
+  void storesProposals() {
+    when(actionService.mayPropose(requester(), 5L)).thenReturn(true);
+    when(model.generate(anyString())).thenReturn("I can do that." + ACTION_BLOCK);
+    when(actionService.screen(any(), eq(5L))).thenAnswer(inv -> inv.getArgument(0));
+    when(commentRepository.save(any(Comment.class))).thenAnswer(inv -> {
+      Comment c = inv.getArgument(0);
+      c.setId(77L);
+      return c;
+    });
+
+    service.reply(event);
+
+    Comment reply = savedReply();
+    assertThat(reply.getContent())
+        .startsWith("I can do that.")
+        .doesNotContain("shipflow-actions")
+        .contains("Proposed changes")
+        .contains("nothing has been applied")
+        .contains("update_task_status(status=DONE, taskId=3)")
+        .contains("Mark the task done");
+    verify(actionService).save(eq(77L), eq(CommentEntityType.TASK), eq(3L), eq(1L), eq(5L), any());
+  }
+
+  @Test
+  @DisplayName("If screening drops everything, the reader sees a plain answer and nothing is stored")
+  void screeningDropsAll() {
+    when(actionService.mayPropose(requester(), 5L)).thenReturn(true);
+    when(model.generate(anyString())).thenReturn("Done." + ACTION_BLOCK);
+    when(actionService.screen(any(), eq(5L))).thenReturn(List.of());
+
+    service.reply(event);
+
+    assertThat(savedReply().getContent()).isEqualTo("Done.");
+    verify(actionService, never()).save(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("A model that emits an action block for someone who may not make changes: block hidden, nothing stored")
+  void blockIgnoredWhenNotAllowed() {
+    when(model.generate(anyString())).thenReturn("Sure." + ACTION_BLOCK);
+
+    service.reply(event);
+
+    assertThat(savedReply().getContent()).isEqualTo("Sure.");
+    verify(actionService, never()).screen(any(), any());
+    verify(actionService, never()).save(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @DisplayName("A reply that is only an action block still gets a lead-in sentence")
+  void onlyActionBlock() {
+    when(actionService.mayPropose(requester(), 5L)).thenReturn(true);
+    when(model.generate(anyString())).thenReturn(ACTION_BLOCK);
+    when(actionService.screen(any(), eq(5L))).thenAnswer(inv -> inv.getArgument(0));
+
+    service.reply(event);
+
+    assertThat(savedReply().getContent()).startsWith("Here is what I would change:");
+  }
+
+  private User requester() {
+    return member;
   }
 }

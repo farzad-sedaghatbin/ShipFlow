@@ -5,6 +5,8 @@ vi.mock('../mentions/mentionUtils', () => ({
   formatMentionToken: (n: string) => `@${n}`,
   splitMentionsInText: (t: string) => t,
 }));
+vi.mock('../../contexts', () => ({ useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn() }) }));
+vi.mock('../../services/agentActionService', () => ({ agentActionService: { confirm: vi.fn(), cancel: vi.fn() } }));
 vi.mock('../../services/commentService', () => ({
   default: {
     getComments: vi.fn(),
@@ -107,5 +109,20 @@ describe('Comments — ShipFlow Agent', () => {
     });
 
     expect(screen.queryByTestId('agent-thinking')).not.toBeInTheDocument();
+  });
+  it('renders the agent\'s proposed changes under its comment and nowhere else', async () => {
+    const proposal = {
+      id: 9, commentId: 2, tool: 'update_task_status', label: 'update_task_status(status=DONE, taskId=1)',
+      status: 'PROPOSED', canConfirm: true, createdAt: '2026-11-03T10:00:00',
+    };
+    getComments.mockResolvedValue({
+      data: [human(1, '@ShipFlow mark it done'), { ...agent(2, 'I can do that.'), proposals: [proposal] }],
+    } as never);
+    await act(async () => {
+      render(<Comments entityType="task" entityId={1} />);
+    });
+
+    expect(screen.getAllByTestId('agent-proposals')).toHaveLength(1);
+    expect(screen.getByText('update_task_status(status=DONE, taskId=1)')).toBeInTheDocument();
   });
 });

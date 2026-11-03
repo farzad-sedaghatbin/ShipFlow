@@ -14,6 +14,8 @@ import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
 import com.github.farzadsedaghatbin.shipflow.event.AgentMentionedEvent;
+import com.github.farzadsedaghatbin.shipflow.dto.agent.AgentActionProposalDTO;
+import com.github.farzadsedaghatbin.shipflow.service.agent.AgentActionProposalReader;
 import com.github.farzadsedaghatbin.shipflow.service.agent.AgentIdentityService;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -45,6 +47,7 @@ public class CommentService {
   private final MessageService messageService;
   private final DashboardNotificationService notificationService;
   private final AgentIdentityService agentIdentityService;
+  private final AgentActionProposalReader agentActionProposalReader;
   private final ApplicationEventPublisher eventPublisher;
 
   // Pattern to match @name mentions (letters, numbers, dots, underscores)
@@ -255,11 +258,16 @@ public class CommentService {
 
     return CommentDTO.builder().id(comment.getId()).content(comment.getContent())
         .entityType(comment.getEntityType()).entityId(comment.getEntityId()).authorId(author.getId())
-        .authorName(authorName).authorUsername(author.getUsername()).isAgent(byAgent).isEdited(comment.getIsEdited())
+        .authorName(authorName).authorUsername(author.getUsername()).isAgent(byAgent)
+        .proposals(byAgent ? proposalsFor(comment.getId(), currentUserId) : null).isEdited(comment.getIsEdited())
         .createdAt(comment.getCreatedAt()).updatedAt(comment.getUpdatedAt())
         .reactions(buildReactionSummary(comment.getId(), currentUserId))
         .canEdit(canUserEdit(comment, currentUserId))
         .canDelete(currentUser != null && canUserDelete(comment, currentUser)).build();
+  }
+
+  private List<AgentActionProposalDTO> proposalsFor(Long commentId, Long viewerId) {
+    return agentActionProposalReader.forComments(List.of(commentId), viewerId).getOrDefault(commentId, List.of());
   }
 
   private ReactionSummaryDTO buildReactionSummary(Long commentId, Long currentUserId) {

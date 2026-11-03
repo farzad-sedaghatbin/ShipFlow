@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
+import AgentProposals from './AgentProposals';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -649,6 +650,22 @@ const Comments: React.FC<CommentsProps> = ({
                       <div className="text-sm markdown-content break-words">
                         {renderCommentContent(comment.content, comment.id)}
                       </div>
+                    )}
+
+                    {/* Changes the agent proposed — nothing applies until the requester confirms */}
+                    {comment.isAgent && comment.proposals && comment.proposals.length > 0 && (
+                      <AgentProposals
+                        proposals={comment.proposals}
+                        onUpdated={(updated) =>
+                          setComments((prev) =>
+                            prev.map((c) =>
+                              c.id === comment.id
+                                ? { ...c, proposals: c.proposals?.map((x) => (x.id === updated.id ? updated : x)) }
+                                : c,
+                            ),
+                          )
+                        }
+                      />
                     )}
 
                     {/* Reactions */}

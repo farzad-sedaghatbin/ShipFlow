@@ -5,6 +5,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.*;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.KnowledgeEntityType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.QAFeedbackType;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
+import com.github.farzadsedaghatbin.shipflow.service.knowledge.KnowledgeProjectResolver;
 import com.github.farzadsedaghatbin.shipflow.service.knowledge.source.RawChunk;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
@@ -51,6 +52,14 @@ public class KnowledgeIngestionService {
   private final InitiativeRepository initiativeRepository;
   private final EpicRepository epicRepository;
   private final ReleaseRepository releaseRepository;
+
+  /** Optional: absent in unit tests that construct this service by hand. */
+  private KnowledgeProjectResolver projectResolver;
+
+  @Autowired(required = false)
+  public void setProjectResolver(KnowledgeProjectResolver projectResolver) {
+    this.projectResolver = projectResolver;
+  }
 
   @Autowired
   public KnowledgeIngestionService(KnowledgeItemRepository knowledgeItemRepository,
@@ -733,6 +742,14 @@ public class KnowledgeIngestionService {
   }
 
   private void embedKnowledgeItem(KnowledgeItem item) {
+    embedKnowledgeItem(item, null);
+  }
+
+  /**
+   * @param knownProjectId a project the caller already knows (e.g. a wiki space's); when null the
+   *     project is derived from the item via {@link KnowledgeProjectResolver}
+   */
+  private void embedKnowledgeItem(KnowledgeItem item, Long knownProjectId) {
     if (embeddingModel == null || embeddingStore == null) {
       log.warn("Embedding model or store not available");
       return;
@@ -757,6 +774,17 @@ public class KnowledgeIngestionService {
       }
       if (item.getPitchId() != null) {
         metadata.put("pitchId", item.getPitchId().toString());
+      }
+      // projectId lets SecurityDocumentFilter keep this chunk away from people who cannot see
+      // the project. Best-effort: a chunk with no determinable project stays project-less.
+      Long projectId = knownProjectId;
+      if (projectId == null && projectResolver != null) {
+        projectId = projectResolver
+            .resolve(item.getEntityType(), item.getEntityId(), item.getCycleId(), item.getPitchId())
+            .orElse(null);
+      }
+      if (projectId != null) {
+        metadata.put("projectId", projectId.toString());
       }
       if (item.getTitle() != null) {
         metadata.put("title", item.getTitle());
@@ -1153,8 +1181,9 @@ public class KnowledgeIngestionService {
    *     {@link KnowledgeEntityType#KNOWLEDGE_SOURCE}
    * @param entityId id of the owning entity (e.g. the {@code KnowledgeSource} id)
    * @param teamId optional team scope, propagated to each item for filtering
-   * @param projectId optional project scope — currently resolved via the parent
-   *     {@code KnowledgeSource} for {@code KNOWLEDGE_SOURCE} items, accepted here for API parity
+   * @param projectId optional project scope, written into each chunk's embedding metadata so
+   *     retrieval can be limited to people who can see that project; when null it is derived from
+   *     the owning entity (wiki space, knowledge source, ...) where possible
    */
   @Transactional
   public void ingestChunks(List<RawChunk> chunks, KnowledgeEntityType entityType, Long entityId,
@@ -1164,7 +1193,6 @@ public class KnowledgeIngestionService {
       return;
     }
 
-    // projectId resolved via parent KnowledgeSource for KNOWLEDGE_SOURCE items
     int total = chunks.size();
     for (RawChunk chunk : chunks) {
       KnowledgeItem item = KnowledgeItem.builder().entityType(entityType).entityId(entityId)
@@ -1180,7 +1208,7 @@ public class KnowledgeIngestionService {
       knowledgeItemRepository.save(item);
 
       try {
-        embedKnowledgeItem(item);
+        embedKnowledgeItem(item, projectId);
       } catch (Exception e) {
         log.warn("Embedding deferred for item {} - will be retried by processPendingEmbeddings",
             item.getId(), e);

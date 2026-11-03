@@ -232,7 +232,7 @@ docker compose up -d
   - **Context-Aware**: Access relevant guides directly from related pages
 - **Comments & Collaboration**: Full commenting system for tasks and bug reports
   - **@Mentions**: Type `@` to mention users with autocomplete suggestions
-  - **@ShipFlow agent** *(v1.16.0, in progress)*: Mention `@ShipFlow` on a task, bug report or wiki page to get an AI answer as a comment — grounded in the item, the thread, the project and your knowledge base, scoped to *your* permissions, read-only, and able to run fully air-gapped via Ollama. See the in-app guide "ShipFlow Agent".
+  - **@ShipFlow agent** *(v1.16.0, in progress)*: Mention `@ShipFlow` on a task, bug report or wiki page to get an AI answer as a comment — grounded in the item, the thread, the project and your knowledge base, scoped to *your* permissions, able to *propose* changes (mark done, assign, create a task…) that only you can Apply, and able to run fully air-gapped via Ollama. See the in-app guide "ShipFlow Agent".
   - **Mention Notifications**: Mentioned users receive in-app and Slack notifications
   - **Emoji Reactions**: 8 emoji reactions (👍, 👎, ❤️, 😄, 😮, 😢, 🚀, 👀) with toggle behavior
   - **CRUD Operations**: Create, edit, delete comments with permission checks

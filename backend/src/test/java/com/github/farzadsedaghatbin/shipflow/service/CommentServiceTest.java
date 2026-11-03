@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import com.github.farzadsedaghatbin.shipflow.event.AgentMentionedEvent;
+import com.github.farzadsedaghatbin.shipflow.service.agent.AgentActionProposalReader;
 import com.github.farzadsedaghatbin.shipflow.service.agent.AgentIdentityService;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -62,6 +63,9 @@ class CommentServiceTest {
 
   @Mock
   private AgentIdentityService agentIdentityService;
+
+  @Mock
+  private AgentActionProposalReader agentActionProposalReader;
 
   @Mock
   private ApplicationEventPublisher eventPublisher;

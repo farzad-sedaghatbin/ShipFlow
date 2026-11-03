@@ -289,6 +289,44 @@ public class McpToolDispatcher {
         "isError", false);
   }
 
+  /**
+   * Runs one MCP <b>write</b> tool on behalf of a signed-in person, outside any MCP session — the
+   * entry point the ShipFlow Agent uses once a person has confirmed a change it proposed.
+   *
+   * <p>It reuses everything an external tool call goes through: the same tool implementations and
+   * service layer, and {@link McpProjectScopeGuard} with a throw-away key restricted to
+   * {@code restrictToProjectId}, so the change cannot touch anything outside that project. It does
+   * not consult the MCP server's own write toggle or API-key scopes (there is no key); the caller
+   * is responsible for the agent's own enable switch and the person's permissions.
+   *
+   * @param auth the confirming person's authentication, bound for the duration of the call
+   * @param restrictToProjectId the only project the change may touch
+   * @throws McpToolException if {@code toolName} is not a write tool, or the arguments reach
+   *     outside the project
+   */
+  public Object executeWriteToolAs(
+      String toolName, Map<String, Object> args, Authentication auth, Long restrictToProjectId) {
+    if (!isWriteTool(toolName)) {
+      throw new McpToolException("Not a write tool: " + toolName);
+    }
+    if (restrictToProjectId == null) {
+      throw new McpToolException("A project is required to run a tool on someone's behalf");
+    }
+    ApiKey scope = new ApiKey();
+    scope.setRestrictedToProjectId(restrictToProjectId);
+
+    SecurityContext previousContext = SecurityContextHolder.getContext();
+    try {
+      SecurityContext toolContext = SecurityContextHolder.createEmptyContext();
+      toolContext.setAuthentication(auth);
+      SecurityContextHolder.setContext(toolContext);
+      Map<String, Object> scopedArgs = scopeGuard.authorize(toolName, args, scope);
+      return scopeGuard.filterResult(dispatchTool(toolName, scopedArgs, auth), scope);
+    } finally {
+      SecurityContextHolder.setContext(previousContext);
+    }
+  }
+
   private void recordUsage(String username, ApiKey apiKey, String toolName, boolean success,
       String errorMessage, long durationMs) {
     if (usageReportService != null) {

@@ -1,7 +1,9 @@
 package com.github.farzadsedaghatbin.shipflow.dto.comment;
 
+import com.github.farzadsedaghatbin.shipflow.dto.agent.AgentActionProposalDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.CommentEntityType;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,6 +30,9 @@ public class CommentDTO {
 
   /** True when the ShipFlow Agent wrote this comment (UI shows an AI badge). */
   private Boolean isAgent;
+
+  /** Changes the agent proposed in this comment, awaiting confirmation (agent comments only). */
+  private List<AgentActionProposalDTO> proposals;
 
   // Metadata
   private Boolean isEdited;
