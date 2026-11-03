@@ -62,6 +62,7 @@ Click **"Browse Templates"** → search or filter by category → click **"Use T
 | **Hill Chart Moved** | Any scope dot is dragged on the hill chart *(Shape Up only)* |
 | **Appetite Exceeded** | Actual hours exceed the pitch appetite *(Shape Up only)* |
 | **Scope Creep Detected** | New tasks are added to a cycle after it has started *(Shape Up only)* |
+| **Schedule** | At a time you choose — every weekday, every day, weekly, or any cron. Used by the ShipFlow Agent's loops (see *Agent Loops*) |
 
 ---
 
@@ -76,6 +77,13 @@ Click **"Browse Templates"** → search or filter by category → click **"Use T
 | **Add Comment** | Posts an automatic comment on the triggering task or pitch |
 | **Change Task Status** | Updates the task's status to a specified value |
 | **Create Task** | Creates a new task in the project |
+| **Agent: Standup digest** | The ShipFlow Agent posts what finished, is in progress, blocked or overdue, plus new bugs |
+| **Agent: Cycle health check** | The agent checks the active cycle or sprint against the calendar and flags risks |
+| **Agent: Betting table prep** | The agent prepares the brief for a betting meeting *(Shape Up only)* |
+
+> **Which actions actually run today:** *Notify Assignee*, *Notify Project Members* and the three *Agent* actions do their job. *Send Webhook*, *Send Email*, *Add Comment*, *Change Task Status* and *Create Task* can be configured and are recorded in the execution log, but they are not carried out yet — don't rely on them.
+
+The three Agent actions are explained in the **Agent Loops** guide.
 
 ### Message templates
 
@@ -127,7 +135,7 @@ View logs two ways:
 - Check the Execution History for FAILURE or SKIPPED entries — they include the reason
 
 **Can I test a rule without waiting for the trigger to happen naturally?**
-Not directly from the UI. The easiest workaround is to perform the triggering action manually (e.g. change a task status to DONE to test a Task Completed trigger) and then check the Execution History.
+For the ShipFlow Agent's loops, yes: each has a **Preview** button (shows what it would send, sends nothing) and a **Run now** button. For other rules, not directly from the UI. The easiest workaround is to perform the triggering action manually (e.g. change a task status to DONE to test a Task Completed trigger) and then check the Execution History.
 
 **What happens if a webhook action fails?**
 The automation logs a FAILURE entry with the HTTP status code and error message. It does not retry automatically — fix the webhook URL and the next real trigger will try again.

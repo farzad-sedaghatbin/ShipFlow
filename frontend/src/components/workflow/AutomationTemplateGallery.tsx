@@ -15,6 +15,9 @@ import {
   CheckSquare,
   Mail,
   Zap,
+  Sparkles,
+  Activity,
+  Target,
 } from 'lucide-react';
 import type { WorkflowAutomationTemplate } from '../../types/automation';
 import { Button } from '../ui/button';
@@ -43,6 +46,9 @@ const ICON_MAP: Record<string, React.ElementType> = {
   ClipboardList,
   CheckSquare,
   Mail,
+  Sparkles,
+  Activity,
+  Target,
   Webhook: Zap,
   FlagOff: Play,
   default: Zap,

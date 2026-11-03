@@ -2222,7 +2222,30 @@ public class SampleDataInitializer implements CommandLineRunner {
 
     createWorkflowAutomationExecutions(taskDoneRule, pitchChangeRule, cycleStartRule);
 
-    log.info("Workflow automation sample data created: 4 demo rules for project '{}'", project.getName());
+    // A ShipFlow Agent loop (S71): a weekday standup digest delivered in-app (the demo has no
+    // Slack/Teams). Enabled, so the scheduler gives it a slot and it really runs.
+    var agentTemplate = templates.stream()
+        .filter(t -> t.getActionType() == ActionType.AGENT_STANDUP_DIGEST).findFirst().orElse(null);
+    WorkflowAutomation standupRule = workflowAutomationRepository.save(WorkflowAutomation.builder()
+        .name("Daily standup digest")
+        .description("Every weekday morning the ShipFlow Agent posts what moved, what is blocked and what is overdue.")
+        .project(project)
+        .triggerType(TriggerType.SCHEDULE)
+        .actionType(ActionType.AGENT_STANDUP_DIGEST)
+        .triggerConfig("{\"cron\":\"0 0 9 * * MON-FRI\",\"timezone\":\"UTC\"}")
+        .actionConfig("{\"channels\":[\"IN_APP\"],\"lookbackHours\":24,\"useAi\":true}")
+        .enabled(true)
+        .template(agentTemplate)
+        .executionCount(2L)
+        .lastTriggeredAt(LocalDateTime.of(2026, 6, 15, 9, 0))
+        .build());
+    saveExecution(standupRule, "SCHEDULE", "{\"trigger\":\"SCHEDULE\",\"scheduledFor\":\"2026-06-12T09:00:00Z\"}",
+        AutomationExecutionStatus.SUCCESS, "Sent to In-app (4 members)", LocalDateTime.of(2026, 6, 12, 9, 0));
+    saveExecution(standupRule, "SCHEDULE", "{\"trigger\":\"SCHEDULE\",\"scheduledFor\":\"2026-06-15T09:00:00Z\"}",
+        AutomationExecutionStatus.SUCCESS, "Sent to In-app (4 members) (with an AI summary)",
+        LocalDateTime.of(2026, 6, 15, 9, 0));
+
+    log.info("Workflow automation sample data created: 5 demo rules for project '{}'", project.getName());
   }
 
   /**

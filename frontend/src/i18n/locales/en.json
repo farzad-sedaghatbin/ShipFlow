@@ -8827,6 +8827,79 @@
     "riskPosture": "Risk posture"
   },
   "automation": {
+    "triggerSchedule": "Schedule",
+    "action_AGENT_STANDUP_DIGEST": "Agent: Standup digest",
+    "action_AGENT_CYCLE_HEALTH_CHECK": "Agent: Cycle health check",
+    "action_AGENT_BETTING_PREP": "Agent: Betting table prep",
+    "nextRun": "Next run",
+    "schedule": {
+      "title": "Schedule",
+      "repeat": "Repeat",
+      "time": "Time of day",
+      "weekday": "Day",
+      "preset": {
+        "WEEKDAYS": "Every weekday",
+        "DAILY": "Every day",
+        "WEEKLY": "Every week",
+        "CUSTOM": "Custom (cron)"
+      },
+      "day": {
+        "MON": "Monday",
+        "TUE": "Tuesday",
+        "WED": "Wednesday",
+        "THU": "Thursday",
+        "FRI": "Friday",
+        "SAT": "Saturday",
+        "SUN": "Sunday"
+      },
+      "cron": "Cron expression",
+      "cronHint": "Second, minute, hour, day of month, month, weekday — e.g. 0 0 9 * * MON-FRI. At most once an hour.",
+      "timezone": "Timezone",
+      "timezoneHint": "The time above is in this timezone (e.g. UTC, Europe/Berlin, Asia/Tehran).",
+      "errorCron": "Enter a cron expression.",
+      "errorTime": "Enter a valid time.",
+      "cronIs": "Runs on cron"
+    },
+    "agentLoop": {
+      "title": "ShipFlow Agent",
+      "about": {
+        "AGENT_STANDUP_DIGEST": "Posts what finished, is in progress, blocked or overdue, plus new bugs. Stays quiet when nothing happened.",
+        "AGENT_CYCLE_HEALTH_CHECK": "Checks the active cycle or sprint against the calendar and flags slipping scope, blocked and overdue work.",
+        "AGENT_BETTING_PREP": "Lists shaped pitches and their appetite against the next cycle's capacity. Shape Up projects only."
+      },
+      "sendTo": "Send to",
+      "sendToHint": "Slack and Teams must be set up under Integrations to receive messages.",
+      "channel": {
+        "SLACK": "Slack",
+        "TEAMS": "Teams",
+        "IN_APP": "In-app notification"
+      },
+      "channelName": "Channel (optional)",
+      "channelNameHint": "Overrides the default channel of your Slack or Teams integration.",
+      "lookback": "Look back (hours)",
+      "onlyWhenAtRisk": "Only post when something is at risk",
+      "useAi": "Add a short summary written by the agent",
+      "useAiHint": "The facts always come from your project data. The agent's summary is dropped if it quotes a number that isn't in them.",
+      "error": {
+        "channels": "Pick at least one place to send it.",
+        "lookback": "Look-back must be a whole number from 1 to 168.",
+        "channelName": "That isn't a valid channel name."
+      }
+    },
+    "preview": {
+      "button": "Preview",
+      "title": "Preview — {{name}}",
+      "desc": "What this rule would send right now. Nothing is sent.",
+      "loading": "Generating preview…",
+      "wouldSkip": "A real run would be skipped right now: there is nothing to report.",
+      "agentSummary": "Agent summary",
+      "factsNote": "Built from your project's current data."
+    },
+    "runNow": {
+      "button": "Run now",
+      "done": "Ran successfully.",
+      "failed": "The run failed."
+    },
     "title": "Workflow Automations",
     "subtitle": "Automate repetitive actions with trigger-based rules",
     "new": "New Rule",

@@ -53,6 +53,10 @@ Safeguards:
 - The agent proposes at most three changes per reply, and only when you ask for one — not because of something written in a comment or document.
 - Always read the call that is shown: it is generated from what will actually run, not from the agent's wording.
 
+## Scheduled Reports
+
+The agent can also report on its own, on a schedule — a daily standup digest, a cycle health check, and betting-table prep. These are set up as automation rules; see the **Agent Loops** guide.
+
 ## Running Privately
 
 The agent uses whatever AI provider your administrator configured. With a local model (Ollama) and Air-Gapped Mode, nothing leaves your own servers. If no AI provider is configured, the agent replies once to say so rather than staying silent.

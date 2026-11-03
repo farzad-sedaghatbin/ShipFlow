@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,8 +27,28 @@ import {
   SelectValue,
 } from '../ui/select';
 import { Switch } from '../ui/switch';
+import ScheduleFields from './ScheduleFields';
+import AgentLoopFields from './AgentLoopFields';
+import {
+  agentProblem,
+  allowedTriggers,
+  buildAgentConfig,
+  buildScheduleConfig,
+  defaultAgentForm,
+  defaultSchedule,
+  isAgentLoop,
+  parseAgentConfig,
+  parseScheduleConfig,
+  scheduleProblem,
+  type AgentForm,
+  type ScheduleForm,
+} from './agentLoopConfig';
 
-const TRIGGER_OPTIONS: { value: TriggerType; label: string }[] = [
+/** `labelKey` entries are translated; the older ones keep their English labels. */
+type Option<T> = { value: T; label?: string; labelKey?: string };
+
+const TRIGGER_OPTIONS: Option<TriggerType>[] = [
+  { value: 'SCHEDULE', labelKey: 'automation.triggerSchedule' },
   { value: 'TASK_CREATED', label: 'Task Created' },
   { value: 'TASK_STATUS_CHANGED', label: 'Task Status Changed' },
   { value: 'TASK_ASSIGNED', label: 'Task Assigned' },
@@ -45,7 +65,10 @@ const TRIGGER_OPTIONS: { value: TriggerType; label: string }[] = [
   { value: 'SCOPE_CREEP_DETECTED', label: 'Scope Creep Detected' },
 ];
 
-const ACTION_OPTIONS: { value: ActionType; label: string }[] = [
+const ACTION_OPTIONS: Option<ActionType>[] = [
+  { value: 'AGENT_STANDUP_DIGEST', labelKey: 'automation.action_AGENT_STANDUP_DIGEST' },
+  { value: 'AGENT_CYCLE_HEALTH_CHECK', labelKey: 'automation.action_AGENT_CYCLE_HEALTH_CHECK' },
+  { value: 'AGENT_BETTING_PREP', labelKey: 'automation.action_AGENT_BETTING_PREP' },
   { value: 'NOTIFY_ASSIGNEE', label: 'Notify Assignee' },
   { value: 'NOTIFY_PROJECT_MEMBERS', label: 'Notify Project Members' },
   { value: 'SEND_WEBHOOK', label: 'Send Webhook' },
@@ -93,7 +116,24 @@ export default function AutomationRuleForm({ open, projectId, automation, onClos
       },
     });
 
+  // The structured sections hold their own state and are turned into JSON on save.
+  const [schedule, setSchedule] = useState<ScheduleForm>(defaultSchedule);
+  const [agent, setAgent] = useState<AgentForm>(defaultAgentForm);
+
+  const triggerType = watch('triggerType');
+  const actionType = watch('actionType');
+  const agentLoop = isAgentLoop(actionType);
+  const triggerChoices = useMemo(() => {
+    const allowed = allowedTriggers(actionType);
+    return allowed ? TRIGGER_OPTIONS.filter((o) => allowed.includes(o.value)) : TRIGGER_OPTIONS;
+  }, [actionType]);
+  const problem =
+    (triggerType === 'SCHEDULE' && scheduleProblem(schedule) !== null) ||
+    (agentLoop && agentProblem(agent, actionType as ActionType) !== null);
+
   useEffect(() => {
+    setSchedule(parseScheduleConfig(automation?.triggerType === 'SCHEDULE' ? automation.triggerConfig : null));
+    setAgent(parseAgentConfig(automation && isAgentLoop(automation.actionType) ? automation.actionConfig : null));
     if (automation) {
       reset({
         name: automation.name,
@@ -117,6 +157,15 @@ export default function AutomationRuleForm({ open, projectId, automation, onClos
     }
   }, [automation, reset]);
 
+  const chooseAction = (value: string) => {
+    setValue('actionType', value);
+    // An agent loop only makes sense on certain triggers: move off one it can't use.
+    const allowed = allowedTriggers(value);
+    if (allowed && !allowed.includes(triggerType as TriggerType)) {
+      setValue('triggerType', allowed[0]);
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     try {
       const payload = {
@@ -124,9 +173,11 @@ export default function AutomationRuleForm({ open, projectId, automation, onClos
         description: values.description,
         projectId,
         triggerType: values.triggerType as TriggerType,
-        triggerConfig: values.triggerConfig,
+        triggerConfig: values.triggerType === 'SCHEDULE' ? buildScheduleConfig(schedule) : values.triggerConfig,
         actionType: values.actionType as ActionType,
-        actionConfig: values.actionConfig,
+        actionConfig: isAgentLoop(values.actionType)
+          ? buildAgentConfig(agent, values.actionType as ActionType)
+          : values.actionConfig,
         enabled: values.enabled,
       };
       if (automation) {
@@ -144,7 +195,7 @@ export default function AutomationRuleForm({ open, projectId, automation, onClos
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {automation ? t('automation.editRule') : t('automation.newRule')}
@@ -168,13 +219,13 @@ export default function AutomationRuleForm({ open, projectId, automation, onClos
             <div className="space-y-1">
               <Label>{t('automation.trigger')} *</Label>
               <Select
-                value={watch('triggerType')}
+                value={triggerType}
                 onValueChange={v => setValue('triggerType', v)}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label={t('automation.trigger')}><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {TRIGGER_OPTIONS.map(o => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  {triggerChoices.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.labelKey ? t(o.labelKey) : o.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -183,30 +234,36 @@ export default function AutomationRuleForm({ open, projectId, automation, onClos
             <div className="space-y-1">
               <Label>{t('automation.action')} *</Label>
               <Select
-                value={watch('actionType')}
-                onValueChange={v => setValue('actionType', v)}
+                value={actionType}
+                onValueChange={chooseAction}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label={t('automation.action')}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ACTION_OPTIONS.map(o => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    <SelectItem key={o.value} value={o.value}>{o.labelKey ? t(o.labelKey) : o.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label htmlFor="actionConfig">{t('automation.actionConfig')}</Label>
-            <Textarea
-              id="actionConfig"
-              rows={3}
-              className="font-mono text-xs"
-              placeholder='{"message":"A task was completed: {{taskTitle}}"}'
-              {...register('actionConfig')}
-            />
-            <p className="text-xs text-muted-foreground">{t('automation.configHint')}</p>
-          </div>
+          {triggerType === 'SCHEDULE' && <ScheduleFields value={schedule} onChange={setSchedule} />}
+
+          {agentLoop ? (
+            <AgentLoopFields action={actionType as ActionType} value={agent} onChange={setAgent} />
+          ) : (
+            <div className="space-y-1">
+              <Label htmlFor="actionConfig">{t('automation.actionConfig')}</Label>
+              <Textarea
+                id="actionConfig"
+                rows={3}
+                className="font-mono text-xs"
+                placeholder='{"message":"A task was completed: {{taskTitle}}"}'
+                {...register('actionConfig')}
+              />
+              <p className="text-xs text-muted-foreground">{t('automation.configHint')}</p>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <Switch
@@ -220,7 +277,7 @@ export default function AutomationRuleForm({ open, projectId, automation, onClos
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || problem}>
               {isSubmitting ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>

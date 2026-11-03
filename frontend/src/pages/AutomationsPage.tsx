@@ -10,6 +10,9 @@ import {
   ChevronRight,
   AlertCircle,
   LayoutTemplate,
+  Eye,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { automationService } from '../services/automationService';
 import { useProject, useToast } from '../contexts';
@@ -31,6 +34,8 @@ import ProjectRequiredDialog from '../components/ProjectRequiredDialog';
 import AutomationRuleForm from '../components/workflow/AutomationRuleForm';
 import AutomationTemplateGallery from '../components/workflow/AutomationTemplateGallery';
 import AutomationExecutionLog from '../components/workflow/AutomationExecutionLog';
+import AgentLoopPreviewDialog from '../components/workflow/AgentLoopPreviewDialog';
+import { isAgentLoop } from '../components/workflow/agentLoopConfig';
 
 const TRIGGER_LABELS: Record<string, string> = {
   TASK_CREATED: 'Task Created',
@@ -47,6 +52,7 @@ const TRIGGER_LABELS: Record<string, string> = {
   HILL_CHART_MOVED: 'Hill Chart Moved',
   APPETITE_EXCEEDED: 'Appetite Exceeded',
   SCOPE_CREEP_DETECTED: 'Scope Creep Detected',
+  SCHEDULE: 'Schedule',
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -57,6 +63,9 @@ const ACTION_LABELS: Record<string, string> = {
   ADD_COMMENT: 'Add Comment',
   CHANGE_TASK_STATUS: 'Change Task Status',
   CREATE_TASK: 'Create Task',
+  AGENT_STANDUP_DIGEST: 'Agent: Standup digest',
+  AGENT_CYCLE_HEALTH_CHECK: 'Agent: Cycle health check',
+  AGENT_BETTING_PREP: 'Agent: Betting table prep',
 };
 
 export default function AutomationsPage() {
@@ -75,6 +84,8 @@ export default function AutomationsPage() {
   const [editingAutomation, setEditingAutomation] = useState<WorkflowAutomation | null>(null);
   const [selectedForLog, setSelectedForLog] = useState<WorkflowAutomation | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [previewFor, setPreviewFor] = useState<WorkflowAutomation | null>(null);
+  const [runningId, setRunningId] = useState<number | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!currentProject?.id) return;
@@ -109,6 +120,29 @@ export default function AutomationsPage() {
       showError(getUserFriendlyError(err));
     }
   };
+
+  /** Runs an agent loop now and reports what actually happened, in the loop's own words. */
+  const handleRunNow = async (automation: WorkflowAutomation) => {
+    setRunningId(automation.id);
+    try {
+      const { data } = await automationService.runNow(automation.id);
+      if (data.status === 'FAILURE') {
+        showError(data.resultMessage ?? t('automation.runNow.failed'));
+      } else {
+        showSuccess(data.resultMessage ?? t('automation.runNow.done'));
+      }
+      fetchData();
+    } catch (err) {
+      showError(getUserFriendlyError(err));
+    } finally {
+      setRunningId(null);
+    }
+  };
+
+  const triggerLabel = (v: string) =>
+    v === 'SCHEDULE' ? t('automation.triggerSchedule') : TRIGGER_LABELS[v] ?? v;
+  const actionLabel = (v: string) =>
+    isAgentLoop(v) ? t(`automation.action_${v}`) : ACTION_LABELS[v] ?? v;
 
   const handleDelete = async (id: number) => {
     setDeletingId(id);
@@ -233,10 +267,10 @@ export default function AutomationsPage() {
                     <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                       <span className="flex items-center gap-1">
                         <Play className="h-3 w-3" />
-                        {TRIGGER_LABELS[automation.triggerType] ?? automation.triggerType}
+                        {triggerLabel(automation.triggerType)}
                       </span>
                       <ChevronRight className="h-3 w-3" />
-                      <span>{ACTION_LABELS[automation.actionType] ?? automation.actionType}</span>
+                      <span>{actionLabel(automation.actionType)}</span>
                       <span className="ml-auto flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {automation.executionCount} {t('automation.runs')}
@@ -245,6 +279,11 @@ export default function AutomationsPage() {
                         )}
                       </span>
                     </div>
+                    {automation.triggerType === 'SCHEDULE' && automation.enabled && automation.nextRunAt && (
+                      <p className="mt-1 text-xs text-muted-foreground" data-testid={`next-run-${automation.id}`}>
+                        {t('automation.nextRun')}: {new Date(automation.nextRunAt).toLocaleString(i18n.language)}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Button
@@ -255,6 +294,33 @@ export default function AutomationsPage() {
                     >
                       <History className="h-4 w-4" />
                     </Button>
+                    {isManager && isAgentLoop(automation.actionType) && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setPreviewFor(automation)}
+                          title={t('automation.preview.button')}
+                          aria-label={t('automation.preview.button')}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={runningId === automation.id}
+                          onClick={() => handleRunNow(automation)}
+                          title={t('automation.runNow.button')}
+                          aria-label={t('automation.runNow.button')}
+                        >
+                          {runningId === automation.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </>
+                    )}
                     {isManager && (
                       <>
                         <Button
@@ -318,6 +384,11 @@ export default function AutomationsPage() {
           onSelect={handleTemplateSelect}
           onClose={() => setShowTemplates(false)}
         />
+      )}
+
+      {/* Agent loop preview */}
+      {previewFor && (
+        <AgentLoopPreviewDialog automation={previewFor} onClose={() => setPreviewFor(null)} />
       )}
 
       {/* Per-rule execution log sheet */}

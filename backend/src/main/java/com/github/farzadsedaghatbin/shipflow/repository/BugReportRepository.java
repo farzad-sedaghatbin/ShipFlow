@@ -151,4 +151,8 @@ public interface BugReportRepository extends JpaRepository<BugReport, Long>, Jpa
 
   @Query("SELECT br.targetRelease.id, COUNT(br) FROM BugReport br WHERE br.targetRelease.id IN :releaseIds GROUP BY br.targetRelease.id")
   List<Object[]> countByTargetReleaseIds(@Param("releaseIds") List<Long> releaseIds);
+
+  /** Bugs reported in a project since a moment, newest first. */
+  @Query("SELECT br FROM BugReport br WHERE br.project.id = :projectId AND br.createdAt >= :since ORDER BY br.createdAt DESC")
+  List<BugReport> findCreatedSince(@Param("projectId") Long projectId, @Param("since") java.time.LocalDateTime since);
 }
