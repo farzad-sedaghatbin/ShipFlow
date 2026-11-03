@@ -1,5 +1,6 @@
 package com.github.farzadsedaghatbin.shipflow.controller;
 
+import com.github.farzadsedaghatbin.shipflow.dto.workflow.AgentLoopPreviewDto;
 import com.github.farzadsedaghatbin.shipflow.dto.workflow.CreateWorkflowAutomationRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.workflow.WorkflowAutomationDto;
 import com.github.farzadsedaghatbin.shipflow.dto.workflow.WorkflowAutomationExecutionDto;
@@ -97,6 +98,24 @@ public class WorkflowAutomationController {
   public ResponseEntity<Void> delete(@PathVariable Long id) {
     automationService.delete(id);
     return ResponseEntity.noContent().build();
+  }
+
+  // ── Agent loops ──────────────────────────────────────────────────────────────
+
+  @PostMapping("/{id}/preview")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @Operation(summary = "Preview an agent loop",
+      description = "Generates what the loop would send right now, without sending anything")
+  public ResponseEntity<AgentLoopPreviewDto> preview(@PathVariable Long id) {
+    return ResponseEntity.ok(automationService.preview(id));
+  }
+
+  @PostMapping("/{id}/run-now")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  @Operation(summary = "Run an agent loop now",
+      description = "Runs the loop as if its slot had arrived and returns the execution record")
+  public ResponseEntity<WorkflowAutomationExecutionDto> runNow(@PathVariable Long id) {
+    return ResponseEntity.ok(automationService.runNow(id));
   }
 
   // ── Execution Logs ───────────────────────────────────────────────────────────

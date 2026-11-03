@@ -22,6 +22,8 @@ public class WorkflowAutomationDto {
   private String templateName;
   private long executionCount;
   private LocalDateTime lastTriggeredAt;
+  /** SCHEDULE automations: when it next runs (null when disabled or not scheduled). */
+  private java.time.Instant nextRunAt;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 }

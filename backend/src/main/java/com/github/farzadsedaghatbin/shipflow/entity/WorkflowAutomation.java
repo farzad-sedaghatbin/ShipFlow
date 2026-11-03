@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TriggerType;
 import jakarta.persistence.*;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -77,6 +78,15 @@ public class WorkflowAutomation {
   @NotAudited
   @Column(name = "last_triggered_at")
   private LocalDateTime lastTriggeredAt;
+
+  /**
+   * When a SCHEDULE automation is next due (null for every other trigger, or when disabled).
+   * Scheduler bookkeeping, deliberately not audited: it changes on every run and the claim on it
+   * is what stops two replicas posting the same digest — see {@code WorkflowScheduler}.
+   */
+  @NotAudited
+  @Column(name = "next_run_at")
+  private Instant nextRunAt;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;

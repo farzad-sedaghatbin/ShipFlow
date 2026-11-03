@@ -7,5 +7,9 @@ public enum ActionType {
   SEND_EMAIL,
   ADD_COMMENT,
   CHANGE_TASK_STATUS,
-  CREATE_TASK
+  CREATE_TASK,
+  // ShipFlow Agent loops (S71): the agent gathers facts, writes a short summary and posts it
+  AGENT_STANDUP_DIGEST,
+  AGENT_CYCLE_HEALTH_CHECK,
+  AGENT_BETTING_PREP
 }

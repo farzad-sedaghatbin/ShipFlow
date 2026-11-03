@@ -15,5 +15,7 @@ public enum TriggerType {
   BETTING_TABLE_LOCKED,
   HILL_CHART_MOVED,
   APPETITE_EXCEEDED,
-  SCOPE_CREEP_DETECTED
+  SCOPE_CREEP_DETECTED,
+  // Time-based: fires on a cron schedule (S71 agent loops)
+  SCHEDULE
 }

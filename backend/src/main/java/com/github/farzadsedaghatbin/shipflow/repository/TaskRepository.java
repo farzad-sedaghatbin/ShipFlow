@@ -317,4 +317,30 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT t.targetRelease.id, COUNT(t) FROM Task t WHERE t.targetRelease.id IN :releaseIds AND t.deletedAt IS NULL GROUP BY t.targetRelease.id")
     List<Object[]> countByTargetReleaseIdsNotDeleted(@Param("releaseIds") List<Long> releaseIds);
+
+    // ── ShipFlow Agent loops (S71) ──────────────────────────────────────────
+
+    /** Tasks finished since a moment, newest first, with the assignee loaded for display. */
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.assignee WHERE t.project.id = :projectId"
+            + " AND t.deletedAt IS NULL AND t.status = :status AND t.completedAt >= :since"
+            + " ORDER BY t.completedAt DESC")
+    List<Task> findCompletedSince(@Param("projectId") Long projectId, @Param("status") TaskStatus status,
+            @Param("since") java.time.LocalDateTime since);
+
+    /** A project's tasks currently in any of the given statuses, most recently touched first. */
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.assignee WHERE t.project.id = :projectId"
+            + " AND t.deletedAt IS NULL AND t.status IN :statuses ORDER BY t.updatedAt DESC")
+    List<Task> findByProjectAndStatusIn(@Param("projectId") Long projectId,
+            @Param("statuses") List<TaskStatus> statuses);
+
+    /** Open tasks past their due date. */
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.assignee WHERE t.project.id = :projectId"
+            + " AND t.deletedAt IS NULL AND t.dueDate < :today AND t.status NOT IN :closed"
+            + " ORDER BY t.dueDate ASC")
+    List<Task> findOverdueByProject(@Param("projectId") Long projectId,
+            @Param("today") java.time.LocalDate today, @Param("closed") List<TaskStatus> closed);
+
+    /** Every live task in a cycle, with the assignee loaded. */
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.assignee WHERE t.cycle.id = :cycleId AND t.deletedAt IS NULL")
+    List<Task> findByCycleIdWithAssignee(@Param("cycleId") Long cycleId);
 }
