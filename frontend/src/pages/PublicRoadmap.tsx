@@ -111,6 +111,16 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.15.0',
+      date: 'November 3, 2026',
+      title: t('publicRoadmap.shipped1150Title'),
+      highlights: [
+        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.shipped1150Item0Title'), description: t('publicRoadmap.shipped1150Item0Desc') },
+        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.shipped1150Item1Title'), description: t('publicRoadmap.shipped1150Item1Desc') },
+        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.shipped1150Item2Title'), description: t('publicRoadmap.shipped1150Item2Desc') },
+      ],
+    },
+    {
       version: '1.14.6',
       date: 'November 2, 2026',
       title: t('publicRoadmap.shipped1146Title'),
@@ -480,23 +490,18 @@ export default function PublicRoadmap() {
 
   const upcomingPhases: RoadmapPhase[] = [
     {
-      // Was v1.15.0 — shifted to v1.16.0 because v1.14.0 absorbed an extra
-      // Scrum-parity feedback batch beyond its original planned scope,
-      // consuming what would otherwise have been the next version number.
-      // See CLAUDE.md's versioning note for 2026-09-09.
       version: 'v1.16.0',
-      theme: t('publicRoadmap.phase115Theme'),
-      status: 'in-progress',
+      theme: t('publicRoadmap.phase116Theme'),
+      status: 'planned',
       items: [
-        { icon: <Sparkles className="h-5 w-5" />, title: t('publicRoadmap.phase115Item0Title'), description: t('publicRoadmap.phase115Item0Desc') },
-        { icon: <Wand2 className="h-5 w-5" />, title: t('publicRoadmap.phase115Item1Title'), description: t('publicRoadmap.phase115Item1Desc') },
-        { icon: <RefreshCw className="h-5 w-5" />, title: t('publicRoadmap.phase115Item2Title'), description: t('publicRoadmap.phase115Item2Desc') },
+        { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.phase116Item0Title'), description: t('publicRoadmap.phase116Item0Desc') },
+        { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.phase116Item1Title'), description: t('publicRoadmap.phase116Item1Desc') },
+        { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase116Item2Title'), description: t('publicRoadmap.phase116Item2Desc') },
       ],
     },
   ];
 
   const futureVision = [
-    { icon: <Rocket className="h-6 w-6" />, title: t('publicRoadmap.future116Title'), description: t('publicRoadmap.future116Desc') },
     { icon: <GitBranch className="h-6 w-6" />, title: t('publicRoadmap.future117Title'), description: t('publicRoadmap.future117Desc') },
     { icon: <TrendingUp className="h-6 w-6" />, title: t('publicRoadmap.future118Title'), description: t('publicRoadmap.future118Desc') },
     { icon: <Lock className="h-6 w-6" />, title: t('publicRoadmap.future119Title'), description: t('publicRoadmap.future119Desc') },

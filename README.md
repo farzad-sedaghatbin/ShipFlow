@@ -232,8 +232,8 @@ docker compose up -d
   - **Context-Aware**: Access relevant guides directly from related pages
 - **Comments & Collaboration**: Full commenting system for tasks and bug reports
   - **@Mentions**: Type `@` to mention users with autocomplete suggestions
-  - **@ShipFlow agent** *(v1.16.0, in progress)*: Mention `@ShipFlow` on a task, bug report or wiki page to get an AI answer as a comment — grounded in the item, the thread, the project and your knowledge base, scoped to *your* permissions, able to *propose* changes (mark done, assign, create a task…) that only you can Apply, and able to run fully air-gapped via Ollama. See the in-app guide "ShipFlow Agent".
-  - **Agent loops** *(v1.16.0, in progress)*: Schedule a daily standup digest, a cycle-health check or betting-table prep from **Automations**; the ShipFlow Agent posts them to Slack, Teams or in-app. The facts come from your data, the agent adds an optional short summary that is dropped if it quotes a number that isn't there, and a quiet day posts nothing.
+  - **@ShipFlow agent** *(v1.15.0)*: Mention `@ShipFlow` on a task, bug report or wiki page to get an AI answer as a comment — grounded in the item, the thread, the project and your knowledge base, scoped to *your* permissions, able to *propose* changes (mark done, assign, create a task…) that only you can Apply, and able to run fully air-gapped via Ollama. See the in-app guide "ShipFlow Agent".
+  - **Agent loops** *(v1.15.0)*: Schedule a daily standup digest, a cycle-health check or betting-table prep from **Automations**; the ShipFlow Agent posts them to Slack, Teams or in-app. The facts come from your data, the agent adds an optional short summary that is dropped if it quotes a number that isn't there, and a quiet day posts nothing.
   - **Mention Notifications**: Mentioned users receive in-app and Slack notifications
   - **Emoji Reactions**: 8 emoji reactions (👍, 👎, ❤️, 😄, 😮, 😢, 🚀, 👀) with toggle behavior
   - **CRUD Operations**: Create, edit, delete comments with permission checks
