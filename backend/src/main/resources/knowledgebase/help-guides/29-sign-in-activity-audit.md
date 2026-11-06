@@ -15,7 +15,7 @@ the users table, and logins were previously recorded nowhere at all.
 Each entry captures:
 
 - **When** — the exact time of the attempt
-- **User** — the username *as it was typed*, even if no such account exists
+- **User** — the username *as it was typed*, even if no such account exists. Usernames are not case-sensitive (`Hooman` signs in as `hooman`), so an entry like `Hooman` is the same person as `hooman`. If someone's sign-in keeps failing, check this column: a username that differs by more than capitals (for example an email address where the username is not an email) will never match
 - **Event** — signed in, sign-in failed, passkey added, password changed, and so on
 - **Outcome** — successful or failed, with the reason for failures
 - **IP address** — the real client address, and the country when available
