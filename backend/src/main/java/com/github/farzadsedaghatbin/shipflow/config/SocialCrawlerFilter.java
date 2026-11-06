@@ -80,6 +80,10 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
       "linkedinbot",
       "discordbot",
       "applebot",
+      // Microsoft Teams (and Skype/Outlook) fetch link previews with these, not with a browser UA
+      "skypeuripreview",
+      "skype-url-preview",
+      "microsoftpreview",
       "googlebot",
       "bingbot",
       "ia_archiver",

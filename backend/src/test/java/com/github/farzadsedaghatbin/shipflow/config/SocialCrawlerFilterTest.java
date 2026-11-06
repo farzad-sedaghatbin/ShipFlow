@@ -94,6 +94,18 @@ class SocialCrawlerFilterTest {
   }
 
   @Test
+  @DisplayName("Microsoft Teams link-preview fetchers are treated as crawlers")
+  void teamsPreviewFetchersAreCrawlers() throws Exception {
+    for (String ua : new String[] {
+        "Mozilla/5.0 (Windows NT 6.1; WOW64) SkypeUriPreview Preview/0.5 skype-url-preview@microsoft.com",
+        "Mozilla/5.0 (compatible; MicrosoftPreview/2.0; +https://aka.ms/MicrosoftPreview)"}) {
+      MockHttpServletResponse response = new MockHttpServletResponse();
+      filter.doFilter(crawlerRequest("/qa/bug-reports/BUG-820", ua), response, Mockito.mock(FilterChain.class));
+      assertThat(response.getForwardedUrl()).as(ua).isEqualTo("/preview/bug/BUG-820");
+    }
+  }
+
+  @Test
   @DisplayName("real browsers fall through to the SPA untouched")
   void browsersPassThrough() throws Exception {
     MockHttpServletRequest request = crawlerRequest("/backlog/42",
