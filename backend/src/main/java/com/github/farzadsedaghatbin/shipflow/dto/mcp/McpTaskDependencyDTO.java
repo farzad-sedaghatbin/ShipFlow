@@ -1,6 +1,7 @@
 package com.github.farzadsedaghatbin.shipflow.dto.mcp;
 
 import com.github.farzadsedaghatbin.shipflow.dto.TaskDependencyDTO;
+import com.github.farzadsedaghatbin.shipflow.service.TaskDependencyPerspective;
 import lombok.Builder;
 import lombok.Data;
 
@@ -27,12 +28,13 @@ public class McpTaskDependencyDTO {
   /**
    * Build a dependency row for the {@code blockingTasks} list of focal task F.
    *
-   * <p>F is the source ({@code F BLOCKS target}); the "other end" is the target.
+   * <p>F blocks the other task. The DTO must already have been built from F's point of view (see
+   * {@link TaskDependencyPerspective}), so {@code otherTaskId} is the task F blocks.
    */
   public static McpTaskDependencyDTO fromBlocking(TaskDependencyDTO dep) {
     return McpTaskDependencyDTO.builder()
-        .taskId(dep.getTargetTaskId())
-        .title(dep.getTargetTaskTitle())
+        .taskId(dep.getOtherTaskId())
+        .title(dep.getOtherTaskTitle())
         .dependencyType(dep.getDependencyType() != null ? dep.getDependencyType().name() : null)
         .build();
   }
@@ -40,12 +42,13 @@ public class McpTaskDependencyDTO {
   /**
    * Build a dependency row for the {@code blockedByTasks} list of focal task F.
    *
-   * <p>F is the target ({@code source BLOCKS F}); the "other end" is the source.
+   * <p>The other task blocks F. The DTO must already have been built from F's point of view (see
+   * {@link TaskDependencyPerspective}), so {@code otherTaskId} is the blocker.
    */
   public static McpTaskDependencyDTO fromBlockedBy(TaskDependencyDTO dep) {
     return McpTaskDependencyDTO.builder()
-        .taskId(dep.getSourceTaskId())
-        .title(dep.getSourceTaskTitle())
+        .taskId(dep.getOtherTaskId())
+        .title(dep.getOtherTaskTitle())
         .dependencyType(dep.getDependencyType() != null ? dep.getDependencyType().name() : null)
         .build();
   }

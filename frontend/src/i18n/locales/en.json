@@ -9345,5 +9345,50 @@
       "noDate": "—",
       "noData": "No release data available"
     }
+  },
+  "taskDependencies": {
+    "title": "Dependencies",
+    "blockerBadge_one": "{{count}} Blocker",
+    "blockerBadge_other": "{{count}} Blockers",
+    "add": "Add Dependency",
+    "blockedBy": "Blocked By",
+    "blocks": "This Task Blocks",
+    "related": "Related",
+    "empty": "No dependencies defined for this task",
+    "loading": "Loading...",
+    "remove": "Remove dependency",
+    "dialog": {
+      "title": "Add Task Dependency",
+      "guideTitle": "Quick Guide",
+      "guideBlocks": "Blocks: this task must finish before the other can start.",
+      "guideDependsOn": "Depends on: this task is waiting for the other one to finish.",
+      "guideRelated": "Related: an informational link. It blocks nothing and shows on both tasks.",
+      "selectTask": "Select Task",
+      "selectPlaceholder": "Select a task from this cycle",
+      "noTasks": "No available tasks in this cycle",
+      "type": "Dependency Type",
+      "cancel": "Cancel",
+      "submit": "Add Dependency",
+      "submitting": "Adding..."
+    },
+    "types": {
+      "BLOCKS": "Blocks",
+      "BLOCKS_hint": "This task prevents the other from starting",
+      "DEPENDS_ON": "Depends on",
+      "DEPENDS_ON_hint": "This task waits for the other to finish",
+      "RELATED_TO": "Related to",
+      "RELATED_TO_hint": "Just a reference, nothing is blocked"
+    },
+    "result": {
+      "BLOCKS": "The selected task will be blocked until this task is done, and will list this task under Blocked By.",
+      "DEPENDS_ON": "This task cannot be completed until the selected task is done, and will list it under Blocked By.",
+      "RELATED_TO": "Both tasks will show each other under Related. Nothing is blocked."
+    },
+    "toast": {
+      "added": "Dependency added",
+      "removed": "Dependency removed",
+      "selectFirst": "Please select a task",
+      "loadTasksFailed": "Failed to load available tasks"
+    }
   }
 }

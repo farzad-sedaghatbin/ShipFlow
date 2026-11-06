@@ -125,6 +125,10 @@ Custom Metrics let you define and track your own KPIs beyond the built-in report
 - **Blocked** — Waiting on something
 
 ## Task Dependencies
-- Tasks can have dependencies on other tasks
-- Blocked tasks show which tasks they depend on
-- Dependency chains are visible in the task list
+- Open a task and use **Dependencies → Add Dependency** to link it to another task in the same cycle (or, for tasks outside any cycle, the same project)
+- There are three kinds of link:
+  - **Blocks** — this task must finish before the other one can start. The other task lists this one under **Blocked By**.
+  - **Depends on** — this task is waiting for the other one. This task lists the other under **Blocked By**, and the other task lists this one under **This Task Blocks**.
+  - **Related to** — just a reference. Nothing is blocked; both tasks show each other under **Related**.
+- Only **Blocked By** counts as a blocker: it drives the red blocker badge, the "blocked" marking in the backlog and on the Kanban board, and the order check when you drag tasks to reorder
+- Two tasks can have only one link between them, whichever way round. ShipFlow refuses a link that would make tasks wait on each other in a circle

@@ -27,20 +27,6 @@ public interface TaskDependencyRepository extends JpaRepository<TaskDependency, 
   Optional<TaskDependency> findBySourceTaskIdAndTargetTaskId(Long sourceTaskId, Long targetTaskId);
 
   /**
-   * Find all tasks that are blocking the given task (dependencies where this task
-   * is the source and type is BLOCKS).
-   */
-  @Query("SELECT td FROM TaskDependency td WHERE td.sourceTask.id = :taskId AND td.dependencyType = 'BLOCKS'")
-  List<TaskDependency> findBlockingDependenciesByTaskId(@Param("taskId") Long taskId);
-
-  /**
-   * Find all tasks that are blocked by the given task (dependencies where this
-   * task is the target and type is BLOCKS).
-   */
-  @Query("SELECT td FROM TaskDependency td WHERE td.targetTask.id = :taskId AND td.dependencyType = 'BLOCKS'")
-  List<TaskDependency> findBlockedByDependenciesByTaskId(@Param("taskId") Long taskId);
-
-  /**
    * Find all dependencies where the given task is either the source or the target.
    * Used for dependency constraint validation during reorder operations.
    */

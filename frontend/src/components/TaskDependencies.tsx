@@ -34,6 +34,7 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
   const { t } = useTranslation();
   const [blockingTasks, setBlockingTasks] = useState<TaskDependency[]>([]);
   const [blockedByTasks, setBlockedByTasks] = useState<TaskDependency[]>([]);
+  const [relatedTasks, setRelatedTasks] = useState<TaskDependency[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
@@ -51,6 +52,7 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
       const response = await taskService.getDependencies(taskId);
       setBlockingTasks(response.data.blocking || []);
       setBlockedByTasks(response.data.blockedBy || []);
+      setRelatedTasks(response.data.related || []);
     } catch (error) {
       console.error('Failed to load dependencies:', error);
       toast.error(t('errors.loadDependenciesFailed'));
@@ -64,21 +66,23 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
       const response = await taskService.getByCycleId(cycleId);
       const tasks = Array.isArray(response.data) ? response.data : response.data.content || [];
       // Filter out the current task and already linked tasks
+      // The server allows one link per pair of tasks, whatever its type or direction
       const existingTaskIds = new Set([
         taskId,
-        ...blockingTasks.map(d => d.targetTaskId),
-        ...blockedByTasks.map(d => d.sourceTaskId),
+        ...blockingTasks.map(d => d.otherTaskId),
+        ...blockedByTasks.map(d => d.otherTaskId),
+        ...relatedTasks.map(d => d.otherTaskId),
       ]);
       setAvailableTasks(tasks.filter(t => !existingTaskIds.has(t.id)));
     } catch (error) {
       console.error('Failed to load available tasks:', error);
-      toast.error('Failed to load available tasks');
+      toast.error(t('taskDependencies.toast.loadTasksFailed'));
     }
   };
 
   const handleAddDependency = async () => {
     if (!selectedTaskId) {
-      toast.error('Please select a task');
+      toast.error(t('taskDependencies.toast.selectFirst'));
       return;
     }
 
@@ -89,7 +93,7 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
         dependencyType,
       };
       await taskService.addDependency(taskId, request);
-      toast.success('Dependency added successfully');
+      toast.success(t('taskDependencies.toast.added'));
       setShowAddDialog(false);
       setSelectedTaskId('');
       setDependencyType('BLOCKS');
@@ -106,7 +110,7 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
   const handleRemoveDependency = async (dependencyId: number) => {
     try {
       await taskService.removeDependency(taskId, dependencyId);
-      toast.success('Dependency removed');
+      toast.success(t('taskDependencies.toast.removed'));
       await loadDependencies();
       onDependenciesChange?.();
     } catch (error) {
@@ -126,17 +130,36 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LinkIcon className="h-5 w-5" />
-            Dependencies
+            {t('taskDependencies.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center text-muted-foreground">Loading...</div>
+          <div className="text-center text-muted-foreground">{t('taskDependencies.loading')}</div>
         </CardContent>
       </Card>
     );
   }
 
   const hasBlockers = blockedByTasks.length > 0;
+
+  // Always link to the task on the *other* end, as the server reports it for this task
+  const renderRow = (dep: TaskDependency, tone: string) => (
+    <div key={dep.id} className={`flex items-center justify-between p-3 rounded-md ${tone}`}>
+      <div className="flex-1">
+        <Link to={`/backlog/${dep.otherTaskId}`} className="text-sm font-medium hover:underline">
+          {dep.otherTaskTitle}
+        </Link>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={t('taskDependencies.remove')}
+        onClick={() => handleRemoveDependency(dep.id)}
+      >
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 
   return (
     <>
@@ -145,10 +168,10 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <LinkIcon className="h-5 w-5" />
-              Dependencies
+              {t('taskDependencies.title')}
               {hasBlockers && (
                 <Badge variant="destructive" className="ml-2">
-                  {blockedByTasks.length} Blocker{blockedByTasks.length > 1 ? 's' : ''}
+                  {t('taskDependencies.blockerBadge', { count: blockedByTasks.length })}
                 </Badge>
               )}
             </CardTitle>
@@ -158,85 +181,47 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
               onClick={handleOpenAddDialog}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Dependency
+              {t('taskDependencies.add')}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Blocked By - Tasks blocking this task */}
+          {/* Blocked By - tasks that block this task */}
           {blockedByTasks.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 text-orange-600" />
-                <Label className="text-sm font-semibold text-orange-600">Blocked By</Label>
+                <Label className="text-sm font-semibold text-orange-600">{t('taskDependencies.blockedBy')}</Label>
               </div>
               <div className="space-y-2">
-                {blockedByTasks.map((dep) => (
-                  <div
-                    key={dep.id}
-                    className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-950/20 rounded-md border border-orange-200 dark:border-orange-800"
-                  >
-                    <div className="flex-1">
-                      <Link
-                        to={`/backlog/${dep.sourceTaskId}`}
-                        className="text-sm font-medium hover:underline"
-                      >
-                        {dep.sourceTaskTitle}
-                      </Link>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Type: {dep.dependencyType}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveDependency(dep.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                {blockedByTasks.map((dep) => renderRow(dep, 'bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800'))}
               </div>
             </div>
           )}
 
-          {/* Blocking - Tasks this task is blocking */}
+          {/* Blocking - tasks this task blocks */}
           {blockingTasks.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">This Task Blocks</Label>
+              <Label className="text-sm font-semibold">{t('taskDependencies.blocks')}</Label>
               <div className="space-y-2">
-                {blockingTasks.map((dep) => (
-                  <div
-                    key={dep.id}
-                    className="flex items-center justify-between p-3 bg-muted rounded-md"
-                  >
-                    <div className="flex-1">
-                      <Link
-                        to={`/backlog/${dep.targetTaskId}`}
-                        className="text-sm font-medium hover:underline"
-                      >
-                        {dep.targetTaskTitle}
-                      </Link>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Type: {dep.dependencyType}
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveDependency(dep.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                {blockingTasks.map((dep) => renderRow(dep, 'bg-muted'))}
               </div>
             </div>
           )}
 
-          {blockedByTasks.length === 0 && blockingTasks.length === 0 && (
+          {/* Related - informational links, they block nothing */}
+          {relatedTasks.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">{t('taskDependencies.related')}</Label>
+              <div className="space-y-2">
+                {relatedTasks.map((dep) => renderRow(dep, 'bg-muted'))}
+              </div>
+            </div>
+          )}
+
+          {blockedByTasks.length === 0 && blockingTasks.length === 0 && relatedTasks.length === 0 && (
             <div className="text-center text-muted-foreground py-8">
-              No dependencies defined for this task
+              {t('taskDependencies.empty')}
             </div>
           )}
         </CardContent>
@@ -246,28 +231,28 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add Task Dependency</DialogTitle>
+            <DialogTitle>{t('taskDependencies.dialog.title')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="p-4 bg-muted rounded-lg space-y-2">
-              <p className="text-sm font-medium">💡 Quick Guide:</p>
+              <p className="text-sm font-medium">💡 {t('taskDependencies.dialog.guideTitle')}</p>
               <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                <li><strong>BLOCKS</strong>: Use when this task must finish before another can start</li>
-                <li><strong>DEPENDS_ON</strong>: Use when this task is waiting on another task (you're blocked)</li>
-                <li><strong>RELATED_TO</strong>: Use for informational links (no blocking)</li>
+                <li>{t('taskDependencies.dialog.guideBlocks')}</li>
+                <li>{t('taskDependencies.dialog.guideDependsOn')}</li>
+                <li>{t('taskDependencies.dialog.guideRelated')}</li>
               </ul>
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="task">Select Task</Label>
+              <Label htmlFor="task">{t('taskDependencies.dialog.selectTask')}</Label>
               <Select value={selectedTaskId} onValueChange={setSelectedTaskId}>
                 <SelectTrigger id="task">
-                  <SelectValue placeholder="Select a task from this cycle" />
+                  <SelectValue placeholder={t('taskDependencies.dialog.selectPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableTasks.length === 0 ? (
                     <div className="p-2 text-sm text-muted-foreground text-center">
-                      No available tasks in this cycle
+                      {t('taskDependencies.dialog.noTasks')}
                     </div>
                   ) : (
                     availableTasks.map((task) => (
@@ -279,65 +264,36 @@ export default function TaskDependencies({ taskId, cycleId, onDependenciesChange
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="type">Dependency Type</Label>
+              <Label htmlFor="type">{t('taskDependencies.dialog.type')}</Label>
               <Select value={dependencyType} onValueChange={(v) => setDependencyType(v as DependencyType)}>
                 <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="BLOCKS">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">BLOCKS</span>
-                      <span className="text-xs text-muted-foreground">This task prevents the other from starting</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="DEPENDS_ON">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">DEPENDS_ON</span>
-                      <span className="text-xs text-muted-foreground">This task waits for the other to finish</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="RELATED_TO">
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">RELATED_TO</span>
-                      <span className="text-xs text-muted-foreground">Just a reference, no blocking</span>
-                    </div>
-                  </SelectItem>
+                  {(['BLOCKS', 'DEPENDS_ON', 'RELATED_TO'] as DependencyType[]).map((type) => (
+                    <SelectItem key={type} value={type}>
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">{t(`taskDependencies.types.${type}`)}</span>
+                        <span className="text-xs text-muted-foreground">{t(`taskDependencies.types.${type}_hint`)}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              
+
               <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
-                <p className="text-sm">
-                  {dependencyType === 'BLOCKS' && (
-                    <>
-                      <strong>Result:</strong> The selected task will be blocked until this task is completed.
-                      The selected task will show this task as a blocker.
-                    </>
-                  )}
-                  {dependencyType === 'DEPENDS_ON' && (
-                    <>
-                      <strong>Result:</strong> This task cannot be completed until the selected task is done.
-                      This task will show as blocked by the selected task.
-                    </>
-                  )}
-                  {dependencyType === 'RELATED_TO' && (
-                    <>
-                      <strong>Result:</strong> Both tasks will show a reference to each other.
-                      No blocking relationship is created.
-                    </>
-                  )}
-                </p>
+                <p className="text-sm">{t(`taskDependencies.result.${dependencyType}`)}</p>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
+              {t('taskDependencies.dialog.cancel')}
             </Button>
             <Button onClick={handleAddDependency} disabled={submitting || !selectedTaskId}>
-              {submitting ? 'Adding...' : 'Add Dependency'}
+              {submitting ? t('taskDependencies.dialog.submitting') : t('taskDependencies.dialog.submit')}
             </Button>
           </DialogFooter>
         </DialogContent>

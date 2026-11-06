@@ -25,7 +25,6 @@ import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BulkAction;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectType;
-import com.github.farzadsedaghatbin.shipflow.entity.enums.DependencyType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ResourceType;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskCategory;
@@ -1439,22 +1438,21 @@ public class TaskService {
   }
 
   private TaskDTO toDTO(Task task) {
-    // Get dependency information with null safety
-    List<TaskDependencyDTO> blocking = task.getOutgoingDependencies() != null
-        ? task.getOutgoingDependencies().stream().map(dep -> TaskDependencyDTO.builder().id(dep.getId())
-            .sourceTaskId(dep.getSourceTask().getId()).sourceTaskTitle(dep.getSourceTask().getTitle())
-            .targetTaskId(dep.getTargetTask().getId()).targetTaskTitle(dep.getTargetTask().getTitle())
-            .dependencyType(dep.getDependencyType()).createdAt(dep.getCreatedAt()).build())
-            .collect(Collectors.toList())
-        : new ArrayList<>();
-
-    List<TaskDependencyDTO> blockedBy = task.getIncomingDependencies() != null
-        ? task.getIncomingDependencies().stream().map(dep -> TaskDependencyDTO.builder().id(dep.getId())
-            .sourceTaskId(dep.getSourceTask().getId()).sourceTaskTitle(dep.getSourceTask().getTitle())
-            .targetTaskId(dep.getTargetTask().getId()).targetTaskTitle(dep.getTargetTask().getTitle())
-            .dependencyType(dep.getDependencyType()).createdAt(dep.getCreatedAt()).build())
-            .collect(Collectors.toList())
-        : new ArrayList<>();
+    // Dependencies are interpreted from this task's point of view: a DEPENDS_ON row makes the
+    // *target* the blocker, and RELATED_TO blocks nobody. Grouping by source/target alone would
+    // report related and depends-on links as blockers.
+    List<TaskDependency> allDependencies = new ArrayList<>();
+    if (task.getOutgoingDependencies() != null) {
+      allDependencies.addAll(task.getOutgoingDependencies());
+    }
+    if (task.getIncomingDependencies() != null) {
+      allDependencies.addAll(task.getIncomingDependencies());
+    }
+    TaskDependencyPerspective.Grouped dependencyView = TaskDependencyPerspective.group(task.getId(),
+        allDependencies);
+    List<TaskDependencyDTO> blocking = dependencyView.blocking();
+    List<TaskDependencyDTO> blockedBy = dependencyView.blockedBy();
+    List<TaskDependencyDTO> related = dependencyView.related();
 
     // Map children (subtasks) - only include basic info to avoid deep recursion
     List<TaskDTO> children = task.getChildren() != null
@@ -1506,7 +1504,7 @@ public class TaskService {
         .parentTaskTitle(task.getParentTask() != null ? task.getParentTask().getTitle() : null)
         .dueDate(task.getDueDate()).completedAt(task.getCompletedAt()).createdAt(task.getCreatedAt())
         .updatedAt(task.getUpdatedAt()).tags(task.getTags()).children(children).blockingTasks(blocking)
-        .blockedByTasks(blockedBy).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty())
+        .blockedByTasks(blockedBy).relatedTasks(related).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty())
         .build();
   }
 
@@ -1541,21 +1539,9 @@ public class TaskService {
 
     // Validate dependency constraints using the pre-loaded dependency list
     for (TaskDependency dep : allDeps) {
-      DependencyType type = dep.getDependencyType();
-      if (type == DependencyType.RELATED_TO) continue;
-
-      Long blockerId;
-      Long blockedId;
-
-      if (type == DependencyType.BLOCKS) {
-        // source BLOCKS target: source must appear before target
-        blockerId = dep.getSourceTask().getId();
-        blockedId = dep.getTargetTask().getId();
-      } else {
-        // DEPENDS_ON: source depends on target, so target must appear before source
-        blockerId = dep.getTargetTask().getId();
-        blockedId = dep.getSourceTask().getId();
-      }
+      Long blockerId = TaskDependencyPerspective.blockerId(dep);
+      Long blockedId = TaskDependencyPerspective.blockedId(dep);
+      if (blockerId == null || blockedId == null) continue; // RELATED_TO: no ordering constraint
 
       Integer blockerOrder = proposedOrder.get(blockerId);
       Integer blockedOrder = proposedOrder.get(blockedId);

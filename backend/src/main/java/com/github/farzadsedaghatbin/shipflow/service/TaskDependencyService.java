@@ -9,7 +9,6 @@ import com.github.farzadsedaghatbin.shipflow.exception.BadRequestException;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskDependencyRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,35 +39,35 @@ public class TaskDependencyService {
     Task targetTask = taskRepository.findById(request.getTargetTaskId()).orElseThrow(
         () -> new IllegalArgumentException("Target task not found with id: " + request.getTargetTaskId()));
 
-    // Validate tasks are in the same cycle
-    if (!sourceTask.getCycle().getId().equals(targetTask.getCycle().getId())) {
-      throw new BadRequestException(localizationService.getMessage("dependency.same.cycle.required"));
-    }
-
     // Prevent self-dependencies
     if (sourceTaskId.equals(request.getTargetTaskId())) {
       throw new BadRequestException(localizationService.getMessage("dependency.self.reference"));
     }
 
-    // Check if dependency already exists
-    if (taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(sourceTaskId, request.getTargetTaskId())
-        .isPresent()) {
-      throw new BadRequestException(localizationService.getMessage("dependency.already.exists"));
+    // Tasks must share a cycle; tasks outside any cycle (backlog / debt work) must share a project
+    if (!inSameScope(sourceTask, targetTask)) {
+      throw new BadRequestException(localizationService.getMessage("dependency.same.cycle.required"));
     }
 
-    // Check for circular dependencies
-    if (wouldCreateCircularDependency(sourceTaskId, request.getTargetTaskId())) {
+    DependencyType type = request.getDependencyType() != null ? request.getDependencyType()
+        : DependencyType.BLOCKS;
+
+    // Check for circular dependencies (only blocking links can form a cycle)
+    if (wouldCreateCircularDependency(sourceTaskId, request.getTargetTaskId(), type)) {
       throw new BadRequestException(localizationService.getMessage("dependency.circular.reference"));
+    }
+
+    // One link per pair, in either direction: "A relates to B" and "B relates to A" are the same fact
+    if (taskDependencyRepository.existsBetweenTasks(sourceTaskId, request.getTargetTaskId())) {
+      throw new BadRequestException(localizationService.getMessage("dependency.already.exists"));
     }
 
     // Create the dependency
     TaskDependency dependency = TaskDependency.builder().sourceTask(sourceTask).targetTask(targetTask)
-        .dependencyType(
-            request.getDependencyType() != null ? request.getDependencyType() : DependencyType.BLOCKS)
-        .build();
+        .dependencyType(type).build();
 
     TaskDependency saved = taskDependencyRepository.save(dependency);
-    return toDTO(saved);
+    return TaskDependencyPerspective.toDTO(saved, sourceTaskId);
   }
 
   /** Remove a dependency between tasks. */
@@ -79,81 +78,98 @@ public class TaskDependencyService {
     taskDependencyRepository.deleteById(dependencyId);
   }
 
-  /** Get all dependencies for a task (both incoming and outgoing). */
+  /**
+   * Get all dependencies for a task, split by what they mean for that task: {@code blocking} (tasks
+   * this one blocks), {@code blockedBy} (tasks that block this one) and {@code related} (plain links).
+   * The type matters: a DEPENDS_ON row makes its target the blocker, and RELATED_TO blocks nobody.
+   */
+  @Transactional(readOnly = true)
   public Map<String, List<TaskDependencyDTO>> getDependenciesForTask(Long taskId) {
-    if (!taskRepository.existsById(taskId)) {
-      throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
-    }
+    TaskDependencyPerspective.Grouped grouped = loadGrouped(taskId);
 
-    List<TaskDependency> outgoing = taskDependencyRepository.findBySourceTaskId(taskId);
-    List<TaskDependency> incoming = taskDependencyRepository.findByTargetTaskId(taskId);
-
-    Map<String, List<TaskDependencyDTO>> result = new HashMap<>();
-    result.put("blocking", outgoing.stream().map(this::toDTO).collect(Collectors.toList()));
-    result.put("blockedBy", incoming.stream().map(this::toDTO).collect(Collectors.toList()));
-
+    Map<String, List<TaskDependencyDTO>> result = new LinkedHashMap<>();
+    result.put("blocking", grouped.blocking());
+    result.put("blockedBy", grouped.blockedBy());
+    result.put("related", grouped.related());
     return result;
   }
 
-  /** Get all tasks that are blocking the given task. */
+  /** Get all dependencies where the given task blocks another task. */
+  @Transactional(readOnly = true)
   public List<TaskDependencyDTO> getBlockingDependencies(Long taskId) {
-    if (!taskRepository.existsById(taskId)) {
-      throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
-    }
-
-    return taskDependencyRepository.findBlockingDependenciesByTaskId(taskId).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+    return loadGrouped(taskId).blocking();
   }
 
-  /** Get all tasks that are blocked by the given task. */
+  /** Get all dependencies where another task blocks the given task. */
+  @Transactional(readOnly = true)
   public List<TaskDependencyDTO> getBlockedByDependencies(Long taskId) {
+    return loadGrouped(taskId).blockedBy();
+  }
+
+  private TaskDependencyPerspective.Grouped loadGrouped(Long taskId) {
     if (!taskRepository.existsById(taskId)) {
       throw new IllegalArgumentException(messageService.getMessage("error.task.not.found", taskId));
     }
+    return TaskDependencyPerspective.group(taskId,
+        taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(taskId, taskId));
+  }
 
-    return taskDependencyRepository.findBlockedByDependenciesByTaskId(taskId).stream().map(this::toDTO)
-        .collect(Collectors.toList());
+  private static boolean inSameScope(Task a, Task b) {
+    Long cycleA = a.getCycle() != null ? a.getCycle().getId() : null;
+    Long cycleB = b.getCycle() != null ? b.getCycle().getId() : null;
+    if (cycleA != null || cycleB != null) {
+      return Objects.equals(cycleA, cycleB);
+    }
+    Long projectA = a.getProject() != null ? a.getProject().getId() : null;
+    Long projectB = b.getProject() != null ? b.getProject().getId() : null;
+    return projectA != null && projectA.equals(projectB);
   }
 
   /**
-   * Check if adding a dependency would create a circular reference. Uses
-   * depth-first search to detect cycles.
+   * Would adding this link make a task (transitively) wait for itself? Only the blocking direction
+   * counts: BLOCKS is {@code source -> target}, DEPENDS_ON is {@code target -> source}, RELATED_TO is
+   * not an edge at all.
    */
-  private boolean wouldCreateCircularDependency(Long sourceTaskId, Long targetTaskId) {
-    // If target already depends on source (directly or indirectly), adding
-    // source->target would
-    // create a cycle
-    return hasPathBetweenTasks(targetTaskId, sourceTaskId, new HashSet<>());
-  }
-
-  /** Check if there's a dependency path from start to end task using DFS. */
-  private boolean hasPathBetweenTasks(Long startTaskId, Long endTaskId, Set<Long> visited) {
-    if (startTaskId.equals(endTaskId)) {
-      return true;
-    }
-
-    if (visited.contains(startTaskId)) {
-      return false;
-    }
-
-    visited.add(startTaskId);
-
-    // Get all tasks that startTask depends on (outgoing dependencies)
-    List<TaskDependency> dependencies = taskDependencyRepository.findBySourceTaskId(startTaskId);
-    for (TaskDependency dep : dependencies) {
-      if (hasPathBetweenTasks(dep.getTargetTask().getId(), endTaskId, visited)) {
-        return true;
+  private boolean wouldCreateCircularDependency(Long sourceTaskId, Long targetTaskId, DependencyType type) {
+    Long blocker;
+    Long blocked;
+    switch (type) {
+      case BLOCKS -> {
+        blocker = sourceTaskId;
+        blocked = targetTaskId;
+      }
+      case DEPENDS_ON -> {
+        blocker = targetTaskId;
+        blocked = sourceTaskId;
+      }
+      default -> {
+        return false;
       }
     }
-
-    return false;
+    // The new edge is blocker -> blocked; it closes a loop if blocked already (transitively) blocks blocker.
+    return blocks(blocked, blocker);
   }
 
-  /** Convert entity to DTO. */
-  private TaskDependencyDTO toDTO(TaskDependency dependency) {
-    return TaskDependencyDTO.builder().id(dependency.getId()).sourceTaskId(dependency.getSourceTask().getId())
-        .sourceTaskTitle(dependency.getSourceTask().getTitle()).targetTaskId(dependency.getTargetTask().getId())
-        .targetTaskTitle(dependency.getTargetTask().getTitle()).dependencyType(dependency.getDependencyType())
-        .createdAt(dependency.getCreatedAt()).build();
+  /** True if {@code from} already blocks {@code to}, directly or through other tasks (iterative DFS). */
+  private boolean blocks(Long from, Long to) {
+    Deque<Long> stack = new ArrayDeque<>();
+    Set<Long> visited = new HashSet<>();
+    stack.push(from);
+    while (!stack.isEmpty()) {
+      Long current = stack.pop();
+      if (current.equals(to)) {
+        return true;
+      }
+      if (!visited.add(current)) {
+        continue;
+      }
+      for (TaskDependency dep : taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(current, current)) {
+        Long blocker = TaskDependencyPerspective.blockerId(dep);
+        if (blocker != null && blocker.equals(current)) {
+          stack.push(TaskDependencyPerspective.blockedId(dep));
+        }
+      }
+    }
+    return false;
   }
 }

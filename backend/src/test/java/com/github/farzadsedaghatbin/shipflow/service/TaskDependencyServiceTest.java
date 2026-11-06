@@ -131,7 +131,7 @@ class TaskDependencyServiceTest {
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L)).thenReturn(Optional.empty());
+    when(taskDependencyRepository.existsBetweenTasks(1L, 2L)).thenReturn(false);
     when(taskDependencyRepository.save(any(TaskDependency.class))).thenReturn(testDependency);
 
     // When
@@ -210,8 +210,7 @@ class TaskDependencyServiceTest {
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L))
-        .thenReturn(Optional.of(testDependency));
+    when(taskDependencyRepository.existsBetweenTasks(1L, 2L)).thenReturn(true);
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
@@ -229,8 +228,8 @@ class TaskDependencyServiceTest {
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L)).thenReturn(Optional.empty());
-    when(taskDependencyRepository.findBySourceTaskId(2L)).thenReturn(Arrays.asList(existingDependency));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(2L, 2L))
+        .thenReturn(Arrays.asList(existingDependency));
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
@@ -247,7 +246,7 @@ class TaskDependencyServiceTest {
 
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
     when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(1L, 2L)).thenReturn(Optional.empty());
+    when(taskDependencyRepository.existsBetweenTasks(1L, 2L)).thenReturn(false);
     when(taskDependencyRepository.save(any(TaskDependency.class))).thenReturn(testDependency);
 
     // When
@@ -289,18 +288,19 @@ class TaskDependencyServiceTest {
         .dependencyType(DependencyType.BLOCKS).createdAt(LocalDateTime.now()).build();
 
     when(taskRepository.existsById(1L)).thenReturn(true);
-    when(taskDependencyRepository.findBySourceTaskId(1L)).thenReturn(Arrays.asList(outgoingDep));
-    when(taskDependencyRepository.findByTargetTaskId(1L)).thenReturn(Arrays.asList(incomingDep));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(1L, 1L))
+        .thenReturn(Arrays.asList(outgoingDep, incomingDep));
 
     // When
     Map<String, List<TaskDependencyDTO>> result = taskDependencyService.getDependenciesForTask(1L);
 
     // Then
-    assertThat(result).containsKeys("blocking", "blockedBy");
+    assertThat(result).containsKeys("blocking", "blockedBy", "related");
+    assertThat(result.get("related")).isEmpty();
     assertThat(result.get("blocking")).hasSize(1);
     assertThat(result.get("blockedBy")).hasSize(1);
-    assertThat(result.get("blocking").get(0).getTargetTaskId()).isEqualTo(2L);
-    assertThat(result.get("blockedBy").get(0).getSourceTaskId()).isEqualTo(3L);
+    assertThat(result.get("blocking").get(0).getOtherTaskId()).isEqualTo(2L);
+    assertThat(result.get("blockedBy").get(0).getOtherTaskId()).isEqualTo(3L);
   }
 
   @Test
@@ -317,14 +317,15 @@ class TaskDependencyServiceTest {
   void getBlockingDependencies_Success() {
     // Given
     when(taskRepository.existsById(1L)).thenReturn(true);
-    when(taskDependencyRepository.findBlockingDependenciesByTaskId(1L)).thenReturn(Arrays.asList(testDependency));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(1L, 1L))
+        .thenReturn(Arrays.asList(testDependency));
 
     // When
     List<TaskDependencyDTO> result = taskDependencyService.getBlockingDependencies(1L);
 
     // Then
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getSourceTaskId()).isEqualTo(1L);
+    assertThat(result.get(0).getOtherTaskId()).isEqualTo(2L);
   }
 
   @Test
@@ -334,14 +335,15 @@ class TaskDependencyServiceTest {
         .dependencyType(DependencyType.BLOCKS).createdAt(LocalDateTime.now()).build();
 
     when(taskRepository.existsById(1L)).thenReturn(true);
-    when(taskDependencyRepository.findBlockedByDependenciesByTaskId(1L)).thenReturn(Arrays.asList(blockingDep));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(1L, 1L))
+        .thenReturn(Arrays.asList(blockingDep));
 
     // When
     List<TaskDependencyDTO> result = taskDependencyService.getBlockedByDependencies(1L);
 
     // Then
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getTargetTaskId()).isEqualTo(1L);
+    assertThat(result.get(0).getOtherTaskId()).isEqualTo(2L);
   }
 
   @Test
@@ -359,12 +361,161 @@ class TaskDependencyServiceTest {
 
     when(taskRepository.findById(3L)).thenReturn(Optional.of(task3));
     when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
-    when(taskDependencyRepository.findBySourceTaskIdAndTargetTaskId(3L, 1L)).thenReturn(Optional.empty());
-    when(taskDependencyRepository.findBySourceTaskId(1L)).thenReturn(Arrays.asList(dep1to2));
-    when(taskDependencyRepository.findBySourceTaskId(2L)).thenReturn(Arrays.asList(dep2to3));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(1L, 1L)).thenReturn(Arrays.asList(dep1to2));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(2L, 2L))
+        .thenReturn(Arrays.asList(dep1to2, dep2to3));
 
     // When & Then
     assertThatThrownBy(() -> taskDependencyService.addDependency(3L, request))
         .isInstanceOf(BadRequestException.class).hasMessageContaining("circular reference");
+  }
+
+  private TaskDependency dep(long id, Task source, Task target, DependencyType type) {
+    return TaskDependency.builder().id(id).sourceTask(source).targetTask(target).dependencyType(type)
+        .createdAt(LocalDateTime.now()).build();
+  }
+
+  @Test
+  void getDependenciesForTask_RelatedToIsNeverABlocker_OnEitherSide() {
+    TaskDependency related = dep(1L, sourceTask, targetTask, DependencyType.RELATED_TO);
+
+    when(taskRepository.existsById(1L)).thenReturn(true);
+    when(taskRepository.existsById(2L)).thenReturn(true);
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(1L, 1L)).thenReturn(List.of(related));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(2L, 2L)).thenReturn(List.of(related));
+
+    Map<String, List<TaskDependencyDTO>> fromSource = taskDependencyService.getDependenciesForTask(1L);
+    Map<String, List<TaskDependencyDTO>> fromTarget = taskDependencyService.getDependenciesForTask(2L);
+
+    assertThat(fromSource.get("blocking")).isEmpty();
+    assertThat(fromSource.get("blockedBy")).isEmpty();
+    assertThat(fromSource.get("related")).extracting(TaskDependencyDTO::getOtherTaskId).containsExactly(2L);
+
+    // The bug: the target used to see the source under "blocked by"
+    assertThat(fromTarget.get("blocking")).isEmpty();
+    assertThat(fromTarget.get("blockedBy")).isEmpty();
+    assertThat(fromTarget.get("related")).extracting(TaskDependencyDTO::getOtherTaskId).containsExactly(1L);
+  }
+
+  @Test
+  void getDependenciesForTask_DependsOnMeansTheTargetIsTheBlocker() {
+    // source DEPENDS_ON target  =>  target blocks source
+    TaskDependency dependsOn = dep(1L, sourceTask, targetTask, DependencyType.DEPENDS_ON);
+
+    when(taskRepository.existsById(1L)).thenReturn(true);
+    when(taskRepository.existsById(2L)).thenReturn(true);
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(1L, 1L)).thenReturn(List.of(dependsOn));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(2L, 2L)).thenReturn(List.of(dependsOn));
+
+    Map<String, List<TaskDependencyDTO>> waiting = taskDependencyService.getDependenciesForTask(1L);
+    Map<String, List<TaskDependencyDTO>> blocker = taskDependencyService.getDependenciesForTask(2L);
+
+    assertThat(waiting.get("blockedBy")).extracting(TaskDependencyDTO::getOtherTaskId).containsExactly(2L);
+    assertThat(waiting.get("blocking")).isEmpty();
+    assertThat(blocker.get("blocking")).extracting(TaskDependencyDTO::getOtherTaskId).containsExactly(1L);
+    assertThat(blocker.get("blockedBy")).isEmpty();
+  }
+
+  @Test
+  void addDependency_RelatedToBothWays_IsRejectedAsDuplicateNotCircular() {
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(1L)
+        .dependencyType(DependencyType.RELATED_TO).build();
+
+    when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
+    when(taskDependencyRepository.existsBetweenTasks(2L, 1L)).thenReturn(true);
+
+    assertThatThrownBy(() -> taskDependencyService.addDependency(2L, request))
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("already exists");
+  }
+
+  @Test
+  void addDependency_RelatedTo_NeverCountsAsACycle() {
+    // 2 BLOCKS 1 exists; relating 1 to 2 must not be treated as a loop (it is a duplicate pair in
+    // reality, but the cycle check itself must ignore RELATED_TO)
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(3L)
+        .dependencyType(DependencyType.RELATED_TO).build();
+
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
+    when(taskRepository.findById(3L)).thenReturn(Optional.of(anotherTask));
+    when(taskDependencyRepository.existsBetweenTasks(1L, 3L)).thenReturn(false);
+    when(taskDependencyRepository.save(any(TaskDependency.class)))
+        .thenReturn(dep(9L, sourceTask, anotherTask, DependencyType.RELATED_TO));
+
+    TaskDependencyDTO result = taskDependencyService.addDependency(1L, request);
+
+    assertThat(result.getDependencyType()).isEqualTo(DependencyType.RELATED_TO);
+    verify(taskDependencyRepository, never()).findBySourceTaskIdOrTargetTaskId(anyLong(), anyLong());
+  }
+
+  @Test
+  void addDependency_DependsOnThatClosesALoop_IsRejected() {
+    // 1 BLOCKS 2, 2 BLOCKS 3, then "1 DEPENDS_ON 3" (3 must finish before 1) is a real loop
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(3L)
+        .dependencyType(DependencyType.DEPENDS_ON).build();
+    TaskDependency oneBlocksTwo = dep(1L, sourceTask, targetTask, DependencyType.BLOCKS);
+    TaskDependency twoBlocksThree = dep(2L, targetTask, anotherTask, DependencyType.BLOCKS);
+
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
+    when(taskRepository.findById(3L)).thenReturn(Optional.of(anotherTask));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(1L, 1L)).thenReturn(List.of(oneBlocksTwo));
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(2L, 2L))
+        .thenReturn(List.of(oneBlocksTwo, twoBlocksThree));
+
+    assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("circular reference");
+  }
+
+  @Test
+  void addDependency_DependsOnThatIsNotALoop_IsAllowed() {
+    // 1 BLOCKS 2, 2 BLOCKS 3, then "3 DEPENDS_ON 1" just says 1 blocks 3 as well: no loop
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(1L)
+        .dependencyType(DependencyType.DEPENDS_ON).build();
+    TaskDependency oneBlocksTwo = dep(1L, sourceTask, targetTask, DependencyType.BLOCKS);
+    TaskDependency twoBlocksThree = dep(2L, targetTask, anotherTask, DependencyType.BLOCKS);
+
+    when(taskRepository.findById(3L)).thenReturn(Optional.of(anotherTask));
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
+    when(taskDependencyRepository.existsBetweenTasks(3L, 1L)).thenReturn(false);
+    // blocked = 3 (the dependent); nothing is blocked by 3
+    when(taskDependencyRepository.findBySourceTaskIdOrTargetTaskId(3L, 3L)).thenReturn(List.of(twoBlocksThree));
+    when(taskDependencyRepository.save(any(TaskDependency.class)))
+        .thenReturn(dep(9L, anotherTask, sourceTask, DependencyType.DEPENDS_ON));
+
+    TaskDependencyDTO result = taskDependencyService.addDependency(3L, request);
+
+    assertThat(result.getDependencyType()).isEqualTo(DependencyType.DEPENDS_ON);
+  }
+
+  @Test
+  void addDependency_TasksWithoutCycle_ShareAProject_IsAllowed() {
+    com.github.farzadsedaghatbin.shipflow.entity.Project project = com.github.farzadsedaghatbin.shipflow.entity.Project
+        .builder().id(7L).build();
+    sourceTask.setCycle(null);
+    targetTask.setCycle(null);
+    sourceTask.setProject(project);
+    targetTask.setProject(project);
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L)
+        .dependencyType(DependencyType.RELATED_TO).build();
+
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
+    when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
+    when(taskDependencyRepository.existsBetweenTasks(1L, 2L)).thenReturn(false);
+    when(taskDependencyRepository.save(any(TaskDependency.class)))
+        .thenReturn(dep(9L, sourceTask, targetTask, DependencyType.RELATED_TO));
+
+    assertThat(taskDependencyService.addDependency(1L, request)).isNotNull();
+  }
+
+  @Test
+  void addDependency_TaskWithoutCycleAndProject_IsRejectedNotNpe() {
+    sourceTask.setCycle(null);
+    CreateTaskDependencyRequest request = CreateTaskDependencyRequest.builder().targetTaskId(2L).build();
+
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(sourceTask));
+    when(taskRepository.findById(2L)).thenReturn(Optional.of(targetTask));
+
+    assertThatThrownBy(() -> taskDependencyService.addDependency(1L, request))
+        .isInstanceOf(BadRequestException.class).hasMessageContaining("same cycle");
   }
 }

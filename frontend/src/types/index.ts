@@ -910,6 +910,7 @@ export interface Task {
   // Dependency information
   blockingTasks?: TaskDependency[];
   blockedByTasks?: TaskDependency[];
+  relatedTasks?: TaskDependency[];
   blockedByCount?: number;
   isBlocked?: boolean;
   
@@ -1021,6 +1022,9 @@ export interface TaskDependency {
   sourceTaskTitle: string;
   targetTaskId: number;
   targetTaskTitle: string;
+  /** The task on the other end, relative to the task the list was requested for. Show this one. */
+  otherTaskId: number;
+  otherTaskTitle: string;
   dependencyType: DependencyType;
   createdAt: string;
 }
@@ -1031,8 +1035,12 @@ export interface CreateTaskDependencyRequest {
 }
 
 export interface TaskDependencies {
+  /** Tasks this task blocks. */
   blocking: TaskDependency[];
+  /** Tasks that block this task. */
   blockedBy: TaskDependency[];
+  /** Informational links (RELATED_TO) - they block nothing, on either side. */
+  related: TaskDependency[];
 }
 
 // Pitch Dependency Types

@@ -229,6 +229,38 @@ class TaskDependencyControllerIntegrationTest {
   }
 
   @Test
+  void getDependencies_RelatedTo_IsNotReportedAsBlockerOnEitherSide() throws Exception {
+    taskDependencyRepository.save(TaskDependency.builder().sourceTask(task1).targetTask(task2)
+        .dependencyType(DependencyType.RELATED_TO).createdAt(LocalDateTime.now()).build());
+
+    mockMvc.perform(get("/api/tasks/{taskId}/dependencies", task2.getId())).andExpect(status().isOk())
+        .andExpect(jsonPath("$.blockedBy", hasSize(0))).andExpect(jsonPath("$.blocking", hasSize(0)))
+        .andExpect(jsonPath("$.related", hasSize(1)))
+        .andExpect(jsonPath("$.related[0].otherTaskId", is(task1.getId().intValue())));
+
+    mockMvc.perform(get("/api/tasks/{taskId}/dependencies", task1.getId())).andExpect(status().isOk())
+        .andExpect(jsonPath("$.blockedBy", hasSize(0))).andExpect(jsonPath("$.blocking", hasSize(0)))
+        .andExpect(jsonPath("$.related[0].otherTaskId", is(task2.getId().intValue())));
+  }
+
+  @Test
+  void getDependencies_DependsOn_IsInvertedFromStorageDirection() throws Exception {
+    // task1 DEPENDS_ON task2  =>  task2 blocks task1
+    taskDependencyRepository.save(TaskDependency.builder().sourceTask(task1).targetTask(task2)
+        .dependencyType(DependencyType.DEPENDS_ON).createdAt(LocalDateTime.now()).build());
+
+    mockMvc.perform(get("/api/tasks/{taskId}/dependencies", task1.getId())).andExpect(status().isOk())
+        .andExpect(jsonPath("$.blockedBy", hasSize(1)))
+        .andExpect(jsonPath("$.blockedBy[0].otherTaskId", is(task2.getId().intValue())))
+        .andExpect(jsonPath("$.blocking", hasSize(0)));
+
+    mockMvc.perform(get("/api/tasks/{taskId}/dependencies", task2.getId())).andExpect(status().isOk())
+        .andExpect(jsonPath("$.blocking", hasSize(1)))
+        .andExpect(jsonPath("$.blocking[0].otherTaskId", is(task1.getId().intValue())))
+        .andExpect(jsonPath("$.blockedBy", hasSize(0)));
+  }
+
+  @Test
   void removeDependency_Success() throws Exception {
     // Given
     TaskDependency dependency = TaskDependency.builder().sourceTask(task1).targetTask(task2)
@@ -289,9 +321,13 @@ class TaskDependencyControllerIntegrationTest {
     mockMvc.perform(post("/api/tasks/{taskId}/dependencies", task1.getId()).contentType(MediaType.APPLICATION_JSON)
         .content(objectMapper.writeValueAsString(dependsOnRequest))).andExpect(status().isCreated());
 
-    // Then - Verify both dependencies exist
+    // Then - task1 blocks task2, but waits for task3 (so task3 blocks task1)
     mockMvc.perform(get("/api/tasks/{taskId}/dependencies", task1.getId())).andExpect(status().isOk())
-        .andExpect(jsonPath("$.blocking", hasSize(2)))
-        .andExpect(jsonPath("$.blocking[*].dependencyType", containsInAnyOrder("BLOCKS", "DEPENDS_ON")));
+        .andExpect(jsonPath("$.blocking", hasSize(1)))
+        .andExpect(jsonPath("$.blocking[0].dependencyType", is("BLOCKS")))
+        .andExpect(jsonPath("$.blocking[0].otherTaskId", is(task2.getId().intValue())))
+        .andExpect(jsonPath("$.blockedBy", hasSize(1)))
+        .andExpect(jsonPath("$.blockedBy[0].dependencyType", is("DEPENDS_ON")))
+        .andExpect(jsonPath("$.blockedBy[0].otherTaskId", is(task3.getId().intValue())));
   }
 }
