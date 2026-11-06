@@ -37,7 +37,9 @@ public class AuthController {
     SecurityContextHolder.getContext().setAuthentication(authentication);
     String token = jwtTokenProvider.generateToken(authentication);
 
-    User user = userService.findUserByUsername(request.getUsername());
+    // authentication.getName() is the stored spelling of the username; request.getUsername() is
+    // whatever was typed (usernames are matched case-insensitively).
+    User user = userService.findUserByUsername(authentication.getName());
 
     AuthResponse response = AuthResponse.builder().token(token).type("Bearer").userId(user.getId())
         .username(user.getUsername()).role(user.getRole())

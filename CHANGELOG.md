@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-11-06
+
 ### Fixed
+- **Usernames are no longer case-sensitive.** A user whose account was `hooman` could not sign in typing `Hooman` (phones and browsers often capitalise the first letter) and got the generic bad-credentials error, which looks exactly like a wrong password. `UserRepository.findByUsername` / `findByUsernameWithPerson` now match ignoring case, and `existsByUsername` does too, so registration, SCIM and SSO can no longer create `Hooman` next to `hooman`. Safeguards: an exact-case match always wins, so an install that already holds two accounts differing only by case keeps resolving each correctly; if a typed spelling matches several accounts and none exactly, nobody matches (never "pick one"). The stored spelling stays canonical — the token's subject and every later lookup use it, and `AuthController.login` now reads it from the authenticated principal instead of echoing what was typed. **No migration:** a unique index on `lower(username)` was deliberately not added because it would fail to apply on an existing install that already has a case-only duplicate; the service-level check plus the tests below carry the guarantee. Email addresses still only work as a login where the username *is* the email address. Tests: `UserRepositoryUsernameCaseTest` (exact-wins, ambiguity, email-style names, null), `AuthControllerIntegrationTest` (mixed-case login returns the stored username).
 - **Links shared in Microsoft Teams showed the generic ShipFlow card instead of the item's preview.** The preview hand-off only recognised a fixed list of chat-app crawlers, and Teams fetches links as `SkypeUriPreview` / `MicrosoftPreview`, which weren't on it, so it got the normal page. Both are now recognised. Chat apps cache previews, so re-share a link (or add `?x=1`) to see the new card.
 
 ## [1.15.0] - 2026-11-03

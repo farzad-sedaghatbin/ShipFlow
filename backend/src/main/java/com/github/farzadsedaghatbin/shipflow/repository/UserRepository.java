@@ -11,14 +11,56 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-  Optional<User> findByUsername(String username);
+  // ── Username lookups are case-insensitive ──────────────────────────────────
+  // "Hooman" and "hooman" are the same person (phones and browsers capitalise the first
+  // letter). An exact match always wins, so an install that already holds two accounts
+  // differing only by case keeps resolving each of them correctly; otherwise the
+  // case-insensitive match is used only when it is unambiguous. The stored username stays
+  // the canonical spelling — the token and every downstream lookup use it, not what was typed.
+
+  @Query("SELECT u FROM User u WHERE u.username = :username")
+  Optional<User> findByUsernameExact(@Param("username") String username);
 
   @Query("SELECT u FROM User u LEFT JOIN FETCH u.person WHERE u.username = :username")
-  Optional<User> findByUsernameWithPerson(@Param("username") String username);
+  Optional<User> findByUsernameWithPersonExact(@Param("username") String username);
+
+  @Query("SELECT u FROM User u WHERE LOWER(u.username) = LOWER(:username)")
+  List<User> findAllByUsernameIgnoreCase(@Param("username") String username);
+
+  @Query("SELECT u FROM User u LEFT JOIN FETCH u.person WHERE LOWER(u.username) = LOWER(:username)")
+  List<User> findAllByUsernameIgnoreCaseWithPerson(@Param("username") String username);
+
+  default Optional<User> findByUsername(String username) {
+    if (username == null) {
+      return Optional.empty();
+    }
+    Optional<User> exact = findByUsernameExact(username);
+    if (exact.isPresent()) {
+      return exact;
+    }
+    return onlyOne(findAllByUsernameIgnoreCase(username));
+  }
+
+  default Optional<User> findByUsernameWithPerson(String username) {
+    if (username == null) {
+      return Optional.empty();
+    }
+    Optional<User> exact = findByUsernameWithPersonExact(username);
+    if (exact.isPresent()) {
+      return exact;
+    }
+    return onlyOne(findAllByUsernameIgnoreCaseWithPerson(username));
+  }
+
+  private static Optional<User> onlyOne(List<User> matches) {
+    return matches.size() == 1 ? Optional.of(matches.get(0)) : Optional.empty();
+  }
 
   Optional<User> findByEmail(String email);
 
-  boolean existsByUsername(String username);
+  /** True when any account has this username, ignoring case — so "Hooman" cannot be registered next to "hooman". */
+  @Query("SELECT COUNT(u) > 0 FROM User u WHERE LOWER(u.username) = LOWER(:username)")
+  boolean existsByUsername(@Param("username") String username);
 
   boolean existsByEmail(String email);
 

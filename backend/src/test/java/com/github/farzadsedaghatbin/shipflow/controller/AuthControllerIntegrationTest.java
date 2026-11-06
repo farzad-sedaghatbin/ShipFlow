@@ -74,6 +74,15 @@ class AuthControllerIntegrationTest {
   }
 
   @Test
+  void login_UsernameIsCaseInsensitive_AndTokenCarriesTheStoredSpelling() throws Exception {
+    LoginRequest request = new LoginRequest("Auth-Test-USER", "password123");
+
+    mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))).andExpect(status().isOk())
+        .andExpect(jsonPath("$.token", notNullValue())).andExpect(jsonPath("$.username", is("auth-test-user")));
+  }
+
+  @Test
   void login_WithInvalidCredentials_ShouldReturn401() throws Exception {
     LoginRequest request = new LoginRequest("testuser", "wrongpassword");
 

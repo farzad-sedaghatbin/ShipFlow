@@ -87,6 +87,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.15.1',
+    date: 'November 6, 2026',
+    title: 'Easier Sign-In, Truer Dependencies',
+    highlights: [
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Usernames Are No Longer Case-Sensitive',
+        description:
+          'Signing in as "Hooman" now works for the account "hooman". Phones and browsers often capitalise the first letter, which used to fail with a wrong-password error. Two accounts can no longer differ only by capital letters.',
+      },
+      {
+        icon: <GitBranch className="h-5 w-5" />,
+        title: 'Related Tasks Are No Longer Blockers',
+        description:
+          'A task linked as "related" used to appear under Blocked By with a red blocker badge, and "depends on" was shown backwards. Related tasks now have their own section, and blockers and dependencies read the right way round everywhere. Kanban projects also no longer show Reports.',
+      },
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Link Previews in Microsoft Teams',
+        description:
+          'Links shared in Teams now show the item\u0027s own preview card instead of the generic ShipFlow one, still using only general details.',
+      },
+    ],
+  },
+  {
     version: '1.15.0',
     date: 'November 3, 2026',
     title: 'ShipFlow Agent',
