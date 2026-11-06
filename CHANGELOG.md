@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Links shared in Microsoft Teams showed the generic ShipFlow card instead of the item's preview.** The preview hand-off only recognised a fixed list of chat-app crawlers, and Teams fetches links as `SkypeUriPreview` / `MicrosoftPreview`, which weren't on it, so it got the normal page. Both are now recognised. Chat apps cache previews, so re-share a link (or add `?x=1`) to see the new card.
+
 ## [1.15.0] - 2026-11-03
 
 The **ShipFlow Agent** milestone (S69–S71): a mentionable AI teammate, agent actions you confirm, and scheduled agent loops. Originally labelled v1.16.0 in the planning docs; it ships as v1.15.0 because no release was cut under that number, and the following milestones move back down by one (Time to Value is now v1.16.0).
