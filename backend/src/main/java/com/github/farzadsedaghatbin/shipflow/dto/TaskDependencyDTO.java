@@ -27,6 +27,16 @@ public class TaskDependencyDTO {
   /** Title of the target task. */
   private String targetTaskTitle;
 
+  /**
+   * The task on the other end of this dependency, relative to the task the list was requested for.
+   * Clients should show this rather than guessing between source and target, because which end is
+   * "the other one" depends on the dependency type and on who is asking.
+   */
+  private Long otherTaskId;
+
+  /** Title of {@link #otherTaskId}. */
+  private String otherTaskTitle;
+
   /** Type of dependency relationship. */
   private DependencyType dependencyType;
 

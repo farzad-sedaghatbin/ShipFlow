@@ -82,6 +82,7 @@ public class TaskDTO {
   // Dependency information
   private java.util.List<TaskDependencyDTO> blockingTasks; // Tasks this task blocks
   private java.util.List<TaskDependencyDTO> blockedByTasks; // Tasks blocking this task
+  private java.util.List<TaskDependencyDTO> relatedTasks; // Tasks linked as RELATED_TO (no blocking)
   private Integer blockedByCount; // Count of blocking tasks
   private Boolean isBlocked; // Quick check if task is blocked
 

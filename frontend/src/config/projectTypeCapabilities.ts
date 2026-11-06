@@ -202,13 +202,13 @@ const kanban: ProjectTypeCapabilities = {
     workspaceSectionTitleKey: 'nav.sections.cycleWorkspace',
     workspaceGroupTitleKey: 'nav.groups.cycleTools',
     showSprintPlanning: false,
-    promoteReportsTopLevel: true,
+    promoteReportsTopLevel: false,
   },
   mobile: {
-    primaryTabs: [dashboardItem, backlogItem, bugReportsItem, reportsItem],
+    primaryTabs: [dashboardItem, backlogItem, bugReportsItem],
   },
-  quickLinkIds: ['logWork', 'tasks', 'reports'],
-  shortcutIds: ['goDashboard', 'goTasks', 'goMeetings', 'goReports', 'logWork', 'showHelp', 'closeDialog'],
+  quickLinkIds: ['logWork', 'tasks'],
+  shortcutIds: ['goDashboard', 'goTasks', 'goMeetings', 'logWork', 'showHelp', 'closeDialog'],
   dashboard: {
     showActiveCyclesStat: false,
     showTotalPitchesStat: false,

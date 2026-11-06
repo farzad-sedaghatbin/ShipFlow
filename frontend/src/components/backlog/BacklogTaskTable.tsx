@@ -200,7 +200,7 @@ function SortableTaskRow({
                     <p className="font-semibold mb-1">{t('backlogPage.blockedByCount', { count: task.blockedByCount })}:</p>
                     <ul className="text-sm space-y-0.5">
                       {task.blockedByTasks?.slice(0, 3).map((blocker, idx) => (
-                        <li key={idx}>• {blocker.sourceTaskTitle}</li>
+                        <li key={idx}>• {blocker.otherTaskTitle}</li>
                       ))}
                       {task.blockedByTasks && task.blockedByTasks.length > 3 && (
                         <li className="text-muted-foreground">{t('backlogPage.andMore', { count: task.blockedByTasks.length - 3 })}</li>
@@ -223,7 +223,7 @@ function SortableTaskRow({
                     <p className="font-semibold mb-1">{t('backlogPage.blockingCount', { count: task.blockingTasks.length })}:</p>
                     <ul className="text-sm space-y-0.5">
                       {task.blockingTasks?.slice(0, 3).map((blocking, idx) => (
-                        <li key={idx}>• {blocking.targetTaskTitle}</li>
+                        <li key={idx}>• {blocking.otherTaskTitle}</li>
                       ))}
                       {task.blockingTasks && task.blockingTasks.length > 3 && (
                         <li className="text-muted-foreground">{t('backlogPage.andMore', { count: task.blockingTasks.length - 3 })}</li>
