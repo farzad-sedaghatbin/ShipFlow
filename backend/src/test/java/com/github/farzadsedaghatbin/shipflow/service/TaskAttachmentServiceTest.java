@@ -123,8 +123,11 @@ class TaskAttachmentServiceTest {
   }
 
   private void authenticateAs(String username) {
-    SecurityContextHolder.getContext().setAuthentication(
-        new UsernamePasswordAuthenticationToken(username, null, List.of()));
+    // Fresh context: never mutate one that another test (or thread) may have leaked.
+    org.springframework.security.core.context.SecurityContext ctx =
+        SecurityContextHolder.createEmptyContext();
+    ctx.setAuthentication(new UsernamePasswordAuthenticationToken(username, null, List.of()));
+    SecurityContextHolder.setContext(ctx);
   }
 
   // ── Upload ─────────────────────────────────────────────────────────────────
