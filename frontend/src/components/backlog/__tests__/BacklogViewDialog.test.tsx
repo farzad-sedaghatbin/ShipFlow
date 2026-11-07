@@ -25,12 +25,26 @@ vi.mock('../../TaskEpicField', () => ({
   default: () => <div data-testid="task-epic-field" />,
 }));
 
+vi.mock('../../LocalizedDateInput', () => ({
+  LocalizedDateInput: () => <div data-testid="due-date-input" />,
+}));
+
 vi.mock('../../TaskDependencies', () => ({
   default: () => <div data-testid="task-dependencies" />,
 }));
 
 vi.mock('../../../services/taskService', () => ({
-  taskService: { getById: vi.fn() },
+  taskService: {
+    getById: vi.fn(),
+    updateStatus: vi.fn(),
+    updatePriority: vi.fn(),
+    updateAssignee: vi.fn(),
+    update: vi.fn(),
+  },
+}));
+
+vi.mock('../../../contexts', () => ({
+  useToast: () => ({ showSuccess: vi.fn(), showError: vi.fn() }),
 }));
 
 const task: Task = {
@@ -48,6 +62,7 @@ describe('BacklogViewDialog', () => {
         open={true}
         task={task}
         subtasks={[]}
+        persons={[]}
         viewHistory={[]}
         onClose={vi.fn()}
         onBack={vi.fn()}

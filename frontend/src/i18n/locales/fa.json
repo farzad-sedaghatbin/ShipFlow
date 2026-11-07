@@ -91,6 +91,7 @@
     }
   },
   "backlogPage": {
+    "openFullPage": "باز کردن در صفحه کامل",
     "actions": {
       "_value": "عملیات",
       "bulkEdit": "ویرایش گروهی",
@@ -1170,6 +1171,7 @@
     "utilized": "استفاده شده"
   },
   "common": {
+    "copyLink": "کپی لینک قابل اشتراک‌گذاری",
     "showMore": "نمایش بیشتر",
     "showLess": "نمایش کمتر",
     "about": "درباره ما",

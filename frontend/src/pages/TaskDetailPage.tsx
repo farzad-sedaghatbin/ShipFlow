@@ -115,7 +115,9 @@ export default function TaskDetailPage() {
 
   useEffect(() => {
     if (taskId) {
-      loadTask(parseInt(taskId));
+      // Accepts a plain id (/backlog/100) or a key-style id (/backlog/MARK-100).
+      const numericId = parseInt(taskId.match(/(\d+)$/)?.[1] ?? '', 10);
+      if (!Number.isNaN(numericId)) loadTask(numericId);
       loadActiveTimer();
       loadInitialData();
     }
