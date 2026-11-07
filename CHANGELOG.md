@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Task detail dialog is editable in place.** In the Backlog/Kanban task dialog, status, priority, assignee, pair assignee, estimate, actual hours and due date can now be changed directly without opening the Edit form (status/priority/assignee use their quick-change endpoints; the rest use the normal task update with the task's other fields unchanged). The dialog also gets **Copy link** and **Open full page** buttons at the top, and shared links use the key form `/backlog/MARK-100`; the full task page now accepts both `/backlog/100` and `/backlog/MARK-100`. Tests: `BacklogViewDialog.test.tsx`.
+
 ## [1.15.1] - 2026-11-06
 
 ### Fixed
