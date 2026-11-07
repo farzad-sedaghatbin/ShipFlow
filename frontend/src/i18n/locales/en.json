@@ -3465,6 +3465,7 @@
     "viewPitch": "View Pitch"
   },
   "backlogPage": {
+    "openFullPage": "Open full page",
     "title": "Backlog",
     "selectCycle": "Select Cycle",
     "allCycles": "All Cycles",
