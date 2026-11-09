@@ -93,6 +93,13 @@ public class DashboardNotificationService {
     log.info("Marked {} notifications as read for user {}", notifications.size(), userId);
   }
 
+  /** Remove every notification of one user ("Clear all"); returns how many were removed. */
+  public int clearAll(Long userId) {
+    int removed = notificationRepository.deleteAllByUserId(userId);
+    log.info("Cleared {} notifications for user {}", removed, userId);
+    return removed;
+  }
+
   /** Delete a notification */
   public void deleteNotification(Long notificationId) {
     notificationRepository.deleteById(notificationId);
