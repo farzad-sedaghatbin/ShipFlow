@@ -20,6 +20,10 @@ import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TestCaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
+import com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.BugReportMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CommentMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.CycleMcpTools;
@@ -30,6 +34,7 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.RoadmapMcp
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TestCaseMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WikiMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorklogMcpTools;
@@ -78,6 +83,9 @@ public class McpProjectScopeGuard {
   private final EpicRepository epicRepository;
   private final UploadedDocumentRepository documentRepository;
   private final InitiativeRepository initiativeRepository;
+  private final WikiSpaceRepository wikiSpaceRepository;
+  private final WikiPageRepository wikiPageRepository;
+  private final WikiSpacePermissionRepository wikiPermissionRepository;
 
   /** The project the key is restricted to, or {@code null} when unrestricted / no key. */
   public static Long restrictedProjectId(ApiKey apiKey) {
@@ -213,6 +221,51 @@ public class McpProjectScopeGuard {
         c.task("taskId");
         c.epic("epicId");
       }
+      // Wiki: a space belongs to a project only when its projectId is set; project-less spaces
+      // are unreachable for a restricted key. Space-level listing is narrowed in filterResult.
+      case WikiMcpTools.TOOL_LIST_SPACES -> {
+        // narrowed in filterResult
+      }
+      case WikiMcpTools.TOOL_GET_TREE,
+          WikiMcpTools.TOOL_UPDATE_SPACE,
+          WikiMcpTools.TOOL_DELETE_SPACE,
+          WikiMcpTools.TOOL_LIST_PERMISSIONS,
+          WikiMcpTools.TOOL_GRANT_PERMISSION -> {
+        c.requirePresent("spaceId");
+        c.wikiSpace("spaceId");
+        if (tool.equals(WikiMcpTools.TOOL_UPDATE_SPACE)) {
+          c.pinProject("projectId");
+        }
+      }
+      case WikiMcpTools.TOOL_SEARCH -> {
+        // Without a spaceId the search spans every readable space.
+        c.requirePresent("spaceId");
+        c.wikiSpace("spaceId");
+      }
+      case WikiMcpTools.TOOL_CREATE_SPACE -> c.pinProject("projectId");
+      case WikiMcpTools.TOOL_CREATE_PAGE -> {
+        c.requirePresent("spaceId");
+        c.wikiSpace("spaceId");
+        c.wikiPage("parentId");
+      }
+      case WikiMcpTools.TOOL_GET_PAGE,
+          WikiMcpTools.TOOL_UPDATE_PAGE,
+          WikiMcpTools.TOOL_DELETE_PAGE,
+          WikiMcpTools.TOOL_GET_HISTORY,
+          WikiMcpTools.TOOL_GET_REVISION,
+          WikiMcpTools.TOOL_RESTORE_REVISION -> {
+        c.requirePresent("pageId");
+        c.wikiPage("pageId");
+      }
+      case WikiMcpTools.TOOL_MOVE_PAGE -> {
+        c.requirePresent("pageId");
+        c.wikiPage("pageId");
+        c.wikiPage("newParentId");
+      }
+      case WikiMcpTools.TOOL_REVOKE_PERMISSION -> {
+        c.requirePresent("permissionId");
+        c.wikiPermission("permissionId");
+      }
       default -> throw denied();
     }
     return c.args;
@@ -231,6 +284,14 @@ public class McpProjectScopeGuard {
     return list.stream().filter(row -> rowAllowed(row, restricted)).toList();
   }
 
+  private Long projectOfWikiSpace(Long spaceId) {
+    return wikiSpaceRepository
+        .findById(spaceId)
+        .filter(sp -> sp.getDeletedAt() == null)
+        .map(sp -> sp.getProjectId())
+        .orElse(null);
+  }
+
   private static boolean rowAllowed(Object row, Long restricted) {
     Long projectId =
         switch (row) {
@@ -240,6 +301,9 @@ public class McpProjectScopeGuard {
           case McpPitchDTO p -> p.getProjectId();
           default -> null;
         };
+    if (row instanceof WikiSpaceDTO space) {
+      return restricted.equals(space.projectId());
+    }
     if (row instanceof McpProjectDTO) {
       return restricted.equals(projectId);
     }
@@ -358,6 +422,53 @@ public class McpProjectScopeGuard {
     void initiative(String key) {
       entity(key, initiativeRepository::findByIdNotDeleted,
           i -> i.getProject() != null ? i.getProject().getId() : null);
+    }
+
+    void wikiSpace(String key) {
+      Long id = toLong(args.get(key));
+      if (id != null) {
+        require(projectOfWikiSpace(id));
+      }
+    }
+
+    void wikiPage(String key) {
+      Long id = toLong(args.get(key));
+      if (id == null) {
+        return;
+      }
+      require(
+          wikiPageRepository
+              .findById(id)
+              .filter(p -> p.getDeletedAt() == null)
+              .map(p -> projectOfWikiSpace(p.getSpaceId()))
+              .orElse(null));
+    }
+
+    void wikiPermission(String key) {
+      Long id = toLong(args.get(key));
+      if (id == null) {
+        return;
+      }
+      require(
+          wikiPermissionRepository
+              .findById(id)
+              .map(pm -> projectOfWikiSpace(pm.getSpaceId()))
+              .orElse(null));
+    }
+
+    /**
+     * Pins an optional project argument to the restricted project: an absent value is filled in,
+     * a foreign one is refused.
+     */
+    void pinProject(String key) {
+      Long id = toLong(args.get(key));
+      if (id == null) {
+        Map<String, Object> copy = new HashMap<>(args);
+        copy.put(key, restricted);
+        args = copy;
+      } else {
+        require(id);
+      }
     }
 
     /** Refuses the call when an id the tool needs (and this guard must check) is missing. */

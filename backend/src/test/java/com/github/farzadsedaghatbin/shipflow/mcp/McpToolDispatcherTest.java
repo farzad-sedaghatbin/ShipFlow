@@ -98,6 +98,10 @@ class McpToolDispatcherTest {
   @Mock private com.github.farzadsedaghatbin.shipflow.repository.EpicRepository epicRepository;
   @Mock private com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository initiativeRepository;
   @Mock private com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository documentRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository wikiSpaceRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository wikiPageRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository wikiPermissionRepository;
+  @Mock private com.github.farzadsedaghatbin.shipflow.service.WikiService wikiService;
 
   private McpToolDispatcher dispatcher;
   private McpServerProperties properties;
@@ -132,13 +136,17 @@ class McpToolDispatcherTest {
     com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpProjectScopeGuard scopeGuard =
         new com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpProjectScopeGuard(
             taskRepository, pitchRepository, cycleRepository, bugReportRepository,
-            testCaseRepository, epicRepository, documentRepository, initiativeRepository);
+            testCaseRepository, epicRepository, documentRepository, initiativeRepository,
+            wikiSpaceRepository, wikiPageRepository, wikiPermissionRepository);
+    com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WikiMcpTools wikiTools =
+        new com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WikiMcpTools(
+            wikiService, userRepository, mapper);
 
     dispatcher = new McpToolDispatcher(
         sessionManager, properties, mapper,
         projectTools, cycleTools, taskTools, pitchTools, commentTools, wiseArchTools,
         workContextTools, taskContextTools, worklogTools,
-        identityTools, testCaseTools, bugReportTools, roadmapTools, scopeGuard);
+        identityTools, testCaseTools, bugReportTools, roadmapTools, wikiTools, scopeGuard);
     dispatcher.setUsageReportService(usageReportService);
 
     McpSession session = new McpSession(

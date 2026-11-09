@@ -16,6 +16,7 @@ import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.RoadmapMcp
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TaskMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.TestCaseMcpTools;
+import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WikiMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WiseArchitectureMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorkContextMcpTools;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.tools.WorklogMcpTools;
@@ -98,6 +99,7 @@ public class McpToolDispatcher {
   private final TestCaseMcpTools testCaseTools;
   private final BugReportMcpTools bugReportTools;
   private final RoadmapMcpTools roadmapTools;
+  private final WikiMcpTools wikiTools;
 
   /** Applies an API key's single-project restriction to every tool call (see its Javadoc). */
   private final McpProjectScopeGuard scopeGuard;
@@ -406,6 +408,25 @@ public class McpToolDispatcher {
       case RoadmapMcpTools.TOOL_ADD_EPIC_DEPENDENCY -> roadmapTools.addEpicDependency(args);
       case RoadmapMcpTools.TOOL_LINK_TASK_TO_EPIC -> roadmapTools.linkTaskToEpic(args);
 
+      // Wiki: spaces, pages, revisions, permissions
+      case WikiMcpTools.TOOL_LIST_SPACES -> wikiTools.listSpaces(auth);
+      case WikiMcpTools.TOOL_GET_TREE -> wikiTools.getTree(args, auth);
+      case WikiMcpTools.TOOL_GET_PAGE -> wikiTools.getPage(args, auth);
+      case WikiMcpTools.TOOL_SEARCH -> wikiTools.search(args, auth);
+      case WikiMcpTools.TOOL_GET_HISTORY -> wikiTools.getHistory(args, auth);
+      case WikiMcpTools.TOOL_GET_REVISION -> wikiTools.getRevision(args, auth);
+      case WikiMcpTools.TOOL_LIST_PERMISSIONS -> wikiTools.listPermissions(args, auth);
+      case WikiMcpTools.TOOL_CREATE_SPACE -> wikiTools.createSpace(args, auth);
+      case WikiMcpTools.TOOL_UPDATE_SPACE -> wikiTools.updateSpace(args, auth);
+      case WikiMcpTools.TOOL_DELETE_SPACE -> wikiTools.deleteSpace(args, auth);
+      case WikiMcpTools.TOOL_CREATE_PAGE -> wikiTools.createPage(args, auth);
+      case WikiMcpTools.TOOL_UPDATE_PAGE -> wikiTools.updatePage(args, auth);
+      case WikiMcpTools.TOOL_MOVE_PAGE -> wikiTools.movePage(args, auth);
+      case WikiMcpTools.TOOL_DELETE_PAGE -> wikiTools.deletePage(args, auth);
+      case WikiMcpTools.TOOL_RESTORE_REVISION -> wikiTools.restoreRevision(args, auth);
+      case WikiMcpTools.TOOL_GRANT_PERMISSION -> wikiTools.grantPermission(args, auth);
+      case WikiMcpTools.TOOL_REVOKE_PERMISSION -> wikiTools.revokePermission(args, auth);
+
       default -> throw new McpToolException("Unknown tool: " + name);
     };
   }
@@ -438,7 +459,14 @@ public class McpToolDispatcher {
         BugReportMcpTools.getBugAttachmentsDefinition(),
         BugReportMcpTools.downloadBugAttachmentDefinition(),
         RoadmapMcpTools.getRoadmapDefinition(),
-        RoadmapMcpTools.getEpicsDefinition());
+        RoadmapMcpTools.getEpicsDefinition(),
+        WikiMcpTools.listSpacesDefinition(),
+        WikiMcpTools.getTreeDefinition(),
+        WikiMcpTools.getPageDefinition(),
+        WikiMcpTools.searchDefinition(),
+        WikiMcpTools.getHistoryDefinition(),
+        WikiMcpTools.getRevisionDefinition(),
+        WikiMcpTools.listPermissionsDefinition());
   }
 
   /**
@@ -467,7 +495,17 @@ public class McpToolDispatcher {
         RoadmapMcpTools.createEpicDefinition(),
         RoadmapMcpTools.updateEpicDefinition(),
         RoadmapMcpTools.addEpicDependencyDefinition(),
-        RoadmapMcpTools.linkTaskToEpicDefinition());
+        RoadmapMcpTools.linkTaskToEpicDefinition(),
+        WikiMcpTools.createSpaceDefinition(),
+        WikiMcpTools.updateSpaceDefinition(),
+        WikiMcpTools.deleteSpaceDefinition(),
+        WikiMcpTools.createPageDefinition(),
+        WikiMcpTools.updatePageDefinition(),
+        WikiMcpTools.movePageDefinition(),
+        WikiMcpTools.deletePageDefinition(),
+        WikiMcpTools.restoreRevisionDefinition(),
+        WikiMcpTools.grantPermissionDefinition(),
+        WikiMcpTools.revokePermissionDefinition());
   }
 
   /** Instance accessor used by {@link #handleToolsList} and {@link #toolCount()}. */
