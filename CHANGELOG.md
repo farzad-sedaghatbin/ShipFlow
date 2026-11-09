@@ -7,8 +7,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **Task detail dialog is editable in place.** In the Backlog/Kanban task dialog, status, priority, assignee, pair assignee, estimate, actual hours and due date can now be changed directly without opening the Edit form (status/priority/assignee use their quick-change endpoints; the rest use the normal task update with the task's other fields unchanged). The dialog also gets **Copy link** and **Open full page** buttons at the top, and shared links use the key form `/backlog/MARK-100`; the full task page now accepts both `/backlog/100` and `/backlog/MARK-100`. Tests: `BacklogViewDialog.test.tsx`.
 
-### Added
-- **Backlog shows which epic a task belongs to, and filters by it.** In Kanban/Scrum projects each task now carries an epic badge (linking to the epic) on its list row and its Kanban card, and the filter bar has an **Epic** selector (*All epics* / *No epic* / one epic). The choice is part of the shareable link (`?epic=<id>` or `?epic=none`) and is cleared by *Clear filters*. Like the dependency filter it is applied in the browser, so the count follows the filtered list. Tests: `TaskEpicBadge.test.tsx`.
+### Fixed
+- **Link previews missing for some shared URLs.** The key-style task links the task dialog's *Copy link* now produces (`/backlog/MARK-100`), a trailing slash (`/backlog/42/`), and the pitch/cycle sub-pages people actually share (`/pitches/{id}/hill-chart`, `/pitches/{id}/test`, `/cycles/{id}/hill-chart`, `/cooldown`, `/circuit-breaker`, `/qa-dashboard`) fell through to the generic site card; they now show the item's own card, and epics (`/epics/{id}`) get one too. The `/preview/**` handlers also no longer demand `Accept: text/html` — a fetcher sending `image/*` or `application/json` got a 406/500 and so no preview at all. Tests: `SocialCrawlerFilterTest`, `LinkPreviewControllerTest`, `LinkPreviewServiceTest`.
 
 ## [1.15.1] - 2026-11-06
 
