@@ -5832,7 +5832,7 @@
     "shipped1154Item0Title": "Test and Automation Emails Work",
     "shipped1154Item0Desc": "Sending the settings test email and emailing from automations failed with a hidden error because the recipient\u0027s address could not be read at that moment. Recipients are now looked up safely, so those emails go out.",
     "shipped1154Item1Title": "An Honest Email Settings Page",
-    "shipped1154Item1Desc": "Organization Settings now shows how email is really set up on the server instead of empty boxes that did nothing, and the test button reports the mail server\u0027s actual error when sending fails."
+    "shipped1154Item1Desc": "Organization Settings now shows how email is really set up on the server instead of empty boxes that did nothing, and the test button reports the mail server\u0027s actual error when sending fails.",
     "phase116Theme": "Time to Value",
     "phase116Item0Title": "Project & Pitch Templates",
     "phase116Item0Desc": "Start from a template instead of a blank page, and clone a whole project in one click.",
