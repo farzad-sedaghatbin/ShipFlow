@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **Task detail dialog is editable in place.** In the Backlog/Kanban task dialog, status, priority, assignee, pair assignee, estimate, actual hours and due date can now be changed directly without opening the Edit form (status/priority/assignee use their quick-change endpoints; the rest use the normal task update with the task's other fields unchanged). The dialog also gets **Copy link** and **Open full page** buttons at the top, and shared links use the key form `/backlog/MARK-100`; the full task page now accepts both `/backlog/100` and `/backlog/MARK-100`. Tests: `BacklogViewDialog.test.tsx`.
 
+### Fixed
+- **Notification bell: read vs unread, remove, clear all.** Unread notifications were indistinguishable from read ones and the per-row buttons were pushed out of the dropdown by long titles (so there was no visible way to remove one). Unread rows now have a dot, a stronger background and a bold title while read rows are dimmed; the list scrolls in a plain container so rows stay inside the menu and their *Mark as read* / *Delete* buttons are always visible; and a new **Clear all** (second click confirms) calls `DELETE /api/dashboard/notifications`, which removes every notification of the current user. The component's strings are now translated (`notificationCenter.*`, en + fa). Tests: `NotificationCenter.test.tsx`, `DashboardNotificationServiceTest`, `DashboardNotificationControllerIntegrationTest`.
+
 ## [1.15.1] - 2026-11-06
 
 ### Fixed
