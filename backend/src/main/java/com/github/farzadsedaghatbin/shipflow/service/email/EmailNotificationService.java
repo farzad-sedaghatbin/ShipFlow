@@ -141,6 +141,28 @@ public class EmailNotificationService implements IEmailNotificationService {
         }
     }
 
+    @Override
+    public String sendTest(String toEmail, String recipientName) {
+        if (!isEnabled()) {
+            return "Email is not configured on this server (SMTP_HOST is not set).";
+        }
+        try {
+            Context ctx = new Context();
+            ctx.setVariable("recipientName", recipientName);
+            ctx.setVariable("subject", "ShipFlow test email");
+            ctx.setVariable("message",
+                    "If you can read this, ShipFlow can send email from " + appBaseUrl + ".");
+            ctx.setVariable("actionUrl", absoluteUrl("/dashboard"));
+            ctx.setVariable("appBaseUrl", appBaseUrl);
+            send(toEmail, "ShipFlow test email", templateEngine.process("email/automation-triggered", ctx));
+            return null;
+        } catch (Exception e) {
+            log.warn("Test email to {} failed: {}", toEmail, e.getMessage());
+            String reason = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+            return oneLine(reason);
+        }
+    }
+
     private void send(String to, String subject, String htmlBody) throws MessagingException {
         MimeMessage msg = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");

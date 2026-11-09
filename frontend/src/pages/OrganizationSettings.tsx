@@ -342,7 +342,7 @@ export default function OrganizationSettingsPage() {
       case 'weights':
         return <WeightsSettingsTab formData={formData} setFormData={setFormData} />;
       case 'email':
-        return <EmailSettingsTab formData={formData} setFormData={setFormData} />;
+        return <EmailSettingsTab />;
       case 'features':
         return <FeaturesSettingsTab formData={formData} setFormData={setFormData} settings={settings} />;
       case 'customFields':

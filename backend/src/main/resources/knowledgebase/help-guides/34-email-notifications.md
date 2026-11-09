@@ -33,4 +33,4 @@ Set these environment variables for the ShipFlow container, then restart it:
 
 Every email is marked as automatic (`Auto-Submitted`, `Precedence: bulk`) so out-of-office replies are not sent back to the sender. Send the mail **through your mail server** (not directly from ShipFlow's host) so SPF and DKIM pass and messages do not land in spam. Emails are sent in the background, so a slow mail server never slows the page you are using; a failure is written to the server log as `Failed to send … email`.
 
-To check it works, use **Organization Settings → Email → Send test email**; it emails the address on your own profile.
+**Organization Settings → Email** shows what the server is currently using (mail server, port, login user, sender, reply-to, link base — never the password) and says plainly when email is off. Nothing is edited on that page; change the environment variables and restart instead. Use **Send test email** there to check it works: it emails the address on your own profile and, if the mail server refuses, shows its actual reason.

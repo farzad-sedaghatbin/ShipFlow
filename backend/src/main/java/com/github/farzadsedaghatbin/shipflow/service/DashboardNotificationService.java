@@ -9,7 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.event.NotificationCreatedEvent;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
-import com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService;
 import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,6 +46,7 @@ public class DashboardNotificationService {
   private final NotificationSseManager notificationSseManager;
   private final IEmailNotificationService emailService;
   private final ApplicationEventPublisher eventPublisher;
+  private final EmailRecipientService emailRecipients;
 
   @Autowired(required = false)
   private PitchHealthService pitchHealthService;
@@ -124,11 +125,8 @@ public class DashboardNotificationService {
         "TASK", task.getId(), assignee.getPerson());
 
     // Send email notification
-    String assigneeEmail = EmailAddressResolver.of(assignee);
-    if (assigneeEmail != null) {
-      emailService.sendTaskAssigned(
-          assigneeEmail, recipientName(assignee), task.getTitle(), "/backlog/" + task.getId());
-    }
+    emailRecipients.forUserId(assignee.getId()).ifPresent(r -> emailService.sendTaskAssigned(r.address(), r.name(),
+        task.getTitle(), "/backlog/" + task.getId()));
 
     log.info("Created task assignment notification for user {} on task {}", assignee.getId(), task.getId());
   }
@@ -149,17 +147,8 @@ public class DashboardNotificationService {
         relatedTask != null ? "TASK" : null, relatedTask != null ? relatedTask.getId() : null);
 
     // The rule's notification also goes to the person's inbox, not only to the in-app bell.
-    String recipientEmail = EmailAddressResolver.of(recipient);
-    if (recipientEmail != null) {
-      emailService.sendAutomationEmail(recipientEmail, recipientName(recipient), automationName, body, actionUrl);
-    }
-  }
-
-  /** The name to greet someone by in an email: their person's name, else their username. */
-  private static String recipientName(User user) {
-    return user.getPerson() != null && user.getPerson().getName() != null
-        ? user.getPerson().getName()
-        : user.getUsername();
+    emailRecipients.forUserId(recipient.getId())
+        .ifPresent(r -> emailService.sendAutomationEmail(r.address(), r.name(), automationName, body, actionUrl));
   }
 
   /** Create notification when a user is mentioned in a comment */
@@ -191,11 +180,8 @@ public class DashboardNotificationService {
         entityType, entityId, mentionedUser.getPerson());
 
     // Send email notification
-    String mentionedEmail = EmailAddressResolver.of(mentionedUser);
-    if (mentionedEmail != null) {
-      emailService.sendMentionedInComment(
-          mentionedEmail, recipientName(mentionedUser), entityType.toLowerCase(), actionUrl);
-    }
+    emailRecipients.forUserId(mentionedUser.getId()).ifPresent(
+        r -> emailService.sendMentionedInComment(r.address(), r.name(), entityType.toLowerCase(), actionUrl));
 
     log.info("Created comment mention notification for user {} from author {} on {} {}", mentionedUser.getId(),
         author.getId(), entityType, entityId);
@@ -226,10 +212,8 @@ public class DashboardNotificationService {
             mentionedUser.getUsername(), preview),
         "WIKI_PAGE", pageId, mentionedUser.getPerson());
 
-    String wikiMentionedEmail = EmailAddressResolver.of(mentionedUser);
-    if (wikiMentionedEmail != null) {
-      emailService.sendMentionedInComment(wikiMentionedEmail, recipientName(mentionedUser), "wiki page", actionUrl);
-    }
+    emailRecipients.forUserId(mentionedUser.getId())
+        .ifPresent(r -> emailService.sendMentionedInComment(r.address(), r.name(), "wiki page", actionUrl));
 
     log.info("Created wiki mention notification for user {} from author {} on page {}", mentionedUser.getId(),
         author.getId(), pageId);

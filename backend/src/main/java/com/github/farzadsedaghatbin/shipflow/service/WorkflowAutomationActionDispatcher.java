@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
 import com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -40,6 +41,7 @@ public class WorkflowAutomationActionDispatcher {
   private final DashboardNotificationService notificationService;
   private final AgentLoopService agentLoopService;
   private final IEmailNotificationService emailService;
+  private final EmailRecipientService emailRecipients;
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final int MAX_EMAIL_RECIPIENTS = 25;
@@ -233,14 +235,13 @@ public class WorkflowAutomationActionDispatcher {
     return "Emailed " + sent + (sent == 1 ? " recipient" : " recipients");
   }
 
-  private static void addUser(Map<String, String[]> recipients, User user) {
-    String address = EmailAddressResolver.of(user);
-    if (address == null) {
+  /** Adds the user if they have an emailable address (resolved by id, outside any lazy-loading trap). */
+  private void addUser(Map<String, String[]> recipients, User user) {
+    if (user == null) {
       return;
     }
-    String name = user.getPerson() != null && user.getPerson().getName() != null ? user.getPerson().getName()
-        : user.getUsername();
-    recipients.putIfAbsent(address.toLowerCase(Locale.ROOT), new String[] {address, name});
+    emailRecipients.forUserId(user.getId())
+        .ifPresent(r -> recipients.putIfAbsent(r.address().toLowerCase(Locale.ROOT), new String[] {r.address(), r.name()}));
   }
 
   private String actionUrl(Map<String, Object> context, Long taskId) {

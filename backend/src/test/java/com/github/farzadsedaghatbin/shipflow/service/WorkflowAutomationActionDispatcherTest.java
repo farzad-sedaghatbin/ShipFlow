@@ -36,6 +36,7 @@ class WorkflowAutomationActionDispatcherTest {
   private TaskRepository tasks;
   private UserProjectRepository members;
   private IEmailNotificationService email;
+  private com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService recipients;
   private WorkflowAutomationActionDispatcher dispatcher;
 
   @BeforeEach
@@ -44,9 +45,10 @@ class WorkflowAutomationActionDispatcherTest {
     tasks = mock(TaskRepository.class);
     members = mock(UserProjectRepository.class);
     email = mock(IEmailNotificationService.class);
+    recipients = mock(com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService.class);
     when(email.isEnabled()).thenReturn(true);
     dispatcher = new WorkflowAutomationActionDispatcher(
-        tasks, members, mock(DashboardNotificationService.class), loops, email);
+        tasks, members, mock(DashboardNotificationService.class), loops, email, recipients);
   }
 
   private static WorkflowAutomation automation(ActionType type) {
@@ -88,10 +90,14 @@ class WorkflowAutomationActionDispatcherTest {
 
   // ── SEND_EMAIL ─────────────────────────────────────────────────────────────────────────────
 
-  private static User member(long id, String username, String personEmail) {
+  private User member(long id, String username, String personEmail) {
     Person person = Person.builder().id(id).name(username + " Name").email(personEmail).build();
     User user = User.builder().id(id).username(username).person(person).build();
     person.setUser(user);
+    String usable = com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver.of(user);
+    when(recipients.forUserId(id)).thenReturn(usable == null ? Optional.empty()
+        : Optional.of(new com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService.Recipient(
+            usable, username + " Name")));
     return user;
   }
 
@@ -112,9 +118,10 @@ class WorkflowAutomationActionDispatcherTest {
   @Test
   @DisplayName("SEND_EMAIL with no 'to' emails every project member, filling {{placeholders}}")
   void sendEmailDefaultsToProjectMembers() {
-    when(members.findByProjectIdEager(5L)).thenReturn(List.of(
-        membership(member(1L, "hooman", "hooman@goldorigins.com"), ProjectRole.CONTRIBUTOR),
-        membership(member(2L, "nikoo", "a.nikoo@goldorigins.com"), ProjectRole.MANAGER)));
+    User hooman = member(1L, "hooman", "hooman@goldorigins.com");
+    User nikoo = member(2L, "nikoo", "a.nikoo@goldorigins.com");
+    when(members.findByProjectIdEager(5L)).thenReturn(
+        List.of(membership(hooman, ProjectRole.CONTRIBUTOR), membership(nikoo, ProjectRole.MANAGER)));
     WorkflowAutomation a = emailRule("{\"subject\":\"Cycle {{cycleName}} done\",\"body\":\"Check the retro.\"}");
 
     String detail = dispatcher.dispatch(a, Map.of("cycleName", "Cycle \"7\"", "cycleId", 9L));
@@ -128,9 +135,10 @@ class WorkflowAutomationActionDispatcherTest {
   @Test
   @DisplayName("'project_managers' emails only members with the MANAGER role")
   void sendEmailToManagersOnly() {
-    when(members.findByProjectIdEager(5L)).thenReturn(List.of(
-        membership(member(1L, "hooman", "hooman@goldorigins.com"), ProjectRole.CONTRIBUTOR),
-        membership(member(2L, "nikoo", "a.nikoo@goldorigins.com"), ProjectRole.MANAGER)));
+    User hooman = member(1L, "hooman", "hooman@goldorigins.com");
+    User nikoo = member(2L, "nikoo", "a.nikoo@goldorigins.com");
+    when(members.findByProjectIdEager(5L)).thenReturn(
+        List.of(membership(hooman, ProjectRole.CONTRIBUTOR), membership(nikoo, ProjectRole.MANAGER)));
 
     String detail = dispatcher.dispatch(emailRule("{\"subject\":\"s\",\"to\":\"project_managers\"}"), Map.of());
 
@@ -167,8 +175,8 @@ class WorkflowAutomationActionDispatcherTest {
   @Test
   @DisplayName("SEND_EMAIL fails when nobody has a usable address (placeholder domains do not count)")
   void sendEmailFailsWithNoRecipients() {
-    when(members.findByProjectIdEager(5L))
-        .thenReturn(List.of(membership(member(1L, "admin", "admin@shipflow.local"), ProjectRole.MANAGER)));
+    User admin = member(1L, "admin", "admin@shipflow.local");
+    when(members.findByProjectIdEager(5L)).thenReturn(List.of(membership(admin, ProjectRole.MANAGER)));
 
     assertThatThrownBy(() -> dispatcher.dispatch(emailRule("{\"subject\":\"s\"}"), Map.of()))
         .hasMessageContaining("Nobody to email");
