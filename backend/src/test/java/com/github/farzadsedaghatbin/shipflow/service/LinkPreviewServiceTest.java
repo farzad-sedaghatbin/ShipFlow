@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.github.farzadsedaghatbin.shipflow.entity.BugReport;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
+import com.github.farzadsedaghatbin.shipflow.entity.Epic;
 import com.github.farzadsedaghatbin.shipflow.entity.Initiative;
 import com.github.farzadsedaghatbin.shipflow.entity.Pitch;
 import com.github.farzadsedaghatbin.shipflow.entity.Task;
@@ -17,12 +18,14 @@ import com.github.farzadsedaghatbin.shipflow.entity.WikiPage;
 import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugSeverity;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.BugStatus;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.EpicStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.InitiativeStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PitchStatus;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskPriority;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
@@ -56,6 +59,7 @@ class LinkPreviewServiceTest {
   private BugReportRepository bugReportRepository;
   private CycleRepository cycleRepository;
   private InitiativeRepository initiativeRepository;
+  private EpicRepository epicRepository;
   private WikiSpaceRepository wikiSpaceRepository;
   private WikiPageRepository wikiPageRepository;
   private WikiSpacePermissionRepository wikiSpacePermissionRepository;
@@ -69,12 +73,13 @@ class LinkPreviewServiceTest {
     bugReportRepository = mock(BugReportRepository.class);
     cycleRepository = mock(CycleRepository.class);
     initiativeRepository = mock(InitiativeRepository.class);
+    epicRepository = mock(EpicRepository.class);
     wikiSpaceRepository = mock(WikiSpaceRepository.class);
     wikiPageRepository = mock(WikiPageRepository.class);
     wikiSpacePermissionRepository = mock(WikiSpacePermissionRepository.class);
     projectRepository = mock(ProjectRepository.class);
     service = new LinkPreviewService(taskRepository, pitchRepository, bugReportRepository, cycleRepository,
-        initiativeRepository, wikiSpaceRepository, wikiPageRepository, wikiSpacePermissionRepository,
+        initiativeRepository, epicRepository, wikiSpaceRepository, wikiPageRepository, wikiSpacePermissionRepository,
         projectRepository);
   }
 
@@ -211,6 +216,21 @@ class LinkPreviewServiceTest {
 
     assertThat(preview.title()).isEqualTo("Q4 growth");
     assertThat(preview.summary()).isEqualTo("Initiative · Planned");
+  }
+
+  @Test
+  @DisplayName("an epic shows its name and status, never its description")
+  void epicShowsNameAndStatusOnly() {
+    when(epicRepository.findByIdNotDeleted(3L)).thenReturn(Optional.of(Epic.builder().name("Onboarding")
+        .description(SECRET).status(EpicStatus.IN_PROGRESS).build()));
+
+    LinkPreview preview = service.forEpic(3L).orElseThrow();
+
+    assertThat(preview.title()).isEqualTo("Onboarding");
+    assertThat(preview.summary()).isEqualTo("Epic · In Progress");
+    assertThat(preview.summary() + preview.title()).doesNotContain("hunter2");
+    when(epicRepository.findByIdNotDeleted(4L)).thenReturn(Optional.empty());
+    assertThat(service.forEpic(4L)).isEmpty();
   }
 
   @Test
