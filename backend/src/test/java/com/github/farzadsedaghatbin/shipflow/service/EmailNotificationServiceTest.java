@@ -203,4 +203,39 @@ class EmailNotificationServiceTest {
         emailService.sendAutomationEmail("alice@example.com", "Alice", "s", "m", null);
         verifyNoInteractions(mailSender, templateEngine);
     }
+
+    // -----------------------------------------------------------------
+    // Test send reports the real outcome
+    // -----------------------------------------------------------------
+
+    @Test
+    void sendTest_returnsNull_whenTheMailServerAcceptsTheMessage() {
+        when(environment.getProperty("spring.mail.host", "")).thenReturn("smtp.example.com");
+        when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html>x</html>");
+        when(mailSender.createMimeMessage()).thenReturn(realMimeMessage);
+
+        assertThat(emailService.sendTest("farzad@goldorigins.com", "Farzad")).isNull();
+        verify(mailSender).send(any(MimeMessage.class));
+    }
+
+    @Test
+    void sendTest_returnsTheRealReason_whenSendingFails() {
+        when(environment.getProperty("spring.mail.host", "")).thenReturn("smtp.example.com");
+        when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html>x</html>");
+        when(mailSender.createMimeMessage()).thenReturn(realMimeMessage);
+        doThrow(new org.springframework.mail.MailSendException("535 Authentication failed\r\nretry later"))
+                .when(mailSender).send(any(MimeMessage.class));
+
+        assertThat(emailService.sendTest("farzad@goldorigins.com", "Farzad"))
+                .isEqualTo("535 Authentication failed retry later");
+    }
+
+    @Test
+    void sendTest_explainsWhenSmtpIsNotConfigured() {
+        when(environment.getProperty("spring.mail.host", "")).thenReturn("");
+
+        assertThat(emailService.sendTest("farzad@goldorigins.com", "Farzad")).contains("not configured");
+        assertThat(noOpService.sendTest("farzad@goldorigins.com", "Farzad")).contains("not configured");
+        verifyNoInteractions(mailSender);
+    }
 }

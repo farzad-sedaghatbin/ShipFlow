@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.15.4] - 2026-11-09
+
+### Fixed
+- **Organization Settings → Email no longer shows editable boxes that did nothing.** Its SMTP host/port/user/from fields and the "Email Notifications Enabled" switch were stored in the database but nothing read them when sending (only the `SMTP_*` environment variables are used), so a server that was sending fine showed an empty form. The page is now a read-only status view fed by the new admin-only `GET /api/admin/settings/email-status` (host, port, login user, sender, reply-to, link base, whether STARTTLS is required — never the password; "Email is off" when `SMTP_HOST` is unset). *Send test email* now sends immediately and returns the mail server's real reason when it fails (`IEmailNotificationService.sendTest`), instead of the page showing "Email not configured" for every error, and is disabled when email is off. The unused database columns are left in place (no migration). Tests: `EmailStatusServiceTest`, `EmailNotificationServiceTest`, `EmailSettingsTab.test.tsx`.
+- **Email notifications failed at runtime with a lazy-loading error (found the first time it was tried on a real server).** v1.15.3 read the recipient's address from `user.getPerson()`, but the address lives on the lazy `Person`, and the code paths that send mail — the Organization Settings *Send test email* endpoint and automation actions — run with no open database session (open-in-view is off, and `WorkflowAutomationEngine.execute`'s `@Transactional` does not apply to the self-invocation from `fire`/`runScheduled`), so reading it threw `LazyInitializationException` ("Could not initialize proxy [Person#4] - no session"); the settings page then showed its generic "Email not configured" toast. Unit tests with mocked users could not see this. New `EmailRecipientService.forUserId` loads the user inside its own read-only transaction and returns the address and greeting name; the notification service, the automation dispatcher and the test-email endpoint now use it by user id. `EmailRecipientServiceTest` runs with no surrounding transaction and asserts both that a detached user's person really is unreadable and that the service still resolves it. Lesson recorded: anything that must read an association from an entity handed to it, outside a request/transaction, should look it up by id.
+
 ## [1.15.3] - 2026-11-09
 
 ### Added

@@ -7,7 +7,9 @@ import com.github.farzadsedaghatbin.shipflow.dto.admin.UpdateOrganizationSetting
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
-import com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailStatusService;
+import com.github.farzadsedaghatbin.shipflow.dto.admin.EmailStatusDTO;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.McpConfig;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +37,8 @@ public class OrganizationSettingsController {
   private final OrganizationSettingsService settingsService;
   private final McpConfig mcpConfig;
   private final IEmailNotificationService emailService;
+  private final EmailRecipientService emailRecipients;
+  private final EmailStatusService emailStatusService;
   private final UserRepository userRepository;
 
   @GetMapping("/settings")
@@ -125,16 +129,25 @@ public class OrganizationSettingsController {
     }
     User user = userRepository.findByUsername(userDetails.getUsername())
         .orElseThrow(() -> new RuntimeException("User not found"));
-    String email = EmailAddressResolver.of(user);
-    if (email == null) {
+    var recipient = emailRecipients.forUserId(user.getId());
+    if (recipient.isEmpty()) {
       return ResponseEntity.ok(Map.of("error", "Current user has no email address configured"));
     }
-    String recipientName = user.getPerson() != null && user.getPerson().getName() != null
-        ? user.getPerson().getName()
-        : user.getUsername();
-    emailService.sendTaskAssigned(email, recipientName, "Test Task — ShipFlow Email Working", "/dashboard");
+    String email = recipient.get().address();
+    String failure = emailService.sendTest(email, recipient.get().name());
+    if (failure != null) {
+      log.warn("Test email to {} requested by admin {} failed: {}", email, userDetails.getUsername(), failure);
+      return ResponseEntity.ok(Map.of("error", failure));
+    }
     log.info("Test email sent to {} by admin {}", email, userDetails.getUsername());
     return ResponseEntity.ok(Map.of("message", "Test email sent to " + email));
+  }
+
+  @GetMapping("/settings/email-status")
+  @Operation(summary = "How email is configured on this server (from its environment; never the password)")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<EmailStatusDTO> getEmailStatus() {
+    return ResponseEntity.ok(emailStatusService.status());
   }
 
   /**

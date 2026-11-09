@@ -87,6 +87,25 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.15.4',
+    date: 'November 9, 2026',
+    title: 'Email Delivery Fix',
+    highlights: [
+      {
+        icon: <Mail className="h-5 w-5" />,
+        title: 'Test and Automation Emails Work',
+        description:
+          'Sending the settings test email and emailing from automations failed with a hidden error because the recipient\u0027s address could not be read at that moment. Recipients are now looked up safely, so those emails go out.',
+      },
+      {
+        icon: <Mail className="h-5 w-5" />,
+        title: 'An Honest Email Settings Page',
+        description:
+          'Organization Settings now shows how email is really set up on the server instead of empty boxes that did nothing, and the test button reports the mail server\u0027s actual error when sending fails.',
+      },
+    ],
+  },
+  {
     version: '1.15.3',
     date: 'November 9, 2026',
     title: 'Email That Reaches You',

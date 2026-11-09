@@ -22,4 +22,12 @@ public interface IEmailNotificationService {
    */
   void sendAutomationEmail(
       String toEmail, String recipientName, String subject, String message, String actionUrl);
+
+  /**
+   * Sends a test message right now (not in the background) and reports what happened, so the
+   * settings page can show the real reason when it fails.
+   *
+   * @return {@code null} when the mail server accepted the message, otherwise a one-line reason
+   */
+  String sendTest(String toEmail, String recipientName);
 }

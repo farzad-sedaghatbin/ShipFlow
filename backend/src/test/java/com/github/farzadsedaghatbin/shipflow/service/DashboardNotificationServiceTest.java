@@ -63,6 +63,9 @@ class DashboardNotificationServiceTest {
   private IEmailNotificationService emailService;
 
   @Mock
+  private com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService emailRecipients;
+
+  @Mock
   private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
   private DashboardNotificationService notificationService;
@@ -83,7 +86,7 @@ class DashboardNotificationServiceTest {
 
     notificationService = new DashboardNotificationService(notificationRepository, taskRepository,
         cycleRepository, pitchRepository, hillChartPointRepository, userRepository, wikiPageRepository,
-        List.of(slackProvider, teamsProvider), notificationSseManager, emailService, eventPublisher);
+        List.of(slackProvider, teamsProvider), notificationSseManager, emailService, eventPublisher, emailRecipients);
 
     testUser = User.builder().id(1L).username("testuser").build();
 
@@ -669,10 +672,15 @@ class DashboardNotificationServiceTest {
 
   // ── email delivery ─────────────────────────────────────────────────────────────────────────
 
-  private static User withPersonEmail(long id, String username, String email) {
+  /** A user whose address the (mocked) recipient lookup resolves; a blank/placeholder address resolves to nothing. */
+  private User withPersonEmail(long id, String username, String email) {
     Person person = Person.builder().id(id).name(username + " Name").email(email).build();
     User user = User.builder().id(id).username(username).person(person).build();
     person.setUser(user);
+    var resolved = com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver.of(user);
+    lenient().when(emailRecipients.forUserId(id)).thenReturn(resolved == null ? java.util.Optional.empty()
+        : java.util.Optional.of(new com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService.Recipient(
+            resolved, username + " Name")));
     return user;
   }
 
