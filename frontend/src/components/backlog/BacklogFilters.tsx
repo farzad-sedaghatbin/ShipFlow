@@ -19,7 +19,7 @@ import {
 } from '../ui/select';
 import { TabsList, TabsTrigger } from '../ui/tabs';
 import { MultiCombobox } from '../ui/multi-combobox';
-import { TaskStatus, TaskPriority, TaskCategory, Person } from '../../types';
+import { TaskStatus, TaskPriority, TaskCategory, Person, Epic } from '../../types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '../../constants/backlogConstants';
 
 export interface BacklogFiltersProps {
@@ -33,6 +33,10 @@ export interface BacklogFiltersProps {
   onCategoryFilterChange: (category: TaskCategory | 'all') => void;
   dependencyFilter: 'all' | 'blocked' | 'blocking';
   onDependencyFilterChange: (filter: 'all' | 'blocked' | 'blocking') => void;
+  // Epics exist for Kanban/Scrum tasks only; with none loaded the filter is not shown.
+  epics?: Epic[];
+  epicFilter?: 'all' | 'none' | number;
+  onEpicFilterChange?: (filter: 'all' | 'none' | number) => void;
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
   persons: Person[];
@@ -54,6 +58,9 @@ export function BacklogFilters({
   onCategoryFilterChange,
   dependencyFilter,
   onDependencyFilterChange,
+  epics = [],
+  epicFilter = 'all',
+  onEpicFilterChange,
   searchQuery,
   onSearchQueryChange,
   persons,
@@ -172,6 +179,25 @@ export function BacklogFilters({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Epic Filter — which epic a task rolls up to (Kanban/Scrum). */}
+        {epics.length > 0 && onEpicFilterChange && (
+          <Select
+            value={String(epicFilter)}
+            onValueChange={(v) => onEpicFilterChange(v === 'all' || v === 'none' ? v : Number(v))}
+          >
+            <SelectTrigger className="w-auto h-9 min-w-[140px] max-w-[220px]" aria-label={t('backlogPage.filters.epic')}>
+              <SelectValue placeholder={t('backlogPage.filters.epic')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('backlogPage.filters.allEpics')}</SelectItem>
+              <SelectItem value="none">{t('backlogPage.filters.noEpic')}</SelectItem>
+              {epics.map((epic) => (
+                <SelectItem key={epic.id} value={String(epic.id)}>{epic.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Assignee Filter — searchable so typing a name filters the list instead of
             leaking keystrokes to the global keyboard shortcuts (the old DropdownMenu had

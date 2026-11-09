@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { TaskEpicBadge } from './backlog/TaskEpicBadge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -186,6 +187,8 @@ function KanbanCard({ task, onViewTask, onEditTask, onDeleteTask, onAddSubtask, 
         >
           {task.title}
         </h4>
+
+        {task.epicId && <TaskEpicBadge task={task} className="mb-2" />}
 
         {/* Parent/sub-task hierarchy — the only structural grouping available
             for Kanban-mode projects (no Pitch concept there). A card's
