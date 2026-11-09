@@ -25,16 +25,17 @@ import {
   DropdownMenuTrigger,
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 export const NotificationCenter: React.FC = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  // "Clear all" deletes everything and cannot be undone, so it takes a second click to confirm.
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -102,6 +103,33 @@ export const NotificationCenter: React.FC = () => {
     }
   };
 
+  const handleClearAll = async () => {
+    if (!confirmClear) {
+      setConfirmClear(true);
+      return;
+    }
+    try {
+      await dashboardNotificationApi.clearAll();
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
+    } finally {
+      setConfirmClear(false);
+    }
+  };
+
+  // The confirmation must not linger: reset it when the menu closes or after a few seconds.
+  useEffect(() => {
+    if (!confirmClear) return;
+    const timer = setTimeout(() => setConfirmClear(false), 4000);
+    return () => clearTimeout(timer);
+  }, [confirmClear]);
+
+  useEffect(() => {
+    if (!open) setConfirmClear(false);
+  }, [open]);
+
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -146,12 +174,12 @@ export const NotificationCenter: React.FC = () => {
     switch (severity) {
       case 'CRITICAL':
       case 'ERROR':
-        return 'border-l-destructive bg-destructive/5';
+        return 'border-l-destructive';
       case 'WARNING':
-        return 'border-l-amber-500 bg-amber-500/5';
+        return 'border-l-amber-500';
       case 'INFO':
       default:
-        return 'border-l-blue-500 bg-blue-500/5';
+        return 'border-l-blue-500';
     }
   };
 
@@ -168,10 +196,10 @@ export const NotificationCenter: React.FC = () => {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t('notificationCenter.justNow');
+    if (diffMins < 60) return t('notificationCenter.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('notificationCenter.hoursAgo', { count: diffHours });
+    if (diffDays < 7) return t('notificationCenter.daysAgo', { count: diffDays });
     return formatLocalizedDate(date, i18n.language);
   };
 
@@ -182,7 +210,9 @@ export const NotificationCenter: React.FC = () => {
           variant="ghost" 
           size="icon" 
           className="relative"
-          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+          aria-label={unreadCount > 0
+            ? t('notificationCenter.ariaUnread', { count: unreadCount })
+            : t('notificationCenter.title')}
         >
           {unreadCount > 0 ? (
             <Bell className="h-5 w-5" />
@@ -200,64 +230,90 @@ export const NotificationCenter: React.FC = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-96 max-w-96">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMarkAllAsRead}
-              className="h-7 text-xs"
-            >
-              <CheckCheck className="h-3 w-3 mr-1" />
-              Mark all read
-            </Button>
-          )}
+        <DropdownMenuLabel className="flex items-center justify-between gap-2">
+          <span>{t('notificationCenter.title')}</span>
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                className="h-7 text-xs"
+              >
+                <CheckCheck className="h-3 w-3 mr-1" />
+                {t('notificationCenter.markAllRead')}
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAll}
+                className={cn(
+                  'h-7 text-xs',
+                  confirmClear
+                    ? 'text-destructive hover:text-destructive font-semibold'
+                    : 'text-muted-foreground hover:text-destructive'
+                )}
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                {confirmClear ? t('notificationCenter.clearAllConfirm') : t('notificationCenter.clearAll')}
+              </Button>
+            )}
+          </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
         {loading ? (
           <div className="p-4 text-center text-muted-foreground">
-            Loading notifications...
+            {t('notificationCenter.loading')}
           </div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center">
             <BellOff className="h-12 w-12 mx-auto mb-2 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No notifications</p>
+            <p className="text-sm text-muted-foreground">{t('notificationCenter.empty')}</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px]">
+          <div className="max-h-[400px] overflow-y-auto overflow-x-hidden">
             <div className="space-y-1 p-1">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={cn(
-                    'p-3 rounded-lg border-l-4 transition-colors cursor-pointer hover:bg-muted/50',
+                    'p-3 rounded-lg border-l-4 transition-colors cursor-pointer min-w-0',
                     getSeverityColor(notification.severity),
-                    !notification.isRead && 'bg-primary/5'
+                    notification.isRead
+                      ? 'opacity-60 hover:opacity-100 hover:bg-muted/50'
+                      : 'bg-primary/10 hover:bg-primary/15'
                   )}
                 >
                   <div className="flex items-start gap-2">
+                    {!notification.isRead && (
+                      <span
+                        className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
+                        aria-label={t('notificationCenter.unread')}
+                      />
+                    )}
                     <div className="mt-0.5">
                       {getTypeIcon(notification.type, notification.severity)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className={cn(
-                          'text-sm font-semibold truncate',
-                          !notification.isRead && 'text-foreground'
+                          'text-sm truncate',
+                          notification.isRead ? 'font-normal' : 'font-semibold text-foreground'
                         )}>
                           {notification.title}
                         </h4>
-                        <div className="flex items-center gap-1">
+                        <div className="flex shrink-0 items-center gap-1">
                           {!notification.isRead && (
                             <Button
                               variant="ghost"
                               size="icon"
                               className="h-6 w-6"
                               onClick={(e) => handleMarkAsRead(notification.id, e)}
-                              title="Mark as read"
+                              title={t('notificationCenter.markRead')}
                             >
                               <Check className="h-3 w-3" />
                             </Button>
@@ -267,7 +323,8 @@ export const NotificationCenter: React.FC = () => {
                             size="icon"
                             className="h-6 w-6 text-muted-foreground hover:text-destructive"
                             onClick={(e) => handleDelete(notification.id, e)}
-                            title="Delete"
+                            title={t('notificationCenter.delete')}
+                            aria-label={t('notificationCenter.delete')}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -291,7 +348,7 @@ export const NotificationCenter: React.FC = () => {
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         )}
       </DropdownMenuContent>
     </DropdownMenu>

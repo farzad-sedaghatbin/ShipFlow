@@ -5477,6 +5477,22 @@
     "noNarrativeYet": "هنوز روایتی تولید نشده",
     "loadError": "خطا در بارگذاری خلاصه سیکل"
   },
+  "notificationCenter": {
+    "title": "اعلان‌ها",
+    "markAllRead": "علامت‌گذاری همه به‌عنوان خوانده‌شده",
+    "clearAll": "پاک کردن همه",
+    "clearAllConfirm": "برای پاک کردن همه دوباره کلیک کنید",
+    "markRead": "علامت‌گذاری به‌عنوان خوانده‌شده",
+    "delete": "حذف",
+    "unread": "خوانده‌نشده",
+    "loading": "در حال بارگذاری اعلان‌ها...",
+    "empty": "اعلانی وجود ندارد",
+    "justNow": "همین الان",
+    "minutesAgo": "{{count}} دقیقه پیش",
+    "hoursAgo": "{{count}} ساعت پیش",
+    "daysAgo": "{{count}} روز پیش",
+    "ariaUnread": "اعلان‌ها ({{count}} خوانده‌نشده)"
+  },
   "settings": {
     "appearance": "ظاهر",
     "darkMode": "حالت تاریک",

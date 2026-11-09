@@ -656,4 +656,14 @@ class DashboardNotificationServiceTest {
         && n.getEntityId().equals(99L)
     ));
   }
+
+  @Test
+  void clearAll_deletesThroughTheRepositoryForThatUserOnly() {
+    when(notificationRepository.deleteAllByUserId(7L)).thenReturn(3);
+
+    assertEquals(3, notificationService.clearAll(7L));
+
+    verify(notificationRepository).deleteAllByUserId(7L);
+    verify(notificationRepository, never()).deleteById(anyLong());
+  }
 }

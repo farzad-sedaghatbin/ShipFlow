@@ -34,6 +34,11 @@ public interface DashboardNotificationRepository extends JpaRepository<Dashboard
   @Query("SELECT n FROM DashboardNotification n WHERE n.expiresAt IS NOT NULL " + "AND n.expiresAt <= :now")
   List<DashboardNotification> findExpiredNotifications(@Param("now") LocalDateTime now);
 
+  /** Delete every notification belonging to one user ("Clear all"); returns how many were removed. */
+  @Modifying
+  @Query("DELETE FROM DashboardNotification n WHERE n.user.id = :userId")
+  int deleteAllByUserId(@Param("userId") Long userId);
+
   /** Delete old read notifications */
   @Modifying
   @Query("DELETE FROM DashboardNotification n WHERE n.isRead = true " + "AND n.readAt < :cutoffDate")

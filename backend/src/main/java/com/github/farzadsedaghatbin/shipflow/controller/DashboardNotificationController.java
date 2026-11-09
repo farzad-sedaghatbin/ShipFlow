@@ -62,6 +62,13 @@ public class DashboardNotificationController {
     return ResponseEntity.noContent().build();
   }
 
+  @DeleteMapping
+  @Operation(summary = "Clear all notifications", description = "Delete every notification of the current user")
+  public ResponseEntity<Void> clearAll() {
+    notificationService.clearAll(getCurrentUserId());
+    return ResponseEntity.noContent().build();
+  }
+
   @DeleteMapping("/{id}")
   @Operation(summary = "Delete notification", description = "Delete a specific notification")
   public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
