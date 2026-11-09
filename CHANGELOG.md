@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **Task detail dialog is editable in place.** In the Backlog/Kanban task dialog, status, priority, assignee, pair assignee, estimate, actual hours and due date can now be changed directly without opening the Edit form (status/priority/assignee use their quick-change endpoints; the rest use the normal task update with the task's other fields unchanged). The dialog also gets **Copy link** and **Open full page** buttons at the top, and shared links use the key form `/backlog/MARK-100`; the full task page now accepts both `/backlog/100` and `/backlog/MARK-100`. Tests: `BacklogViewDialog.test.tsx`.
 
+### Fixed
+- **Shared backlog filter link opened on the active cycle instead of "All cycles".** The address bar left `cycle` out of the URL while "All cycles" was selected, and a link with no `cycle` means "use the project's active cycle", so the recipient saw a different list than the sender. "All cycles" is now written as `?cycle=all` (the page already read it back). The read/write rules live in `utils/backlogCycleParam.ts`. Tests: `backlogCycleParam.test.ts`.
+
 ## [1.15.1] - 2026-11-06
 
 ### Fixed

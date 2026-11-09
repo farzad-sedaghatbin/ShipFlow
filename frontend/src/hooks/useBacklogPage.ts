@@ -5,6 +5,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
 import { taskService } from '../services/taskService';
 import { taskAttachmentService } from '../services/taskAttachmentService';
+import { cycleParamValue, parseCycleParam, type CycleSelection } from '../utils/backlogCycleParam';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { teamService } from '../services/teamService';
@@ -67,11 +68,7 @@ export function useBacklogPage() {
   const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
   // Cycle from a shared link (`?cycle=`). loadInitialData normally auto-selects the project's
   // first cycle; this makes it honor the link's cycle instead, once, then fall back to normal.
-  const urlCycleRef = useRef<number | 'all' | null>((() => {
-    const v = searchParams.get('cycle');
-    if (!v) return null;
-    return v === 'all' ? 'all' : (Number(v) || null);
-  })());
+  const urlCycleRef = useRef<CycleSelection | null>(parseCycleParam(searchParams.get('cycle')));
   // Category is now a filter, not primary navigation (tabs removed — see §C.1). 'all' means no
   // category filtering, matching the optional `category` param already accepted server-side.
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>(
@@ -527,7 +524,8 @@ export function useBacklogPage() {
       const next = new URLSearchParams();
       prev.forEach((v, k) => { if (!BACKLOG_FILTER_KEYS.includes(k)) next.append(k, v); });
       if (currentProject?.id) next.set('project', String(currentProject.id));
-      if (!isKanbanProject && selectedCycle !== 'all') next.set('cycle', String(selectedCycle));
+      const cycleParam = cycleParamValue(selectedCycle, isKanbanProject);
+      if (cycleParam) next.set('cycle', cycleParam);
       if (searchQuery) next.set('q', searchQuery);
       statusFilter.forEach((v) => next.append('status', v));
       priorityFilter.forEach((v) => next.append('priority', v));
