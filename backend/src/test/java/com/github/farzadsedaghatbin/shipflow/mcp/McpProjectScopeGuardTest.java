@@ -23,6 +23,9 @@ import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.TestCaseRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UploadedDocumentRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiPageRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpacePermissionRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.WikiSpaceRepository;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.server.McpProjectScopeGuard;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +46,9 @@ class McpProjectScopeGuardTest {
   private static final long OWN = 1L;
   private static final long FOREIGN = 2L;
 
+  @Mock private WikiSpaceRepository wikiSpaceRepository;
+  @Mock private WikiPageRepository wikiPageRepository;
+  @Mock private WikiSpacePermissionRepository wikiPermissionRepository;
   @Mock private TaskRepository taskRepository;
   @Mock private PitchRepository pitchRepository;
   @Mock private CycleRepository cycleRepository;
@@ -65,7 +71,8 @@ class McpProjectScopeGuardTest {
     guard =
         new McpProjectScopeGuard(
             taskRepository, pitchRepository, cycleRepository, bugReportRepository,
-            testCaseRepository, epicRepository, documentRepository, initiativeRepository);
+            testCaseRepository, epicRepository, documentRepository, initiativeRepository,
+            wikiSpaceRepository, wikiPageRepository, wikiPermissionRepository);
 
     for (long id : new long[] {10, 20}) {
       Project p = project(id == 10 ? OWN : FOREIGN);
@@ -112,6 +119,75 @@ class McpProjectScopeGuardTest {
       doc.setEntityId(id);
       lenient().when(documentRepository.findById(id)).thenReturn(Optional.of(doc));
     }
+  }
+
+  private void wikiFixtures() {
+    com.github.farzadsedaghatbin.shipflow.entity.WikiSpace own = new com.github.farzadsedaghatbin.shipflow.entity.WikiSpace();
+    own.setId(1L);
+    own.setProjectId(OWN);
+    com.github.farzadsedaghatbin.shipflow.entity.WikiSpace foreign = new com.github.farzadsedaghatbin.shipflow.entity.WikiSpace();
+    foreign.setId(2L);
+    foreign.setProjectId(FOREIGN);
+    com.github.farzadsedaghatbin.shipflow.entity.WikiSpace projectless = new com.github.farzadsedaghatbin.shipflow.entity.WikiSpace();
+    projectless.setId(3L);
+    lenient().when(wikiSpaceRepository.findById(1L)).thenReturn(Optional.of(own));
+    lenient().when(wikiSpaceRepository.findById(2L)).thenReturn(Optional.of(foreign));
+    lenient().when(wikiSpaceRepository.findById(3L)).thenReturn(Optional.of(projectless));
+    for (long[] pg : new long[][] {{10, 1}, {20, 2}, {30, 3}}) {
+      com.github.farzadsedaghatbin.shipflow.entity.WikiPage page = new com.github.farzadsedaghatbin.shipflow.entity.WikiPage();
+      page.setId(pg[0]);
+      page.setSpaceId(pg[1]);
+      lenient().when(wikiPageRepository.findById(pg[0])).thenReturn(Optional.of(page));
+    }
+    for (long[] pm : new long[][] {{100, 1}, {200, 2}}) {
+      com.github.farzadsedaghatbin.shipflow.entity.WikiSpacePermission perm = new com.github.farzadsedaghatbin.shipflow.entity.WikiSpacePermission();
+      perm.setId(pm[0]);
+      perm.setSpaceId(pm[1]);
+      lenient().when(wikiPermissionRepository.findById(pm[0])).thenReturn(Optional.of(perm));
+    }
+  }
+
+  @Test
+  void wikiTools_allowOwnProjectSpace_denyForeignProjectlessAndMissing() {
+    wikiFixtures();
+    for (String tool : new String[] {"get_wiki_tree", "delete_wiki_space", "list_wiki_permissions",
+        "grant_wiki_permission", "search_wiki_pages", "create_wiki_page"}) {
+      assertAllowed(tool, new java.util.HashMap<>(Map.of("spaceId", 1L)));
+      assertDenied(tool, new java.util.HashMap<>(Map.of("spaceId", 2L)));
+      assertDenied(tool, new java.util.HashMap<>(Map.of("spaceId", 3L)));
+      assertDenied(tool, new java.util.HashMap<>());
+    }
+    for (String tool : new String[] {"get_wiki_page", "update_wiki_page", "delete_wiki_page",
+        "get_wiki_page_history", "get_wiki_revision", "restore_wiki_revision", "move_wiki_page"}) {
+      assertAllowed(tool, new java.util.HashMap<>(Map.of("pageId", 10L)));
+      assertDenied(tool, new java.util.HashMap<>(Map.of("pageId", 20L)));
+      assertDenied(tool, new java.util.HashMap<>(Map.of("pageId", 30L)));
+      assertDenied(tool, new java.util.HashMap<>(Map.of("pageId", 999L)));
+    }
+    assertAllowed("revoke_wiki_permission", new java.util.HashMap<>(Map.of("permissionId", 100L)));
+    assertDenied("revoke_wiki_permission", new java.util.HashMap<>(Map.of("permissionId", 200L)));
+    // moving a page under a foreign parent is refused
+    assertDenied("move_wiki_page", new java.util.HashMap<>(Map.of("pageId", 10L, "newParentId", 20L)));
+  }
+
+  @Test
+  void createWikiSpace_isPinnedToTheRestrictedProject() {
+    Map<String, Object> out = guard.authorize("create_wiki_space", new java.util.HashMap<>(Map.of("name", "x")), restricted);
+    assertThat(out).containsEntry("projectId", OWN);
+    assertDenied("create_wiki_space", new java.util.HashMap<>(Map.of("name", "x", "projectId", FOREIGN)));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void listWikiSpaces_isNarrowedToTheRestrictedProject() {
+    com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO own =
+        new com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO(1L, "a", "a", null, OWN, 1L, null, null);
+    com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO foreign =
+        new com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO(2L, "b", "b", null, FOREIGN, 1L, null, null);
+    com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO none =
+        new com.github.farzadsedaghatbin.shipflow.dto.wiki.WikiSpaceDTO(3L, "c", "c", null, null, 1L, null, null);
+    assertThat((java.util.List<Object>) guard.filterResult(java.util.List.of(own, foreign, none), restricted))
+        .containsExactly(own);
   }
 
   private void assertDenied(String tool, Map<String, Object> args) {
