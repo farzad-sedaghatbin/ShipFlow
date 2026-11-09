@@ -1,3 +1,4 @@
+import { TaskEpicBadge } from './TaskEpicBadge';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { useState, useRef, useMemo } from 'react';
@@ -187,6 +188,7 @@ function SortableTaskRow({
               </span>
               {task.title}
             </Link>
+            <TaskEpicBadge task={task} />
             {task.isBlocked && task.blockedByCount && task.blockedByCount > 0 && (
               <TooltipProvider>
                 <Tooltip>

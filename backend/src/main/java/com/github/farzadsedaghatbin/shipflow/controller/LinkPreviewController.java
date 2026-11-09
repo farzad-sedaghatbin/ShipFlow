@@ -3,11 +3,13 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.config.SocialCrawlerFilter;
 import com.github.farzadsedaghatbin.shipflow.service.LinkPreviewService;
 import com.github.farzadsedaghatbin.shipflow.service.LinkPreviewService.LinkPreview;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,49 +52,54 @@ public class LinkPreviewController {
   // Item previews — each asks LinkPreviewService, which decides what is safe to show
   // -------------------------------------------------------------------------
 
-  @GetMapping(value = "/preview/task/{id}", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/task/{id}")
   public ResponseEntity<String> taskPreview(@PathVariable Long id) {
     return render(linkPreviewService.forTask(id), "Task not found", "/backlog/" + id);
   }
 
   /** {@code ref} is a numeric id or a bug key; the pattern keeps anything else out of the page. */
-  @GetMapping(value = "/preview/bug/{ref:[A-Za-z0-9-]{1,64}}", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/bug/{ref:[A-Za-z0-9-]{1,64}}")
   public ResponseEntity<String> bugPreview(@PathVariable String ref) {
     return render(linkPreviewService.forBug(ref), "Bug report not found", "/qa/bug-reports/" + ref);
   }
 
-  @GetMapping(value = "/preview/pitch/{id}", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/pitch/{id}")
   public ResponseEntity<String> pitchPreview(@PathVariable Long id) {
     return render(linkPreviewService.forPitch(id), "Pitch not found", "/pitches/" + id);
   }
 
-  @GetMapping(value = "/preview/cycle/{id}", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/cycle/{id}")
   public ResponseEntity<String> cyclePreview(@PathVariable Long id) {
     return render(linkPreviewService.forCycle(id), "Cycle not found", "/cycles/" + id);
   }
 
-  @GetMapping(value = "/preview/initiative/{id}", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/initiative/{id}")
   public ResponseEntity<String> initiativePreview(@PathVariable Long id) {
     return render(linkPreviewService.forInitiative(id), "Initiative not found", "/initiatives/" + id);
   }
 
-  @GetMapping(value = "/preview/wiki/{spaceId}", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/epic/{id}")
+  public ResponseEntity<String> epicPreview(@PathVariable Long id) {
+    return render(linkPreviewService.forEpic(id), "Epic not found", "/epics/" + id);
+  }
+
+  @GetMapping("/preview/wiki/{spaceId}")
   public ResponseEntity<String> wikiSpacePreview(@PathVariable Long spaceId) {
     return render(linkPreviewService.forWikiSpace(spaceId), "Wiki space not found", "/wiki/" + spaceId);
   }
 
-  @GetMapping(value = "/preview/wiki/{spaceId}/{pageId}", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/wiki/{spaceId}/{pageId}")
   public ResponseEntity<String> wikiPagePreview(@PathVariable Long spaceId, @PathVariable Long pageId) {
     return render(linkPreviewService.forWikiPage(spaceId, pageId), "Wiki page not found",
         "/wiki/" + spaceId + "/" + pageId);
   }
 
-  @GetMapping(value = "/preview/roadmap", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/roadmap")
   public ResponseEntity<String> roadmapPreview() {
     return render(Optional.of(linkPreviewService.forRoadmap()), "Roadmap", "/roadmap");
   }
 
-  @GetMapping(value = "/preview/backlog", produces = "text/html;charset=UTF-8")
+  @GetMapping("/preview/backlog")
   public ResponseEntity<String> backlogPreview(@RequestParam Long project) {
     return render(linkPreviewService.forBacklog(project), "Backlog not found", "/backlog?project=" + project);
   }
@@ -128,7 +135,10 @@ public class LinkPreviewController {
    * to real visitors, or vice versa.
    */
   private ResponseEntity<String> preview(HttpStatus status, String html) {
-    return ResponseEntity.status(status).cacheControl(CacheControl.noStore()).body(html);
+    // The type is set here rather than via @GetMapping(produces=…): that made a crawler whose Accept
+    // header omits text/html (an image/* or application/json fetcher) get a 406/500 and no preview.
+    return ResponseEntity.status(status).cacheControl(CacheControl.noStore())
+        .contentType(new MediaType("text", "html", StandardCharsets.UTF_8)).body(html);
   }
 
   /**
