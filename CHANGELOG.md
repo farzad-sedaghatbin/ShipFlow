@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **Task detail dialog is editable in place.** In the Backlog/Kanban task dialog, status, priority, assignee, pair assignee, estimate, actual hours and due date can now be changed directly without opening the Edit form (status/priority/assignee use their quick-change endpoints; the rest use the normal task update with the task's other fields unchanged). The dialog also gets **Copy link** and **Open full page** buttons at the top, and shared links use the key form `/backlog/MARK-100`; the full task page now accepts both `/backlog/100` and `/backlog/MARK-100`. Tests: `BacklogViewDialog.test.tsx`.
 
+### Added
+- **Full wiki control over MCP.** The MCP server had no wiki tools (only `add_comment` could touch a wiki page). New `WikiMcpTools` adds 7 read tools (`list_wiki_spaces`, `get_wiki_tree`, `get_wiki_page`, `search_wiki_pages`, `get_wiki_page_history`, `get_wiki_revision`, `list_wiki_permissions`) and 10 write tools (create/update/delete space; create/update/move/delete page; `restore_wiki_revision`; grant/revoke space permission). Every call goes through `WikiService` as the key's user, so per-space wiki ACLs, the optimistic-lock `expectedVersion` check, mentions, events and Knowledge Center re-indexing behave exactly as in the app. Page bodies can be sent as light `markdown` (converted to BlockNote blocks) or raw BlockNote `content`. `McpProjectScopeGuard` covers every tool: a project-restricted key only reaches spaces whose `projectId` is its project, `list_wiki_spaces` is narrowed, `create_wiki_space` is pinned to the project, and space-less search is refused. Not added to the ShipFlow Agent's allow-list. Tests: `WikiMcpToolsTest`, wiki cases in `McpProjectScopeGuardTest`.
+
 ## [1.15.1] - 2026-11-06
 
 ### Fixed
