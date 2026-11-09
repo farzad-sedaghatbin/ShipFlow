@@ -7,6 +7,7 @@ import com.github.farzadsedaghatbin.shipflow.dto.admin.UpdateOrganizationSetting
 import com.github.farzadsedaghatbin.shipflow.entity.User;
 import com.github.farzadsedaghatbin.shipflow.repository.UserRepository;
 import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver;
 import com.github.farzadsedaghatbin.shipflow.service.OrganizationSettingsService;
 import com.github.farzadsedaghatbin.shipflow.service.mcp.McpConfig;
 import io.swagger.v3.oas.annotations.Operation;
@@ -124,8 +125,8 @@ public class OrganizationSettingsController {
     }
     User user = userRepository.findByUsername(userDetails.getUsername())
         .orElseThrow(() -> new RuntimeException("User not found"));
-    String email = user.getEmail();
-    if (email == null || email.isBlank()) {
+    String email = EmailAddressResolver.of(user);
+    if (email == null) {
       return ResponseEntity.ok(Map.of("error", "Current user has no email address configured"));
     }
     String recipientName = user.getPerson() != null && user.getPerson().getName() != null

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.15.3] - 2026-11-09
+
+### Added
+- **Email notifications now actually reach people, and automations can email.** The code to email on task assignment and @mention existed but could not work on a typical install, for four reasons, all fixed: (1) it only used `users.email`, which is almost always empty — the address lives on the linked person — so `EmailAddressResolver` now falls back to the person's address and treats placeholder domains (`.local`, `.invalid`, `.example`, `example.com`) and malformed values as "no address" instead of handing them to the mail server; (2) the button in every email used a relative link (`/backlog/12`), which does nothing in a mail client — links are now made absolute from `APP_BASE_URL`; (3) the *Notify Assignee* / *Notify Project Members* automation actions only created the in-app bell notification — they now also email the recipient; (4) the *Send Email* automation action was recognised but only logged — it now works: `subject` and `body` (with `{{placeholders}}`, filled after the JSON is parsed so a title containing a quote cannot break it) and an optional `to` of `assignee`, `project_members` (default), `project_managers`, an address, or a list mixing them, capped at 25 recipients. It fails loudly (a FAILURE in the execution log, with the reason) when SMTP is not configured or nobody has a usable address, rather than reporting success. New `automation-triggered` email template. The two seeded *Email* templates (cycle ended, appetite exceeded) now do something. Pitch-status emails still have no caller and are unchanged.
+- **Mail hygiene for a shared sender mailbox.** `SMTP_FROM` accepts `Display Name <address>`; new `SMTP_REPLY_TO`; every message carries `Auto-Submitted: auto-generated` and `Precedence: bulk` so out-of-office replies do not go to a mailbox nobody reads; subjects are forced to one line (header-injection guard). Sending is now `@Async`, so assigning a task or posting a comment never waits on the mail server, and JavaMail connect/read/write timeouts (10 s / 15 s / 15 s) replace its default of waiting forever. Tests: `EmailNotificationServiceTest`, `EmailAddressResolverTest`, `WorkflowAutomationActionDispatcherTest`, `DashboardNotificationServiceTest`. New help guide `34-email-notifications.md`; `13-automations.md` corrected.
+
 ## [1.15.2] - 2026-11-09
 
 ### Changed

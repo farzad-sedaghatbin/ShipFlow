@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.event.NotificationCreatedEvent;
 import com.github.farzadsedaghatbin.shipflow.repository.*;
 import com.github.farzadsedaghatbin.shipflow.service.IEmailNotificationService;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver;
 import com.github.farzadsedaghatbin.shipflow.service.notification.NotificationProvider;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -123,12 +124,10 @@ public class DashboardNotificationService {
         "TASK", task.getId(), assignee.getPerson());
 
     // Send email notification
-    if (assignee.getEmail() != null && !assignee.getEmail().isBlank()) {
-      String recipientName = assignee.getPerson() != null && assignee.getPerson().getName() != null
-          ? assignee.getPerson().getName()
-          : assignee.getUsername();
+    String assigneeEmail = EmailAddressResolver.of(assignee);
+    if (assigneeEmail != null) {
       emailService.sendTaskAssigned(
-          assignee.getEmail(), recipientName, task.getTitle(), "/backlog/" + task.getId());
+          assigneeEmail, recipientName(assignee), task.getTitle(), "/backlog/" + task.getId());
     }
 
     log.info("Created task assignment notification for user {} on task {}", assignee.getId(), task.getId());
@@ -145,9 +144,22 @@ public class DashboardNotificationService {
     String body = (message == null || message.isBlank())
         ? String.format("Automation \"%s\" was triggered.", automationName)
         : message;
-    createNotification(recipient, "AUTOMATION_TRIGGERED", automationName, body, "INFO",
-        relatedTask != null ? "/backlog/" + relatedTask.getId() : null,
+    String actionUrl = relatedTask != null ? "/backlog/" + relatedTask.getId() : null;
+    createNotification(recipient, "AUTOMATION_TRIGGERED", automationName, body, "INFO", actionUrl,
         relatedTask != null ? "TASK" : null, relatedTask != null ? relatedTask.getId() : null);
+
+    // The rule's notification also goes to the person's inbox, not only to the in-app bell.
+    String recipientEmail = EmailAddressResolver.of(recipient);
+    if (recipientEmail != null) {
+      emailService.sendAutomationEmail(recipientEmail, recipientName(recipient), automationName, body, actionUrl);
+    }
+  }
+
+  /** The name to greet someone by in an email: their person's name, else their username. */
+  private static String recipientName(User user) {
+    return user.getPerson() != null && user.getPerson().getName() != null
+        ? user.getPerson().getName()
+        : user.getUsername();
   }
 
   /** Create notification when a user is mentioned in a comment */
@@ -179,12 +191,10 @@ public class DashboardNotificationService {
         entityType, entityId, mentionedUser.getPerson());
 
     // Send email notification
-    if (mentionedUser.getEmail() != null && !mentionedUser.getEmail().isBlank()) {
-      String recipientName = mentionedUser.getPerson() != null && mentionedUser.getPerson().getName() != null
-          ? mentionedUser.getPerson().getName()
-          : mentionedUser.getUsername();
+    String mentionedEmail = EmailAddressResolver.of(mentionedUser);
+    if (mentionedEmail != null) {
       emailService.sendMentionedInComment(
-          mentionedUser.getEmail(), recipientName, entityType.toLowerCase(), actionUrl);
+          mentionedEmail, recipientName(mentionedUser), entityType.toLowerCase(), actionUrl);
     }
 
     log.info("Created comment mention notification for user {} from author {} on {} {}", mentionedUser.getId(),
@@ -216,11 +226,9 @@ public class DashboardNotificationService {
             mentionedUser.getUsername(), preview),
         "WIKI_PAGE", pageId, mentionedUser.getPerson());
 
-    if (mentionedUser.getEmail() != null && !mentionedUser.getEmail().isBlank()) {
-      String recipientName = mentionedUser.getPerson() != null && mentionedUser.getPerson().getName() != null
-          ? mentionedUser.getPerson().getName()
-          : mentionedUser.getUsername();
-      emailService.sendMentionedInComment(mentionedUser.getEmail(), recipientName, "wiki page", actionUrl);
+    String wikiMentionedEmail = EmailAddressResolver.of(mentionedUser);
+    if (wikiMentionedEmail != null) {
+      emailService.sendMentionedInComment(wikiMentionedEmail, recipientName(mentionedUser), "wiki page", actionUrl);
     }
 
     log.info("Created wiki mention notification for user {} from author {} on page {}", mentionedUser.getId(),

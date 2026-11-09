@@ -87,6 +87,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: '1.15.3',
+    date: 'November 9, 2026',
+    title: 'Email That Reaches You',
+    highlights: [
+      {
+        icon: <Mail className="h-5 w-5" />,
+        title: 'Assignment and Mention Emails',
+        description:
+          'Being assigned a task or mentioned in a comment or wiki page now emails you, using the address on your profile, with a link that opens the right page.',
+      },
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: 'Automations Can Email',
+        description:
+          'Notify rules now email the people they notify, and the Send Email action works: pick the assignee, project members, managers or any address, with placeholders in the subject and body.',
+      },
+      {
+        icon: <Bell className="h-5 w-5" />,
+        title: 'A Proper Sender',
+        description:
+          'Emails carry a sender name, an optional reply-to address and automatic-message headers so out-of-office replies stay away, and sending happens in the background so pages never wait on the mail server.',
+      },
+    ],
+  },
+  {
     version: '1.15.2',
     date: 'November 9, 2026',
     title: 'Edit in Place, Wiki over MCP',
