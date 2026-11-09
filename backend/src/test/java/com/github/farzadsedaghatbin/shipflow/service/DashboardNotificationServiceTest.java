@@ -666,4 +666,56 @@ class DashboardNotificationServiceTest {
     verify(notificationRepository).deleteAllByUserId(7L);
     verify(notificationRepository, never()).deleteById(anyLong());
   }
+
+  // ── email delivery ─────────────────────────────────────────────────────────────────────────
+
+  private static User withPersonEmail(long id, String username, String email) {
+    Person person = Person.builder().id(id).name(username + " Name").email(email).build();
+    User user = User.builder().id(id).username(username).person(person).build();
+    person.setUser(user);
+    return user;
+  }
+
+  @Test
+  void notifyTaskAssignment_emailsThePersonsAddress_whenTheUserHasNoEmailOfTheirOwn() {
+    User assignee = withPersonEmail(10L, "hooman", "hooman@goldorigins.com");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyTaskAssignment(testTask, assignee);
+
+    verify(emailService).sendTaskAssigned(eq("hooman@goldorigins.com"), eq("hooman Name"), eq("Test Task"),
+        eq("/backlog/1"));
+  }
+
+  @Test
+  void notifyTaskAssignment_doesNotEmailAPlaceholderAddress() {
+    User assignee = withPersonEmail(10L, "admin", "admin@shipflow.local");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyTaskAssignment(testTask, assignee);
+
+    verify(emailService, never()).sendTaskAssigned(any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCommentMention_emailsTheMentionedPerson() {
+    User author = withPersonEmail(2L, "bob", "bob@goldorigins.com");
+    User mentioned = withPersonEmail(3L, "alice", "alice@goldorigins.com");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 42L, "Hey @alice");
+
+    verify(emailService).sendMentionedInComment(eq("alice@goldorigins.com"), eq("alice Name"), eq("task"), any());
+  }
+
+  @Test
+  void notifyAutomationTriggered_emailsTheRecipientAsWellAsTheInAppBell() {
+    User recipient = withPersonEmail(10L, "hooman", "hooman@goldorigins.com");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyAutomationTriggered(recipient, "Hill chart moved", "Now at 60%", testTask);
+
+    verify(emailService).sendAutomationEmail(eq("hooman@goldorigins.com"), eq("hooman Name"),
+        eq("Hill chart moved"), eq("Now at 60%"), eq("/backlog/1"));
+  }
 }

@@ -44,4 +44,10 @@ public class NoOpEmailNotificationService implements IEmailNotificationService {
             String actionUrl) {
         // no-op
     }
+
+    @Override
+    public void sendAutomationEmail(
+            String toEmail, String recipientName, String subject, String message, String actionUrl) {
+        // no-op
+    }
 }
