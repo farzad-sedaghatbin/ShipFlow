@@ -253,10 +253,16 @@ Once connected, your AI assistant has access to these tools:
 | `wise_architecture_get_files` | Retrieve generated Markdown implementation guides for a past analysis |
 | `get_roadmap` | Roadmap timeline for a `projectId` (optional `startDate`/`endDate`, ISO; default today-3mo..today+12mo): initiatives, epics with progress and child pitches (Shape Up) or root tasks (Kanban/Scrum), releases, and epic `dependencies` (`sourceEpicId` BLOCKS `targetEpicId`), plus `projectType` |
 | `get_epics` | Epics of a `projectId` — id, name, status, dates, initiative, priority, pitch/task counts. Use it to find epic IDs |
+| `list_wiki_spaces` | Wiki spaces the user can read (id, name, spaceKey, projectId) |
+| `get_wiki_tree` | Nested page tree of a wiki space (`spaceId`) |
+| `get_wiki_page` | A wiki page: title, plain text, BlockNote JSON `content`, `[[page]]` links and `version` (`pageId`) |
+| `search_wiki_pages` | Title search across readable spaces (`query`, optional `spaceId`) |
+| `get_wiki_page_history` / `get_wiki_revision` | A page's revision list / the full content of one revision |
+| `list_wiki_permissions` | Access rules on a space (`spaceId`) |
 | `get_work_context` | **Full relationship graph** for a pitch or cycle in one call — cycle, pitches, tasks, blockers, hill-chart scopes, and retrospective summaries (provide `pitchId`, `cycleId`, or `taskId` — `taskId` resolves to the task's parent pitch or cycle) |
 | `get_task_context` | **Task-rooted aggregator for coding agents** — given a single `taskId`, returns the task (with dependency graph and subtasks), its parent pitch (Shape Up fields + `wireframeLinks`), parent cycle, sibling tasks under the same pitch, and a server-generated `hints` array (Figma URL guidance, blocked-by detail, thin-context warnings). Use this instead of stitching `get_task` + `get_pitch_detail` + `get_tasks` when the goal is "implement this task". |
 
-### Write Tools (14 tools, requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
+### Write Tools (requires `MCP_SERVER_WRITE_ENABLED=true` + WRITE-scoped key)
 
 | Tool | What it does |
 |------|-------------|
@@ -272,6 +278,11 @@ Once connected, your AI assistant has access to these tools:
 | `create_pitch` | Create a new pitch in IDEA status (title required; optional: problemStatement, appetiteDays) |
 | `update_pitch` | **v1.6.0** PATCH-semantic field update — supply any of: title, description, problemStatement, solution, rabbitHoles, risks, noGos, wireframeLinks, appetiteDays. Omitted fields keep their current values. Use `update_pitch_status` for status changes. |
 | `update_pitch_status` | Move a pitch to IDEA, DRAFT, SHAPED, or PENDING |
+| `create_wiki_space` / `update_wiki_space` / `delete_wiki_space` | Manage wiki spaces (delete is a soft delete of the space and its pages) |
+| `create_wiki_page` | New page in a space, optionally under `parentId`. Body as `markdown` (headings, bullets, numbered lists, paragraphs) or `content` (BlockNote JSON) |
+| `update_wiki_page` | Edit title and/or body. Pass the `version` from `get_wiki_page` as `expectedVersion` to get a conflict instead of overwriting a concurrent edit |
+| `move_wiki_page` / `delete_wiki_page` / `restore_wiki_revision` | Re-parent/reorder, soft-delete, or restore an earlier revision of a page |
+| `grant_wiki_permission` / `revoke_wiki_permission` | Add or remove a USER/ROLE READ/WRITE rule on a space |
 | `add_comment` | Add a comment to a TASK, BUG_REPORT, or WIKI_PAGE (entityType, entityId, content required) |
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
 | `create_scope` | Create a Hill Chart scope for a pitch (pitchId, title required; optional: description, progress) |
@@ -688,3 +699,12 @@ flag) and never logged, per this repo's integration-secret convention.
 | `ENVIRONMENT_SETUP.md` | Local dev environment |
 | `SECURITY.md` | Security considerations |
 | `API_CONTRACT_GENERATION.md` | REST API documentation |
+
+### Wiki control (v1.15.2)
+
+The wiki tools above give an MCP client full control of the wiki. They run **as the API key's user**,
+so the wiki's own per-space permissions still apply: a key can only read or change what that user
+could in the app. Deletes are soft deletes. A key restricted to one project can only reach wiki
+spaces whose `projectId` is that project (project-less spaces are out of reach), and
+`create_wiki_space` is pinned to that project. The ShipFlow Agent does **not** get these tools
+(`AgentActionCatalog` is an explicit allow-list).
