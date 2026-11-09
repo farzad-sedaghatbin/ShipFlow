@@ -1169,6 +1169,22 @@
     "noNarrativeYet": "No narrative generated yet",
     "loadError": "Failed to load cycle summary"
   },
+  "notificationCenter": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "clearAll": "Clear all",
+    "clearAllConfirm": "Click again to clear all",
+    "markRead": "Mark as read",
+    "delete": "Delete",
+    "unread": "Unread",
+    "loading": "Loading notifications...",
+    "empty": "No notifications",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "ariaUnread": "Notifications ({{count}} unread)"
+  },
   "settings": {
     "title": "Settings",
     "general": "General",
@@ -3552,6 +3568,9 @@
     "updated": "Updated",
     "updateTaskDetails": "Update Task Details",
     "filters": {
+      "epic": "Epic",
+      "allEpics": "All epics",
+      "noEpic": "No epic",
       "search": "Search",
       "searchPlaceholder": "Search backlog items...",
       "status": "Status",

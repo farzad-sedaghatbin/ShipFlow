@@ -57,6 +57,30 @@ class LinkPreviewControllerTest {
   }
 
   @Test
+  @DisplayName("answers 200 HTML whatever Accept header the crawler sends")
+  void ignoresAcceptHeader() throws Exception {
+    when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(TASK));
+
+    // Previously produces="text/html" turned these into 406 / 500, i.e. no preview at all.
+    for (String accept : new String[] {"image/*", "application/json", "*/*", "text/html,application/xhtml+xml"}) {
+      mockMvc.perform(previewRequest("/preview/task/7", "host").header("Accept", accept))
+          .andExpect(status().isOk())
+          .andExpect(content().contentTypeCompatibleWith("text/html"))
+          .andExpect(content().string(Matchers.containsString("og:title")));
+    }
+  }
+
+  @Test
+  @DisplayName("epic preview renders the epic card")
+  void epicPreview() throws Exception {
+    when(linkPreviewService.forEpic(3L)).thenReturn(Optional.of(new LinkPreview("Onboarding", "Epic · Planned")));
+
+    mockMvc.perform(previewRequest("/preview/epic/3", "host"))
+        .andExpect(status().isOk())
+        .andExpect(content().string(Matchers.containsString("content=\"https://host/epics/3\"")));
+  }
+
+  @Test
   @DisplayName("task preview advertises the host actually being browsed, not shipflow.dev")
   void taskPreviewUsesRequestHost() throws Exception {
     when(linkPreviewService.forTask(7L)).thenReturn(Optional.of(TASK));
