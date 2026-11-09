@@ -23,8 +23,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * <ul>
  *   <li>{@code /backlog/{id}} and legacy {@code /tasks/{id}} → {@code /preview/task/{id}}
  *   <li>{@code /qa/bug-reports/{id or key}} and legacy {@code /bugs/{id}} → {@code /preview/bug/{id or key}}
- *   <li>{@code /pitches/{id}} → {@code /preview/pitch/{id}}
- *   <li>{@code /cycles/{id}}  → {@code /preview/cycle/{id}}
+ *   <li>{@code /pitches/{id}} (and its hill-chart/test sub-pages) → {@code /preview/pitch/{id}}
+ *   <li>{@code /cycles/{id}} (and its hill-chart/cooldown/… sub-pages) → {@code /preview/cycle/{id}}
+ *   <li>{@code /epics/{id}} → {@code /preview/epic/{id}}
  *   <li>{@code /backlog?project={id}} → {@code /preview/backlog?project={id}}
  *   <li>{@code /initiatives/{id}} → {@code /preview/initiative/{id}}
  *   <li>{@code /wiki/{spaceId}} and {@code /wiki/{spaceId}/{pageId}} → {@code /preview/wiki/...}
@@ -92,12 +93,20 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
       "pinterest"
   );
 
-  private static final Pattern TASK_PATH   = Pattern.compile("^/(?:backlog|tasks)/(\\d+)$");
+  // The task dialog's "Copy link" now produces key-style links (/backlog/MARK-100); the page accepts
+  // both, and the number after the last dash is the task id.
+  private static final Pattern TASK_PATH   =
+      Pattern.compile("^/(?:backlog|tasks)/(?:[A-Za-z][A-Za-z0-9_]*-)?(\\d+)$");
   // The bug page settles on the bug key (/qa/bug-reports/BUG-150) — that is the URL people copy —
   // while older links and notifications still carry the numeric id.
   private static final Pattern BUG_PATH    = Pattern.compile("^/(?:qa/bug-reports|bugs)/([A-Za-z0-9-]{1,64})$");
-  private static final Pattern PITCH_PATH  = Pattern.compile("^/pitches/(\\d+)$");
-  private static final Pattern CYCLE_PATH  = Pattern.compile("^/cycles/(\\d+)$");
+  // Sub-pages of a pitch/cycle (hill chart, QA, cooldown…) are shared as often as the pitch itself,
+  // and show the same item, so they get the item's card rather than the generic site one.
+  private static final Pattern PITCH_PATH  =
+      Pattern.compile("^/pitches/(\\d+)(?:/(?:hill-chart|test))?$");
+  private static final Pattern CYCLE_PATH  =
+      Pattern.compile("^/cycles/(\\d+)(?:/(?:hill-chart|circuit-breaker|cooldown|qa-dashboard))?$");
+  private static final Pattern EPIC_PATH   = Pattern.compile("^/epics/(\\d+)$");
   private static final Pattern PROJECT_PARAM = Pattern.compile("^\\d+$");
   private static final Pattern INITIATIVE_PATH = Pattern.compile("^/initiatives/(\\d+)$");
   private static final Pattern WIKI_SPACE_PATH = Pattern.compile("^/wiki/(\\d+)$");
@@ -110,7 +119,7 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
 
     String ua = request.getHeader("User-Agent");
     if (ua != null && isCrawler(ua)) {
-      String previewUrl = resolvePreviewUrl(request.getRequestURI(), request.getParameter("project"));
+      String previewUrl = resolvePreviewUrl(normalise(request.getRequestURI()), request.getParameter("project"));
       if (previewUrl != null) {
         request.setAttribute(IN_PLACE_ATTRIBUTE, Boolean.TRUE);
         request.getRequestDispatcher(previewUrl).forward(request, response);
@@ -119,6 +128,11 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
     }
 
     chain.doFilter(request, response);
+  }
+
+  /** {@code /backlog/42/} is the same page as {@code /backlog/42} — the SPA router treats it so. */
+  private static String normalise(String path) {
+    return path.length() > 1 && path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
   }
 
   private boolean isCrawler(String ua) {
@@ -145,6 +159,9 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
 
     m = CYCLE_PATH.matcher(path);
     if (m.matches()) return "/preview/cycle/" + m.group(1);
+
+    m = EPIC_PATH.matcher(path);
+    if (m.matches()) return "/preview/epic/" + m.group(1);
 
     m = INITIATIVE_PATH.matcher(path);
     if (m.matches()) return "/preview/initiative/" + m.group(1);

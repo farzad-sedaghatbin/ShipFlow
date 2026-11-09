@@ -201,6 +201,9 @@
     "filterByPriority": "فیلتر بر اساس اولویت",
     "filterByStatus": "فیلتر بر اساس وضعیت",
     "filters": {
+      "epic": "اپیک",
+      "allEpics": "همه اپیک‌ها",
+      "noEpic": "بدون اپیک",
       "all": "همه",
       "allCategory": "همه دسته‌بندی‌ها",
       "allCycles": "همه سیکل‌ها",

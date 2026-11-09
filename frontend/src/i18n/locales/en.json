@@ -3552,6 +3552,9 @@
     "updated": "Updated",
     "updateTaskDetails": "Update Task Details",
     "filters": {
+      "epic": "Epic",
+      "allEpics": "All epics",
+      "noEpic": "No epic",
       "search": "Search",
       "searchPlaceholder": "Search backlog items...",
       "status": "Status",
