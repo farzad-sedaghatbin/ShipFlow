@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
-import { ChevronLeft, Eye, Pencil } from 'lucide-react';
+import { ChevronLeft, Eye, Link2, ExternalLink, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Task } from '../../types';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
+import { LocalizedDateInput } from '../LocalizedDateInput';
+import { useToast } from '../../contexts';
+import { getUserFriendlyError } from '../../utils/errorMessages';
+import { Task, Person, CreateTaskRequest, TaskStatus, TaskPriority } from '../../types';
 import { statusOptions, priorityOptions } from './backlogTypes';
 import TaskDependencies from '../TaskDependencies';
 import TaskAttachments from '../TaskAttachments';
@@ -23,6 +29,7 @@ interface BacklogViewDialogProps {
   open: boolean;
   task: Task | null;
   subtasks: Task[];
+  persons: Person[];
   viewHistory: Task[];
   onClose: () => void;
   onBack: () => void;
@@ -36,6 +43,7 @@ export function BacklogViewDialog({
   open,
   task,
   subtasks,
+  persons,
   viewHistory,
   onClose,
   onBack,
@@ -45,6 +53,74 @@ export function BacklogViewDialog({
   setViewDialogTask,
 }: BacklogViewDialogProps) {
   const { t } = useTranslation();
+  const { showSuccess, showError } = useToast();
+
+  // Runs one inline edit, then refreshes the open task and the list behind the dialog.
+  const applyEdit = async (request: () => Promise<{ data: Task }>, successKey = 'backlogPage.taskUpdated') => {
+    try {
+      const res = await request();
+      setViewDialogTask(res.data);
+      onReloadTasks();
+      showSuccess(t(successKey));
+    } catch (error) {
+      showError(getUserFriendlyError(error));
+    }
+  };
+
+  // Fields without a dedicated PATCH endpoint go through the full update, same payload as the edit form.
+  const updateFields = (current: Task, changes: Partial<CreateTaskRequest>) =>
+    applyEdit(() =>
+      taskService.update(current.id, {
+        title: current.title,
+        description: current.description || '',
+        cycleId: current.cycleId,
+        projectId: !current.cycleId ? current.projectId : undefined,
+        status: current.status,
+        priority: current.priority,
+        estimateHours: current.estimateHours,
+        actualHours: current.actualHours,
+        teamId: current.teamId,
+        assigneeId: current.assigneeId,
+        pairAssigneeId: current.pairAssigneeId,
+        dueDate: current.dueDate,
+        tags: current.tags || '',
+        category: current.category,
+        pitchId: current.pitchId,
+        parentTaskId: current.parentTaskId,
+        epicId: current.epicId ?? undefined,
+        ...changes,
+      }),
+    );
+
+  // Shared links open the full task page, not this modal.
+  const taskPath = task ? `/backlog/${task.projectKey ? `${task.projectKey}-${task.id}` : task.id}` : '';
+  const taskUrl = `${window.location.origin}${taskPath}`;
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(taskUrl);
+      showSuccess(t('common.linkCopied'));
+    } catch {
+      showError(taskUrl);
+    }
+  };
+
+  const hoursInput = (current: Task, field: 'estimateHours' | 'actualHours') => (
+    <Input
+      key={`${current.id}-${field}-${current[field] ?? ''}`}
+      type="number"
+      min={0}
+      step="0.5"
+      defaultValue={current[field] ?? ''}
+      className="h-9"
+      aria-label={t(field === 'estimateHours' ? 'backlogPage.estimate' : 'backlogPage.actual')}
+      onBlur={(e) => {
+        const value = e.target.value === '' ? undefined : Number(e.target.value);
+        if (value !== (current[field] ?? undefined) && (value === undefined || value >= 0)) {
+          updateFields(current, { [field]: value });
+        }
+      }}
+    />
+  );
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -72,23 +148,57 @@ export function BacklogViewDialog({
           </DialogTitle>
         </DialogHeader>
         {task && (
+          <div className="flex flex-wrap items-center gap-2 -mt-2">
+            <Button variant="outline" size="sm" onClick={copyLink}>
+              <Link2 className="h-4 w-4 mr-2" />
+              {t('common.copyLink')}
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <a href={taskPath} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                {t('backlogPage.openFullPage')}
+              </a>
+            </Button>
+          </div>
+        )}
+        {task && (
           <div className="space-y-6">
             {/* Task Metadata */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">{t('common.status')}</Label>
                 <div className="mt-1">
-                  <Badge variant={statusOptions.find(s => s.value === task.status)?.variant}>
-                    {t(statusOptions.find(s => s.value === task.status)?.labelKey || 'backlogPage.statusOptions.backlog')}
-                  </Badge>
+                  <Select
+                    value={task.status}
+                    onValueChange={(v) => applyEdit(() => taskService.updateStatus(task.id, v as TaskStatus), 'backlogPage.statusUpdated')}
+                  >
+                    <SelectTrigger className="h-9" aria-label={t('common.status')}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{t(o.labelKey)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">{t('backlogPage.filters.priority')}</Label>
                 <div className="mt-1">
-                  <Badge variant={priorityOptions.find(p => p.value === task.priority)?.variant}>
-                    {t(priorityOptions.find(p => p.value === task.priority)?.labelKey || 'backlogPage.priorityOptions.medium')}
-                  </Badge>
+                  <Select
+                    value={task.priority}
+                    onValueChange={(v) => applyEdit(() => taskService.updatePriority(task.id, v as TaskPriority), 'backlogPage.priorityUpdated')}
+                  >
+                    <SelectTrigger className="h-9" aria-label={t('backlogPage.filters.priority')}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priorityOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{t(o.labelKey)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               {task.teamName && (
@@ -99,36 +209,56 @@ export function BacklogViewDialog({
               )}
               <div>
                 <Label className="text-xs text-muted-foreground">{t('backlogPage.assignee')}</Label>
-                <div className="mt-1 font-medium">
-                  {task.assigneeName || t('backlogPage.unassigned')}
+                <div className="mt-1">
+                  <Combobox
+                    options={[
+                      { value: 'unassigned', label: t('backlogPage.unassigned') },
+                      ...persons.map((p) => ({ value: p.id.toString(), label: p.name })),
+                    ]}
+                    value={task.assigneeId?.toString() || 'unassigned'}
+                    onValueChange={(v) =>
+                      applyEdit(() => taskService.updateAssignee(task.id, v === 'unassigned' ? null : Number(v)), 'backlogPage.assigneeUpdated')
+                    }
+                    placeholder={t('backlogPage.selectAssignee')}
+                  />
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">{t('backlogPage.pairAssignee')}</Label>
-                <div className="mt-1 font-medium">
-                  {task.pairAssigneeName || t('backlogPage.none')}
+                <div className="mt-1">
+                  <Combobox
+                    options={[
+                      { value: 'none', label: t('backlogPage.none') },
+                      ...persons.filter((p) => p.id !== task.assigneeId).map((p) => ({ value: p.id.toString(), label: p.name })),
+                    ]}
+                    value={task.pairAssigneeId?.toString() || 'none'}
+                    onValueChange={(v) => updateFields(task, { pairAssigneeId: v === 'none' ? undefined : Number(v) })}
+                    placeholder={t('backlogPage.selectPair')}
+                  />
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">{t('backlogPage.estimate')}</Label>
-                <div className="mt-1 font-medium">
-                  {task.estimateHours ? `${task.estimateHours}h` : '-'}
-                </div>
+                <div className="mt-1">{hoursInput(task, 'estimateHours')}</div>
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Actual</Label>
-                <div className="mt-1 font-medium">
-                  {task.actualHours ? `${task.actualHours}h` : '-'}
+                <Label className="text-xs text-muted-foreground">{t('backlogPage.actual')}</Label>
+                <div className="mt-1">{hoursInput(task, 'actualHours')}</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">{t('backlogPage.dueDate')}</Label>
+                <div className="mt-1">
+                  <LocalizedDateInput
+                    value={task.dueDate ? dayjs(task.dueDate).format('YYYY-MM-DD') : ''}
+                    onChange={(v) => {
+                      if (v && v !== (task.dueDate ? dayjs(task.dueDate).format('YYYY-MM-DD') : '')) {
+                        updateFields(task, { dueDate: v });
+                      }
+                    }}
+                    aria-label={t('backlogPage.dueDate')}
+                  />
                 </div>
               </div>
-              {task.dueDate && (
-                <div>
-                  <Label className="text-xs text-muted-foreground">{t('backlogPage.dueDate')}</Label>
-                  <div className="mt-1 font-medium">
-                    {dayjs(task.dueDate).format('MMM D, YYYY')}
-                  </div>
-                </div>
-              )}
               <TaskEpicField
                 task={task}
                 onChanged={(updated) => {

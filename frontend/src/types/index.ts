@@ -1560,6 +1560,15 @@ export interface UpdateRetroRequest {
   notes?: string;
 }
 
+export interface CycleDeleteImpact {
+  cycleId: number;
+  cycleName: string;
+  taskCount: number;
+  doneTaskCount: number;
+  pitchCount: number;
+  retrospectiveCount: number;
+}
+
 export interface CycleRetroStatus {
   cycleId: number;
   cycleName: string;

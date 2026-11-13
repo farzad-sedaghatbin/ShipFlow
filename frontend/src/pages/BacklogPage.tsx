@@ -194,6 +194,7 @@ export default function BacklogPage() {
         open={bp.viewDialog.open}
         task={bp.viewDialog.task}
         subtasks={bp.subtasks}
+        persons={bp.persons}
         viewHistory={bp.viewHistory}
         onClose={bp.handleCloseViewDialog}
         onBack={bp.handleViewBack}

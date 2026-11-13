@@ -181,6 +181,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId")
     int countByCycleId(@Param("cycleId") Long cycleId);
 
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId AND t.deletedAt IS NULL")
+    int countActiveByCycleId(@Param("cycleId") Long cycleId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId AND t.deletedAt IS NULL AND t.status = :status")
+    int countActiveByCycleIdAndStatus(@Param("cycleId") Long cycleId, @Param("status") TaskStatus status);
+
     @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId AND t.status = :status")
     int countByCycleIdAndStatus(@Param("cycleId") Long cycleId, @Param("status") TaskStatus status);
 

@@ -12,9 +12,10 @@ import {
   Calendar,
   Users,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
 import { cycleService } from '../services/cycleService';
-import { Cycle } from '../types';
+import { Cycle, CycleDeleteImpact } from '../types';
 import { useProject, useToast } from '../contexts';
 import { CycleListSkeleton } from '../components/Skeletons';
 import EmptyState from '../components/EmptyState';
@@ -52,6 +53,10 @@ export default function CycleList() {
     open: false,
     cycle: null,
   });
+  // What deleting the cycle would cascade to; loaded when the dialog opens so the user sees it first.
+  const [deleteImpact, setDeleteImpact] = useState<CycleDeleteImpact | null>(null);
+  const [deleteImpactState, setDeleteImpactState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,8 +99,47 @@ export default function CycleList() {
     }
   };
 
+  // Load the cascade impact each time the delete dialog opens for a cycle.
+  useEffect(() => {
+    const cycle = deleteDialog.cycle;
+    setDeleteConfirmText('');
+    setDeleteImpact(null);
+    if (!deleteDialog.open || !cycle) {
+      setDeleteImpactState('idle');
+      return;
+    }
+    let cancelled = false;
+    setDeleteImpactState('loading');
+    cycleService
+      .getDeleteImpact(cycle.id)
+      .then((res) => {
+        if (cancelled) return;
+        setDeleteImpact(res.data);
+        setDeleteImpactState('ready');
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error('Failed to load cycle delete impact:', error);
+        setDeleteImpactState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [deleteDialog.open, deleteDialog.cycle]);
+
+  // A cycle with anything in it needs its name typed back; if we couldn't load the impact we
+  // assume it is not empty rather than let a blind delete through.
+  const deleteNeedsTypedConfirm =
+    deleteImpactState === 'error' ||
+    (deleteImpact !== null &&
+      deleteImpact.taskCount + deleteImpact.pitchCount + deleteImpact.retrospectiveCount > 0);
+  const deleteConfirmed =
+    deleteImpactState === 'ready' || deleteImpactState === 'error'
+      ? !deleteNeedsTypedConfirm || deleteConfirmText.trim() === (deleteDialog.cycle?.name ?? '').trim()
+      : false;
+
   const handleDelete = async () => {
-    if (!deleteDialog.cycle) return;
+    if (!deleteDialog.cycle || !deleteConfirmed) return;
     try {
       await cycleService.delete(deleteDialog.cycle.id);
       showSuccess(t('cycles.cycleDeleted'));
@@ -436,11 +480,64 @@ export default function CycleList() {
               {t('cycles.deleteDialogDesc', { name: deleteDialog.cycle?.name })}
             </DialogDescription>
           </DialogHeader>
+
+          <div data-testid="cycle-delete-impact" className="space-y-3 text-sm">
+            {deleteImpactState === 'loading' && (
+              <p className="text-muted-foreground">{t('cycles.deleteImpactLoading')}</p>
+            )}
+            {deleteImpactState === 'error' && (
+              <p className="text-destructive">{t('cycles.deleteImpactFailed')}</p>
+            )}
+            {deleteImpactState === 'ready' && deleteImpact && !deleteNeedsTypedConfirm && (
+              <p className="text-muted-foreground">{t('cycles.deleteImpactEmpty')}</p>
+            )}
+            {deleteImpactState === 'ready' && deleteImpact && deleteNeedsTypedConfirm && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3">
+                <p className="flex items-center gap-2 font-medium text-destructive">
+                  <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                  {t('cycles.deleteImpactTitle')}
+                </p>
+                <ul className="mt-2 list-disc space-y-1 ps-6">
+                  {deleteImpact.taskCount > 0 && (
+                    <li>
+                      {t('cycles.deleteImpactTasks', {
+                        count: deleteImpact.taskCount,
+                        done: deleteImpact.doneTaskCount,
+                      })}
+                    </li>
+                  )}
+                  {deleteImpact.pitchCount > 0 && (
+                    <li>{t('cycles.deleteImpactPitches', { count: deleteImpact.pitchCount })}</li>
+                  )}
+                  {deleteImpact.retrospectiveCount > 0 && (
+                    <li>{t('cycles.deleteImpactRetros', { count: deleteImpact.retrospectiveCount })}</li>
+                  )}
+                </ul>
+                <p className="mt-2 text-muted-foreground">{t('cycles.deleteImpactAdvice')}</p>
+              </div>
+            )}
+
+            {deleteNeedsTypedConfirm && (
+              <div className="space-y-1">
+                <label htmlFor="cycle-delete-confirm" className="font-medium">
+                  {t('cycles.deleteConfirmLabel', { name: deleteDialog.cycle?.name })}
+                </label>
+                <Input
+                  id="cycle-delete-confirm"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={deleteDialog.cycle?.name}
+                  autoComplete="off"
+                />
+              </div>
+            )}
+          </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, cycle: null })}>
               {t('common.cancel')}
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant="destructive" onClick={handleDelete} disabled={!deleteConfirmed}>
               {t('common.delete')}
             </Button>
           </DialogFooter>

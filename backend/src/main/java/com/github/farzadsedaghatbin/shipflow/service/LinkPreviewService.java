@@ -9,6 +9,7 @@ import com.github.farzadsedaghatbin.shipflow.entity.WikiSpace;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.repository.BugReportRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.CycleRepository;
+import com.github.farzadsedaghatbin.shipflow.repository.EpicRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.InitiativeRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.PitchRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.ProjectRepository;
@@ -60,6 +61,7 @@ public class LinkPreviewService {
   private final BugReportRepository bugReportRepository;
   private final CycleRepository cycleRepository;
   private final InitiativeRepository initiativeRepository;
+  private final EpicRepository epicRepository;
   private final WikiSpaceRepository wikiSpaceRepository;
   private final WikiPageRepository wikiPageRepository;
   private final WikiSpacePermissionRepository wikiSpacePermissionRepository;
@@ -132,6 +134,12 @@ public class LinkPreviewService {
   @Transactional(readOnly = true)
   public Optional<LinkPreview> forInitiative(Long id) {
     return initiativeRepository.findByIdNotDeleted(id).map(this::toPreview);
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<LinkPreview> forEpic(Long id) {
+    return epicRepository.findByIdNotDeleted(id)
+        .map(epic -> new LinkPreview(epic.getName(), join("Epic", label(epic.getStatus()))));
   }
 
   @Transactional(readOnly = true)

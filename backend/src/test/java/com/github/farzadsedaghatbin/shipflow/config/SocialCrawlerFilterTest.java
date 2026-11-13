@@ -73,7 +73,21 @@ class SocialCrawlerFilterTest {
     assertForward("/wiki/1", "/preview/wiki/1");
     assertForward("/wiki/1/6", "/preview/wiki/1/6");
     assertForward("/roadmap", "/preview/roadmap");
+    assertForward("/epics/9", "/preview/epic/9");
     assertForward("/backlog?project=5", "/preview/backlog?project=5");
+  }
+
+  @Test
+  @DisplayName("a trailing slash and a pitch/cycle sub-page still get the item's card")
+  void trailingSlashesAndSubPages() throws Exception {
+    assertForward("/backlog/42/", "/preview/task/42");
+    assertForward("/pitches/55/", "/preview/pitch/55");
+    assertForward("/pitches/55/hill-chart", "/preview/pitch/55");
+    assertForward("/pitches/55/test", "/preview/pitch/55");
+    assertForward("/cycles/3/hill-chart", "/preview/cycle/3");
+    assertForward("/cycles/3/cooldown", "/preview/cycle/3");
+    assertForward("/cycles/3/qa-dashboard", "/preview/cycle/3");
+    assertForward("/qa/bug-reports/BUG-150/", "/preview/bug/BUG-150");
   }
 
   @Test

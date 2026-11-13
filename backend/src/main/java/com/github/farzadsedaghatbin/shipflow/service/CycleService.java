@@ -2,6 +2,8 @@ package com.github.farzadsedaghatbin.shipflow.service;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.CycleDeleteImpactDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleRetroStatusDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
 import com.github.farzadsedaghatbin.shipflow.entity.Project;
@@ -258,6 +260,22 @@ public class CycleService {
 
     return CycleRetroStatusDTO.builder().cycleId(cycleId).cycleName(cycle.getName()).totalRetros((int) totalRetros)
         .closedRetros((int) closedRetros).canCloseCycle(canClose).message(message).build();
+  }
+
+  /**
+   * Describes what {@link #deleteCycle} would permanently remove, so the UI can warn first. Deleting a
+   * cycle is a hard delete that cascades to its tasks (database {@code ON DELETE CASCADE}), pitches
+   * and retrospectives (JPA cascade) — the task history and narratives go with them.
+   */
+  @Transactional(readOnly = true)
+  public CycleDeleteImpactDTO getDeleteImpact(Long id) {
+    Cycle cycle = cycleRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Cycle not found with id: " + id));
+    return CycleDeleteImpactDTO.builder().cycleId(cycle.getId()).cycleName(cycle.getName())
+        .taskCount(taskRepository.countActiveByCycleId(id))
+        .doneTaskCount(taskRepository.countActiveByCycleIdAndStatus(id, TaskStatus.DONE))
+        .pitchCount((int) pitchRepository.countByCycleIdNotDeleted(id))
+        .retrospectiveCount((int) retroRepository.countByCycleId(id)).build();
   }
 
   @CacheEvict(value = {"cycles", "roadmap"}, allEntries = true)

@@ -91,6 +91,7 @@
     }
   },
   "backlogPage": {
+    "openFullPage": "باز کردن در صفحه کامل",
     "actions": {
       "_value": "عملیات",
       "bulkEdit": "ویرایش گروهی",
@@ -1170,6 +1171,7 @@
     "utilized": "استفاده شده"
   },
   "common": {
+    "copyLink": "کپی لینک قابل اشتراک‌گذاری",
     "showMore": "نمایش بیشتر",
     "showLess": "نمایش کمتر",
     "about": "درباره ما",
@@ -1548,7 +1550,19 @@
     "daysRemaining_one": "{{count}} روز باقیمانده",
     "deleteCycle": "حذف سیکل",
     "deleteCycleTooltip": "حذف سیکل",
-    "deleteDialogDesc": "آیا مطمئن هستید که می‌خواهید \"{{name}}\" را حذف کنید؟ این عمل همه پیچ‌ها و گزارش‌های کار مرتبط را نیز حذف می‌کند.",
+    "deleteDialogDesc": "آیا مطمئن هستید که می‌خواهید \"{{name}}\" را حذف کنید؟",
+    "deleteImpactLoading": "در حال بررسی موارد قابل حذف…",
+    "deleteImpactFailed": "بررسی محتوای این سیکل ناموفق بود. حذف ممکن است وظایف، پیچ‌ها و بازبینی‌های آن را پاک کند.",
+    "deleteImpactEmpty": "این سیکل خالی است — چیز دیگری حذف نمی‌شود.",
+    "deleteImpactTitle": "موارد زیر برای همیشه حذف می‌شوند:",
+    "deleteImpactTasks_one": "{{count}} وظیفه ({{done}} انجام‌شده)",
+    "deleteImpactTasks_other": "{{count}} وظیفه ({{done}} انجام‌شده)",
+    "deleteImpactPitches_one": "{{count}} پیچ",
+    "deleteImpactPitches_other": "{{count}} پیچ",
+    "deleteImpactRetros_one": "{{count}} بازبینی",
+    "deleteImpactRetros_other": "{{count}} بازبینی",
+    "deleteImpactAdvice": "تاریخچه وظایف و خلاصه‌های هوش مصنوعی این سیکل نیز حذف می‌شود. وظایفی را که می‌خواهید نگه دارید ابتدا به سیکل دیگر یا بک‌لاگ منتقل کنید.",
+    "deleteConfirmLabel": "برای تأیید، \"{{name}}\" را تایپ کنید",
     "deleteDialogTitle": "حذف سیکل",
     "editCycle": "ویرایش سیکل",
     "editCycleTooltip": "ویرایش سیکل",

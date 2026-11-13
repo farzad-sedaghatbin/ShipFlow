@@ -2,6 +2,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.CycleDeleteImpactDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleRetroStatusDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.enums.PermissionType;
@@ -119,6 +120,14 @@ public class CycleController {
   @Operation(summary = "Get cycle retrospective completion status")
   public ResponseEntity<CycleRetroStatusDTO> getCycleRetroStatus(@PathVariable Long id) {
     return ResponseEntity.ok(cycleService.getCycleRetroStatus(id));
+  }
+
+  @GetMapping("/{id}/delete-impact")
+  @RequirePermission(resource = ResourceType.CYCLE, permission = PermissionType.DELETE)
+  @PreAuthorize("hasRole('ADMIN')")
+  @Operation(summary = "Preview what deleting a cycle would permanently remove (tasks, pitches, retros)")
+  public ResponseEntity<CycleDeleteImpactDTO> getDeleteImpact(@PathVariable Long id) {
+    return ResponseEntity.ok(cycleService.getDeleteImpact(id));
   }
 
   @DeleteMapping("/{id}")
