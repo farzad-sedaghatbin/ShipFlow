@@ -112,6 +112,19 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.15.6',
+    date: 'November 14, 2026',
+    title: 'Plugins Load Again',
+    highlights: [
+      {
+        icon: <Puzzle className="h-5 w-5" />,
+        title: 'Plugins Tab and Menu Fixed',
+        description:
+          'The Plugins tab in Organization Settings showed "failed to load plugins", and a plugin\u0027s sidebar entry never appeared, because the app asked for the wrong address. Both now load.',
+      },
+    ],
+  },
+  {
     version: '1.15.5',
     date: 'November 14, 2026',
     title: 'Plugin Pages, Convert to Subtask',

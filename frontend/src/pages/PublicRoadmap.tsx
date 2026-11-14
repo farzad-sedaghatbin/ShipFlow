@@ -113,6 +113,14 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.15.6',
+      date: 'November 14, 2026',
+      title: t('publicRoadmap.shipped1156Title'),
+      highlights: [
+        { icon: <Puzzle className="h-5 w-5" />, title: t('publicRoadmap.shipped1156Item0Title'), description: t('publicRoadmap.shipped1156Item0Desc') },
+      ],
+    },
+    {
       version: '1.15.5',
       date: 'November 14, 2026',
       title: t('publicRoadmap.shipped1155Title'),
