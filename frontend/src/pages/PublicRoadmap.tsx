@@ -56,6 +56,7 @@ import {
   BarChart3,
   Search,
   CornerDownRight,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -111,6 +112,16 @@ export default function PublicRoadmap() {
   };
 
   const recentlyShipped: RoadmapRelease[] = [
+    {
+      version: '1.15.5',
+      date: 'November 14, 2026',
+      title: t('publicRoadmap.shipped1155Title'),
+      highlights: [
+        { icon: <Puzzle className="h-5 w-5" />, title: t('publicRoadmap.shipped1155Item0Title'), description: t('publicRoadmap.shipped1155Item0Desc') },
+        { icon: <CornerDownRight className="h-5 w-5" />, title: t('publicRoadmap.shipped1155Item1Title'), description: t('publicRoadmap.shipped1155Item1Desc') },
+        { icon: <AlertTriangle className="h-5 w-5" />, title: t('publicRoadmap.shipped1155Item2Title'), description: t('publicRoadmap.shipped1155Item2Desc') },
+      ],
+    },
     {
       version: '1.15.4',
       date: 'November 9, 2026',
@@ -539,8 +550,6 @@ export default function PublicRoadmap() {
         { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.phase116Item0Title'), description: t('publicRoadmap.phase116Item0Desc') },
         { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.phase116Item1Title'), description: t('publicRoadmap.phase116Item1Desc') },
         { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase116Item2Title'), description: t('publicRoadmap.phase116Item2Desc') },
-        { icon: <Puzzle className="h-5 w-5" />, title: t('publicRoadmap.phase116Item3Title'), description: t('publicRoadmap.phase116Item3Desc') },
-        { icon: <CornerDownRight className="h-5 w-5" />, title: t('publicRoadmap.phase116Item4Title'), description: t('publicRoadmap.phase116Item4Desc') },
       ],
     },
   ];
