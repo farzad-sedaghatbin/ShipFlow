@@ -4,7 +4,8 @@ import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import Layout from '../Layout';
 import packageJson from '../../../package.json';
-import { PROJECT_TYPE_CAPABILITIES } from '../../config/projectTypeCapabilities';
+import { PROJECT_TYPE_CAPABILITIES, type NavItemConfig } from '../../config/projectTypeCapabilities';
+import { Puzzle } from 'lucide-react';
 
 // Mock all context providers
 vi.mock('../../contexts', () => ({
@@ -78,9 +79,51 @@ vi.mock('../RouteProgressProvider', () => ({
   RouteProgressProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+// Plugin-contributed nav items. Mocked so Layout tests don't need a QueryClientProvider;
+// individual tests push items into this array.
+const pluginNavItems: NavItemConfig[] = [];
+vi.mock('../../hooks/usePluginMenu', () => ({
+  usePluginNavItems: () => pluginNavItems,
+}));
+
 describe('Layout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    pluginNavItems.length = 0;
+  });
+
+  describe('plugin menu section', () => {
+    const renderLayout = () =>
+      render(
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <TooltipProvider>
+            <Layout>
+              <div>Test Content</div>
+            </Layout>
+          </TooltipProvider>
+        </MemoryRouter>
+      );
+
+    it('is absent when no plugin contributes menu items', () => {
+      renderLayout();
+
+      expect(screen.queryByText('nav.sections.plugins')).not.toBeInTheDocument();
+    });
+
+    it('lists plugin items under a Plugins section using their literal label', () => {
+      pluginNavItems.push({
+        textKey: '',
+        label: 'Plugin Showcase',
+        icon: Puzzle,
+        path: '/plugins/builtin-plugin-showcase/overview',
+      });
+
+      renderLayout();
+
+      expect(screen.getAllByText('nav.sections.plugins').length).toBeGreaterThan(0);
+      const link = screen.getAllByRole('link', { name: 'Plugin Showcase' })[0];
+      expect(link).toHaveAttribute('href', '/plugins/builtin-plugin-showcase/overview');
+    });
   });
 
   it('should display version from package.json', () => {

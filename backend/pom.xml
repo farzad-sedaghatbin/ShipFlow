@@ -59,7 +59,7 @@
         <dependency>
             <groupId>com.github.farzadsedaghatbin.shipflow</groupId>
             <artifactId>shipflow-plugin-api</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
         </dependency>
 
         <!-- AWS SDK v2 — S3 / MinIO object storage -->

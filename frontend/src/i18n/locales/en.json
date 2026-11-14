@@ -169,6 +169,7 @@
       "rd": "Research & Development",
       "roadmap": "Roadmap & Planning",
       "helpSupport": "Help & Support",
+      "plugins": "Plugins",
       "administration": "Administration",
       "integrations": "Integrations",
       "automations": "Automations"
@@ -4858,6 +4859,45 @@
     "totalShown": "{{hours}}h logged on this page",
     "moreNotShown": "{{count}} more not shown"
   },
+  "taskHierarchy": {
+    "makeSubtask": "Make subtask",
+    "parentMenu": "Parent task",
+    "changeParent": "Change parent…",
+    "makeTopLevel": "Make top-level task",
+    "addExisting": "Add existing task",
+    "createNew": "Create new subtask",
+    "hasSubtasksTip": "This task already has {{count}} subtask(s), so it can't become a subtask itself. Subtasks are one level deep.",
+    "emptyTitle": "Break this work into smaller pieces",
+    "emptyHint": "Create a new subtask, or pull in an existing task from this project.",
+    "pickParentTitle": "Make “{{task}}” a subtask of…",
+    "pickChildTitle": "Add an existing task as a subtask of “{{task}}”",
+    "pickerHint": "Search by title or ID. Only tasks in this project that can take part in the change are listed.",
+    "searchPlaceholder": "Search by title or ID…",
+    "noResults": "No matching tasks",
+    "noResultsChildHint": "Tasks that already have subtasks, or that own a hill chart scope, can't be added as a subtask.",
+    "selectToPreview": "Pick a task to preview the change.",
+    "subtaskOf": "becomes a subtask of",
+    "keyboardHint": "↑ ↓ to move · Enter to select · Enter again to confirm",
+    "confirm": "Make subtask",
+    "productBacklog": "Product backlog",
+    "preview": {
+      "cycle": "Moves into {{cycle}} (a subtask lives in its parent's cycle)",
+      "status": "Status changes from {{from}} to {{to}} (subtasks are never in Backlog)"
+    },
+    "converted": "“{{task}}” is now a subtask of “{{parent}}”",
+    "detached": "“{{task}}” is now a top-level task",
+    "undone": "Restored “{{task}}”",
+    "undo": "Undo",
+    "status": {
+      "BACKLOG": "Backlog",
+      "TODO": "To Do",
+      "IN_PROGRESS": "In Progress",
+      "BLOCKED": "Blocked",
+      "IN_REVIEW": "In Review",
+      "DONE": "Done",
+      "CANCELLED": "Cancelled"
+    }
+  },
   "taskDetailPage": {
     "title": "Title",
     "editTask": "Edit Task",
@@ -5810,6 +5850,10 @@
     "phase116Item1Desc": "Tokenized, revocable, no-login links for pitches, hill charts and the roadmap.",
     "phase116Item2Title": "Guest Access",
     "phase116Item2Desc": "Invite an external stakeholder into a single project without giving them the rest of the workspace.",
+    "phase116Item3Title": "Plugin Menu Items & Pages",
+    "phase116Item3Desc": "A plugin can now add an entry to the sidebar and a page of its own. Pages are built from simple blocks (text, numbers, tables, links, notices) that ShipFlow draws itself, so a plugin never runs its own code in your browser. Plugins can be switched on or off in Organization Settings, and the choice now survives a restart.",
+    "phase116Item4Title": "Convert to Subtask",
+    "phase116Item4Desc": "Turn any task into a subtask of another (or pull an existing task in as a subtask) from a quick search-and-preview picker, Jira-style. It shows exactly what will change, and one click on Undo puts everything back. Subtasks stay one level deep, so a task that already has subtasks cannot become one.",
     "shipped1122Title": "Accurate Hill Charts & Broader Attachment Support",
     "shipped1122Item0Title": "Hill Chart Progress You Can Trust",
     "shipped1122Item0Desc": "A scope's position on the hill chart could get stuck reflecting only the first task ever created for it, and a single completed subtask could wrongly push the whole scope to “Done.” Progress now comes from every linked task, and a task's own status always counts alongside its subtasks.",
@@ -9004,12 +9048,22 @@
     "typeRisk": "Risk Calculator",
     "typeReport": "Report Generator",
     "typeIntegration": "Integration Provider",
+    "typeUi": "Menu & Pages",
     "sdkTitle": "Plugin SDK",
     "sdkDesc": "Build your own plugin using the Maven archetype. Implement any SPI interface and add it to the classpath.",
     "previewBadge": "Preview",
     "builtinNote": "These are SDK reference implementations included with ShipFlow. They demonstrate the plugin extension API — replace them with your own plugins to customize behavior.",
     "builtinDeadlinePressureDesc": "Scores pitches by the gap between time consumed and task completion. Use as a template for custom risk calculators.",
-    "builtinCycleHealthDesc": "Produces a plain-text cycle health summary. Override with your own report format via the Plugin SDK."
+    "builtinCycleHealthDesc": "Produces a plain-text cycle health summary. Override with your own report format via the Plugin SDK.",
+    "builtinShowcaseDesc": "Adds a sample page to the sidebar that shows every block a plugin page can use. Off by default; turn it on to see what plugin pages look like."
+  },
+  "plugins": {
+    "page": {
+      "loading": "Loading plugin page",
+      "notFound": "This plugin page does not exist, or the plugin is disabled.",
+      "forbidden": "You do not have access to this plugin page.",
+      "error": "This plugin page could not be loaded. Try again later or ask an administrator to check the plugin."
+    }
   },
   "projectSettings": {
     "title": "Project Settings",

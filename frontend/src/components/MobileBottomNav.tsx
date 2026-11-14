@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useBreakpointHelpers } from '@/hooks/useBreakpoint';
 import { useProject } from '../contexts';
+import { usePluginNavItems } from '../hooks/usePluginMenu';
 import type { NavItemConfig } from '../config/projectTypeCapabilities';
 
 interface NavSection {
@@ -32,7 +33,10 @@ interface NavSection {
 // projectTypeCapabilities.ts (same source Layout.tsx's desktop sidebar reads)
 // so mobile can't drift from desktop the way it previously had. The remaining
 // sections below aren't project-type-specific.
-function getMoreSections(capabilities: ReturnType<typeof useProject>['capabilities']): NavSection[] {
+function getMoreSections(
+  capabilities: ReturnType<typeof useProject>['capabilities'],
+  pluginItems: NavItemConfig[],
+): NavSection[] {
   const sections: NavSection[] = [
     {
       titleKey: 'nav.sections.overview',
@@ -91,6 +95,10 @@ function getMoreSections(capabilities: ReturnType<typeof useProject>['capabiliti
     },
   );
 
+  if (pluginItems.length > 0) {
+    sections.push({ titleKey: 'nav.sections.plugins', items: pluginItems });
+  }
+
   return sections;
 }
 
@@ -99,12 +107,13 @@ export default function MobileBottomNav() {
   const location = useLocation();
   const { isMobile } = useBreakpointHelpers();
   const { capabilities } = useProject();
+  const pluginItems = usePluginNavItems();
   const [moreOpen, setMoreOpen] = useState(false);
 
   if (!isMobile) return null;
 
   const primaryTabs = capabilities.mobile.primaryTabs;
-  const moreSections = getMoreSections(capabilities);
+  const moreSections = getMoreSections(capabilities, pluginItems);
 
   const isActive = (item: NavItemConfig) => {
     const paths = item.matchPaths || [item.path];
@@ -157,7 +166,7 @@ export default function MobileBottomNav() {
                         )}
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="text-[11px] font-medium text-center leading-tight">{t(item.textKey)}</span>
+                        <span className="text-[11px] font-medium text-center leading-tight">{item.label ?? t(item.textKey)}</span>
                       </Link>
                     );
                   })}

@@ -55,6 +55,7 @@ import {
   Smartphone,
   BarChart3,
   Search,
+  CornerDownRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -507,6 +508,8 @@ export default function PublicRoadmap() {
         { icon: <Layers className="h-5 w-5" />, title: t('publicRoadmap.phase116Item0Title'), description: t('publicRoadmap.phase116Item0Desc') },
         { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.phase116Item1Title'), description: t('publicRoadmap.phase116Item1Desc') },
         { icon: <Users className="h-5 w-5" />, title: t('publicRoadmap.phase116Item2Title'), description: t('publicRoadmap.phase116Item2Desc') },
+        { icon: <Puzzle className="h-5 w-5" />, title: t('publicRoadmap.phase116Item3Title'), description: t('publicRoadmap.phase116Item3Desc') },
+        { icon: <CornerDownRight className="h-5 w-5" />, title: t('publicRoadmap.phase116Item4Title'), description: t('publicRoadmap.phase116Item4Desc') },
       ],
     },
   ];

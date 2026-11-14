@@ -81,6 +81,7 @@ import MobileBottomNav from './MobileBottomNav';
 import GlobalSearchCommand from './GlobalSearchCommand';
 import { KeyboardShortcutSheet } from './KeyboardShortcutSheet';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { usePluginNavItems } from '../hooks/usePluginMenu';
 import type { NavItemConfig } from '../config/projectTypeCapabilities';
 import packageJson from '../../package.json';
 
@@ -108,6 +109,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/sprint-planning': 'Sprint Planning',
   '/ai-features': 'AI Features',
   '/wiki': 'Wiki',
+  '/plugins': 'Plugins',
 };
 
 function getPageTitle(pathname: string): string {
@@ -224,7 +226,7 @@ function NavItem({
       )}
     >
       <Icon className="h-5 w-5 flex-shrink-0" />
-      <span className="flex-1">{t(item.textKey)}</span>
+      <span className="flex-1">{item.label ?? t(item.textKey)}</span>
     </Link>
   );
 }
@@ -284,6 +286,7 @@ function SectionHeader({ textKey }: { textKey: string }) {
 function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
   const location = useLocation();
   const { capabilities } = useProject();
+  const pluginNavItems = usePluginNavItems();
   const { hasPermissionSync, hasPermission } = usePermission();
   const { startTour, hasCompletedTour } = useTour();
   const { actualMode, toggleTheme } = useTheme();
@@ -476,6 +479,21 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             currentPath={currentPath}
             onItemClick={onItemClick}
           />
+
+          {/* Plugin-contributed pages — shown only when an enabled UI plugin adds entries */}
+          {pluginNavItems.length > 0 && (
+            <>
+              <SectionHeader textKey="nav.sections.plugins" />
+              {pluginNavItems.map((item) => (
+                <NavItem
+                  key={item.path}
+                  item={item}
+                  isActive={currentPath === item.path}
+                  onClick={onItemClick}
+                />
+              ))}
+            </>
+          )}
 
           {/* Help & Guides Section */}
           <SectionHeader textKey="nav.sections.helpSupport" />

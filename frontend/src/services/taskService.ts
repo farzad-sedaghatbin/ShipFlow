@@ -235,6 +235,15 @@ export const taskService = {
   
   // Sub-task hierarchy
   getSubTasks: (parentTaskId: number) => api.get<Task[]>(`/tasks/${parentTaskId}/subtasks`),
+
+  // Convert to / from subtask. parentTaskId = null turns a subtask back into a top-level task.
+  setParent: (taskId: number, parentTaskId: number | null) =>
+    api.patch<Task>(`/tasks/${taskId}/parent`, { parentTaskId }),
+  // Eligible tasks for the "make subtask of…" / "add existing subtask" pickers (server enforces the rules)
+  getParentCandidates: (taskId: number, q?: string) =>
+    api.get<Task[]>(`/tasks/${taskId}/parent-candidates`, { params: { q: q || undefined } }),
+  getSubtaskCandidates: (taskId: number, q?: string) =>
+    api.get<Task[]>(`/tasks/${taskId}/subtask-candidates`, { params: { q: q || undefined } }),
   getRootTasks: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/roots`),
   getTaskTree: (cycleId: number) => api.get<Task[]>(`/tasks/cycle/${cycleId}/tree`),
   

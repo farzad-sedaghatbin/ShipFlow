@@ -14,6 +14,15 @@ public interface ReportGeneratorPlugin {
   /** Human-readable name for this report type. */
   String getDisplayName();
 
+  /**
+   * The plugin's own version (for example {@code 1.2.0}), shown in Organization Settings →
+   * Plugins so an administrator can tell which build is running. Optional: {@code null} means
+   * "not stated". Added in SDK 1.1.0 as a default method, so older plugins still compile and run.
+   */
+  default String getVersion() {
+    return null;
+  }
+
   /** The MIME type of the generated report, e.g. "application/pdf". */
   String getContentType();
 

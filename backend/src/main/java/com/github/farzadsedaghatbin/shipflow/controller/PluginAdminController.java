@@ -3,6 +3,7 @@ package com.github.farzadsedaghatbin.shipflow.controller;
 import com.github.farzadsedaghatbin.shipflow.dto.plugin.PluginDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.plugin.PluginToggleRequest;
 import com.github.farzadsedaghatbin.shipflow.plugin.PluginRegistry;
+import com.github.farzadsedaghatbin.shipflow.plugin.PluginStateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class PluginAdminController {
 
   private final PluginRegistry pluginRegistry;
+  private final PluginStateService pluginStateService;
 
   @GetMapping
   @PreAuthorize("hasAuthority('ROLE_ADMIN')")
@@ -37,7 +39,7 @@ public class PluginAdminController {
     if (displayName == null) {
       return ResponseEntity.notFound().build();
     }
-    pluginRegistry.setEnabled(pluginId, request.isEnabled());
+    pluginStateService.setEnabled(pluginId, request.isEnabled());
     // Determine plugin type for the response
     List<PluginDTO> all = pluginRegistry.getAllPluginDTOs();
     PluginDTO updated = all.stream()

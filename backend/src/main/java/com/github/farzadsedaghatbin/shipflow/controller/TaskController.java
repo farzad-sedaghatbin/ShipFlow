@@ -416,6 +416,36 @@ public class TaskController {
     return ResponseEntity.ok(taskService.setTaskEpic(id, request.getEpicId()));
   }
 
+  @PatchMapping("/{id}/parent")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
+  @Operation(summary = "Convert a task to a subtask of another task, or back to a top-level task with a null parentTaskId",
+      description = "Hierarchy is two levels deep: a task with subtasks cannot become a subtask, and a subtask"
+          + " cannot be a parent. The task moves into the parent's cycle and leaves Backlog status.")
+  @ApiResponses({
+      @ApiResponse(responseCode = "200", description = "Task updated"),
+      @ApiResponse(responseCode = "400", description = "Conversion not allowed (has subtasks, parent is a subtask, other project, owns a scope)")
+  })
+  public ResponseEntity<TaskDTO> updateTaskParent(@PathVariable Long id,
+      @RequestBody com.github.farzadsedaghatbin.shipflow.dto.UpdateTaskParentRequest request) {
+    return ResponseEntity.ok(taskService.setTaskParent(id, request.getParentTaskId()));
+  }
+
+  @GetMapping("/{id}/parent-candidates")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Tasks this task could become a subtask of (search by title or id)")
+  public ResponseEntity<List<TaskDTO>> getParentCandidates(@PathVariable Long id,
+      @RequestParam(required = false) String q) {
+    return ResponseEntity.ok(taskService.findParentCandidates(id, q));
+  }
+
+  @GetMapping("/{id}/subtask-candidates")
+  @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'READ')")
+  @Operation(summary = "Existing tasks that could be added as a subtask of this task (search by title or id)")
+  public ResponseEntity<List<TaskDTO>> getSubtaskCandidates(@PathVariable Long id,
+      @RequestParam(required = false) String q) {
+    return ResponseEntity.ok(taskService.findSubtaskCandidates(id, q));
+  }
+
   @PatchMapping("/{id}/unlink-release")
   @PreAuthorize("@permissionService.hasPermission('BACKLOG', 'UPDATE')")
   @Operation(summary = "Clear target release from a task")

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { LocalizedDateInput } from '../components/LocalizedDateInput';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
-import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, Square, Clock, Link2, FolderInput } from 'lucide-react';
+import { ChevronLeft, Pencil, PlayCircle, Plus, Eye, Loader2, Square, Clock, Link2, FolderInput, CornerDownRight, Unlink, ChevronDown, ListPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +47,10 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { useAuth } from '../contexts';
 import { MoveToProjectDialog } from '../components/MoveToProjectDialog';
 import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
+import { useTaskHierarchy } from '../hooks/useTaskHierarchy';
+import TaskHierarchyPicker, { TaskHierarchyPickerMode } from '../components/TaskHierarchyPicker';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const statusOptions: { value: TaskStatus; label: string; variant: 'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline' }[] = [
   { value: 'BACKLOG', label: 'Backlog', variant: 'secondary' },
@@ -112,6 +116,17 @@ export default function TaskDetailPage() {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [hierarchyPicker, setHierarchyPicker] = useState<TaskHierarchyPickerMode | null>(null);
+
+  // Re-read the task and its subtasks after a convert/detach/undo without the full-page spinner.
+  const refreshHierarchy = async () => {
+    const numericId = parseInt(taskId?.match(/(\d+)$/)?.[1] ?? '', 10);
+    if (Number.isNaN(numericId)) return;
+    const [taskRes, subtasksRes] = await Promise.all([taskService.getById(numericId), taskService.getSubTasks(numericId)]);
+    setTask(taskRes.data);
+    setSubtasks(subtasksRes.data || []);
+  };
+  const hierarchy = useTaskHierarchy(refreshHierarchy);
 
   useEffect(() => {
     if (taskId) {
@@ -494,6 +509,47 @@ export default function TaskDetailPage() {
                   Add Subtask
                 </Button>
               )}
+              {!task.parentTaskId ? (
+                subtasks.length > 0 ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      {/* A disabled button swallows hover, so the tooltip hangs off a wrapper. */}
+                      <span tabIndex={0}>
+                        <Button variant="outline" size="sm" disabled data-testid="make-subtask">
+                          <CornerDownRight className="h-4 w-4 mr-2" />
+                          {t('taskHierarchy.makeSubtask')}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>{t('taskHierarchy.hasSubtasksTip', { count: subtasks.length })}</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button variant="outline" size="sm" data-testid="make-subtask" onClick={() => setHierarchyPicker('parent')}>
+                    <CornerDownRight className="h-4 w-4 mr-2" />
+                    {t('taskHierarchy.makeSubtask')}
+                  </Button>
+                )
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" data-testid="parent-menu">
+                      <CornerDownRight className="h-4 w-4 mr-2" />
+                      {t('taskHierarchy.parentMenu')}
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => setHierarchyPicker('parent')}>
+                      <CornerDownRight className="h-4 w-4 mr-2" />
+                      {t('taskHierarchy.changeParent')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => void hierarchy.makeTopLevel(task)}>
+                      <Unlink className="h-4 w-4 mr-2" />
+                      {t('taskHierarchy.makeTopLevel')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {activeTimerTaskId === task.id ? (
                 <Button
                   variant="destructive"
@@ -758,12 +814,34 @@ export default function TaskDetailPage() {
       />
 
       {/* Subtasks */}
-      {subtasks.length > 0 && (
-        <Card>
-          <CardHeader>
+      {!task.parentTaskId && (
+        <Card data-testid="subtasks-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-lg">{t('taskDetailPage.subtasks')} ({subtasks.length})</CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" data-testid="add-existing-subtask" onClick={() => setHierarchyPicker('child')}>
+                <ListPlus className="h-4 w-4 mr-2" />
+                {t('taskHierarchy.addExisting')}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
+            {subtasks.length === 0 && (
+              <div className="rounded-lg border border-dashed px-4 py-8 text-center">
+                <p className="text-sm font-medium">{t('taskHierarchy.emptyTitle')}</p>
+                <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">{t('taskHierarchy.emptyHint')}</p>
+                <div className="mt-4 flex justify-center gap-2">
+                  <Button size="sm" variant="outline" onClick={handleAddSubtask}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t('taskHierarchy.createNew')}
+                  </Button>
+                  <Button size="sm" onClick={() => setHierarchyPicker('child')}>
+                    <ListPlus className="h-4 w-4 mr-2" />
+                    {t('taskHierarchy.addExisting')}
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="space-y-3">
               {subtasks.map((subtask) => (
                 <div
@@ -805,6 +883,20 @@ export default function TaskDetailPage() {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={t('taskHierarchy.makeTopLevel')}
+                          data-testid={`detach-subtask-${subtask.id}`}
+                          onClick={() => void hierarchy.makeTopLevel(subtask)}
+                        >
+                          <Unlink className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{t('taskHierarchy.makeTopLevel')}</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
@@ -812,6 +904,14 @@ export default function TaskDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <TaskHierarchyPicker
+        open={hierarchyPicker !== null}
+        onOpenChange={(open) => !open && setHierarchyPicker(null)}
+        task={task}
+        mode={hierarchyPicker ?? 'parent'}
+        onConfirm={(child, parent) => hierarchy.makeSubtask(child, parent)}
+      />
 
       {/* View Subtask Dialog */}
       <Dialog open={!!viewSubtask} onOpenChange={(open) => !open && setViewSubtask(null)}>

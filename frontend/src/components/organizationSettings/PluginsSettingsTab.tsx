@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { Puzzle, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -8,22 +9,26 @@ import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { pluginService, PluginDTO } from '../../services/pluginService';
 import { useToast } from '../../contexts';
+import { PLUGIN_MENU_QUERY_KEY } from '../../hooks/usePluginMenu';
 
 const TYPE_LABELS: Record<string, string> = {
   risk: 'pluginSettings.typeRisk',
   report: 'pluginSettings.typeReport',
   integration: 'pluginSettings.typeIntegration',
+  ui: 'pluginSettings.typeUi',
 };
 
 const TYPE_COLORS: Record<string, string> = {
   risk: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   report: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   integration: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  ui: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
 const BUILTIN_DESCRIPTIONS: Record<string, string> = {
   'builtin-deadline-pressure': 'pluginSettings.builtinDeadlinePressureDesc',
   'builtin-cycle-health-report': 'pluginSettings.builtinCycleHealthDesc',
+  'builtin-plugin-showcase': 'pluginSettings.builtinShowcaseDesc',
 };
 
 function isBuiltin(pluginId: string) {
@@ -36,6 +41,7 @@ export function PluginsSettingsTab() {
   const [plugins, setPlugins] = useState<PluginDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const load = async () => {
     setLoading(true);
@@ -58,6 +64,8 @@ export function PluginsSettingsTab() {
     try {
       const res = await pluginService.togglePlugin(pluginId, enabled);
       setPlugins((prev) => prev.map((p) => (p.pluginId === pluginId ? res.data : p)));
+      // A UI plugin adds or removes sidebar entries, so refresh the menu straight away.
+      queryClient.invalidateQueries({ queryKey: PLUGIN_MENU_QUERY_KEY });
       showToast(
         enabled ? t('pluginSettings.enabledSuccess') : t('pluginSettings.disabledSuccess'),
         'success',
@@ -74,7 +82,7 @@ export function PluginsSettingsTab() {
     return acc;
   }, {});
 
-  const typeOrder = ['risk', 'report', 'integration'];
+  const typeOrder = ['risk', 'report', 'integration', 'ui'];
   const hasBuiltins = plugins.some((p) => isBuiltin(p.pluginId));
 
   return (
@@ -130,6 +138,11 @@ export function PluginsSettingsTab() {
                             <div className="space-y-1">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <Label>{plugin.displayName}</Label>
+                                {plugin.version && (
+                                  <span className="text-xs text-muted-foreground" dir="ltr">
+                                    v{plugin.version.replace(/^v/i, '')}
+                                  </span>
+                                )}
                                 {builtin ? (
                                   <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/40">
                                     {t('pluginSettings.previewBadge')}
