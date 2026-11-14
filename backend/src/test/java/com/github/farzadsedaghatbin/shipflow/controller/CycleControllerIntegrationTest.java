@@ -141,6 +141,20 @@ class CycleControllerIntegrationTest {
   }
 
   @Test
+  void getDeleteImpact_ShouldReportCountsAndNotDelete() throws Exception {
+    mockMvc.perform(get("/api/cycles/{id}/delete-impact", testCycle.getId())).andExpect(status().isOk())
+        .andExpect(jsonPath("$.cycleName", is(testCycle.getName()))).andExpect(jsonPath("$.taskCount", is(0)))
+        .andExpect(jsonPath("$.pitchCount", is(0)));
+
+    mockMvc.perform(get("/api/cycles/{id}", testCycle.getId())).andExpect(status().isOk());
+  }
+
+  @Test
+  void getDeleteImpact_UnknownCycle_ShouldReturn404() throws Exception {
+    mockMvc.perform(get("/api/cycles/{id}/delete-impact", 987654L)).andExpect(status().isNotFound());
+  }
+
+  @Test
   void deleteCycle_WhenExists_ShouldDeleteCycle() throws Exception {
     mockMvc.perform(delete("/api/cycles/{id}", testCycle.getId())).andExpect(status().isNoContent());
 

@@ -837,6 +837,149 @@ public class TaskService {
         task.getId(), oldStatus, newStatus);
   }
 
+  // ========== Convert to / from subtask (Jira-style) ==========
+
+  private static final int PARENT_CANDIDATE_LIMIT = 20;
+
+  /**
+   * Turn a task into a subtask of {@code parentTaskId}, or back into a top-level task when it is
+   * null. Hierarchy is two levels deep, so a task that already has subtasks cannot become a
+   * subtask, and a subtask cannot be a parent.
+   *
+   * <p>A subtask lives where its parent lives, so converting also moves the task into the
+   * parent's cycle (and pitch, when the parent has one) and lifts it out of Backlog status
+   * (subtasks are never in Backlog). A task that owns a hill-chart scope is refused rather than
+   * silently orphaning the scope.
+   */
+  @CacheEvict(value = "roadmap", allEntries = true)
+  public TaskDTO setTaskParent(Long taskId, Long parentTaskId) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
+    Long projectId = resolveProjectId(task);
+    if (projectId == null) {
+      throw new BadRequestException("Cannot change parent: project reference missing on task " + taskId);
+    }
+    projectService.requireProjectAccess(projectId);
+
+    Task oldParent = task.getParentTask();
+    if (parentTaskId == null) {
+      return detachFromParent(task, oldParent);
+    }
+    if (oldParent != null && oldParent.getId().equals(parentTaskId)) {
+      return toDTO(task); // already there
+    }
+    if (parentTaskId.equals(taskId)) {
+      throw new BadRequestException(messageService.getMessage("error.task.circular.reference"));
+    }
+    Task parent = taskRepository.findByIdNotDeleted(parentTaskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + parentTaskId));
+    if (!projectId.equals(resolveProjectId(parent))) {
+      throw new BadRequestException(messageService.getMessage("error.task.parent.different.project"));
+    }
+    if (parent.getParentTask() != null) {
+      throw new BadRequestException(messageService.getMessage("error.task.parent.is.subtask"));
+    }
+    if (taskRepository.existsByParentTaskIdAndDeletedAtIsNull(taskId)) {
+      throw new BadRequestException(messageService.getMessage("error.task.convert.has.subtasks"));
+    }
+    if (oldParent == null && hillChartPointRepository.findByLinkedTaskId(taskId).isPresent()) {
+      throw new BadRequestException(messageService.getMessage("error.task.convert.owns.scope"));
+    }
+
+    task.setParentTask(parent);
+    task.setCycle(parent.getCycle());
+    if (parent.getPitch() != null) {
+      task.setPitch(parent.getPitch());
+    }
+    if (task.getStatus() == TaskStatus.BACKLOG) {
+      task.setStatus(TaskStatus.TODO);
+    }
+    task.setUpdatedAt(LocalDateTime.now());
+    Task saved = taskRepository.save(task);
+    resyncRootScope(oldParent);
+    resyncRootScope(parent);
+    return toDTO(saved);
+  }
+
+  private TaskDTO detachFromParent(Task task, Task oldParent) {
+    if (oldParent == null) {
+      return toDTO(task); // already top level
+    }
+    task.setParentTask(null);
+    task.setUpdatedAt(LocalDateTime.now());
+    Task saved = taskRepository.save(task);
+    // A top-level pitch task gets its own scope, exactly as when one is created that way.
+    if (shouldCreateScopeAutomatically(saved) && hillChartPointRepository.findByLinkedTaskId(saved.getId()).isEmpty()) {
+      createLinkedScope(saved, null);
+    }
+    resyncRootScope(oldParent);
+    return toDTO(saved);
+  }
+
+  /** Recompute the auto-progress of the scope a root task owns, after its subtasks changed. */
+  private void resyncRootScope(Task root) {
+    if (root == null) {
+      return;
+    }
+    hillChartPointRepository.findByLinkedTaskId(root.getId()).ifPresent(scope -> {
+      try {
+        scopeProgressService.syncProgressIfEnabled(scope.getId());
+      } catch (Exception e) {
+        log.warn("Failed to resync scope {} after subtask change on task {}", scope.getId(), root.getId(), e);
+      }
+    });
+  }
+
+  /** Tasks that {@code taskId} could be made a subtask of (search by title or numeric id). */
+  @Transactional(readOnly = true)
+  public List<TaskDTO> findParentCandidates(Long taskId, String query) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
+    Long projectId = requireCandidateProject(task);
+    return taskRepository
+        .findParentCandidates(projectId, taskId, searchText(query), searchId(query),
+            org.springframework.data.domain.PageRequest.of(0, PARENT_CANDIDATE_LIMIT))
+        .stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  /** Tasks that could be added as a subtask of {@code taskId} (search by title or numeric id). */
+  @Transactional(readOnly = true)
+  public List<TaskDTO> findSubtaskCandidates(Long taskId, String query) {
+    Task task = taskRepository.findByIdNotDeleted(taskId)
+        .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
+    Long projectId = requireCandidateProject(task);
+    if (task.getParentTask() != null) {
+      return List.of(); // a subtask cannot have subtasks
+    }
+    return taskRepository
+        .findSubtaskCandidates(projectId, taskId, searchText(query), searchId(query),
+            org.springframework.data.domain.PageRequest.of(0, PARENT_CANDIDATE_LIMIT))
+        .stream().map(this::toDTO).collect(Collectors.toList());
+  }
+
+  private Long requireCandidateProject(Task task) {
+    Long projectId = resolveProjectId(task);
+    if (projectId == null) {
+      throw new BadRequestException("Project reference missing on task " + task.getId());
+    }
+    projectService.requireProjectAccess(projectId);
+    return projectId;
+  }
+
+  private static String searchText(String query) {
+    return query == null ? "" : query.trim().replace("#", "");
+  }
+
+  /** A numeric query also matches the task id; -1 matches nothing. */
+  private static Long searchId(String query) {
+    String q = searchText(query);
+    try {
+      return q.isEmpty() ? -1L : Long.parseLong(q);
+    } catch (NumberFormatException e) {
+      return -1L;
+    }
+  }
+
   /**
    * Link a task to an epic, or unlink it when {@code epicId} is null. The epic must exist, not be
    * soft-deleted, and belong to the same project as the task.

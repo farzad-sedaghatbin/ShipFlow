@@ -67,6 +67,7 @@ import {
   Filter,
   Puzzle,
   KeyRound,
+  CornerDownRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -86,6 +87,41 @@ interface Release {
 }
 
 const releases: Release[] = [
+  {
+    version: '1.16.0',
+    date: 'Coming soon',
+    title: 'Time to Value',
+    upcoming: true,
+    highlights: [
+      {
+        icon: <Layers className="h-5 w-5" />,
+        title: 'Project & Pitch Templates',
+        description: 'Start from a template instead of a blank page, and clone a whole project in one click.',
+      },
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Public Share Links',
+        description: 'Tokenized, revocable, no-login links for pitches, hill charts and the roadmap.',
+      },
+      {
+        icon: <Users className="h-5 w-5" />,
+        title: 'Guest Access',
+        description: 'Invite an external stakeholder into a single project without giving them the rest of the workspace.',
+      },
+      {
+        icon: <Puzzle className="h-5 w-5" />,
+        title: 'Plugin Menu Items & Pages',
+        description:
+          'A plugin can now add an entry to the sidebar and a page of its own. Pages are built from simple blocks (text, numbers, tables, links, notices) that ShipFlow draws itself, so a plugin never runs its own code in your browser. Plugins can be switched on or off in Organization Settings, and the choice now survives a restart.',
+      },
+      {
+        icon: <CornerDownRight className="h-5 w-5" />,
+        title: 'Convert to Subtask',
+        description:
+          'Turn any task into a subtask of another (or pull an existing task in as a subtask) from a quick search-and-preview picker, Jira-style. It shows exactly what will change, and one click on Undo puts everything back. Subtasks stay one level deep, so a task that already has subtasks cannot become one.',
+      },
+    ],
+  },
   {
     version: '1.15.4',
     date: 'November 9, 2026',

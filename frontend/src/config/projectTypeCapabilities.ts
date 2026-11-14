@@ -25,7 +25,10 @@ import { ProjectType } from '../types';
  */
 
 export interface NavItemConfig {
+  /** i18n key for the label. Ignored when `label` is set. */
   textKey: string;
+  /** Literal label (used by plugin-contributed items, which have no i18n key). */
+  label?: string;
   icon: ComponentType<{ className?: string }>;
   path: string;
   tourId?: string;

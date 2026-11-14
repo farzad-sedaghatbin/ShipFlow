@@ -1,5 +1,5 @@
 import api from './api';
-import { Cycle, CreateCycleRequest, CyclePhase, CycleRetroStatus, BurndownPoint, VelocityPoint, BurnupPoint, SprintReport, ReleaseReport, Team } from '../types';
+import { Cycle, CycleDeleteImpact, CreateCycleRequest, CyclePhase, CycleRetroStatus, BurndownPoint, VelocityPoint, BurnupPoint, SprintReport, ReleaseReport, Team } from '../types';
 
 export const cycleService = {
   getAll: () => api.get<Cycle[]>('/cycles'),
@@ -15,6 +15,8 @@ export const cycleService = {
   toggleActive: (id: number) => api.patch<Cycle>(`/cycles/${id}/toggle-active`),
   closeCycle: (id: number) => api.post<Cycle>(`/cycles/${id}/close`),
   getRetroStatus: (id: number) => api.get<CycleRetroStatus>(`/cycles/${id}/retro-status`),
+  /** What deleting this cycle would permanently remove (tasks, pitches, retros) — for the confirm dialog. */
+  getDeleteImpact: (id: number) => api.get<CycleDeleteImpact>(`/cycles/${id}/delete-impact`),
   delete: (id: number) => api.delete(`/cycles/${id}`),
   /** Scrum: fetch burndown chart data for a sprint (cycle) */
   getBurndown: (cycleId: number) => api.get<BurndownPoint[]>(`/cycles/${cycleId}/burndown`),

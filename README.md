@@ -58,6 +58,7 @@ docker compose up -d
 | **Installable & offline-capable (PWA)** *(v1.11.0)* | Install ShipFlow like a native app; already-visited pages stay browsable offline, and writes made offline (comments, status changes, new tasks) are queued and sent automatically once you're back online. On mobile, a one-time prompt right after login offers to install it *(v1.11.1)* |
 | **Web Push & Passkey sign-in** *(v1.11.0)* | Native push notifications for mentions, assignments, and cycle events — no email or open tab required. Sign in with Face ID, Touch ID, Windows Hello, or a security key (WebAuthn) instead of a password. Password-login users with no passkey get a one-time setup prompt *(v1.11.1)* |
 | **Flexible task cycles & Pitch Kanban** *(v1.11.2)* | Logging a task no longer requires picking a cycle up front — a pitch-linked task follows whatever cycle its pitch is currently bet on, automatically, with an audit trail for reporting. A pitch's tasks now render as a drag-and-drop Kanban board on its own detail page |
+| **Plugin menu items & pages** *(v1.16.0, in progress)* | A plugin can add a sidebar entry and a page of its own. Pages are built from simple blocks (text, numbers, tables, links, notices) that ShipFlow renders itself, so a plugin never runs its own code in your browser. Roles are enforced by the backend and plugins can be switched on or off per installation |
 | **Plugin SDK & GitLab/Azure DevOps AI context** *(v1.12.0)* | A real, distributable `shipflow-plugin-api` Maven module plus a `shipflow-plugin-archetype` for scaffolding a plugin project in one command. AI features like Wise Architecture can now pull repository code context from GitLab and Azure Repos, alongside the existing GitHub, Figma, Notion, and Confluence integrations |
 | **Open-core licensing & Community Edition** *(v1.14.0)* | This repository is the fully-functional Community Edition — up to 10 active users, 5 enabled workflow automations. An admin can upload a signed licence file (Org Settings → Licence) to lift those limits and unlock future commercial features; a bad, expired, or missing licence never blocks startup, it just runs as Community Edition |
 | **Self-hosted & free** | MIT licence, Docker Compose in one command, PostgreSQL + Redis, full data ownership |
@@ -132,6 +133,7 @@ docker compose up -d
     - Backlog list view: a sub-task always renders directly under its parent, regardless of the active sort field
     - Kanban board: sub-tasks group under their parent within a shared status column; a "N subtasks" badge and "Sub-task of ..." caption keep the relationship visible when they're in different columns
     - The only structural grouping available for Kanban-mode projects, which have no Pitch concept to group by
+    - **Convert to / add as sub-task** *(v1.16.0)*: turn any task into a sub-task from a search-and-preview picker, or pull an existing task in as one, with one-click Undo; hierarchy stays two levels deep
   - **Soft Delete**: Safe deletion with recovery options
     - Records are marked as deleted, not permanently removed
     - Complete audit trail with deletion timestamp and user tracking

@@ -129,6 +129,7 @@ const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter'));
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
 
 // Wiki
+const PluginPage = lazy(() => import('./pages/PluginPage'));
 const WikiSpaceList = lazy(() => import('./pages/WikiSpaceList'));
 const WikiSpace = lazy(() => import('./pages/WikiSpace'));
 const WikiPage = lazy(() => import('./pages/WikiPage'));
@@ -396,6 +397,8 @@ function App() {
                       <Route path="help/scrum-mode" element={<ScrumModeGuide />} />
                       <Route path="help/migration" element={<MigrationGuide />} />
                       <Route path="help/automations" element={<WorkflowAutomationsGuide />} />
+
+                      <Route path="plugins/:pluginId/:pageKey" element={<PluginPage />} />
 
                       {/* Catch-all for unmatched routes within protected area */}
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />

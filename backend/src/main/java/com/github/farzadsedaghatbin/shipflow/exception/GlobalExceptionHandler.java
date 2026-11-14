@@ -52,6 +52,16 @@ public class GlobalExceptionHandler {
     return messageSource.getMessage(key, args, key, locale);
   }
 
+  @ExceptionHandler(PluginPageException.class)
+  public ResponseEntity<Map<String, Object>> handlePluginPageException(PluginPageException ex) {
+    Map<String, Object> error = new HashMap<>();
+    error.put("timestamp", LocalDateTime.now());
+    error.put("message", getMessage("plugin.page.failed"));
+    error.put("messageKey", "plugin.page.failed");
+    error.put("status", HttpStatus.BAD_GATEWAY.value());
+    return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+  }
+
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
     Map<String, Object> error = new HashMap<>();

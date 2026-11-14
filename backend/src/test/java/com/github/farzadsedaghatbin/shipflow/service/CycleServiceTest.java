@@ -7,6 +7,8 @@ import static org.mockito.Mockito.*;
 
 import com.github.farzadsedaghatbin.shipflow.dto.CreateCycleRequest;
 import com.github.farzadsedaghatbin.shipflow.dto.CycleDTO;
+import com.github.farzadsedaghatbin.shipflow.dto.CycleDeleteImpactDTO;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.TaskStatus;
 import com.github.farzadsedaghatbin.shipflow.dto.TeamDTO;
 import com.github.farzadsedaghatbin.shipflow.dto.admin.OrganizationSettingsDTO;
 import com.github.farzadsedaghatbin.shipflow.entity.Cycle;
@@ -185,6 +187,31 @@ class CycleServiceTest {
     cycleService.deleteCycle(1L);
 
     verify(cycleRepository).deleteById(1L);
+  }
+
+  @Test
+  void getDeleteImpact_ReportsWhatTheCascadeWouldRemove() {
+    when(cycleRepository.findById(1L)).thenReturn(Optional.of(testCycle));
+    when(taskRepository.countActiveByCycleId(1L)).thenReturn(15);
+    when(taskRepository.countActiveByCycleIdAndStatus(1L, TaskStatus.DONE)).thenReturn(4);
+    when(pitchRepository.countByCycleIdNotDeleted(1L)).thenReturn(2L);
+    when(retroRepository.countByCycleId(1L)).thenReturn(1L);
+
+    CycleDeleteImpactDTO impact = cycleService.getDeleteImpact(1L);
+
+    assertThat(impact.getCycleName()).isEqualTo("Test Cycle");
+    assertThat(impact.getTaskCount()).isEqualTo(15);
+    assertThat(impact.getDoneTaskCount()).isEqualTo(4);
+    assertThat(impact.getPitchCount()).isEqualTo(2);
+    assertThat(impact.getRetrospectiveCount()).isEqualTo(1);
+    verify(cycleRepository, never()).deleteById(any());
+  }
+
+  @Test
+  void getDeleteImpact_UnknownCycle_Throws() {
+    when(cycleRepository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> cycleService.getDeleteImpact(99L)).isInstanceOf(ResourceNotFoundException.class);
   }
 
   @Test

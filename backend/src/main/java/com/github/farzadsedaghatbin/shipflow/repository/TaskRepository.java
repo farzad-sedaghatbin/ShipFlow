@@ -181,6 +181,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId")
     int countByCycleId(@Param("cycleId") Long cycleId);
 
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId AND t.deletedAt IS NULL")
+    int countActiveByCycleId(@Param("cycleId") Long cycleId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId AND t.deletedAt IS NULL AND t.status = :status")
+    int countActiveByCycleIdAndStatus(@Param("cycleId") Long cycleId, @Param("status") TaskStatus status);
+
     @Query("SELECT COUNT(t) FROM Task t WHERE t.cycle.id = :cycleId AND t.status = :status")
     int countByCycleIdAndStatus(@Param("cycleId") Long cycleId, @Param("status") TaskStatus status);
 
@@ -279,6 +285,33 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     @Query("SELECT t FROM Task t WHERE t.parentTask.id = :parentTaskId AND t.deletedAt IS NULL")
     List<Task> findByParentTaskIdNotDeleted(@Param("parentTaskId") Long parentTaskId);
+
+    boolean existsByParentTaskIdAndDeletedAtIsNull(Long parentTaskId);
+
+    /**
+     * Top-level tasks of a project that could become the PARENT of another task: live, not
+     * themselves subtasks (hierarchy is two levels deep), matching the search text or the
+     * numeric id. {@code excludeId} is the task being converted.
+     */
+    @Query("SELECT t FROM Task t LEFT JOIN t.cycle c WHERE t.deletedAt IS NULL AND t.parentTask IS NULL "
+            + "AND t.id <> :excludeId AND (t.project.id = :projectId OR c.project.id = :projectId) "
+            + "AND (LOWER(t.title) LIKE LOWER(CONCAT('%', :q, '%')) OR t.id = :qId) "
+            + "ORDER BY t.updatedAt DESC")
+    List<Task> findParentCandidates(@Param("projectId") Long projectId, @Param("excludeId") Long excludeId,
+            @Param("q") String q, @Param("qId") Long qId, Pageable pageable);
+
+    /**
+     * Top-level tasks of a project that could become a SUBTASK of another task: live, with no
+     * subtasks of their own and no hill-chart scope they own (see {@code TaskService#setTaskParent}).
+     */
+    @Query("SELECT t FROM Task t LEFT JOIN t.cycle c WHERE t.deletedAt IS NULL AND t.parentTask IS NULL "
+            + "AND t.id <> :excludeId AND (t.project.id = :projectId OR c.project.id = :projectId) "
+            + "AND NOT EXISTS (SELECT 1 FROM Task ch WHERE ch.parentTask = t AND ch.deletedAt IS NULL) "
+            + "AND NOT EXISTS (SELECT 1 FROM HillChartPoint h WHERE h.linkedTask = t) "
+            + "AND (LOWER(t.title) LIKE LOWER(CONCAT('%', :q, '%')) OR t.id = :qId) "
+            + "ORDER BY t.updatedAt DESC")
+    List<Task> findSubtaskCandidates(@Param("projectId") Long projectId, @Param("excludeId") Long excludeId,
+            @Param("q") String q, @Param("qId") Long qId, Pageable pageable);
 
     List<Task> findByCycleIdAndParentTaskIdIsNull(Long cycleId);
 

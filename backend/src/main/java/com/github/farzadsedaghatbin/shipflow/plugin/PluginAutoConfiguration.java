@@ -19,16 +19,21 @@ public class PluginAutoConfiguration {
       PluginRegistry registry,
       List<RiskCalculatorPlugin> riskPlugins,
       List<ReportGeneratorPlugin> reportPlugins,
-      List<IntegrationProviderPlugin> integrationPlugins) {
+      List<IntegrationProviderPlugin> integrationPlugins,
+      List<UiContributionPlugin> uiPlugins,
+      PluginStateService stateService) {
     return args -> {
       riskPlugins.forEach(registry::registerRiskPlugin);
       reportPlugins.forEach(registry::registerReportPlugin);
       integrationPlugins.forEach(registry::registerIntegrationPlugin);
+      uiPlugins.forEach(registry::registerUiPlugin);
+      stateService.syncOnStartup();
 
-      log.info("Plugin registry initialized: {} risk, {} report, {} integration plugins",
+      log.info("Plugin registry initialized: {} risk, {} report, {} integration, {} UI plugins",
           registry.getRiskPlugins().size(),
           registry.getReportPlugins().size(),
-          registry.getIntegrationPlugins().size());
+          registry.getIntegrationPlugins().size(),
+          registry.getUiPlugins().size());
     };
   }
 }

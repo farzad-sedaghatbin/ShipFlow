@@ -16,7 +16,7 @@
     <maven.compiler.target>21</maven.compiler.target>
     <!-- Matches plugin-sdk/shipflow-plugin-api's own artifact version (independent of the
          ShipFlow app/milestone version — see that module's pom.xml). -->
-    <shipflow-plugin-api.version>1.0.0</shipflow-plugin-api.version>
+    <shipflow-plugin-api.version>1.1.0</shipflow-plugin-api.version>
     <spring-boot.version>3.4.0</spring-boot.version>
     <!-- Matches the backend's pinned Lombok version (backend/pom.xml) — older Lombok releases
          don't support newer JDKs' internal javac APIs (annotation processing fails with a
