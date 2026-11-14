@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.15.6] - 2026-11-14
+
+### Fixed
+- **Organization Settings → Plugins said "failed to load plugins", and plugin sidebar entries never appeared.** The plugin controllers are mounted under `/api/v1` (`/api/v1/admin/plugins`, `/api/v1/plugins/ui/**`) but `pluginService.ts` called `/api/admin/plugins` and `/api/plugins/ui/**`, so every request returned 404 on a real server. This has been broken since the Plugins tab was added in v1.6.0 (the v1.15.5 plugin pages hit the same wrong path). `pluginService.test.ts` mocked the API client and asserted the same wrong paths, which is why the suite never noticed; the paths and the test are corrected and the test now also covers listing plugins.
+
 ## [1.15.5] - 2026-11-14
 
 ### Added

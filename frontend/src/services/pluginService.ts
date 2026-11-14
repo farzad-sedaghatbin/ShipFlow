@@ -44,14 +44,16 @@ export interface PluginPage {
   blocks: PluginBlock[];
 }
 
+// The plugin controllers are mounted under /api/v1 (see PluginAdminController and
+// PluginUiController), and api's baseURL is /api, so every path here starts with /v1.
 export const pluginService = {
-  listPlugins: () => api.get<PluginDTO[]>('/admin/plugins'),
+  listPlugins: () => api.get<PluginDTO[]>('/v1/admin/plugins'),
   togglePlugin: (pluginId: string, enabled: boolean) =>
-    api.patch<PluginDTO>(`/admin/plugins/${encodeURIComponent(pluginId)}/enabled`, { enabled }),
-  getMenu: () => api.get<PluginMenuItem[]>('/plugins/ui/menu'),
+    api.patch<PluginDTO>(`/v1/admin/plugins/${encodeURIComponent(pluginId)}/enabled`, { enabled }),
+  getMenu: () => api.get<PluginMenuItem[]>('/v1/plugins/ui/menu'),
   getPage: (pluginId: string, pageKey: string, projectId?: number | null) =>
     api.get<PluginPage>(
-      `/plugins/ui/${encodeURIComponent(pluginId)}/pages/${encodeURIComponent(pageKey)}`,
+      `/v1/plugins/ui/${encodeURIComponent(pluginId)}/pages/${encodeURIComponent(pageKey)}`,
       { params: projectId ? { projectId } : undefined },
     ),
 };
