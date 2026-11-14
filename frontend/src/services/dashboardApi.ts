@@ -67,6 +67,10 @@ export const dashboardNotificationApi = {
     await api.put('/dashboard/notifications/read-all');
   },
 
+  clearAll: async (): Promise<void> => {
+    await api.delete('/dashboard/notifications');
+  },
+
   deleteNotification: async (id: number): Promise<void> => {
     await api.delete(`/dashboard/notifications/${id}`);
   },

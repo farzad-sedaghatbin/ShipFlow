@@ -9,6 +9,13 @@ import com.github.farzadsedaghatbin.shipflow.entity.enums.ActionType;
 import com.github.farzadsedaghatbin.shipflow.repository.TaskRepository;
 import com.github.farzadsedaghatbin.shipflow.repository.UserProjectRepository;
 import com.github.farzadsedaghatbin.shipflow.service.agent.loop.AgentLoopService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.farzadsedaghatbin.shipflow.entity.enums.ProjectRole;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver;
+import com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +24,9 @@ import org.springframework.stereotype.Component;
 /**
  * Dispatches the configured action for a matched workflow automation rule.
  *
- * <p>Only NOTIFY_ASSIGNEE and NOTIFY_PROJECT_MEMBERS actually deliver anything today (via
- * {@link DashboardNotificationService}'s in-app/SSE notification bus). The other five action
- * types (SEND_WEBHOOK, SEND_EMAIL, ADD_COMMENT, CHANGE_TASK_STATUS, CREATE_TASK) are recognized
+ * <p>NOTIFY_ASSIGNEE and NOTIFY_PROJECT_MEMBERS deliver in-app (and, when SMTP is configured, by email)
+ * via {@link DashboardNotificationService}; SEND_EMAIL emails directly. The other four action
+ * types (SEND_WEBHOOK, ADD_COMMENT, CHANGE_TASK_STATUS, CREATE_TASK) are recognized
  * and logged but intentionally NOT executed yet — see each handler's Javadoc for what real
  * execution would require. Tracked as a follow-up; do not assume they work from the presence of
  * a log line.
@@ -33,6 +40,11 @@ public class WorkflowAutomationActionDispatcher {
   private final UserProjectRepository userProjectRepository;
   private final DashboardNotificationService notificationService;
   private final AgentLoopService agentLoopService;
+  private final IEmailNotificationService emailService;
+  private final EmailRecipientService emailRecipients;
+
+  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final int MAX_EMAIL_RECIPIENTS = 25;
 
   /**
    * Runs the automation's action.
@@ -52,7 +64,7 @@ public class WorkflowAutomationActionDispatcher {
       case NOTIFY_ASSIGNEE -> handleNotifyAssignee(automation, rendered, context);
       case NOTIFY_PROJECT_MEMBERS -> handleNotifyProjectMembers(automation, rendered, context);
       case SEND_WEBHOOK -> handleSendWebhook(automation, rendered, context);
-      case SEND_EMAIL -> handleSendEmail(automation, rendered, context);
+      case SEND_EMAIL -> detail = handleSendEmail(automation, config, context);
       case ADD_COMMENT -> handleAddComment(automation, rendered, context);
       case CHANGE_TASK_STATUS -> handleChangeTaskStatus(automation, rendered, context);
       case CREATE_TASK -> handleCreateTask(automation, rendered, context);
@@ -137,13 +149,116 @@ public class WorkflowAutomationActionDispatcher {
   }
 
   /**
-   * NOT YET IMPLEMENTED. Would route through {@code IEmailNotificationService} with a
-   * subject/body extracted from {@code actionConfig} and a resolved recipient. Currently only
-   * logs.
+   * Emails the people named in the rule. Config: {@code {"subject": "...", "body": "...", "to": ...}}
+   * where {@code to} is optional and is a keyword or an address, or an array mixing them:
+   * {@code assignee} (the triggering task's assignee), {@code project_members}, {@code project_managers}
+   * (members with the project MANAGER role), or an email address. Without {@code to} the rule emails
+   * the project's members. {@code {{placeholders}}} in subject and body are filled from the trigger.
+   *
+   * <p>Fails (so the execution log shows a FAILURE) rather than pretending: when SMTP is not
+   * configured, or when nobody could be emailed.
    */
-  private void handleSendEmail(WorkflowAutomation automation, String config,
-      Map<String, Object> context) {
-    log.info("[Automation:{}] SEND_EMAIL not implemented — config={}", automation.getId(), config);
+  private String handleSendEmail(WorkflowAutomation automation, String rawConfig, Map<String, Object> context) {
+    if (!emailService.isEnabled()) {
+      throw new IllegalStateException("Email is not configured on this server (SMTP_HOST is not set)");
+    }
+    JsonNode config;
+    try {
+      config = MAPPER.readTree(rawConfig == null || rawConfig.isBlank() ? "{}" : rawConfig);
+    } catch (Exception e) {
+      throw new IllegalStateException("The email action's settings are not valid JSON");
+    }
+    String subject = fill(config.path("subject").asText(""), context);
+    if (subject.isBlank()) {
+      subject = automation.getName() != null ? automation.getName() : "ShipFlow automation";
+    }
+    String body = fill(config.path("body").asText(config.path("message").asText("")), context);
+
+    Long taskId = extractLongId(context, "taskId");
+    Task task = taskId != null ? taskRepository.findById(taskId).orElse(null) : null;
+    String actionUrl = actionUrl(context, taskId);
+
+    // address (lower-case) -> display name; insertion order kept, duplicates collapse
+    Map<String, String[]> recipients = new LinkedHashMap<>();
+    JsonNode to = config.path("to");
+    java.util.List<String> targets = new java.util.ArrayList<>();
+    if (to.isArray()) {
+      to.forEach(n -> targets.add(n.asText("")));
+    } else if (to.isTextual() && !to.asText().isBlank()) {
+      for (String part : to.asText().split("[,;]")) {
+        targets.add(part);
+      }
+    }
+    if (targets.isEmpty()) {
+      targets.add("project_members");
+    }
+    for (String raw : targets) {
+      String target = raw.trim();
+      String key = target.toLowerCase(Locale.ROOT);
+      switch (key) {
+        case "" -> {
+        }
+        case "assignee" -> {
+          Person assignee = task != null ? task.getAssignee() : null;
+          addUser(recipients, assignee != null ? assignee.getUser() : null);
+        }
+        case "project_members", "project_managers" -> {
+          if (automation.getProject() != null) {
+            for (UserProject member : userProjectRepository.findByProjectIdEager(automation.getProject().getId())) {
+              if (key.equals("project_members") || member.getProjectRole() == ProjectRole.MANAGER) {
+                addUser(recipients, member.getUser());
+              }
+            }
+          }
+        }
+        default -> {
+          String address = EmailAddressResolver.usable(target);
+          if (address != null) {
+            recipients.putIfAbsent(address.toLowerCase(Locale.ROOT), new String[] {address, address});
+          }
+        }
+      }
+    }
+    if (recipients.isEmpty()) {
+      throw new IllegalStateException(
+          "Nobody to email: no matching recipient has a usable email address (check the rule's \"to\" setting)");
+    }
+    int sent = 0;
+    for (String[] r : recipients.values()) {
+      if (sent >= MAX_EMAIL_RECIPIENTS) {
+        break;
+      }
+      emailService.sendAutomationEmail(r[0], r[1], subject, body, actionUrl);
+      sent++;
+    }
+    log.info("[Automation:{}] SEND_EMAIL queued for {} recipient(s)", automation.getId(), sent);
+    return "Emailed " + sent + (sent == 1 ? " recipient" : " recipients");
+  }
+
+  /** Adds the user if they have an emailable address (resolved by id, outside any lazy-loading trap). */
+  private void addUser(Map<String, String[]> recipients, User user) {
+    if (user == null) {
+      return;
+    }
+    emailRecipients.forUserId(user.getId())
+        .ifPresent(r -> recipients.putIfAbsent(r.address().toLowerCase(Locale.ROOT), new String[] {r.address(), r.name()}));
+  }
+
+  private String actionUrl(Map<String, Object> context, Long taskId) {
+    if (taskId != null) {
+      return "/backlog/" + taskId;
+    }
+    Long pitchId = extractLongId(context, "pitchId");
+    if (pitchId != null) {
+      return "/pitches/" + pitchId;
+    }
+    Long cycleId = extractLongId(context, "cycleId");
+    return cycleId != null ? "/cycles/" + cycleId : null;
+  }
+
+  /** Fills {{placeholders}} in plain text (not JSON), so a value containing quotes cannot break anything. */
+  private String fill(String text, Map<String, Object> context) {
+    return renderTemplate(text, context);
   }
 
   /**

@@ -73,7 +73,7 @@ Click **"Browse Templates"** → search or filter by category → click **"Use T
 | **Notify Assignee** | Sends an in-app notification to the task's assignee |
 | **Notify Project Members** | Sends an in-app notification to all project members |
 | **Send Webhook** | POSTs the event payload to a URL you provide |
-| **Send Email** | Sends an email notification (requires SMTP configured in Org Settings) |
+| **Send Email** | Emails the people you choose (see *Email notifications* guide). Needs the server's SMTP settings; without them the run is recorded as a failure instead of pretending to send |
 | **Add Comment** | Posts an automatic comment on the triggering task or pitch |
 | **Change Task Status** | Updates the task's status to a specified value |
 | **Create Task** | Creates a new task in the project |
@@ -81,7 +81,7 @@ Click **"Browse Templates"** → search or filter by category → click **"Use T
 | **Agent: Cycle health check** | The agent checks the active cycle or sprint against the calendar and flags risks |
 | **Agent: Betting table prep** | The agent prepares the brief for a betting meeting *(Shape Up only)* |
 
-> **Which actions actually run today:** *Notify Assignee*, *Notify Project Members* and the three *Agent* actions do their job. *Send Webhook*, *Send Email*, *Add Comment*, *Change Task Status* and *Create Task* can be configured and are recorded in the execution log, but they are not carried out yet — don't rely on them.
+> **Which actions actually run today:** *Notify Assignee*, *Notify Project Members* (in the app, and by email when the server has email set up), *Send Email* and the three *Agent* actions do their job. *Send Webhook*, *Add Comment*, *Change Task Status* and *Create Task* can be configured and are recorded in the execution log, but they are not carried out yet — don't rely on them.
 
 The three Agent actions are explained in the **Agent Loops** guide.
 

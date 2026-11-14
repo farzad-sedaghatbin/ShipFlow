@@ -44,4 +44,15 @@ public class NoOpEmailNotificationService implements IEmailNotificationService {
             String actionUrl) {
         // no-op
     }
+
+    @Override
+    public void sendAutomationEmail(
+            String toEmail, String recipientName, String subject, String message, String actionUrl) {
+        // no-op
+    }
+
+    @Override
+    public String sendTest(String toEmail, String recipientName) {
+        return "Email is not configured on this server (SMTP_HOST is not set).";
+    }
 }

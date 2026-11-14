@@ -112,6 +112,37 @@ export default function PublicRoadmap() {
 
   const recentlyShipped: RoadmapRelease[] = [
     {
+      version: '1.15.4',
+      date: 'November 9, 2026',
+      title: t('publicRoadmap.shipped1154Title'),
+      highlights: [
+        { icon: <Mail className="h-5 w-5" />, title: t('publicRoadmap.shipped1154Item0Title'), description: t('publicRoadmap.shipped1154Item0Desc') },
+        { icon: <Mail className="h-5 w-5" />, title: t('publicRoadmap.shipped1154Item1Title'), description: t('publicRoadmap.shipped1154Item1Desc') },
+      ],
+    },
+    {
+      version: '1.15.3',
+      date: 'November 9, 2026',
+      title: t('publicRoadmap.shipped1153Title'),
+      highlights: [
+        { icon: <Mail className="h-5 w-5" />, title: t('publicRoadmap.shipped1153Item0Title'), description: t('publicRoadmap.shipped1153Item0Desc') },
+        { icon: <Workflow className="h-5 w-5" />, title: t('publicRoadmap.shipped1153Item1Title'), description: t('publicRoadmap.shipped1153Item1Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.shipped1153Item2Title'), description: t('publicRoadmap.shipped1153Item2Desc') },
+      ],
+    },
+    {
+      version: '1.15.2',
+      date: 'November 9, 2026',
+      title: t('publicRoadmap.shipped1152Title'),
+      highlights: [
+        { icon: <Pencil className="h-5 w-5" />, title: t('publicRoadmap.shipped1152Item0Title'), description: t('publicRoadmap.shipped1152Item0Desc') },
+        { icon: <BookOpen className="h-5 w-5" />, title: t('publicRoadmap.shipped1152Item1Title'), description: t('publicRoadmap.shipped1152Item1Desc') },
+        { icon: <Filter className="h-5 w-5" />, title: t('publicRoadmap.shipped1152Item2Title'), description: t('publicRoadmap.shipped1152Item2Desc') },
+        { icon: <Bell className="h-5 w-5" />, title: t('publicRoadmap.shipped1152Item3Title'), description: t('publicRoadmap.shipped1152Item3Desc') },
+        { icon: <Link2 className="h-5 w-5" />, title: t('publicRoadmap.shipped1152Item4Title'), description: t('publicRoadmap.shipped1152Item4Desc') },
+      ],
+    },
+    {
       version: '1.15.1',
       date: 'November 6, 2026',
       title: t('publicRoadmap.shipped1151Title'),

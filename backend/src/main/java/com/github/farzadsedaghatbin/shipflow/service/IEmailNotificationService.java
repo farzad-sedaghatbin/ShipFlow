@@ -12,4 +12,22 @@ public interface IEmailNotificationService {
 
   void sendPitchStatusChanged(
       String toEmail, String recipientName, String pitchTitle, String newStatus, String actionUrl);
+
+  /**
+   * A message from a workflow automation (the "Notify" actions and the "Send email" action).
+   *
+   * @param subject the email subject (single line)
+   * @param message the body text; plain text, rendered escaped
+   * @param actionUrl a path inside ShipFlow ("/backlog/12") or a full URL, or null for no button
+   */
+  void sendAutomationEmail(
+      String toEmail, String recipientName, String subject, String message, String actionUrl);
+
+  /**
+   * Sends a test message right now (not in the background) and reports what happened, so the
+   * settings page can show the real reason when it fails.
+   *
+   * @return {@code null} when the mail server accepted the message, otherwise a one-line reason
+   */
+  String sendTest(String toEmail, String recipientName);
 }

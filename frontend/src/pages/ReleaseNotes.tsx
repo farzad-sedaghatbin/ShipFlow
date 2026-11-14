@@ -123,6 +123,87 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.15.4',
+    date: 'November 9, 2026',
+    title: 'Email Delivery Fix',
+    highlights: [
+      {
+        icon: <Mail className="h-5 w-5" />,
+        title: 'Test and Automation Emails Work',
+        description:
+          'Sending the settings test email and emailing from automations failed with a hidden error because the recipient\u0027s address could not be read at that moment. Recipients are now looked up safely, so those emails go out.',
+      },
+      {
+        icon: <Mail className="h-5 w-5" />,
+        title: 'An Honest Email Settings Page',
+        description:
+          'Organization Settings now shows how email is really set up on the server instead of empty boxes that did nothing, and the test button reports the mail server\u0027s actual error when sending fails.',
+      },
+    ],
+  },
+  {
+    version: '1.15.3',
+    date: 'November 9, 2026',
+    title: 'Email That Reaches You',
+    highlights: [
+      {
+        icon: <Mail className="h-5 w-5" />,
+        title: 'Assignment and Mention Emails',
+        description:
+          'Being assigned a task or mentioned in a comment or wiki page now emails you, using the address on your profile, with a link that opens the right page.',
+      },
+      {
+        icon: <Workflow className="h-5 w-5" />,
+        title: 'Automations Can Email',
+        description:
+          'Notify rules now email the people they notify, and the Send Email action works: pick the assignee, project members, managers or any address, with placeholders in the subject and body.',
+      },
+      {
+        icon: <Bell className="h-5 w-5" />,
+        title: 'A Proper Sender',
+        description:
+          'Emails carry a sender name, an optional reply-to address and automatic-message headers so out-of-office replies stay away, and sending happens in the background so pages never wait on the mail server.',
+      },
+    ],
+  },
+  {
+    version: '1.15.2',
+    date: 'November 9, 2026',
+    title: 'Edit in Place, Wiki over MCP',
+    highlights: [
+      {
+        icon: <Pencil className="h-5 w-5" />,
+        title: 'Edit Tasks Right in the Dialog',
+        description:
+          'Status, priority, assignee, estimate, hours and due date can be changed directly in the task dialog, without opening the Edit form. The dialog also has Copy link and Open full page.',
+      },
+      {
+        icon: <BookOpen className="h-5 w-5" />,
+        title: 'Full Wiki Control over MCP',
+        description:
+          'AI tools connected over MCP can now read and manage wiki spaces and pages: browse, search, create, edit, move, delete, view history and restore revisions, and manage space permissions, all with the key owner\u0027s own access.',
+      },
+      {
+        icon: <Filter className="h-5 w-5" />,
+        title: 'Epics in the Backlog',
+        description:
+          'Backlog rows and board cards now show each task\u0027s epic, and a new Epic filter narrows the list to one epic or to tasks with none. The filter is kept in the shareable link.',
+      },
+      {
+        icon: <Bell className="h-5 w-5" />,
+        title: 'A Clearer Notification Bell',
+        description:
+          'Unread notifications now look different from read ones, the remove and mark-read buttons stay visible next to long titles, and a new Clear all empties the list.',
+      },
+      {
+        icon: <Link2 className="h-5 w-5" />,
+        title: 'Shared Links Behave',
+        description:
+          'A shared backlog filter link keeps All cycles instead of jumping to the active cycle, and more shared links show their own preview card, including key-style task links, epics and the pitch and cycle sub-pages.',
+      },
+    ],
+  },
+  {
     version: '1.15.1',
     date: 'November 6, 2026',
     title: 'Easier Sign-In, Truer Dependencies',

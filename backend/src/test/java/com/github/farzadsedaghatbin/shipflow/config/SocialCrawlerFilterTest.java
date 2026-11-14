@@ -81,6 +81,9 @@ class SocialCrawlerFilterTest {
   @DisplayName("a trailing slash and a pitch/cycle sub-page still get the item's card")
   void trailingSlashesAndSubPages() throws Exception {
     assertForward("/backlog/42/", "/preview/task/42");
+    assertForward("/backlog/MARK-100", "/preview/task/100");
+    assertForward("/backlog/MARK-100/", "/preview/task/100");
+    assertForward("/tasks/ab2-7", "/preview/task/7");
     assertForward("/pitches/55/", "/preview/pitch/55");
     assertForward("/pitches/55/hill-chart", "/preview/pitch/55");
     assertForward("/pitches/55/test", "/preview/pitch/55");

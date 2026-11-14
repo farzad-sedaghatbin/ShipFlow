@@ -5,6 +5,8 @@ import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'sonner';
 import { taskService } from '../services/taskService';
 import { taskAttachmentService } from '../services/taskAttachmentService';
+import { cycleParamValue, parseCycleParam, type CycleSelection } from '../utils/backlogCycleParam';
+import { epicService } from '../services/epicService';
 import { cycleService } from '../services/cycleService';
 import { personService } from '../services/personService';
 import { teamService } from '../services/teamService';
@@ -14,6 +16,7 @@ import timerService from '../services/timerService';
 import {
   Task,
   Cycle,
+  Epic,
   Person,
   Pitch,
   Release,
@@ -34,9 +37,18 @@ const KANBAN_PAGE_SIZE = 500;
 // Query params owned by the backlog's filter state. Mirrored into the URL so a filtered
 // backlog can be shared/bookmarked; anything else in the query string (e.g. `addSubtask`)
 // is left alone.
-const BACKLOG_FILTER_KEYS = ['project', 'cycle', 'q', 'status', 'priority', 'assignee', 'creator', 'dep', 'category', 'tab', 'sortBy', 'sortOrder'];
+const BACKLOG_FILTER_KEYS = ['project', 'cycle', 'epic', 'q', 'status', 'priority', 'assignee', 'creator', 'dep', 'category', 'tab', 'sortBy', 'sortOrder'];
 const SORT_FIELDS = ['createdAt', 'priority', 'status', 'dueDate', 'title'] as const;
 type SortField = typeof SORT_FIELDS[number];
+export type EpicFilter = 'all' | 'none' | number;
+
+/** `?epic=` → filter: missing/garbage means no epic filtering. */
+export function parseEpicParam(value: string | null): EpicFilter {
+  if (value === 'none') return 'none';
+  const id = Number(value);
+  return Number.isInteger(id) && id > 0 ? id : 'all';
+}
+
 const toIds = (values: string[]) => values.map(Number).filter((n) => Number.isInteger(n) && n > 0);
 
 export function useBacklogPage() {
@@ -67,11 +79,7 @@ export function useBacklogPage() {
   const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
   // Cycle from a shared link (`?cycle=`). loadInitialData normally auto-selects the project's
   // first cycle; this makes it honor the link's cycle instead, once, then fall back to normal.
-  const urlCycleRef = useRef<number | 'all' | null>((() => {
-    const v = searchParams.get('cycle');
-    if (!v) return null;
-    return v === 'all' ? 'all' : (Number(v) || null);
-  })());
+  const urlCycleRef = useRef<CycleSelection | null>(parseCycleParam(searchParams.get('cycle')));
   // Category is now a filter, not primary navigation (tabs removed — see §C.1). 'all' means no
   // category filtering, matching the optional `category` param already accepted server-side.
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>(
@@ -98,6 +106,10 @@ export function useBacklogPage() {
     const v = searchParams.get('dep');
     return v === 'blocked' || v === 'blocking' ? v : 'all';
   });
+  // 'all' = no epic filtering, 'none' = tasks without an epic, otherwise one epic's id. Epics only
+  // exist for Kanban/Scrum tasks; the filter is applied client-side like the dependency filter.
+  const [epicFilter, setEpicFilter] = useState<EpicFilter>(() => parseEpicParam(searchParams.get('epic')));
+  const [epics, setEpics] = useState<Epic[]>([]);
   const [excludeMode] = useState(false);
   const [sortBy, setSortBy] = useState<SortField>(() => {
     const v = searchParams.get('sortBy');
@@ -134,6 +146,17 @@ export function useBacklogPage() {
 
   useEffect(() => { loadInitialData(); loadActiveTimer(); }, []);
 
+  // Epics exist only for Kanban/Scrum projects (tasks sit under them there), so the filter and its
+  // options are loaded just for those.
+  useEffect(() => {
+    if (!currentProject || currentProject.projectType === 'SHAPE_UP') { setEpics([]); return; }
+    let cancelled = false;
+    epicService.getByProject(currentProject.id)
+      .then((r) => { if (!cancelled) setEpics(r.data); })
+      .catch(() => { if (!cancelled) setEpics([]); });
+    return () => { cancelled = true; };
+  }, [currentProject?.id, currentProject?.projectType]);
+
   // Fix: run loadInitialData on every project switch (including "All Projects" where currentProject is null)
   useEffect(() => { loadInitialData(); }, [currentProject?.id, isKanbanProject]);
 
@@ -153,7 +176,7 @@ export function useBacklogPage() {
     selectedCycle, currentProject?.id, isKanbanProject, viewMode,
     categoryFilter, tabValue,
     statusFilter, priorityFilter, assigneeFilter, creatorFilter, releaseFilter, searchQuery,
-    excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter,
+    excludeMode, page, rowsPerPage, sortBy, sortOrder, dependencyFilter, epicFilter,
   ]);
 
   // Fix: clear bulk selection when visible task set changes
@@ -168,7 +191,7 @@ export function useBacklogPage() {
   // dependencyFilter entirely).
   useEffect(() => { setPage(0); }, [
     selectedCycle, tabValue, categoryFilter, statusFilter, priorityFilter, assigneeFilter, creatorFilter,
-    releaseFilter, searchQuery, dependencyFilter,
+    releaseFilter, searchQuery, dependencyFilter, epicFilter,
   ]);
 
   // ── Data loaders ──────────────────────────────────────────────────────────────
@@ -235,8 +258,14 @@ export function useBacklogPage() {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
     }
+    if (epicFilter === 'none') result = result.filter((t) => !t.epicId);
+    else if (epicFilter !== 'all') result = result.filter((t) => t.epicId === epicFilter);
     return applyDependencyFilter(result);
   };
+
+  // Filters that only run in the browser (never sent to the server), so the server's totalElements
+  // does not reflect them and the count falls back to the filtered array's length.
+  const clientSideFilterActive = dependencyFilter !== 'all' || epicFilter !== 'all';
 
   const loadTasks = async () => {
     // 'all' means no server-side category filtering — matches the optional `category` param
@@ -275,7 +304,7 @@ export function useBacklogPage() {
         // dependencyFilter is applied client-side only — fall back to the filtered length so
         // the count doesn't reflect the server's unfiltered total.
         setTotalElements(
-          dependencyFilter !== 'all'
+          clientSideFilterActive
             ? filtered.length
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
@@ -329,7 +358,7 @@ export function useBacklogPage() {
         // totalElements only reflects the true count when dependencyFilter is 'all' — otherwise
         // fall back to the filtered array length so "Page N of M" doesn't strand the user.
         setTotalElements(
-          dependencyFilter !== 'all'
+          clientSideFilterActive
             ? filteredTasks.length
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
@@ -346,7 +375,7 @@ export function useBacklogPage() {
         // totalElements only reflects the true count when dependencyFilter is 'all' — otherwise
         // fall back to the filtered array length so "Page N of M" doesn't strand the user.
         setTotalElements(
-          dependencyFilter !== 'all'
+          clientSideFilterActive
             ? filteredTasks.length
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
@@ -355,7 +384,7 @@ export function useBacklogPage() {
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         setTotalElements(
-          dependencyFilter !== 'all'
+          clientSideFilterActive
             ? filteredTasks.length
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
@@ -364,7 +393,7 @@ export function useBacklogPage() {
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         setTotalElements(
-          dependencyFilter !== 'all'
+          clientSideFilterActive
             ? filteredTasks.length
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
@@ -373,7 +402,7 @@ export function useBacklogPage() {
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         setTotalElements(
-          dependencyFilter !== 'all'
+          clientSideFilterActive
             ? filteredTasks.length
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
@@ -527,13 +556,15 @@ export function useBacklogPage() {
       const next = new URLSearchParams();
       prev.forEach((v, k) => { if (!BACKLOG_FILTER_KEYS.includes(k)) next.append(k, v); });
       if (currentProject?.id) next.set('project', String(currentProject.id));
-      if (!isKanbanProject && selectedCycle !== 'all') next.set('cycle', String(selectedCycle));
+      const cycleParam = cycleParamValue(selectedCycle, isKanbanProject);
+      if (cycleParam) next.set('cycle', cycleParam);
       if (searchQuery) next.set('q', searchQuery);
       statusFilter.forEach((v) => next.append('status', v));
       priorityFilter.forEach((v) => next.append('priority', v));
       assigneeFilter.forEach((v) => next.append('assignee', String(v)));
       creatorFilter.forEach((v) => next.append('creator', String(v)));
       if (dependencyFilter !== 'all') next.set('dep', dependencyFilter);
+      if (epicFilter !== 'all') next.set('epic', String(epicFilter));
       if (categoryFilter !== 'all') next.set('category', categoryFilter);
       if (tabValue === 'my') next.set('tab', 'my');
       if (sortBy !== 'createdAt') next.set('sortBy', sortBy);
@@ -542,7 +573,7 @@ export function useBacklogPage() {
     }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectsLoading, loading, currentProject?.id, isKanbanProject, selectedCycle, searchQuery, statusFilter, priorityFilter, assigneeFilter,
-    creatorFilter, dependencyFilter, categoryFilter, tabValue, sortBy, sortOrder]);
+    creatorFilter, dependencyFilter, epicFilter, categoryFilter, tabValue, sortBy, sortOrder]);
 
   const handleCopyShareLink = async () => {
     try {
@@ -690,7 +721,7 @@ export function useBacklogPage() {
   // Page reset is handled by the centralized effect above (all of these are in its deps).
   const handleClearFilters = () => {
     setStatusFilter([]); setPriorityFilter([]); setAssigneeFilter([]); setCreatorFilter([]);
-    setDependencyFilter('all'); setReleaseFilter(undefined); setSearchQuery('');
+    setDependencyFilter('all'); setEpicFilter('all'); setReleaseFilter(undefined); setSearchQuery('');
   };
 
   const handleExportCsv = async () => {
@@ -735,7 +766,7 @@ export function useBacklogPage() {
 
   const hasActiveFilters = statusFilter.length > 0 || priorityFilter.length > 0
     || assigneeFilter.length > 0 || creatorFilter.length > 0
-    || dependencyFilter !== 'all' || !!releaseFilter || !!searchQuery;
+    || dependencyFilter !== 'all' || epicFilter !== 'all' || !!releaseFilter || !!searchQuery;
 
   return {
     // State
@@ -754,6 +785,7 @@ export function useBacklogPage() {
     releaseFilter, setReleaseFilter,
     searchQuery, setSearchQuery,
     dependencyFilter, setDependencyFilter,
+    epicFilter, setEpicFilter, epics,
     sortBy, sortOrder,
     page, setPage,
     rowsPerPage, setRowsPerPage,

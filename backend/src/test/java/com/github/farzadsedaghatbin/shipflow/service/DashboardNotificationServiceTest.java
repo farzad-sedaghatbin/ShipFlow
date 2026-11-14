@@ -63,6 +63,9 @@ class DashboardNotificationServiceTest {
   private IEmailNotificationService emailService;
 
   @Mock
+  private com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService emailRecipients;
+
+  @Mock
   private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
   private DashboardNotificationService notificationService;
@@ -83,7 +86,7 @@ class DashboardNotificationServiceTest {
 
     notificationService = new DashboardNotificationService(notificationRepository, taskRepository,
         cycleRepository, pitchRepository, hillChartPointRepository, userRepository, wikiPageRepository,
-        List.of(slackProvider, teamsProvider), notificationSseManager, emailService, eventPublisher);
+        List.of(slackProvider, teamsProvider), notificationSseManager, emailService, eventPublisher, emailRecipients);
 
     testUser = User.builder().id(1L).username("testuser").build();
 
@@ -655,5 +658,72 @@ class DashboardNotificationServiceTest {
         && n.getEntityType().equals("BUG_REPORT")
         && n.getEntityId().equals(99L)
     ));
+  }
+
+  @Test
+  void clearAll_deletesThroughTheRepositoryForThatUserOnly() {
+    when(notificationRepository.deleteAllByUserId(7L)).thenReturn(3);
+
+    assertEquals(3, notificationService.clearAll(7L));
+
+    verify(notificationRepository).deleteAllByUserId(7L);
+    verify(notificationRepository, never()).deleteById(anyLong());
+  }
+
+  // ── email delivery ─────────────────────────────────────────────────────────────────────────
+
+  /** A user whose address the (mocked) recipient lookup resolves; a blank/placeholder address resolves to nothing. */
+  private User withPersonEmail(long id, String username, String email) {
+    Person person = Person.builder().id(id).name(username + " Name").email(email).build();
+    User user = User.builder().id(id).username(username).person(person).build();
+    person.setUser(user);
+    var resolved = com.github.farzadsedaghatbin.shipflow.service.email.EmailAddressResolver.of(user);
+    lenient().when(emailRecipients.forUserId(id)).thenReturn(resolved == null ? java.util.Optional.empty()
+        : java.util.Optional.of(new com.github.farzadsedaghatbin.shipflow.service.email.EmailRecipientService.Recipient(
+            resolved, username + " Name")));
+    return user;
+  }
+
+  @Test
+  void notifyTaskAssignment_emailsThePersonsAddress_whenTheUserHasNoEmailOfTheirOwn() {
+    User assignee = withPersonEmail(10L, "hooman", "hooman@goldorigins.com");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyTaskAssignment(testTask, assignee);
+
+    verify(emailService).sendTaskAssigned(eq("hooman@goldorigins.com"), eq("hooman Name"), eq("Test Task"),
+        eq("/backlog/1"));
+  }
+
+  @Test
+  void notifyTaskAssignment_doesNotEmailAPlaceholderAddress() {
+    User assignee = withPersonEmail(10L, "admin", "admin@shipflow.local");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyTaskAssignment(testTask, assignee);
+
+    verify(emailService, never()).sendTaskAssigned(any(), any(), any(), any());
+  }
+
+  @Test
+  void notifyCommentMention_emailsTheMentionedPerson() {
+    User author = withPersonEmail(2L, "bob", "bob@goldorigins.com");
+    User mentioned = withPersonEmail(3L, "alice", "alice@goldorigins.com");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyCommentMention(mentioned, author, "TASK", 42L, "Hey @alice");
+
+    verify(emailService).sendMentionedInComment(eq("alice@goldorigins.com"), eq("alice Name"), eq("task"), any());
+  }
+
+  @Test
+  void notifyAutomationTriggered_emailsTheRecipientAsWellAsTheInAppBell() {
+    User recipient = withPersonEmail(10L, "hooman", "hooman@goldorigins.com");
+    when(notificationRepository.save(any(DashboardNotification.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    notificationService.notifyAutomationTriggered(recipient, "Hill chart moved", "Now at 60%", testTask);
+
+    verify(emailService).sendAutomationEmail(eq("hooman@goldorigins.com"), eq("hooman Name"),
+        eq("Hill chart moved"), eq("Now at 60%"), eq("/backlog/1"));
   }
 }

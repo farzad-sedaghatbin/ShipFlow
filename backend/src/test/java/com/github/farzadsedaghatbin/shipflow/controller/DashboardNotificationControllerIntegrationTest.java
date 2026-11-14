@@ -126,6 +126,19 @@ class DashboardNotificationControllerIntegrationTest {
         .andExpect(jsonPath("$").isEmpty());
   }
 
+  @Test
+  @WithMockUser(username = "testuser", roles = "DEVELOPER")
+  void clearAll_ShouldRemoveEveryNotificationOfTheUser() throws Exception {
+    notificationRepository.save(DashboardNotification.builder().user(testUser).type("BLOCKED_TASK")
+        .title("Second Notification").severity("ERROR").isRead(true).build());
+
+    mockMvc.perform(delete("/api/dashboard/notifications")).andExpect(status().isNoContent());
+
+    mockMvc.perform(get("/api/dashboard/notifications")).andExpect(status().isOk())
+        .andExpect(jsonPath("$").isEmpty());
+    mockMvc.perform(get("/api/dashboard/notifications/unread/count")).andExpect(jsonPath("$.count").value(0));
+  }
+
   // TODO: Fix this test - requires proper admin role configuration
   // @Test
   // @WithMockUser(username = "testuser", roles = "ADMIN")

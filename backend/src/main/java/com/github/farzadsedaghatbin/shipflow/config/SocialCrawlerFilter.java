@@ -93,7 +93,10 @@ public class SocialCrawlerFilter extends OncePerRequestFilter {
       "pinterest"
   );
 
-  private static final Pattern TASK_PATH   = Pattern.compile("^/(?:backlog|tasks)/(\\d+)$");
+  // The task dialog's "Copy link" now produces key-style links (/backlog/MARK-100); the page accepts
+  // both, and the number after the last dash is the task id.
+  private static final Pattern TASK_PATH   =
+      Pattern.compile("^/(?:backlog|tasks)/(?:[A-Za-z][A-Za-z0-9_]*-)?(\\d+)$");
   // The bug page settles on the bug key (/qa/bug-reports/BUG-150) — that is the URL people copy —
   // while older links and notifications still carry the numeric id.
   private static final Pattern BUG_PATH    = Pattern.compile("^/(?:qa/bug-reports|bugs)/([A-Za-z0-9-]{1,64})$");

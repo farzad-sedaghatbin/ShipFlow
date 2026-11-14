@@ -48,6 +48,21 @@ export const organizationSettingsService = {
   sendTestEmail: () => api.post<{ message?: string; error?: string }>('/admin/settings/test-email'),
 
   /**
+   * How email is configured on the server (from its environment; never the password).
+   */
+  getEmailStatus: () =>
+    api.get<{
+      configured: boolean;
+      host: string | null;
+      port: number | null;
+      username: string | null;
+      from: string | null;
+      replyTo: string | null;
+      baseUrl: string | null;
+      starttlsRequired: boolean;
+    }>('/admin/settings/email-status'),
+
+  /**
    * Generate (or regenerate) the SCIM 2.0 bearer token. Returns it once — store immediately.
    */
   generateScimToken: () => api.post<{ token: string }>('/admin/settings/scim/generate-token'),
