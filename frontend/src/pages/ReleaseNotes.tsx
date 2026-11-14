@@ -68,6 +68,7 @@ import {
   Puzzle,
   KeyRound,
   CornerDownRight,
+  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -108,6 +109,13 @@ const releases: Release[] = [
         title: 'Guest Access',
         description: 'Invite an external stakeholder into a single project without giving them the rest of the workspace.',
       },
+    ],
+  },
+  {
+    version: '1.15.5',
+    date: 'November 14, 2026',
+    title: 'Plugin Pages, Convert to Subtask',
+    highlights: [
       {
         icon: <Puzzle className="h-5 w-5" />,
         title: 'Plugin Menu Items & Pages',
@@ -119,6 +127,12 @@ const releases: Release[] = [
         title: 'Convert to Subtask',
         description:
           'Turn any task into a subtask of another (or pull an existing task in as a subtask) from a quick search-and-preview picker, Jira-style. It shows exactly what will change, and one click on Undo puts everything back. Subtasks stay one level deep, so a task that already has subtasks cannot become one.',
+      },
+      {
+        icon: <AlertTriangle className="h-5 w-5" />,
+        title: 'Cycle Delete Warns First',
+        description:
+          'Deleting a cycle permanently removes its tasks, pitches and retrospectives. The delete dialog now shows the counts first, and a cycle with anything in it asks you to type its name before the Delete button turns on.',
       },
     ],
   },
