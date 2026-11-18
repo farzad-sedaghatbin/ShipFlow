@@ -127,6 +127,9 @@ export default function BacklogPage() {
           epics={bp.epics}
           epicFilter={bp.epicFilter}
           onEpicFilterChange={bp.setEpicFilter}
+          releases={bp.releases}
+          releaseFilter={bp.releaseFilter}
+          onReleaseFilterChange={bp.setReleaseFilter}
           searchQuery={bp.searchQuery}
           onSearchQueryChange={bp.setSearchQuery}
           persons={bp.persons}

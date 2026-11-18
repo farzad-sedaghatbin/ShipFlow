@@ -3583,6 +3583,8 @@
     "filters": {
       "epic": "Epic",
       "allEpics": "All epics",
+      "release": "Release",
+      "allReleases": "All releases",
       "noEpic": "No epic",
       "search": "Search",
       "searchPlaceholder": "Search backlog items...",
@@ -8361,7 +8363,8 @@
   "attachments": {
     "title": "Attachments",
     "dropHint": "Drag & drop a file here, or click to browse",
-    "allowedTypes": "Images, PDF, DOCX, DOC, TXT, MD, JSON, ZIP — max 10 MB",
+    "allowedTypes": "Images, PDF, DOCX, DOC, XLSX, XLS, CSV, HTML, TXT, MD, JSON, ZIP — max 10 MB",
+    "preview": "Preview",
     "uploaded": "File uploaded successfully",
     "uploadError": "Failed to upload file",
     "deleted": "Attachment deleted",

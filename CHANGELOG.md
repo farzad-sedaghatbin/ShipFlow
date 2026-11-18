@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Backlog/roadmap/attachment feedback batch.** Backlog gains a **Release** filter (also in shared links); the **No epic** filter no longer lists subtasks of epic'd tasks (new `parentEpicId` on `TaskDTO`); Roadmap epic and initiative bars/dots now follow the legend (status derived from progress, custom initiative colour dropped); HTML, CSV, XLS and XLSX can be attached (type also inferred from the extension when the browser sends `application/octet-stream`); image attachments open in a preview dialog instead of downloading.
+- **Creator filter returned nothing for users without a Person profile.** `createTask` silently saved the task with no creator when the account had no linked `Person` (found on production: 43 Kixy tasks). It now creates (or reuses, by e-mail) and links a `Person` first, so the creator is always recorded. Tasks already saved without a creator cannot be recovered.
+
 ## [1.15.6] - 2026-11-14
 
 ### Fixed
