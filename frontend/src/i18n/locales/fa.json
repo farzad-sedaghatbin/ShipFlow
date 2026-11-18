@@ -203,6 +203,8 @@
     "filters": {
       "epic": "اپیک",
       "allEpics": "همه اپیک‌ها",
+      "release": "ریلیز",
+      "allReleases": "همه ریلیزها",
       "noEpic": "بدون اپیک",
       "all": "همه",
       "allCategory": "همه دسته‌بندی‌ها",
@@ -7097,7 +7099,8 @@
   "attachments": {
     "title": "پیوست‌ها",
     "dropHint": "فایل را اینجا بکشید یا کلیک کنید",
-    "allowedTypes": "تصاویر، PDF، DOCX، DOC، TXT، MD، JSON، ZIP — حداکثر ۱۰ مگابایت",
+    "allowedTypes": "تصاویر، PDF، DOCX، DOC، XLSX، XLS، CSV، HTML، TXT، MD، JSON، ZIP — حداکثر ۱۰ مگابایت",
+    "preview": "پیش‌نمایش",
     "uploaded": "فایل با موفقیت بارگذاری شد",
     "uploadError": "بارگذاری فایل ناموفق بود",
     "deleted": "پیوست حذف شد",

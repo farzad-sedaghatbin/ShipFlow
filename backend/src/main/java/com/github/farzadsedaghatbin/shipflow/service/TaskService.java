@@ -367,10 +367,9 @@ public class TaskService {
 
     // Set created by current user's person
     try {
-      Person currentPerson = getCurrentUserPerson();
-      task.setCreatedBy(currentPerson);
+      task.setCreatedBy(ensureCurrentUserPerson());
     } catch (Exception e) {
-      // If user is not linked to a person, allow task creation without createdBy
+      log.warn("Task created without createdBy: {}", e.getMessage());
     }
 
     Task saved = taskRepository.save(task);
@@ -1324,6 +1323,27 @@ public class TaskService {
     return user.getPerson();
   }
 
+  /**
+   * Returns the caller's Person, creating and linking one when the account has none. Without
+   * this a task created by such a user was stored with no creator at all and could never be
+   * found by the Creator filter.
+   */
+  private Person ensureCurrentUserPerson() {
+    String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    User user = userRepository.findByUsernameWithPerson(username)
+        .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+    if (user.getPerson() != null) {
+      return user.getPerson();
+    }
+    Person person = (user.getEmail() == null ? java.util.Optional.<Person>empty()
+        : personRepository.findByEmail(user.getEmail()))
+        .orElseGet(() -> personRepository.save(Person.builder().name(user.getUsername())
+            .email(user.getEmail()).isActive(true).build()));
+    user.setPerson(person);
+    userRepository.save(user);
+    return person;
+  }
+
   private User getCurrentUser() {
     String username = SecurityContextHolder.getContext().getAuthentication().getName();
     return userRepository.findByUsername(username)
@@ -1645,6 +1665,8 @@ public class TaskService {
         .createdByName(task.getCreatedBy() != null ? task.getCreatedBy().getName() : null)
         .parentTaskId(task.getParentTask() != null ? task.getParentTask().getId() : null)
         .parentTaskTitle(task.getParentTask() != null ? task.getParentTask().getTitle() : null)
+        .parentEpicId(task.getParentTask() != null && task.getParentTask().getEpic() != null
+            ? task.getParentTask().getEpic().getId() : null)
         .dueDate(task.getDueDate()).completedAt(task.getCompletedAt()).createdAt(task.getCreatedAt())
         .updatedAt(task.getUpdatedAt()).tags(task.getTags()).children(children).blockingTasks(blocking)
         .blockedByTasks(blockedBy).relatedTasks(related).blockedByCount(blockedBy.size()).isBlocked(!blockedBy.isEmpty())

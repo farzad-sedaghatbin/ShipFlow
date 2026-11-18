@@ -878,6 +878,7 @@ export interface Task {
   // Epic link (Kanban/Scrum projects)
   epicId?: number | null;
   epicName?: string | null;
+  parentEpicId?: number | null;
   
   // Auto-created scope for root tasks linked to pitch (Scope-Task Bridge)
   autoCreatedScopeId?: number;

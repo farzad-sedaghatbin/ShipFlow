@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -12,11 +12,13 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TaskAttachment } from '../types';
 import { taskAttachmentService } from '../services/taskAttachmentService';
 import { useAuth } from '../contexts';
@@ -28,17 +30,24 @@ export const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword',
   'text/plain', 'text/markdown',
+  'text/html', 'text/csv',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/json',
   'application/zip', 'application/x-zip-compressed',
 ];
 
+/** Extensions accepted even when the browser reports no / a generic MIME type (common for .xlsx, .html, .csv). */
+const ALLOWED_EXTENSIONS = ['html', 'htm', 'csv', 'xls', 'xlsx', 'json', 'zip', 'md', 'txt', 'pdf', 'doc', 'docx'];
+
 /** Accept list for a file input: the allowed MIME types plus extensions browsers often leave untyped. */
-export const ATTACHMENT_ACCEPT = [...ALLOWED_TYPES, '.json', '.zip'].join(',');
+export const ATTACHMENT_ACCEPT = [...ALLOWED_TYPES, ...ALLOWED_EXTENSIONS.map((e) => `.${e}`)].join(',');
 
 /** Returns the i18n key of the reason a file can't be attached, or null when it's fine. */
 export function attachmentRejection(file: File): string | null {
   if (file.size > MAX_FILE_SIZE) return 'attachments.tooLarge';
-  if (!ALLOWED_TYPES.includes(file.type)) return 'attachments.unsupportedType';
+  const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : '';
+  if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) return 'attachments.unsupportedType';
   return null;
 }
 
@@ -58,6 +67,46 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** Images the browser can show inline. They render through <img> from a blob, never as a document. */
+export const isPreviewable = (contentType: string) => contentType.startsWith('image/');
+
+function ImagePreview({ taskId, attachment, onClose }: { taskId: number; attachment: TaskAttachment | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!attachment) return;
+    let url: string | null = null;
+    let cancelled = false;
+    setSrc(null);
+    setFailed(false);
+    taskAttachmentService.fetchBlob(taskId, attachment.id)
+      .then((blob) => { if (cancelled) return; url = window.URL.createObjectURL(blob); setSrc(url); })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; if (url) window.URL.revokeObjectURL(url); };
+  }, [taskId, attachment]);
+
+  return (
+    <Dialog open={!!attachment} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle className="truncate">{attachment?.fileName}</DialogTitle>
+        </DialogHeader>
+        <div className="flex min-h-[200px] items-center justify-center">
+          {failed ? (
+            <p className="text-sm text-destructive">{t('attachments.downloadError')}</p>
+          ) : src ? (
+            <img src={src} alt={attachment?.fileName} className="max-h-[75vh] max-w-full object-contain" />
+          ) : (
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 interface Props {
   taskId: number;
 }
@@ -70,6 +119,7 @@ export default function TaskAttachments({ taskId }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [previewing, setPreviewing] = useState<TaskAttachment | null>(null);
 
   const queryKey = ['task-attachments', taskId];
 
@@ -216,13 +266,34 @@ export default function TaskAttachments({ taskId }: Props) {
                 <li key={a.id} className="flex items-center gap-3 px-3 py-2.5">
                   {fileIcon(a.contentType)}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{a.fileName}</p>
+                    {isPreviewable(a.contentType) ? (
+                      <button
+                        type="button"
+                        className="block max-w-full truncate text-left text-sm font-medium hover:underline"
+                        onClick={() => setPreviewing(a)}
+                      >
+                        {a.fileName}
+                      </button>
+                    ) : (
+                      <p className="truncate text-sm font-medium">{a.fileName}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {formatBytes(a.fileSize)}
                       {a.uploadedByUsername && ` · ${a.uploadedByUsername}`}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    {isPreviewable(a.contentType) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title={t('attachments.preview')}
+                        onClick={() => setPreviewing(a)}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -255,6 +326,7 @@ export default function TaskAttachments({ taskId }: Props) {
           )}
         </CardContent>
       )}
+      <ImagePreview taskId={taskId} attachment={previewing} onClose={() => setPreviewing(null)} />
     </Card>
   );
 }

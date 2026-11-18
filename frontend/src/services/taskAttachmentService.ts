@@ -27,6 +27,15 @@ export const taskAttachmentService = {
     });
   },
 
+  /** Fetch an attachment's bytes (authenticated) so the UI can preview it without saving. */
+  fetchBlob: async (taskId: number, attachmentId: number): Promise<Blob> => {
+    const response = await api.get<Blob>(
+      `/tasks/${taskId}/attachments/${attachmentId}/download`,
+      { responseType: 'blob' }
+    );
+    return response.data;
+  },
+
   /**
    * Download an attachment via the authenticated axios client and trigger a
    * browser save. A plain anchor href cannot be used because the JWT lives in

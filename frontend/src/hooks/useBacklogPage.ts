@@ -37,7 +37,7 @@ const KANBAN_PAGE_SIZE = 500;
 // Query params owned by the backlog's filter state. Mirrored into the URL so a filtered
 // backlog can be shared/bookmarked; anything else in the query string (e.g. `addSubtask`)
 // is left alone.
-const BACKLOG_FILTER_KEYS = ['project', 'cycle', 'epic', 'q', 'status', 'priority', 'assignee', 'creator', 'dep', 'category', 'tab', 'sortBy', 'sortOrder'];
+const BACKLOG_FILTER_KEYS = ['project', 'cycle', 'epic', 'q', 'status', 'priority', 'assignee', 'creator', 'release', 'dep', 'category', 'tab', 'sortBy', 'sortOrder'];
 const SORT_FIELDS = ['createdAt', 'priority', 'status', 'dueDate', 'title'] as const;
 type SortField = typeof SORT_FIELDS[number];
 export type EpicFilter = 'all' | 'none' | number;
@@ -100,7 +100,7 @@ export function useBacklogPage() {
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority[]>(() => searchParams.getAll('priority') as TaskPriority[]);
   const [assigneeFilter, setAssigneeFilter] = useState<number[]>(() => toIds(searchParams.getAll('assignee')));
   const [creatorFilter, setCreatorFilter] = useState<number[]>(() => toIds(searchParams.getAll('creator')));
-  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(undefined);
+  const [releaseFilter, setReleaseFilter] = useState<number | undefined>(() => toIds([searchParams.get('release') ?? ''])[0]);
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') ?? '');
   const [dependencyFilter, setDependencyFilter] = useState<'all' | 'blocked' | 'blocking'>(() => {
     const v = searchParams.get('dep');
@@ -258,14 +258,16 @@ export function useBacklogPage() {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
     }
-    if (epicFilter === 'none') result = result.filter((t) => !t.epicId);
+    // A subtask of an epic'd task inherits that epic on the board, so it is not "no epic".
+    if (releaseFilter) result = result.filter((t) => t.targetReleaseId === releaseFilter);
+    if (epicFilter === 'none') result = result.filter((t) => !t.epicId && !t.parentEpicId);
     else if (epicFilter !== 'all') result = result.filter((t) => t.epicId === epicFilter);
     return applyDependencyFilter(result);
   };
 
   // Filters that only run in the browser (never sent to the server), so the server's totalElements
   // does not reflect them and the count falls back to the filtered array's length.
-  const clientSideFilterActive = dependencyFilter !== 'all' || epicFilter !== 'all';
+  const clientSideFilterActive = dependencyFilter !== 'all' || epicFilter !== 'all' || !!releaseFilter;
 
   const loadTasks = async () => {
     // 'all' means no server-side category filtering — matches the optional `category` param
@@ -565,6 +567,7 @@ export function useBacklogPage() {
       creatorFilter.forEach((v) => next.append('creator', String(v)));
       if (dependencyFilter !== 'all') next.set('dep', dependencyFilter);
       if (epicFilter !== 'all') next.set('epic', String(epicFilter));
+      if (releaseFilter) next.set('release', String(releaseFilter));
       if (categoryFilter !== 'all') next.set('category', categoryFilter);
       if (tabValue === 'my') next.set('tab', 'my');
       if (sortBy !== 'createdAt') next.set('sortBy', sortBy);
@@ -573,7 +576,7 @@ export function useBacklogPage() {
     }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectsLoading, loading, currentProject?.id, isKanbanProject, selectedCycle, searchQuery, statusFilter, priorityFilter, assigneeFilter,
-    creatorFilter, dependencyFilter, epicFilter, categoryFilter, tabValue, sortBy, sortOrder]);
+    creatorFilter, dependencyFilter, epicFilter, releaseFilter, categoryFilter, tabValue, sortBy, sortOrder]);
 
   const handleCopyShareLink = async () => {
     try {

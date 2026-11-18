@@ -188,7 +188,7 @@ public class TaskAttachmentService {
 
   private String resolveContentType(MultipartFile file) {
     String ct = file.getContentType();
-    if (ct != null && !ct.isBlank()) return ct;
+    if (ct != null && !ct.isBlank() && !"application/octet-stream".equals(ct)) return ct;
     // Fall back to extension-based detection
     String name = file.getOriginalFilename();
     if (name != null) {
@@ -199,6 +199,10 @@ public class TaskAttachmentService {
         case "doc" -> "application/msword";
         case "txt" -> "text/plain";
         case "md" -> "text/markdown";
+        case "html", "htm" -> "text/html";
+        case "csv" -> "text/csv";
+        case "xls" -> "application/vnd.ms-excel";
+        case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
         case "jpg", "jpeg" -> "image/jpeg";
         case "png" -> "image/png";
         case "gif" -> "image/gif";

@@ -19,7 +19,7 @@ import {
 } from '../ui/select';
 import { TabsList, TabsTrigger } from '../ui/tabs';
 import { MultiCombobox } from '../ui/multi-combobox';
-import { TaskStatus, TaskPriority, TaskCategory, Person, Epic } from '../../types';
+import { TaskStatus, TaskPriority, TaskCategory, Person, Epic, Release } from '../../types';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '../../constants/backlogConstants';
 
 export interface BacklogFiltersProps {
@@ -37,6 +37,10 @@ export interface BacklogFiltersProps {
   epics?: Epic[];
   epicFilter?: 'all' | 'none' | number;
   onEpicFilterChange?: (filter: 'all' | 'none' | number) => void;
+  // Target releases of the project; with none loaded the filter is not shown.
+  releases?: Release[];
+  releaseFilter?: number;
+  onReleaseFilterChange?: (releaseId: number | undefined) => void;
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
   persons: Person[];
@@ -61,6 +65,9 @@ export function BacklogFilters({
   epics = [],
   epicFilter = 'all',
   onEpicFilterChange,
+  releases = [],
+  releaseFilter,
+  onReleaseFilterChange,
   searchQuery,
   onSearchQueryChange,
   persons,
@@ -179,6 +186,24 @@ export function BacklogFilters({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Release Filter — tasks targeted at a given release. */}
+        {releases.length > 0 && onReleaseFilterChange && (
+          <Select
+            value={releaseFilter ? String(releaseFilter) : 'all'}
+            onValueChange={(v) => onReleaseFilterChange(v === 'all' ? undefined : Number(v))}
+          >
+            <SelectTrigger className="w-auto h-9 min-w-[140px] max-w-[220px]" aria-label={t('backlogPage.filters.release')}>
+              <SelectValue placeholder={t('backlogPage.filters.release')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('backlogPage.filters.allReleases')}</SelectItem>
+              {releases.map((release) => (
+                <SelectItem key={release.id} value={String(release.id)}>{release.version ? `${release.version} · ${release.name}` : release.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Epic Filter — which epic a task rolls up to (Kanban/Scrum). */}
         {epics.length > 0 && onEpicFilterChange && (

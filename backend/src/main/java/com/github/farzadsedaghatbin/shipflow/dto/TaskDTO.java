@@ -40,6 +40,8 @@ public class TaskDTO {
   // Epic relationship (Kanban/Scrum roadmap)
   private Long epicId;
   private String epicName;
+  /** Epic of this task's parent, so a subtask can be told apart from a truly epic-less task. */
+  private Long parentEpicId;
 
   // Scope relationship
   private Long scopeId;

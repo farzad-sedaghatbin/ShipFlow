@@ -97,6 +97,18 @@ const getStatusCssColor = (status: string): string => {
   return STATUS_COLORS[status] || '#94a3b8';
 };
 
+/**
+ * Epics and initiatives keep a manually-set status that rarely changes, so their bars sat on
+ * "Planned" even after their tasks moved. The colour follows the work: finished work reads as
+ * Completed, started work as In progress. On hold / cancelled / released stay as set.
+ */
+const getEffectiveStatus = (status: string, progress?: number): string => {
+  if (['ON_HOLD', 'CANCELLED', 'RELEASED'].includes(status)) return status;
+  if ((progress ?? 0) >= 100) return 'COMPLETED';
+  if ((progress ?? 0) > 0 && ['DRAFT', 'PLANNED', 'PLANNING'].includes(status)) return 'IN_PROGRESS';
+  return status;
+};
+
 const getRiskBadgeVariant = (risk: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
   switch (risk) {
     case 'LOW': return 'secondary';
@@ -398,7 +410,7 @@ function RoadmapEpicBlock({
             ) : (
               <span className="w-3.5 shrink-0" />
             )}
-            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(epic.status) }} />
+            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getStatusCssColor(getEffectiveStatus(epic.status, epic.progress)) }} />
             <Link to={`/epics/${epic.id}`} className="text-sm hover:underline truncate" onClick={(e) => e.stopPropagation()}>
               {epic.name}
             </Link>
@@ -430,7 +442,7 @@ function RoadmapEpicBlock({
             endDate={epic.endDate}
             timelineStart={timelineStart}
             timelineEnd={timelineEnd}
-            status={epic.status}
+            status={getEffectiveStatus(epic.status, epic.progress)}
             progress={epic.progress}
             onDatesChange={(s, e) => onDatesChange(epic.id, s, e)}
           />
@@ -1020,7 +1032,7 @@ export default function RoadmapPage() {
                           )}
                           <div
                             className="w-3 h-3 rounded-full shrink-0"
-                            style={{ backgroundColor: initiative.color || getStatusCssColor(initiative.status) }}
+                            style={{ backgroundColor: getStatusCssColor(getEffectiveStatus(initiative.status, initiative.progress)) }}
                           />
                           <Link
                             to={`/initiatives/${initiative.id}`}
@@ -1045,8 +1057,7 @@ export default function RoadmapPage() {
                           endDate={initiative.endDate}
                           timelineStart={timelineStart}
                           timelineEnd={timelineEnd}
-                          status={initiative.status}
-                          color={initiative.color}
+                          status={getEffectiveStatus(initiative.status, initiative.progress)}
                           progress={initiative.progress}
                           onDatesChange={(s, e) => handleInitiativeDatesChange(initiative.id, s, e)}
                         />

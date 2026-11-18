@@ -40,6 +40,10 @@ public class ObjectStorageService {
           "application/msword",
           "text/plain",
           "text/markdown",
+          "text/html",
+          "text/csv",
+          "application/vnd.ms-excel",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "application/json",
           "application/zip",
           "application/x-zip-compressed");
