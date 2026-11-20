@@ -112,6 +112,31 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.15.7',
+    date: 'November 20, 2026',
+    title: 'Backlog Fixes and Filters',
+    highlights: [
+      {
+        icon: <Kanban className="h-5 w-5" />,
+        title: 'Backlog Calendar Shows Everything',
+        description:
+          'The Backlog calendar, Gantt and board views loaded only the first 10 tasks outside a single Kanban project, so the calendar could look empty. They now load up to 500 tasks, like the project board.',
+      },
+      {
+        icon: <Filter className="h-5 w-5" />,
+        title: 'Release Filter and a Cleaner Epic Filter',
+        description:
+          'Backlog gains a Release filter (also kept in shared links), and the No epic filter no longer lists subtasks whose parent task already has an epic. Roadmap epic and initiative bars now follow the legend colours.',
+      },
+      {
+        icon: <Paperclip className="h-5 w-5" />,
+        title: 'More Attachment Types, Image Preview',
+        description:
+          'HTML, CSV and Excel files can now be attached, and image attachments open in a preview instead of downloading. Every new task now records its creator, so the Creator filter no longer comes back empty.',
+      },
+    ],
+  },
+  {
     version: '1.15.6',
     date: 'November 14, 2026',
     title: 'Plugins Load Again',
