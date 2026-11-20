@@ -30,9 +30,8 @@ import {
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useProject, useAuth } from '../contexts';
 import { ViewMode } from '../components/backlog';
+import { KANBAN_PAGE_SIZE, taskRequestPaging } from './backlogPaging';
 
-// Large page size for Kanban — fetches effectively all tasks for the board
-const KANBAN_PAGE_SIZE = 500;
 
 // Query params owned by the backlog's filter state. Mirrored into the URL so a filtered
 // backlog can be shared/bookmarked; anything else in the query string (e.g. `addSubtask`)
@@ -316,6 +315,8 @@ export function useBacklogPage() {
     }
 
     if (!selectedCycle) { setTasks([]); setTotalElements(0); setTasksLoading(false); return; }
+    // Board/Gantt/calendar views have no pager, so they load the whole set instead of the list's page.
+    const { page: reqPage, size: reqSize } = taskRequestPaging(viewMode, page, rowsPerPage);
     setTasksLoading(true);
     const timeout = setTimeout(() => setTasksLoading(false), 10000);
     try {
@@ -348,10 +349,10 @@ export function useBacklogPage() {
         const assignees = assigneeFilter.length > 0 ? assigneeFilter : undefined;
         const creators = creatorFilter.length > 0 ? creatorFilter : undefined;
         if (selectedCycle === 'all') {
-          response = await taskService.getMy(page, rowsPerPage, sortBy, sortOrder, categoryParam,
+          response = await taskService.getMy(reqPage, reqSize, sortBy, sortOrder, categoryParam,
             statuses, priorities, assignees, creators, excludeMode);
         } else {
-          response = await taskService.getMyByCycle(selectedCycle, page, rowsPerPage, sortBy, sortOrder, categoryParam,
+          response = await taskService.getMyByCycle(selectedCycle, reqPage, reqSize, sortBy, sortOrder, categoryParam,
             statuses, priorities, assignees, creators, excludeMode);
         }
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
@@ -365,7 +366,7 @@ export function useBacklogPage() {
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
       } else if (selectedCycle === 'all') {
-        response = await taskService.getAll(page, rowsPerPage, sortBy, sortOrder, categoryParam,
+        response = await taskService.getAll(reqPage, reqSize, sortBy, sortOrder, categoryParam,
           statusFilter.length > 0 ? statusFilter : undefined,
           priorityFilter.length > 0 ? priorityFilter : undefined,
           assigneeFilter.length > 0 ? assigneeFilter : undefined,
@@ -382,7 +383,7 @@ export function useBacklogPage() {
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
       } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || creatorFilter.length > 0) {
-        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, creatorFilter.length > 0 ? creatorFilter : undefined, categoryParam, excludeMode, page, rowsPerPage, sortBy, sortOrder);
+        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, creatorFilter.length > 0 ? creatorFilter : undefined, categoryParam, excludeMode, reqPage, reqSize, sortBy, sortOrder);
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         setTotalElements(
@@ -391,7 +392,7 @@ export function useBacklogPage() {
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
       } else if (categoryParam) {
-        response = await taskService.getByCycleIdAndCategory(selectedCycle, categoryParam, page, rowsPerPage, sortBy, sortOrder);
+        response = await taskService.getByCycleIdAndCategory(selectedCycle, categoryParam, reqPage, reqSize, sortBy, sortOrder);
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         setTotalElements(
@@ -400,7 +401,7 @@ export function useBacklogPage() {
             : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
         );
       } else {
-        response = await taskService.getByCycleId(selectedCycle, page, rowsPerPage, sortBy, sortOrder);
+        response = await taskService.getByCycleId(selectedCycle, reqPage, reqSize, sortBy, sortOrder);
         const filteredTasks = applyCommonFilters(response?.data?.content || []);
         setTasks(filteredTasks);
         setTotalElements(
