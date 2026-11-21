@@ -16,6 +16,7 @@ import {
   Eye,
   PenLine,
   Strikethrough,
+  Table,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Markdown } from './ui/markdown';
@@ -113,6 +114,11 @@ type ToolbarItem =
   | { type: 'sep' }
   | { type: 'btn'; icon: React.FC<{ className?: string }>; label: string; shortcut?: string; action: FormatAction };
 
+// GitHub-flavoured Markdown table; rendered by <Markdown> (remark-gfm). Blank lines around it are
+// required, otherwise the table glues onto the preceding paragraph and is not recognised.
+const TABLE_TEMPLATE =
+  '\n\n| Column 1 | Column 2 | Column 3 |\n| --- | --- | --- |\n|  |  |  |\n|  |  |  |\n\n';
+
 const TOOLBAR: ToolbarItem[] = [
   { type: 'btn', icon: Bold,          label: 'Bold',           shortcut: 'Ctrl+B', action: { kind: 'inline', prefix: '**', suffix: '**' } },
   { type: 'btn', icon: Italic,        label: 'Italic',         shortcut: 'Ctrl+I', action: { kind: 'inline', prefix: '_',  suffix: '_'  } },
@@ -130,6 +136,7 @@ const TOOLBAR: ToolbarItem[] = [
   { type: 'btn', icon: Code2,         label: 'Code block',                         action: { kind: 'inline', prefix: '```\n', suffix: '\n```' } },
   { type: 'sep' },
   { type: 'btn', icon: Link,          label: 'Insert link',    shortcut: 'Ctrl+K', action: { kind: 'link'   } },
+  { type: 'btn', icon: Table,         label: 'Insert table',                       action: { kind: 'insert', text: TABLE_TEMPLATE } },
   { type: 'btn', icon: Minus,         label: 'Horizontal rule',                    action: { kind: 'insert', text: '\n\n---\n\n' } },
 ];
 

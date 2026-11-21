@@ -4,12 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Insert a table in descriptions.** The Markdown editor (task, bug, pitch, epic descriptions) rendered tables but gave no way to create one; a new **Insert table** toolbar button adds a 3-column GFM table template at the cursor. Test: `MarkdownEditor.test.tsx`.
+- **MCP now has full control of test cases.** Over MCP you could read test cases and record runs, but not create, edit or delete a test case. New write tools `create_test_case`, `create_test_cases` (atomic batch), `update_test_case` (any field, including lifecycle status) and `delete_test_case` (soft delete) reuse `TestCaseService`, so validation, keys and history match the UI. `get_test_cases` also lists a whole project (`projectId`) and takes a `status` filter. Project-restricted API keys are confined: links must be inside the key's project, an unanchored test case is pinned to it, and `scopeId`/`teamId` (which cannot be tied to a project) are refused. Tests: `TestCaseMcpToolsTest`, `McpProjectScopeGuardTest`. Not agent-proposable (not added to `AgentActionCatalog`).
+
+### Fixed
+- **Backlog/roadmap/attachment feedback batch.** Backlog gains a **Release** filter (also in shared links); the **No epic** filter no longer lists subtasks of epic'd tasks (new `parentEpicId` on `TaskDTO`); Roadmap epic and initiative bars/dots now follow the legend (status derived from progress, custom initiative colour dropped); HTML, CSV, XLS and XLSX can be attached (type also inferred from the extension when the browser sends `application/octet-stream`); image attachments open in a preview dialog instead of downloading.
+- **Creator filter returned nothing for users without a Person profile.** `createTask` silently saved the task with no creator when the account had no linked `Person` (found on production: 43 Kixy tasks). It now creates (or reuses, by e-mail) and links a `Person` first, so the creator is always recorded. Tasks already saved without a creator cannot be recovered.
+
 ## [1.15.7] - 2026-11-20
 
 ### Fixed
 - **The Backlog calendar (and Gantt and board views) showed only 10 tasks outside a Kanban project.** The list view's pager (10 rows per page) was also what these views asked the server for, and none of them has a pager, so in **All Projects**, in a Shape Up project and in My Tasks they drew just the first 10 tasks. In All Projects those were the 10 newest, which happened to have no due date, so the calendar looked empty while the side list said "No due date (10)". A single Kanban/Scrum project was unaffected because it already loaded up to 500. The calendar, Gantt and board views now load up to 500 tasks, like the Kanban project path; the list view still pages. The rule lives in `hooks/backlogPaging.ts` with a unit test (the hook itself is too large to mount in a test, which is how this went unnoticed).
-- **Backlog/roadmap/attachment feedback batch.** Backlog gains a **Release** filter (also in shared links); the **No epic** filter no longer lists subtasks of epic'd tasks (new `parentEpicId` on `TaskDTO`); Roadmap epic and initiative bars/dots now follow the legend (status derived from progress, custom initiative colour dropped); HTML, CSV, XLS and XLSX can be attached (type also inferred from the extension when the browser sends `application/octet-stream`); image attachments open in a preview dialog instead of downloading.
-- **Creator filter returned nothing for users without a Person profile.** `createTask` silently saved the task with no creator when the account had no linked `Person` (found on production: 43 Kixy tasks). It now creates (or reuses, by e-mail) and links a `Person` first, so the creator is always recorded. Tasks already saved without a creator cannot be recovered.
 
 ## [1.15.6] - 2026-11-14
 

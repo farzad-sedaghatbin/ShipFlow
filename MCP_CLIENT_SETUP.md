@@ -238,7 +238,7 @@ Once connected, your AI assistant has access to these tools:
 | `get_tasks` | Tasks filtered by **any combination** of `cycleId`, `projectId`, `pitchId`, `assigneeId`, or `mine: true`. At least one scope required. |
 | `get_task` | Full task detail including blocked-by relationships |
 | `get_blockers` | Tasks that are currently blocked within a cycle, project, pitch, or for a given assignee/mine |
-| `get_test_cases` | Test cases (acceptance criteria) linked to a task, pitch, or cycle — preconditions, steps, expectedResult |
+| `get_test_cases` | Test cases (acceptance criteria) for a task, pitch, cycle, or whole project — preconditions, steps, expectedResult; optional `status` filter |
 | `get_test_case` | Single test case by ID |
 | `get_test_runs` | Execution history of a test case — status, notes, actualResult, linked bug |
 | `get_bug_reports` | Bug reports linked to a task, pitch, or cycle — severity, status, repro steps |
@@ -287,6 +287,10 @@ Once connected, your AI assistant has access to these tools:
 | `wise_architecture_analyze` | Run a Wise Architecture analysis and return agent-ready Markdown guides |
 | `create_scope` | Create a Hill Chart scope for a pitch (pitchId, title required; optional: description, progress) |
 | `record_test_run` | Record the result of executing a test case — status (PASSED/FAILED/BLOCKED/SKIPPED/PENDING/RUNNING), notes, actualResult, buildVersion, environment |
+| `create_test_case` | Create a test case — `title`, `type`, `priority` required; optional description, preconditions, steps, expectedResult, status, tags, estimatedMinutes, and links (`projectId`, `taskId`, `pitchId`, `cycleId`, `scopeId`, `teamId`) |
+| `create_test_cases` | Create several test cases atomically (`testCases` array, same fields as `create_test_case`; all or nothing) |
+| `update_test_case` | Change any field of a test case, including `status` (DRAFT/READY/APPROVED/DEPRECATED/ARCHIVED); only passed fields change |
+| `delete_test_case` | Soft-delete a test case (history and past runs kept). Use `update_test_case` with `ARCHIVED` to just retire one |
 | `create_bug` | Create a bug report (title, description, severity required; also a project — pass `projectId`, or a `pitchId`/`cycleId`/`taskId` it can be derived from, otherwise the call is rejected: a bug with no project is invisible in every project-scoped list. Optional: stepsToReproduce, expectedBehavior, actualBehavior, environment, assigneeUsername). The calling MCP user becomes the reporter. |
 | `update_bug_status` | Update a bug report's status (OPEN, IN_PROGRESS, RESOLVED, VERIFIED, CLOSED, REOPENED, WONT_FIX, DUPLICATE) and optional resolution text |
 | `update_bug_assignee` | Reassign an existing bug report — by `assigneeUsername`, `assigneeId`, or `mine: true`; or clear with `unassign: true`. Identify the bug by `bugKey` or `bugReportId`. |

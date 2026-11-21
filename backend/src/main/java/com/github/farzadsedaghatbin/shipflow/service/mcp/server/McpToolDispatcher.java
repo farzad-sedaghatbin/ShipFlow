@@ -389,6 +389,10 @@ public class McpToolDispatcher {
       case TestCaseMcpTools.TOOL_GET_TEST_CASE -> testCaseTools.getTestCase(args);
       case TestCaseMcpTools.TOOL_GET_TEST_RUNS -> testCaseTools.getTestRuns(args);
       case TestCaseMcpTools.TOOL_RECORD_TEST_RUN -> testCaseTools.recordTestRun(args, auth);
+      case TestCaseMcpTools.TOOL_CREATE_TEST_CASE -> testCaseTools.createTestCase(args, auth);
+      case TestCaseMcpTools.TOOL_CREATE_TEST_CASES -> testCaseTools.createTestCases(args, auth);
+      case TestCaseMcpTools.TOOL_UPDATE_TEST_CASE -> testCaseTools.updateTestCase(args, auth);
+      case TestCaseMcpTools.TOOL_DELETE_TEST_CASE -> testCaseTools.deleteTestCase(args);
 
       // Bug reports
       case BugReportMcpTools.TOOL_GET_BUG_REPORTS -> bugReportTools.getBugReports(args);
@@ -488,6 +492,10 @@ public class McpToolDispatcher {
         WiseArchitectureMcpTools.analyzeDefinition(),
         WorklogMcpTools.logWorkDefinition(),
         TestCaseMcpTools.recordTestRunDefinition(),
+        TestCaseMcpTools.createTestCaseDefinition(),
+        TestCaseMcpTools.createTestCasesDefinition(),
+        TestCaseMcpTools.updateTestCaseDefinition(),
+        TestCaseMcpTools.deleteTestCaseDefinition(),
         BugReportMcpTools.createBugDefinition(),
         BugReportMcpTools.updateBugStatusDefinition(),
         BugReportMcpTools.updateBugAssigneeDefinition(),
