@@ -112,6 +112,25 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.15.8',
+    date: 'November 21, 2026',
+    title: 'Test Cases over MCP, Tables in Descriptions',
+    highlights: [
+      {
+        icon: <FlaskConical className="h-5 w-5" />,
+        title: 'Full Test-Case Control over MCP',
+        description:
+          'AI tools connected over MCP can now create, edit and delete test cases (singly or in a batch), and list a whole project\u0027s test cases filtered by status. Keys, validation and history match the web app, and project-restricted API keys stay inside their project.',
+      },
+      {
+        icon: <FileText className="h-5 w-5" />,
+        title: 'Insert a Table in Descriptions',
+        description:
+          'The Markdown editor used for task, bug, pitch and epic descriptions has a new Insert table button that drops a ready-to-edit table at the cursor.',
+      },
+    ],
+  },
+  {
     version: '1.15.7',
     date: 'November 20, 2026',
     title: 'Backlog Fixes and Filters',
