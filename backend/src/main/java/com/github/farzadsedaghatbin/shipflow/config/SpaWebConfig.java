@@ -29,13 +29,24 @@ public class SpaWebConfig implements WebMvcConfigurer {
             }
 
             // Otherwise, return index.html for SPA routing
-            // But not for API calls
-            if (!resourcePath.startsWith("api/")) {
+            // But not for API calls or /.well-known/ discovery documents
+            if (servesSpaFallback(resourcePath)) {
               return new ClassPathResource("/static/index.html");
             }
 
             return null;
           }
         });
+  }
+
+  /**
+   * Whether an unknown path should get the web app's index.html. API calls and
+   * {@code /.well-known/} documents must not: a client probing for OAuth
+   * metadata (Claude Code does this on any MCP reconnect) expects JSON or a
+   * 404, and an HTML 200 made it fail with "JSON Parse error" instead of
+   * simply using the configured API key.
+   */
+  static boolean servesSpaFallback(String resourcePath) {
+    return !resourcePath.startsWith("api/") && !resourcePath.startsWith(".well-known/");
   }
 }

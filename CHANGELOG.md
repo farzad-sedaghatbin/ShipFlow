@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.15.9] - 2026-11-21
+
+### Fixed
+- **Claude Code could not reconnect to the MCP server (and showed "Couldn't sign in" / "JSON Parse error").** After a server restart an MCP client has to reconnect; Claude Code first looks for OAuth metadata at `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource`. ShipFlow answered those with the web app's HTML page (the single-page-app fallback returned `index.html` with status 200 for every unknown path), so the client choked on the HTML and never fell back to the configured API key. Unknown `/.well-known/` paths now return 404, which clients treat as "no OAuth, use the key". Real files under `/.well-known/` are still served. Test: `SpaWebConfigTest`.
+
 ## [1.15.8] - 2026-11-21
 
 ### Added
