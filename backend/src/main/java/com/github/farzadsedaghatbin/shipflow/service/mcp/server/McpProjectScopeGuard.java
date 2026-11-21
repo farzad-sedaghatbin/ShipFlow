@@ -168,9 +168,17 @@ public class McpProjectScopeGuard {
         c.task("taskId");
         c.pitch("pitchId");
         c.cycle("cycleId");
+        c.scopeList();
+      }
+      case TestCaseMcpTools.TOOL_CREATE_TEST_CASE -> c.testCaseLinks(true);
+      case TestCaseMcpTools.TOOL_CREATE_TEST_CASES -> c.testCaseBatch();
+      case TestCaseMcpTools.TOOL_UPDATE_TEST_CASE -> {
+        c.testCase("testCaseId");
+        c.testCaseLinks(false);
       }
       case TestCaseMcpTools.TOOL_GET_TEST_CASE,
           TestCaseMcpTools.TOOL_GET_TEST_RUNS,
+          TestCaseMcpTools.TOOL_DELETE_TEST_CASE,
           TestCaseMcpTools.TOOL_RECORD_TEST_RUN -> c.testCase("testCaseId");
       case BugReportMcpTools.TOOL_GET_BUG_REPORTS -> {
         c.task("taskId");
@@ -412,6 +420,57 @@ public class McpProjectScopeGuard {
     void testCase(String key) {
       entity(key, testCaseRepository::findByIdNotDeleted,
           McpProjectScopeGuard.this::projectOfTestCase);
+    }
+
+    /**
+     * Links on a test case create/update must stay inside the restricted project. scopeId/teamId
+     * can't be resolved to a project, so a restricted key may not set them. When {@code inject}
+     * is true a missing projectId is filled with the restricted project, so the new test case
+     * can never be left unanchored.
+     */
+    void testCaseLinks(boolean inject) {
+      this.args = checkedLinks(this.args, inject);
+    }
+
+    private Map<String, Object> checkedLinks(Map<String, Object> source, boolean inject) {
+      Map<String, Object> saved = this.args;
+      this.args = source;
+      try {
+        project("projectId");
+        task("taskId");
+        pitch("pitchId");
+        cycle("cycleId");
+        if (source.get("scopeId") != null || source.get("teamId") != null) {
+          throw denied();
+        }
+      } finally {
+        this.args = saved;
+      }
+      if (inject && source.get("projectId") == null) {
+        Map<String, Object> withProject = new HashMap<>(source);
+        withProject.put("projectId", restricted);
+        return withProject;
+      }
+      return source;
+    }
+
+    /** Create-batch: every item gets the same link check and project injection. */
+    void testCaseBatch() {
+      if (!(args.get("testCases") instanceof java.util.List<?> items)) {
+        return;
+      }
+      java.util.List<Object> checked = new java.util.ArrayList<>();
+      for (Object item : items) {
+        if (!(item instanceof Map<?, ?> m)) {
+          throw denied();
+        }
+        @SuppressWarnings("unchecked")
+        Map<String, Object> entry = (Map<String, Object>) m;
+        checked.add(checkedLinks(entry, true));
+      }
+      Map<String, Object> narrowed = new HashMap<>(args);
+      narrowed.put("testCases", checked);
+      args = narrowed;
     }
 
     void epic(String key) {

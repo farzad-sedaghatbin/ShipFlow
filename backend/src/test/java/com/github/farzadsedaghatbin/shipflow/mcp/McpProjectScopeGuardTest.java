@@ -216,6 +216,8 @@ class McpProjectScopeGuardTest {
             Map.entry("get_test_case", "testCaseId"),
             Map.entry("get_test_runs", "testCaseId"),
             Map.entry("record_test_run", "testCaseId"),
+            Map.entry("update_test_case", "testCaseId"),
+            Map.entry("delete_test_case", "testCaseId"),
             Map.entry("get_bug_report", "bugReportId"),
             Map.entry("get_bug_attachments", "bugReportId"),
             Map.entry("update_bug_status", "bugReportId"),
@@ -269,6 +271,50 @@ class McpProjectScopeGuardTest {
     assertDenied("get_test_cases", Map.of("pitchId", 20));
     assertDenied("get_test_cases", Map.of("cycleId", 20));
     assertAllowed("get_test_cases", Map.of("taskId", 10));
+  }
+
+  @Test
+  void createTestCase_isConfinedToTheRestrictedProject() {
+    Map<String, Object> base = Map.of("title", "t", "type", "UNIT", "priority", "LOW");
+    java.util.function.Function<Map<String, Object>, Map<String, Object>> with =
+        extra -> {
+          Map<String, Object> m = new java.util.HashMap<>(base);
+          m.putAll(extra);
+          return m;
+        };
+    assertDenied("create_test_case", with.apply(Map.of("projectId", FOREIGN)));
+    assertDenied("create_test_case", with.apply(Map.of("taskId", 20)));
+    assertDenied("create_test_case", with.apply(Map.of("pitchId", 20)));
+    assertDenied("create_test_case", with.apply(Map.of("cycleId", 20)));
+    // scope/team can't be resolved to a project, so they are refused for a restricted key
+    assertDenied("create_test_case", with.apply(Map.of("scopeId", 5)));
+    assertDenied("create_test_case", with.apply(Map.of("teamId", 5)));
+    assertAllowed("create_test_case", with.apply(Map.of("taskId", 10)));
+    // an unanchored test case is pinned to the key's project instead of being left project-less
+    assertThat(guard.authorize("create_test_case", base, restricted))
+        .containsEntry("projectId", OWN);
+  }
+
+  @Test
+  void createTestCases_checksAndPinsEveryItem() {
+    Map<String, Object> ok = Map.of("title", "a", "type", "UNIT", "priority", "LOW");
+    Map<String, Object> bad = Map.of("title", "b", "type", "UNIT", "priority", "LOW", "taskId", 20);
+    assertDenied("create_test_cases", Map.of("testCases", List.of(ok, bad)));
+    Map<String, Object> out = guard.authorize("create_test_cases", Map.of("testCases", List.of(ok)), restricted);
+    assertThat((List<?>) out.get("testCases")).singleElement()
+        .satisfies(item -> assertThat(((Map<?, ?>) item).get("projectId")).isEqualTo(OWN));
+  }
+
+  @Test
+  void updateTestCase_cannotMoveItIntoAForeignProject() {
+    assertDenied("update_test_case", Map.of("testCaseId", 10, "taskId", 20));
+    assertAllowed("update_test_case", Map.of("testCaseId", 10, "status", "APPROVED"));
+  }
+
+  @Test
+  void listTestCases_byProject_isNarrowedAndForeignDenied() {
+    assertThat(guard.authorize("get_test_cases", Map.of(), restricted)).containsEntry("projectId", OWN);
+    assertDenied("get_test_cases", Map.of("projectId", FOREIGN));
   }
 
   @Test
