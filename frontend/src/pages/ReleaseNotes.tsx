@@ -112,6 +112,19 @@ const releases: Release[] = [
     ],
   },
   {
+    version: '1.15.9',
+    date: 'November 21, 2026',
+    title: 'Reconnecting to MCP Works Again',
+    highlights: [
+      {
+        icon: <Plug className="h-5 w-5" />,
+        title: 'MCP Reconnect Fixed',
+        description:
+          'Claude Code and other MCP clients could fail to reconnect after a server update, with a confusing "couldn\u0027t sign in" error. The server now says plainly that it uses API keys, so clients just use the key.',
+      },
+    ],
+  },
+  {
     version: '1.15.8',
     date: 'November 21, 2026',
     title: 'Test Cases over MCP, Tables in Descriptions',
