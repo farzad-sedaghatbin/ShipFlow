@@ -35,7 +35,7 @@ The Backlog in ShipFlow holds ideas and tasks that haven't been shaped into pitc
 ## How to Use the Backlog
 1. Navigate to **Backlog** from the sidebar
 2. View all unscheduled items
-3. Filter by priority, assignee, creator, or release
+3. Filter by priority, assignee, creator, or release (filters combine: each one you add narrows the list, and the count under the list is the number of tasks that match all of them)
 4. Drag items to reorder by priority
 
 ### Sharing a Filtered Backlog
@@ -67,7 +67,7 @@ The Backlog page shows one merged list of every task for the project — there's
 3. Optionally tag the item with a priority level
 4. Items can later be promoted to pitches for the Betting Table
 
-No task requires picking a cycle up front anymore — link it to a Pitch and its cycle follows the pitch's own bet automatically (including if the pitch is later re-bet onto a different cycle), or leave it unlinked as opportunistic Debt & Improvement work with no cycle at all. See the "Tasks No Longer Require Picking a Cycle Up Front" section of the Pitches & Betting guide for the full picture.
+No task requires picking a cycle up front anymore — link it to a Pitch and its cycle follows the pitch's own bet automatically (including if the pitch is later re-bet onto a different cycle), or leave it unlinked as opportunistic Debt & Improvement work with no cycle at all. The same holds when you edit a task: the **Cycle** field in the edit dialog is optional, so a task without a cycle can be changed and saved without choosing one. See the "Tasks No Longer Require Picking a Cycle Up Front" section of the Pitches & Betting guide for the full picture.
 
 ## Moving Backlog Items to Pitches
 1. Select a backlog item

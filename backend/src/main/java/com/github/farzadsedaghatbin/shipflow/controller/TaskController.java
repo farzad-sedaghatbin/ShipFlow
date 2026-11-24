@@ -84,12 +84,13 @@ public class TaskController {
       @RequestParam(required = false) List<TaskPriority> priorities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false) Long releaseId,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity
-        .ok(taskService.getMyTasks(category, statuses, priorities, assigneeIds, creatorIds, exclude, pageable));
+        .ok(taskService.getMyTasks(category, statuses, priorities, assigneeIds, creatorIds, releaseId, exclude, pageable));
   }
 
   @GetMapping("/my/cycle/{cycleId}")
@@ -104,12 +105,13 @@ public class TaskController {
       @RequestParam(required = false) List<TaskPriority> priorities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false) Long releaseId,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getMyTasksByCycle(cycleId, category, statuses, priorities, assigneeIds,
-        creatorIds, exclude, pageable));
+        creatorIds, releaseId, exclude, pageable));
   }
 
   // ========== General Task Management ==========
@@ -125,12 +127,13 @@ public class TaskController {
       @RequestParam(required = false) List<TaskPriority> priorities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false) Long releaseId,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity
-        .ok(taskService.getAllTasks(category, statuses, priorities, assigneeIds, creatorIds, exclude, pageable));
+        .ok(taskService.getAllTasks(category, statuses, priorities, assigneeIds, creatorIds, releaseId, exclude, pageable));
   }
 
   @GetMapping("/search")
@@ -144,6 +147,7 @@ public class TaskController {
       @RequestParam(required = false) List<TaskPriority> priorities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false) Long releaseId,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude) {
     if (q == null || q.trim().length() < 3) {
       return ResponseEntity.badRequest().body(Map.of("error", "Search query must be at least 3 characters"));
@@ -152,7 +156,7 @@ public class TaskController {
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(
-        taskService.searchTasks(q, category, statuses, priorities, assigneeIds, creatorIds, exclude, pageable));
+        taskService.searchTasks(q, category, statuses, priorities, assigneeIds, creatorIds, releaseId, exclude, pageable));
   }
 
   @GetMapping("/{id}")
@@ -220,6 +224,7 @@ public class TaskController {
       @RequestParam(required = false) List<TaskPriority> priorities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false) Long releaseId,
       @RequestParam(required = false) TaskCategory category,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
@@ -228,7 +233,7 @@ public class TaskController {
     String validSortBy = validateSortField(sortBy, "createdAt");
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
-    return ResponseEntity.ok(taskService.getTasksWithFilters(cycleId, statuses, priorities, assigneeIds, creatorIds,
+    return ResponseEntity.ok(taskService.getTasksWithFilters(cycleId, statuses, priorities, assigneeIds, creatorIds, releaseId,
         category, exclude, pageable));
   }
 
@@ -308,6 +313,7 @@ public class TaskController {
       @RequestParam(required = false) List<TaskPriority> priorities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false) Long releaseId,
       @RequestParam(required = false) TaskCategory category,
       @RequestParam(required = false, defaultValue = "false") Boolean exclude,
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size,
@@ -317,7 +323,7 @@ public class TaskController {
     Sort.Direction direction = sortOrder.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
     return ResponseEntity.ok(taskService.getTasksByProjectIdWithFilters(projectId, statuses, priorities,
-        assigneeIds, creatorIds, category, exclude, pageable));
+        assigneeIds, creatorIds, releaseId, category, exclude, pageable));
   }
 
   @GetMapping("/project/{projectId}/backlog-tasks")
@@ -512,6 +518,7 @@ public class TaskController {
       @RequestParam(required = false) List<TaskPriority> priorities,
       @RequestParam(required = false) List<Long> assigneeIds,
       @RequestParam(required = false) List<Long> creatorIds,
+      @RequestParam(required = false) Long releaseId,
       @RequestParam(required = false) TaskCategory category) {
 
     if ((projectId == null) == (cycleId == null)) {
@@ -520,7 +527,7 @@ public class TaskController {
     }
 
     byte[] csv =
-        taskService.exportTasksCsv(projectId, cycleId, statuses, priorities, assigneeIds, creatorIds, category);
+        taskService.exportTasksCsv(projectId, cycleId, statuses, priorities, assigneeIds, creatorIds, releaseId, category);
 
     String filename = cycleId != null
         ? "tasks-cycle" + cycleId + "-" + java.time.LocalDate.now() + ".csv"

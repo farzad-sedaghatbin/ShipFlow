@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Editing a task no longer demands a cycle.** The edit dialog on the task page marked **Cycle** as required and refused to save without one, although a task may have no cycle (a backlog item, or a task whose pitch is not bet yet), so such a task could not be edited without being pushed into a cycle. The cycle is now optional there: a task without a cycle is saved with its project reference (the server needs a cycle, a project or a pitch), and its pitch picker lists all pitches instead of an empty list. Test: `taskEditForm.test.ts`.
+- **The Backlog Release filter showed only some of a release's tasks.** The filter ran in the browser over the one page of 10 tasks the server had returned, so it listed only the matches that happened to be on that page: with **All Cycles** and a release chosen, a project showed 2 tasks while a single cycle of the same project showed more. The filter is now applied by the server: `releaseId` is a new optional parameter on `GET /tasks`, `/tasks/my`, `/tasks/my/cycle/{id}`, `/tasks/search`, `/tasks/cycle/{id}/filter`, `/tasks/project/{id}/filter` and `/tasks/export` (so the CSV export follows the filter too), and the page count under the list is the real number of matching tasks. The **Epic** and **Dependencies** filters had the same flaw in the list view and stay browser-side, so the list now loads the whole set (up to 500 tasks) while one of them is on and pages the filtered result itself. Tests: `TaskReleaseFilterRepositoryTest` (real database, matches beyond the first page), `taskService.test.ts`, `backlogPaging.test.ts`.
+
 ## [1.15.9] - 2026-11-21
 
 ### Fixed

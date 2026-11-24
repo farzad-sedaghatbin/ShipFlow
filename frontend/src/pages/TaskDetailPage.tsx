@@ -48,6 +48,7 @@ import { useAuth } from '../contexts';
 import { MoveToProjectDialog } from '../components/MoveToProjectDialog';
 import { useFollowEntityProject } from '../hooks/useFollowEntityProject';
 import { useTaskHierarchy } from '../hooks/useTaskHierarchy';
+import { taskEditFormErrors, taskToEditForm } from '../utils/taskEditForm';
 import TaskHierarchyPicker, { TaskHierarchyPickerMode } from '../components/TaskHierarchyPicker';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -227,6 +228,17 @@ export default function TaskDetailPage() {
     }
   };
 
+  // A task with no cycle can still be linked to a pitch, so offer all of them.
+  const loadAllPitches = async () => {
+    try {
+      const response = await pitchService.getMyPitches();
+      setPitches(response.data);
+    } catch (error) {
+      console.error('Failed to load pitches:', error);
+      setPitches([]);
+    }
+  };
+
   const handlePitchChange = (pitchId: string) => {
     const pitch = pitchId === 'none' ? undefined : Number(pitchId);
     setFormData({ ...formData, pitchId: pitch });
@@ -291,22 +303,7 @@ export default function TaskDetailPage() {
     if (!task) return;
     
     // Populate form with current task data
-    setFormData({
-      title: task.title,
-      description: task.description || '',
-      cycleId: task.cycleId,
-      status: task.status,
-      priority: task.priority,
-      estimateHours: task.estimateHours,
-      teamId: task.teamId,
-      assigneeId: task.assigneeId,
-      pairAssigneeId: task.pairAssigneeId,
-      dueDate: task.dueDate,
-      tags: task.tags || '',
-      category: task.category,
-      parentTaskId: task.parentTaskId,
-      pitchId: task.pitchId,
-    });
+    setFormData(taskToEditForm(task));
     
     if (task.dueDate) {
       setDueDate(dayjs(task.dueDate));
@@ -317,6 +314,8 @@ export default function TaskDetailPage() {
     // Load pitches for the cycle
     if (task.cycleId) {
       loadPitchesForCycle(task.cycleId);
+    } else {
+      loadAllPitches();
     }
     
     setFieldErrors({});
@@ -324,13 +323,10 @@ export default function TaskDetailPage() {
   };
 
   const validateTaskForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    if (!formData.title.trim()) {
-      errors.title = 'Title is required';
-    }
-    if (!formData.cycleId || formData.cycleId === 0) {
-      errors.cycleId = 'Cycle is required';
-    }
+    // A cycle is optional: a task may sit in the backlog without one.
+    const errors = Object.fromEntries(
+      Object.entries(taskEditFormErrors(formData)).map(([field, key]) => [field, t(key)]),
+    );
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -1054,16 +1050,17 @@ export default function TaskDetailPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="edit-cycle">Cycle *</Label>
+              <Label htmlFor="edit-cycle">{t('taskDetail.cycle')}</Label>
               <Combobox
                 options={cycles.map(cycle => ({ value: cycle.id.toString(), label: cycle.name }))}
-                value={formData.cycleId !== undefined ? formData.cycleId.toString() : ''}
+                value={formData.cycleId ? formData.cycleId.toString() : ''}
                 onValueChange={(value) => {
                   const cycleId = parseInt(value);
-                  setFormData({ ...formData, cycleId, pitchId: undefined });
+                  if (!cycleId) return;
+                  setFormData({ ...formData, cycleId, projectId: undefined, pitchId: undefined });
                   loadPitchesForCycle(cycleId);
                 }}
-                placeholder="Select cycle"
+                placeholder={t('taskDetail.selectCycle')}
                 className={fieldErrors.cycleId ? 'border-destructive' : ''}
               />
               {fieldErrors.cycleId && (

@@ -6,7 +6,8 @@ export const taskService = {
   getMy: (
     page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
     statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
-    exclude?: boolean
+    exclude?: boolean,
+    releaseId?: number
   ) => {
     return api.get<Page<Task>>('/tasks/my', {
       params: {
@@ -20,13 +21,15 @@ export const taskService = {
         assigneeIds: assigneeIds?.join(','),
         creatorIds: creatorIds?.join(','),
         exclude: exclude ?? false,
+        releaseId,
       },
     });
   },
   getMyByCycle: (
     cycleId: number, page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
     statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
-    exclude?: boolean
+    exclude?: boolean,
+    releaseId?: number
   ) => {
     if (page !== undefined) {
       return api.get<Page<Task>>(`/tasks/my/cycle/${cycleId}`, {
@@ -41,6 +44,7 @@ export const taskService = {
           assigneeIds: assigneeIds?.join(','),
           creatorIds: creatorIds?.join(','),
           exclude: exclude ?? false,
+          releaseId,
         },
       });
     }
@@ -51,7 +55,8 @@ export const taskService = {
   getAll: (
     page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
     statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
-    exclude?: boolean
+    exclude?: boolean,
+    releaseId?: number
   ) => {
     return api.get<Page<Task>>('/tasks', {
       params: {
@@ -65,6 +70,7 @@ export const taskService = {
         assigneeIds: assigneeIds?.join(','),
         creatorIds: creatorIds?.join(','),
         exclude: exclude ?? false,
+        releaseId,
       },
     });
   },
@@ -141,7 +147,8 @@ export const taskService = {
     page?: number,
     size?: number,
     sortBy?: string,
-    sortOrder?: string
+    sortOrder?: string,
+    releaseId?: number
   ) => {
     return api.get<Page<Task>>(`/tasks/project/${projectId}/filter`, {
       params: {
@@ -151,6 +158,7 @@ export const taskService = {
         creatorIds: creatorIds?.join(','),
         category: category,
         exclude: exclude ?? false,
+        releaseId,
         page: page ?? 0,
         size: size ?? 10,
         sortBy: sortBy ?? 'createdAt',
@@ -162,7 +170,8 @@ export const taskService = {
   search: (
     query: string, page?: number, size?: number, sortBy?: string, sortOrder?: string, category?: TaskCategory,
     statuses?: TaskStatus[], priorities?: TaskPriority[], assigneeIds?: number[], creatorIds?: number[],
-    exclude?: boolean
+    exclude?: boolean,
+    releaseId?: number
   ) => {
     return api.get<Page<Task>>('/tasks/search', {
       params: {
@@ -177,6 +186,7 @@ export const taskService = {
         assigneeIds: assigneeIds?.join(','),
         creatorIds: creatorIds?.join(','),
         exclude: exclude ?? false,
+        releaseId,
       },
     });
   },
@@ -193,7 +203,8 @@ export const taskService = {
     page?: number,
     size?: number,
     sortBy?: string,
-    sortOrder?: string
+    sortOrder?: string,
+    releaseId?: number
   ) => {
     return api.get<Page<Task>>(`/tasks/cycle/${cycleId}/filter`, {
       params: {
@@ -203,6 +214,7 @@ export const taskService = {
         creatorIds: creatorIds?.join(','),
         category: category,
         exclude: exclude ?? false,
+        releaseId,
         page: page ?? 0,
         size: size ?? 10,
         sortBy: sortBy ?? 'createdAt',
@@ -293,6 +305,7 @@ export const taskService = {
     priorities?: TaskPriority[];
     assigneeIds?: number[];
     creatorIds?: number[];
+    releaseId?: number;
     category?: TaskCategory;
   }) =>
     api.get<Blob>('/tasks/export', {
@@ -303,6 +316,7 @@ export const taskService = {
         priorities: params.priorities?.join(','),
         assigneeIds: params.assigneeIds?.join(','),
         creatorIds: params.creatorIds?.join(','),
+        releaseId: params.releaseId,
         category: params.category,
       },
       responseType: 'blob',

@@ -30,7 +30,7 @@ import {
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useProject, useAuth } from '../contexts';
 import { ViewMode } from '../components/backlog';
-import { KANBAN_PAGE_SIZE, taskRequestPaging } from './backlogPaging';
+import { KANBAN_PAGE_SIZE, pageOfFiltered, taskRequestPaging } from './backlogPaging';
 
 
 // Query params owned by the backlog's filter state. Mirrored into the URL so a filtered
@@ -258,7 +258,6 @@ export function useBacklogPage() {
       result = result.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
     }
     // A subtask of an epic'd task inherits that epic on the board, so it is not "no epic".
-    if (releaseFilter) result = result.filter((t) => t.targetReleaseId === releaseFilter);
     if (epicFilter === 'none') result = result.filter((t) => !t.epicId && !t.parentEpicId);
     else if (epicFilter !== 'all') result = result.filter((t) => t.epicId === epicFilter);
     return applyDependencyFilter(result);
@@ -266,7 +265,9 @@ export function useBacklogPage() {
 
   // Filters that only run in the browser (never sent to the server), so the server's totalElements
   // does not reflect them and the count falls back to the filtered array's length.
-  const clientSideFilterActive = dependencyFilter !== 'all' || epicFilter !== 'all' || !!releaseFilter;
+  // The release filter is NOT one of them: it is sent to the server (`releaseId`), because filtering
+  // one page of 10 in the browser showed only the matches that happened to be on that page.
+  const clientSideFilterActive = dependencyFilter !== 'all' || epicFilter !== 'all';
 
   const loadTasks = async () => {
     // 'all' means no server-side category filtering — matches the optional `category` param
@@ -285,7 +286,7 @@ export function useBacklogPage() {
         // project-scoped filter endpoint so they're applied server-side (not just to the
         // KANBAN_PAGE_SIZE-capped page) — see the analogous cycle-scoped branch below.
         const hasServerFilters = statusFilter.length > 0 || priorityFilter.length > 0
-          || assigneeFilter.length > 0 || creatorFilter.length > 0;
+          || assigneeFilter.length > 0 || creatorFilter.length > 0 || !!releaseFilter;
         const response = hasServerFilters
           ? await taskService.getByProjectIdWithFilters(
               currentProject.id,
@@ -293,7 +294,7 @@ export function useBacklogPage() {
               priorityFilter.length > 0 ? priorityFilter : undefined,
               assigneeFilter.length > 0 ? assigneeFilter : undefined,
               creatorFilter.length > 0 ? creatorFilter : undefined,
-              undefined, excludeMode, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
+              undefined, excludeMode, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder, releaseFilter,
             )
           : await taskService.getByProjectIdPaged(
               currentProject.id, 0, KANBAN_PAGE_SIZE, sortBy, sortOrder,
@@ -316,7 +317,15 @@ export function useBacklogPage() {
 
     if (!selectedCycle) { setTasks([]); setTotalElements(0); setTasksLoading(false); return; }
     // Board/Gantt/calendar views have no pager, so they load the whole set instead of the list's page.
-    const { page: reqPage, size: reqSize } = taskRequestPaging(viewMode, page, rowsPerPage);
+    // So does the list while a browser-only filter is on; it is then paged here (showFiltered).
+    const { page: reqPage, size: reqSize } = taskRequestPaging(viewMode, page, rowsPerPage, clientSideFilterActive);
+    // The server's totalElements is only right when it applied every filter itself; with a
+    // browser-only filter on, the count and the visible page come from the filtered set.
+    const showFiltered = (items: Task[], serverTotal: number) => {
+      if (!clientSideFilterActive) { setTasks(items); setTotalElements(serverTotal); return; }
+      setTasks(pageOfFiltered(items, viewMode, page, rowsPerPage));
+      setTotalElements(items.length);
+    };
     setTasksLoading(true);
     const timeout = setTimeout(() => setTasksLoading(false), 10000);
     try {
@@ -332,7 +341,7 @@ export function useBacklogPage() {
           priorityFilter.length > 0 ? priorityFilter : undefined,
           assigneeFilter.length > 0 ? assigneeFilter : undefined,
           creatorFilter.length > 0 ? creatorFilter : undefined,
-          excludeMode,
+          excludeMode, releaseFilter,
         );
         let results: Task[] = response?.data?.content || [];
         if (selectedCycle !== 'all') results = results.filter((t) => t.cycleId === selectedCycle);
@@ -350,20 +359,14 @@ export function useBacklogPage() {
         const creators = creatorFilter.length > 0 ? creatorFilter : undefined;
         if (selectedCycle === 'all') {
           response = await taskService.getMy(reqPage, reqSize, sortBy, sortOrder, categoryParam,
-            statuses, priorities, assignees, creators, excludeMode);
+            statuses, priorities, assignees, creators, excludeMode, releaseFilter);
         } else {
           response = await taskService.getMyByCycle(selectedCycle, reqPage, reqSize, sortBy, sortOrder, categoryParam,
-            statuses, priorities, assignees, creators, excludeMode);
+            statuses, priorities, assignees, creators, excludeMode, releaseFilter);
         }
-        const filteredTasks = applyCommonFilters(response?.data?.content || []);
-        setTasks(filteredTasks);
-        // dependencyFilter is applied client-side only (never sent server-side), so the server's
-        // totalElements only reflects the true count when dependencyFilter is 'all' — otherwise
-        // fall back to the filtered array length so "Page N of M" doesn't strand the user.
-        setTotalElements(
-          clientSideFilterActive
-            ? filteredTasks.length
-            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        showFiltered(
+          applyCommonFilters(response?.data?.content || []),
+          response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0,
         );
       } else if (selectedCycle === 'all') {
         response = await taskService.getAll(reqPage, reqSize, sortBy, sortOrder, categoryParam,
@@ -371,43 +374,28 @@ export function useBacklogPage() {
           priorityFilter.length > 0 ? priorityFilter : undefined,
           assigneeFilter.length > 0 ? assigneeFilter : undefined,
           creatorFilter.length > 0 ? creatorFilter : undefined,
-          excludeMode);
-        const filteredTasks = applyCommonFilters(response?.data?.content || []);
-        setTasks(filteredTasks);
-        // dependencyFilter is applied client-side only (never sent server-side), so the server's
-        // totalElements only reflects the true count when dependencyFilter is 'all' — otherwise
-        // fall back to the filtered array length so "Page N of M" doesn't strand the user.
-        setTotalElements(
-          clientSideFilterActive
-            ? filteredTasks.length
-            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+          excludeMode, releaseFilter);
+        showFiltered(
+          applyCommonFilters(response?.data?.content || []),
+          response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0,
         );
-      } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || creatorFilter.length > 0) {
-        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, creatorFilter.length > 0 ? creatorFilter : undefined, categoryParam, excludeMode, reqPage, reqSize, sortBy, sortOrder);
-        const filteredTasks = applyCommonFilters(response?.data?.content || []);
-        setTasks(filteredTasks);
-        setTotalElements(
-          clientSideFilterActive
-            ? filteredTasks.length
-            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+      } else if (statusFilter.length > 0 || priorityFilter.length > 0 || assigneeFilter.length > 0 || creatorFilter.length > 0 || releaseFilter) {
+        response = await taskService.getWithFilters(selectedCycle, statusFilter.length > 0 ? statusFilter : undefined, priorityFilter.length > 0 ? priorityFilter : undefined, assigneeFilter.length > 0 ? assigneeFilter : undefined, creatorFilter.length > 0 ? creatorFilter : undefined, categoryParam, excludeMode, reqPage, reqSize, sortBy, sortOrder, releaseFilter);
+        showFiltered(
+          applyCommonFilters(response?.data?.content || []),
+          response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0,
         );
       } else if (categoryParam) {
         response = await taskService.getByCycleIdAndCategory(selectedCycle, categoryParam, reqPage, reqSize, sortBy, sortOrder);
-        const filteredTasks = applyCommonFilters(response?.data?.content || []);
-        setTasks(filteredTasks);
-        setTotalElements(
-          clientSideFilterActive
-            ? filteredTasks.length
-            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        showFiltered(
+          applyCommonFilters(response?.data?.content || []),
+          response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0,
         );
       } else {
         response = await taskService.getByCycleId(selectedCycle, reqPage, reqSize, sortBy, sortOrder);
-        const filteredTasks = applyCommonFilters(response?.data?.content || []);
-        setTasks(filteredTasks);
-        setTotalElements(
-          clientSideFilterActive
-            ? filteredTasks.length
-            : (response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0),
+        showFiltered(
+          applyCommonFilters(response?.data?.content || []),
+          response?.data?.page?.totalElements ?? response?.data?.totalElements ?? 0,
         );
       }
     } catch (error) { console.error('Failed to load tasks:', error); setTasks([]); setTotalElements(0); }
@@ -740,6 +728,7 @@ export function useBacklogPage() {
         priorities: priorityFilter.length > 0 ? priorityFilter : undefined,
         assigneeIds: assigneeFilter.length > 0 ? assigneeFilter : undefined,
         creatorIds: creatorFilter.length > 0 ? creatorFilter : undefined,
+        releaseId: releaseFilter,
         category: categoryFilter !== 'all' ? categoryFilter : undefined,
       });
       const blob = new Blob([response.data as unknown as BlobPart], { type: 'text/csv;charset=utf-8;' });
