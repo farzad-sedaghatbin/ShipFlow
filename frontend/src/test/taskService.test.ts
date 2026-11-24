@@ -166,6 +166,45 @@ describe('taskService', () => {
     });
   });
 
+  // The Backlog's release filter is applied by the server. Filtering one page of 10 in the
+  // browser showed only the matches that happened to be on that page.
+  describe('release filter', () => {
+    const releaseParam = { params: expect.objectContaining({ releaseId: 8 }) };
+
+    beforeEach(() => {
+      mockedApi.get.mockResolvedValue({ data: { content: [], totalElements: 0 } });
+    });
+
+    it('sends releaseId when listing all tasks', async () => {
+      await taskService.getAll(0, 10, 'createdAt', 'desc', undefined, undefined, undefined, undefined, undefined, false, 8);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks', releaseParam);
+    });
+
+    it('sends releaseId when listing my tasks, with and without a cycle', async () => {
+      await taskService.getMy(0, 10, 'createdAt', 'desc', undefined, undefined, undefined, undefined, undefined, false, 8);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/my', releaseParam);
+
+      await taskService.getMyByCycle(18, 0, 10, 'createdAt', 'desc', undefined, undefined, undefined, undefined, undefined, false, 8);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/my/cycle/18', releaseParam);
+    });
+
+    it('sends releaseId to the cycle and project filter endpoints', async () => {
+      await taskService.getWithFilters(18, undefined, undefined, undefined, undefined, undefined, false, 0, 10, 'createdAt', 'desc', 8);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/cycle/18/filter', releaseParam);
+
+      await taskService.getByProjectIdWithFilters(1, undefined, undefined, undefined, undefined, undefined, false, 0, 500, 'createdAt', 'desc', 8);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/project/1/filter', releaseParam);
+    });
+
+    it('sends releaseId when searching and when exporting', async () => {
+      await taskService.search('monzo', 0, 500, 'createdAt', 'desc', undefined, undefined, undefined, undefined, undefined, false, 8);
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/search', releaseParam);
+
+      await taskService.exportTasks({ projectId: 1, releaseId: 8 });
+      expect(mockedApi.get).toHaveBeenCalledWith('/tasks/export', expect.objectContaining(releaseParam));
+    });
+  });
+
   describe('create', () => {
     it('should create a new task', async () => {
       const newTask = {
